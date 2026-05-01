@@ -1,0 +1,78 @@
+---
+description: Finalize and open the PR. Verifies tests pass, presents structured commit/branch/PR options, executes the chosen path. Last command before review.
+argument-hint: "[--draft] [--base <branch>]"
+allowed-tools:
+  - Read
+  - Glob
+  - Grep
+  - Skill
+  - AskUserQuestion
+  - Bash(git *)
+  - Bash(gh pr create:*)
+  - Bash(gh pr view:*)
+  - Bash(gh pr list:*)
+  - Bash(npm *:*)
+  - Bash(pnpm *:*)
+  - Bash(yarn *:*)
+---
+
+# /orc:ship
+
+You're done implementing. Time to integrate. This command runs the structured branch-completion flow.
+
+## Arguments
+
+- `--draft` — open the PR as a draft.
+- `--base <branch>` — target a non-default base (e.g. `develop`, `release/v2`).
+
+## Workflow
+
+### Phase 1 — Pre-ship verification
+
+Invoke `orc:verification-before-completion`. Confirm:
+- Tests pass.
+- Lint / type-check pass (if configured).
+- No staged-but-uncommitted changes (`git status --porcelain`).
+- Current branch is NOT a protected branch.
+
+If any check fails, stop and show the failure. Do not proceed.
+
+### Phase 2 — Self-request a review
+
+Invoke `orc:requesting-code-review`. The skill walks through whether the work meets requirements and is review-ready. If the skill flags gaps, surface them; user decides whether to proceed.
+
+### Phase 3 — Branch completion options
+
+Invoke `orc:finishing-a-development-branch`. The skill presents structured options via `AskUserQuestion` (typically: open PR / merge directly / keep working / discard). Execute the chosen option.
+
+If the user picks "open PR":
+
+### Phase 4 — Compose PR
+
+Invoke `orc:git-commit` if there are uncommitted changes. Then:
+1. Determine PR title from the branch name + recent commit subjects.
+2. Compose a body with sections:
+   - **What** — one-paragraph summary
+   - **Why** — link to plan / issue / PRD if available (`.orc/<branch>/files/plan.md` if present)
+   - **How tested** — test commands run, browser QA artifacts if web change (`.orc/<branch>/files/qa/`)
+   - **Checklist** — boxes for the reviewer
+3. Show the user the title + body via `AskUserQuestion`: `Open as-is` / `Edit first` / `Cancel`.
+
+### Phase 5 — Push + create PR
+
+```
+git push -u origin <branch>
+gh pr create --title "<title>" --body "<body>" [--draft] [--base <base>]
+```
+
+Echo the PR URL.
+
+### Phase 6 — Cleanup hint
+
+If the user opted for "merge after CI" rather than "wait for review," surface a reminder to come back with `/orc:address` if reviewers leave comments.
+
+## Output
+
+- A new (or updated) PR on GitHub
+- PR URL echoed to the user
+- (No `.orc/` writes — `/orc:ship` doesn't checkpoint; integration is the terminal state.)
