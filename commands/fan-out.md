@@ -1,6 +1,6 @@
 ---
-description: Dispatch independent tasks to parallel sub-sessions. Reads a task list (from a plan or supplied directly), runs them concurrently, recombines results. Writes to .orc/<branch>/files/.
-argument-hint: "[--from-plan] [--max <n>] <task list or 'use plan.md'>"
+description: Parallel-dispatch N independent tasks that don't share state — paralleled investigations, multi-PR review, multi-repo work, doc bulk updates. For parallel-safe slices within a single feature plan, prefer /orc:flow (which dispatches parallel batches inside Phase 5 with the full lifecycle around them). /orc:fan-out is the standalone parallelism primitive, no surrounding lifecycle. Writes per-task results to .orc/<branch>/files/fan-out/.
+argument-hint: "[--from-plan] [--max <n>] [--agent <name>] <task list or 'use plan.md'>"
 allowed-tools:
   - Read
   - Write
@@ -15,12 +15,20 @@ allowed-tools:
 
 # /orc:fan-out
 
-When you have 2+ independent tasks that can run without sharing state, fan them out instead of doing them sequentially.
+When you have N independent tasks that can run without sharing state, fan them out instead of doing them sequentially.
+
+## When to reach for `/orc:fan-out` vs `/orc:flow`
+
+- **`/orc:flow`** — when you're driving ONE feature/bug/refactor end-to-end and the plan has parallel-safe slices in Phase 5. The umbrella handles the parallel dispatch inside the lifecycle (plan → start → parallel implementation → QA → ship).
+- **`/orc:fan-out`** — when you have N independent things that aren't a single feature pipeline. Multi-PR review, paralleled investigations, multi-repo work, doc bulk updates, partial-plan execution without the full lifecycle. No phases, no QA, no ship — just dispatch and collect.
+
+The two are different abstraction levels: `/orc:flow` is a lifecycle, `/orc:fan-out` is a parallelism primitive.
 
 ## Arguments
 
-- `--from-plan` — read tasks from the current `.orc/<branch>/files/plan.md` (or named plan).
+- `--from-plan` — read tasks from the current `.orc/<branch>/files/plan.md` (or named plan). De-emphasized path: for plans inside an active feature flow, prefer `/orc:flow` which handles parallel batches in-context with QA + ship after.
 - `--max <n>` — cap concurrent agents (default 5; 8 for Sonnet-only sets).
+- `--agent <name>` — explicit agent type for all tasks (e.g. `--agent orc-pr-reviewer` for multi-PR review, `--agent orc-debug-investigator` for paralleled investigations). Default: auto-pick per task shape (slice → orc-implementer; otherwise general-purpose).
 - The remaining argument is either a freeform task list or `use plan.md`.
 
 ## Workflow
