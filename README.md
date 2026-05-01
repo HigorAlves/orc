@@ -10,7 +10,7 @@
 
 ## What it does
 
-`orc` is a personal-workflow plugin: **49 curated skills, 15 composite slash commands, 6 specialist subagents, and 3 hook scripts** that quietly enforce discipline (no commits to `main`, dependency pre-flight check, skill catalog injected at every session start).
+`orc` is a personal-workflow plugin: **50 curated skills, 15 composite slash commands, 6 specialist subagents, and 3 hook scripts** that quietly enforce discipline (no commits to `main`, dependency pre-flight check, skill catalog injected at every session start).
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
@@ -82,7 +82,7 @@ export ORC_SKIP_TOOL_CHECK=1
 
 ## Skill catalog
 
-**Core (17, always available):** `tdd`, `systematic-debugging`, `verification-before-completion`, `writing-plans`, `executing-plans`, `caveman-review`, `receiving-code-review`, `requesting-code-review`, `git-commit`, `gh-cli`, `using-git-worktrees`, `finishing-a-development-branch`, `dispatching-parallel-agents`, `error-handling-patterns`, `git-advanced-workflows`, `architecture-patterns`, `improve-codebase-architecture`.
+**Core (18, always available):** `tdd`, `systematic-debugging`, `verification-before-completion`, `writing-plans`, `executing-plans`, `caveman-review`, `caveman-pr`, `receiving-code-review`, `requesting-code-review`, `git-commit`, `gh-cli`, `using-git-worktrees`, `finishing-a-development-branch`, `dispatching-parallel-agents`, `error-handling-patterns`, `git-advanced-workflows`, `architecture-patterns`, `improve-codebase-architecture`.
 
 **Senior/architect practice (3, authored for orc):** `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem` (blameless incident postmortems).
 
@@ -94,7 +94,7 @@ export ORC_SKIP_TOOL_CHECK=1
 
 **Pack: workflow-extras (11):** `docker-expert`, `turborepo`, `sentry-cli`, `skill-creator`, `write-a-skill`, `documentation-writer`, `create-readme`, `to-prd`, `to-issues`, `grill-me`, `agent-browser` (drives a real browser for `/orc:qa` web mode).
 
-Plus the meta skill `using-orc` (auto-injected at SessionStart, encodes iron rules). **Total: 49 skills.**
+Plus the meta skill `using-orc` (auto-injected at SessionStart, encodes iron rules). **Total: 50 skills.**
 
 ## Insight blocks
 
@@ -137,7 +137,7 @@ Without the required artifacts, "QA passed" is not an accepted claim. The `orc-q
 orc/
 ├── .claude-plugin/plugin.json   # manifest
 ├── .orc/                        # gitignored — workspace state per session
-├── skills/<name>/SKILL.md       # 49 skills (1 authored + 48 curated)
+├── skills/<name>/SKILL.md       # 50 skills (5 authored + 45 curated)
 ├── commands/<name>.md           # 15 slash commands
 ├── agents/orc-<role>.md         # 6 subagents
 ├── hooks/

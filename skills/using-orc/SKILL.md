@@ -67,6 +67,7 @@ No "QA passed" claim is accepted without the required artifacts in `qa/`. `orc:v
 | `orc:writing-plans` | When you have a spec or requirements for a multi-step task, before touching code |
 | `orc:executing-plans` | When executing a written plan with review checkpoints |
 | `orc:caveman-review` | When reviewing PR diffs — terse, signal-only comments |
+| `orc:caveman-pr` | When writing a PR description — terse, signal-only body (paired with `/orc:ship --caveman`) |
 | `orc:receiving-code-review` | When receiving review feedback — verify before implementing |
 | `orc:requesting-code-review` | When completing major work before merging |
 | `orc:git-commit` | When committing — intelligent staging + Conventional Commits |

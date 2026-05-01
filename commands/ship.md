@@ -1,6 +1,6 @@
 ---
 description: Finalize and open the PR. Verifies tests pass, presents structured commit/branch/PR options, executes the chosen path. Last command before review.
-argument-hint: "[--draft] [--base <branch>]"
+argument-hint: "[--draft] [--base <branch>] [--caveman]"
 allowed-tools:
   - Read
   - Glob
@@ -24,6 +24,7 @@ You're done implementing. Time to integrate. This command runs the structured br
 
 - `--draft` — open the PR as a draft.
 - `--base <branch>` — target a non-default base (e.g. `develop`, `release/v2`).
+- `--caveman` — compose the PR title and body using `orc:caveman-pr` (terse, signal-only). Default is the verbose template documented in Phase 4.
 
 ## Workflow
 
@@ -50,12 +51,11 @@ If the user picks "open PR":
 ### Phase 4 — Compose PR
 
 Invoke `orc:git-commit` if there are uncommitted changes. Then:
+
 1. Determine PR title from the branch name + recent commit subjects.
-2. Compose a body with sections:
-   - **What** — one-paragraph summary
-   - **Why** — link to plan / issue / PRD if available (`.orc/<branch>/files/plan.md` if present)
-   - **How tested** — test commands run, browser QA artifacts if web change (`.orc/<branch>/files/qa/`)
-   - **Checklist** — boxes for the reviewer
+2. Compose the body. Two modes:
+   - **Default (verbose)** — sections: **What** (one-paragraph summary), **Why** (link to plan / issue / PRD if available; `.orc/<branch>/files/plan.md` if present), **How tested** (test commands run; browser QA artifacts if web change at `.orc/<branch>/files/qa/`), **Checklist** (boxes for the reviewer).
+   - **`--caveman` mode** — invoke `orc:caveman-pr` and follow it exactly. Skips the verbose template; returns a tight title + body with only the sections that add signal (Why / What changed / How tested / Notes / trailers). Best when the diff is small or the PR template is heavyweight.
 3. Show the user the title + body via `AskUserQuestion`: `Open as-is` / `Edit first` / `Cancel`.
 
 ### Phase 5 — Push + create PR
