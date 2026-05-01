@@ -71,13 +71,16 @@ Multi-phase commands (`/orc:plan`, `/orc:start`, `/orc:debug`, `/orc:fan-out`, w
 
 ## Web QA evidence (a hard rule)
 
-Any change touching a web surface goes through `/orc:qa --web` (or auto-detected). The `orc-qa-validator` agent drives a real browser via the `orc:agent-browser` skill, capturing:
-- per-step screenshots
-- a session video
-- a step-by-step `steps.md` narrative
-- a `console.log` (with errors flagged)
+Any change touching a web surface goes through `/orc:qa --web` (or auto-detected). The `orc-qa-validator` agent drives a real browser via the [vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser) CLI (loaded via the `orc:agent-browser` skill), capturing **required** artifacts:
+- per-step `screenshot-NN-<step>.png` (use `--annotate` to overlay element refs `@eN`)
+- `snapshot-final.txt` — accessibility tree at end of run (from `agent-browser snapshot`)
+- `console.log` — browser console output (from `agent-browser console`)
+- `network.har` — network traffic (from `agent-browser network har start/stop`)
+- `steps.md` — narrated golden-path + edge cases
 
-No "QA passed" claim is accepted without these artifacts in `.orc/<branch>/files/qa/`. `orc:verification-before-completion` enforces this.
+Optional bonus artifacts (NOT required): `trace.json` (Chrome DevTools), `react-renders.json`, `vitals.json`, OS-recorded `video.mov`. agent-browser does not record video natively; use `screencapture -v` (macOS) or similar when video is genuinely needed.
+
+No "QA passed" claim is accepted without the required artifacts in `.orc/<branch>/files/qa/`. `orc:verification-before-completion` enforces this.
 
 ## Stack scope
 

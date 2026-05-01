@@ -1,5 +1,5 @@
 ---
-description: Pre-PR quality gate. For web changes, full browser-driven QA with screenshots, video, and step-by-step narrative saved to .orc/<branch>/files/qa/. No QA-passed claim without artifacts.
+description: Pre-PR quality gate. For web changes, browser-driven QA via the agent-browser CLI — annotated screenshots, accessibility snapshot, console log, network HAR, and a step-by-step narrative saved to .orc/<branch>/files/qa/. No QA-passed claim without artifacts.
 argument-hint: "[--web <url>] [--no-web] <feature description>"
 allowed-tools:
   - Read
@@ -18,6 +18,8 @@ allowed-tools:
   - Bash(pytest *:*)
   - Bash(curl:*)
   - Bash(node:*)
+  - Bash(agent-browser:*)
+  - Bash(npx agent-browser:*)
 ---
 
 # /orc:qa
@@ -74,7 +76,17 @@ Bump `checkpoint.md` to mark QA complete.
 
 ## Iron rule
 
-For any web mode QA: if `qa/` directory does not contain `screenshots/`, `video.*`, `steps.md`, AND `console.log`, the QA is NOT passed. Surface this and stop. The user must address the gap before any "ready to PR" claim.
+For any web-mode QA, the `qa/` directory MUST contain all of:
+- one or more `screenshot-NN-<step>.png` for the golden path (use `agent-browser screenshot --annotate` to overlay element refs)
+- one or more screenshots for edge cases (or an explicit "no edge cases applicable, here's why" note in `steps.md`)
+- `snapshot-final.txt` (final accessibility tree from `agent-browser snapshot`)
+- `console.log` (from `agent-browser console`)
+- `network.har` (from `agent-browser network har stop`)
+- `steps.md` (the narrative)
+
+Optional bonus evidence (NOT required): `trace.json` (Chrome DevTools trace), `react-renders.json`, `vitals.json`, an OS-recorded `video.mov`. Add these only when relevant to the change.
+
+If any required artifact is missing, surface it and stop. The user must address the gap before any "ready to PR" claim.
 
 ## Output
 

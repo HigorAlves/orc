@@ -42,18 +42,20 @@ These apply at all times, regardless of context:
 
 ## Web QA evidence (hard rule)
 
-For any change touching a web surface, `/orc:qa` MUST drive a real browser via the `orc:agent-browser` skill — not just inspect code or run unit tests. The `orc-qa-validator` agent is responsible for:
+For any change touching a web surface, `/orc:qa` MUST drive a real browser via the `orc:agent-browser` skill (which wraps the [vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser) CLI) — not just inspect code or run unit tests. The `orc-qa-validator` agent is responsible for:
 
 1. Booting (or attaching to) the running app at a URL provided by the user.
 2. Walking the **golden path** for the changed feature.
-3. Walking **edge cases** (failure states, empty states, validation, slow network).
-4. Capturing artifacts to `.orc/<branch>/files/qa/`:
-   - `screenshot-<NN>-<step-slug>.png` per visible step
-   - `video.mp4` (or `.webm`) of the full session
+3. Walking **edge cases** (failure states, empty states, validation, slow network, auth states).
+4. Capturing required artifacts to `.orc/<branch>/files/qa/`:
+   - `screenshot-<NN>-<step>.png` per visible step (use `agent-browser screenshot --annotate` so refs `@eN` overlay each interactive element)
+   - `snapshot-final.txt` — final accessibility tree from `agent-browser snapshot`
+   - `console.log` — captured browser console (errors and warnings flagged)
+   - `network.har` — captured network from `agent-browser network har start/stop`
    - `steps.md` — numbered narrative: what was tested, expected vs. actual, links to each screenshot
-   - `console.log` — captured browser console output (errors flagged)
+5. Optional bonus evidence (NOT required): `trace.json` (Chrome DevTools), `react-renders.json`, `vitals.json`, an OS-recorded `video.mov` for animated changes.
 
-No "QA passed" claim is accepted without these artifacts in `qa/`. `orc:verification-before-completion` enforces this.
+No "QA passed" claim is accepted without the required artifacts in `qa/`. `orc:verification-before-completion` enforces this. agent-browser does NOT record video natively; if the change is animation-heavy and you need a video, capture an OS screen recording (e.g. `screencapture -v` on macOS) into `qa/video.mov`.
 
 ## Available Skills
 

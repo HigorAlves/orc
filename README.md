@@ -63,12 +63,15 @@ Plus the meta skill `using-orc` (auto-injected at SessionStart, encodes iron rul
 
 Any web-surface change going through `/orc:qa` MUST produce, in `.orc/<branch>/files/qa/`:
 
-- `screenshot-NN-<step>.png` per visible step
-- `video.mp4` (or `.webm`) of the full session
-- `steps.md` — narrated golden-path + edge cases
+- `screenshot-NN-<step>.png` per visible step (annotated via `agent-browser screenshot --annotate`)
+- `snapshot-final.txt` — accessibility tree from `agent-browser snapshot`
 - `console.log` — captured browser console (errors flagged)
+- `network.har` — network traffic from `agent-browser network har start/stop`
+- `steps.md` — narrated golden path + edge cases
 
-Without these artifacts, "QA passed" is not an accepted claim. The `orc-qa-validator` agent (driven by `agent-browser`) produces them.
+Bonus (optional): `trace.json`, `react-renders.json`, `vitals.json`, or an OS-recorded `video.mov` for animated changes. agent-browser does not record video natively.
+
+Without the required artifacts, "QA passed" is not an accepted claim. The `orc-qa-validator` agent — driven by the [vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser) CLI via the `orc:agent-browser` skill — produces them.
 
 ## Layout
 
