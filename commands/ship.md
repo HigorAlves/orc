@@ -71,6 +71,8 @@ Echo the PR URL.
 
 If the user opted for "merge after CI" rather than "wait for review," surface a reminder to come back with `/orc:address` if reviewers leave comments.
 
+After the PR merges in GitHub, the user should run **`/orc:cleanup`** to remove the `.orc/<branch>/` workspace state, the associated git worktree (if `using-git-worktrees` was used), and the local feature branch (if it merged cleanly). Surface this hint as the last line of `/orc:ship`'s output so the lifecycle closes properly.
+
 ## Output
 
 - A new (or updated) PR on GitHub

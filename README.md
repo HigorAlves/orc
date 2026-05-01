@@ -38,6 +38,7 @@ Reload after edits without restarting:
 | `/orc:adr` | Author an Architecture Decision Record (`docs/adr/NNNN-*.md`) |
 | `/orc:rfc` | Author a system-design RFC pre-implementation (`docs/rfcs/NNNN-*.md`) |
 | `/orc:postmortem` | Author a blameless incident postmortem; files P0 action items as tracker issues |
+| `/orc:cleanup` | Remove `.orc/` state, worktree, and (if merged) branch for completed sessions |
 
 ## Skill catalog
 
