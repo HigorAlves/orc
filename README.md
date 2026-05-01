@@ -5,7 +5,17 @@
 <h1 align="center">orc</h1>
 
 <p align="center">
-  Personal Claude Code plugin orchestrating the <strong>plan → debug → verify → ship</strong> loop with curated skills and slash commands.
+  <strong>"Zug zug."</strong>
+</p>
+
+<p align="center">
+  <em>Let the orcs do the work.</em>
+</p>
+
+<p align="center">
+  A personal Claude Code plugin for the senior-developer day —
+  <em>plan → debug → verify → ship</em> — with curated skills, composite commands,
+  and a senior-dev agent that writes the code while you mind the gates.
 </p>
 
 ## What it does
