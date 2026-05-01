@@ -2,10 +2,17 @@
 
 Concrete walk-throughs for the workflows orc is built for. Each scenario shows the right command sequence, what gets written to `.orc/<branch>/files/`, and the iron rules that apply.
 
+## Quickest path
+
+If you want orc to drive the whole loop interactively (plan → implement → QA → ship → cleanup, with select-from-list gates at every phase), use **`/orc:flow "<task description>"`** and follow the prompts. See [00 — End-to-end with /orc:flow](./00-end-to-end-flow.md) for the full walk-through.
+
+The per-scenario examples below cover the **per-phase** commands for when you want fine-grained control.
+
 ## When you have ...
 
 | Scenario | Read |
 |----------|------|
+| A whole feature/bug to drive end-to-end | [00 — End-to-end with /orc:flow](./00-end-to-end-flow.md) |
 | A reproducible bug or failing test | [01 — Fixing a bug](./01-fixing-a-bug.md) |
 | Just had a production incident | [02 — Writing an incident postmortem](./02-incident-postmortem.md) |
 | A new feature to ship | [03 — Adding a new feature](./03-adding-a-new-feature.md) |

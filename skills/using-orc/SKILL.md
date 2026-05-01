@@ -96,6 +96,7 @@ Stack-specific skills (load when working in that stack):
 
 | Command | Purpose | Writes `.orc/`? |
 |---------|---------|------|
+| `/orc:flow` | **End-to-end pipeline** — drives plan → start → implement → QA → ship → address → cleanup with interactive gates at every phase. Recommended entry point. | ✅ |
 | `/orc:plan` | Plan a feature/refactor — produces a TDD-shaped plan | ✅ |
 | `/orc:start` | Start a feature — worktree + plan + first failing test | ✅ |
 | `/orc:debug` | Systematic root-cause investigation, then fix with TDD | ✅ |
