@@ -27,11 +27,13 @@ orc/
 | **Agents** | Long-running specialists with isolated context. Used when work needs a fresh window. | `orc-debug-investigator` is dispatched by `/orc:debug` to find root cause without polluting the main session. |
 | **Hooks** | Run automatically (no user invocation). Establish discipline at session start; intercept dangerous operations. | `pre-commit-branch-check` refuses commits to `main`. |
 
-## SessionStart hook
+## SessionStart hooks (two scripts, same matcher)
 
-`hooks/scripts/session-start-using-orc.sh` runs on `startup|resume|clear|compact`. It reads `skills/using-orc/SKILL.md` and emits it as additional session context. The model sees orc's iron rules, skill catalog, and **the insight-block format** before its first response — the user doesn't need to type "use orc" and doesn't need a separate explanatory-output-style plugin loaded.
+`hooks/hooks.json` wires two scripts to the `startup|resume|clear|compact` matcher:
 
-The `★ Insight ─────────...` block was previously delivered by a sibling plugin (`explanatory-output-style/`); folding it into `using-orc/SKILL.md` collapses two SessionStart hooks into one and makes orc self-sufficient on this dimension.
+1. **`session-start-using-orc.sh`** — reads `skills/using-orc/SKILL.md` and emits it as additional session context. The model sees orc's iron rules, skill catalog, and the insight-block format before its first response. The `★ Insight ─────...` block was previously delivered by a sibling plugin (`explanatory-output-style/`); folding it into `using-orc/SKILL.md` collapses that into one hook and makes orc self-sufficient on this dimension.
+
+2. **`session-start-tool-check.sh`** — pre-flight check for orc's CLI dependencies (`git`, `jq`, `gh`, `agent-browser`). Silent when everything's present; otherwise injects a `⚠ Tool check ─────...` block and instructs the model to surface it once at session start. Suppress with `ORC_SKIP_TOOL_CHECK=1`. Adding new tooling checks later is additive — drop another script alongside.
 
 ## PreToolUse(Bash) hook
 

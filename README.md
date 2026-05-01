@@ -20,6 +20,23 @@ Reload after edits without restarting:
 /reload-plugins
 ```
 
+## Requirements
+
+orc's SessionStart pre-flight (`hooks/scripts/session-start-tool-check.sh`) verifies these CLI tools are installed and surfaces a `⚠ Tool check ─────` warning if anything's missing.
+
+| Tool | Tier | Used by |
+|------|------|---------|
+| `git` | required | every command |
+| `jq` | required | hook scripts (parse Bash tool input) |
+| `gh` | recommended | `/orc:code-review`, `/orc:address`, `/orc:ship`, `/orc:postmortem` |
+| `agent-browser` | recommended | `/orc:qa` (web mode — browser-driven QA evidence) |
+
+Suppress the check on machines where missing tools are intentional:
+
+```bash
+export ORC_SKIP_TOOL_CHECK=1
+```
+
 ## Day-one command catalog
 
 | Command | Purpose |
