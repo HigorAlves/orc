@@ -63,6 +63,10 @@ For `--type=bug`, phases 2–3 collapse into a single `/orc:debug` invocation th
 
 ### Phase 1 — Triage
 
+If the user provided a long-form PRD, a Jira/issue link, or a multi-paragraph brief — dispatch `orc-prd-analyzer` via `Task` first. The agent returns a structured analysis (goals, ambiguities, P0/P1/P2 clarifying questions). Use its recommendation to gate progression: if P0 questions exist, surface them and ask the user to either answer here or pause the flow until they're resolved with the PM.
+
+If the input is a short one-liner ("add CSV export"), skip the analyzer and proceed.
+
 Determine the **type** of work if `--type=` wasn't passed:
 
 ```
@@ -117,7 +121,12 @@ AskUserQuestion (after plan drafted):
 
 ### Phase 4 — Start
 
-For code work (`feature`, `bug`, `refactor`): invoke `orc:using-git-worktrees` (worktree + branch), then `orc:tdd` (write the first failing test from slice 1 of the plan / regression test from the diagnosis). Test MUST fail with the right message. Commit the failing test.
+For code work (`feature`, `bug`, `refactor`): invoke `orc:using-git-worktrees` (worktree + branch), then write the first failing test.
+
+- **Simple first test** (single assertion, single function under test): invoke `orc:tdd` skill inline.
+- **Complex first test** (state machine, async coordination, integration boundary, multiple branches): dispatch `orc-test-author` via `Task`. The agent designs a comprehensive suite (happy path + boundary + error paths) using the project's test idioms, runs it, reports.
+
+Test MUST fail with the right message. Commit the failing test.
 
 For `--type=docs`: skip; advance to phase 6.
 
@@ -156,7 +165,13 @@ The next invocation of `/orc:flow` (or `/orc:resume`) reads the checkpoint and j
 
 ### Phase 6 — QA
 
-Detect web vs code mode (heuristic on changed files vs main). Invoke `orc:verification-before-completion` (tests + lint + type-check) and `orc:caveman-review` (self-review of diff). For web changes, dispatch `orc-qa-validator` (drives `agent-browser`, captures evidence to `.orc/<branch>/files/qa/`).
+Detect web vs code mode (heuristic on changed files vs main). Invoke `orc:verification-before-completion` (tests + lint + type-check) and `orc:caveman-review` (self-review of diff).
+
+When the diff touches security-sensitive paths (auth, sessions, raw SQL, deserialization, file upload, network egress, dependency surface) — dispatch `orc-security-reviewer` in parallel with the self-review. Merge findings before surfacing.
+
+For web changes, dispatch `orc-qa-validator` (drives `agent-browser`, captures evidence to `.orc/<branch>/files/qa/`).
+
+If verification flags untested branches, dispatch `orc-test-author` to fill them in before continuing.
 
 ```
 AskUserQuestion (after QA verdict):

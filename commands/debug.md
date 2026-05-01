@@ -47,6 +47,13 @@ Use `AskUserQuestion`:
 
 Invoke `orc:tdd`. Write the test described in the diagnosis. Run the suite — it MUST fail with the expected message (proving it captures the bug). Commit the failing test on a fix branch.
 
+For **complex regression tests** (multi-branch state machines, async coordination, integration boundaries) — dispatch the `orc-test-author` subagent via `Task` instead of writing inline. Pass it the diagnosis's "recommended regression test" section + the affected file. The agent returns a comprehensive test (happy path + boundary + error paths) using the project's existing test idioms, runs the suite, reports.
+
+`AskUserQuestion`:
+- "Write inline (orc:tdd)" — for simple single-assertion regressions
+- "Dispatch orc-test-author" — for complex test scenarios
+- "Auto-pick — orc decides based on diagnosis depth"
+
 ### Phase 4 — Fix and verify
 
 Hand the diagnosis + regression test to `orc-code-fixer` via `Task`. The agent applies the fix, re-runs tests. Read the report. If green, proceed. If red, return to Phase 1 with the new evidence.

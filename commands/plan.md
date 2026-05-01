@@ -26,6 +26,17 @@ Turn a feature or refactor request into a written, TDD-shaped implementation pla
 
 ## Workflow
 
+### Phase 0 — Detect PRD-shaped input (optional)
+
+If the feature description is long-form, references a Jira ticket / linked doc, or reads more like a brief than a settled spec — dispatch the `orc-prd-analyzer` subagent via `Task` first. Pass it the input + the URL if there is one. The agent returns a structured analysis (extracted goals, ambiguities, P0/P1/P2 clarifying questions, recommendation).
+
+`AskUserQuestion` after the analyzer returns:
+- "Proceed to plan — questions are P1/P2 only"
+- "Hold — answer P0 questions with PM first" (exit; don't waste planning effort)
+- "Run `/orc:rfc` first — design space needs RFC treatment"
+
+If the input is short and clear, skip Phase 0 and go straight to Phase 1.
+
 ### Phase 1 — Initialize workspace
 
 1. Determine the current branch: `git branch --show-current`.

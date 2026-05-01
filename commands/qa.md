@@ -45,9 +45,13 @@ If `--no-web`: code mode. If `--web`: web mode. Otherwise heuristic: glob the di
 
 Invoke `orc:verification-before-completion`. Run the project's test suite. Run lint and type-check if available. Confirm green output. If anything fails, stop and surface — QA cannot pass.
 
-### Phase 3 — Self-review
+### Phase 3 — Self-review + (optional) security pass
 
 Invoke `orc:caveman-review`. Review the staged or last-commit diff. Surface any findings to the user.
+
+When the diff touches security-sensitive paths (auth, sessions, raw SQL, deserialization, file upload, network egress, dependency surface) — **dispatch `orc-security-reviewer` in parallel** with the self-review. Same auto-detection as `/orc:code-review`. The agent returns a security finding list; merge with caveman findings before surfacing.
+
+If verification (Phase 2) flagged untested branches — dispatch **`orc-test-author`** to write the missing tests. Pass the function/behavior under-tested + the project's test idioms. The agent writes tests, runs the suite, returns a report. Loop back to Phase 2 if new failures surface.
 
 ### Phase 4 (web mode only) — Browser QA
 

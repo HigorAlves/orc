@@ -10,7 +10,7 @@
 
 ## What it does
 
-`orc` is a personal-workflow plugin: **50 curated skills, 16 composite slash commands, 6 specialist subagents, and 3 hook scripts** that quietly enforce discipline (no commits to `main`, dependency pre-flight check, skill catalog injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle interactively with select-from-list gates at every phase.
+`orc` is a personal-workflow plugin: **50 curated skills, 16 composite slash commands, 9 specialist subagents, and 3 hook scripts** that quietly enforce discipline (no commits to `main`, dependency pre-flight check, skill catalog injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle interactively with select-from-list gates at every phase.
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
@@ -140,7 +140,7 @@ orc/
 ├── .orc/                        # gitignored — workspace state per session
 ├── skills/<name>/SKILL.md       # 50 skills (5 authored + 45 curated)
 ├── commands/<name>.md           # 16 slash commands (incl. /orc:flow umbrella)
-├── agents/orc-<role>.md         # 6 subagents
+├── agents/orc-<role>.md         # 9 subagents (3 generalist + 6 specialist)
 ├── hooks/
 │   ├── hooks.json
 │   └── scripts/                 # session-start-using-orc.sh

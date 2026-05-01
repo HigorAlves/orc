@@ -35,15 +35,28 @@ Review a pull request authored by someone else. Output is a terse, signal-only r
 
 `Glob` the repo for `CLAUDE.md` files (root + scoped to changed directories). Read them. The reviewer agent will use them as project-specific style/architecture rules.
 
-### Phase 3 — Dispatch reviewer
+### Phase 3 — Dispatch reviewer(s)
 
-Dispatch the `orc-pr-reviewer` subagent via `Task`. Pass it:
+Always dispatch `orc-pr-reviewer` (generalist). Additionally dispatch `orc-security-reviewer` **in parallel** when the diff touches security-sensitive paths — auto-detect via heuristic on the changed files:
+
+```
+auth/* | session* | login* | password* | token* | jwt* | crypto*
+api/* | routes/* | middleware/*
+*.sql | migrations/* | db/*
+upload* | file* | parser*
+deserializ* | exec | eval
+package*.json | requirements.txt | go.mod | Cargo.toml  (dependency surface)
+```
+
+If any changed file matches, the parallel dispatch applies. Otherwise just `orc-pr-reviewer`. (Override via `AskUserQuestion`: "force security review" / "skip security review" / "auto".)
+
+Each agent gets:
 - The PR ref.
 - The full diff (`gh pr diff <ref>`).
 - Any CLAUDE.md guideline content found.
 - Any `--context` text.
 
-The agent returns a categorized finding list (Bugs / Security / Tests / Architecture / optional Nits).
+`orc-pr-reviewer` returns a categorized list (Bugs / Tests / Architecture / optional Nits). `orc-security-reviewer` (when dispatched) returns its own categorization (High / Medium / Low / Questions). Merge both before showing the user.
 
 ### Phase 4 — Confirm with user
 

@@ -45,16 +45,22 @@ If you passed `--jira PROJ-1234`: fetch the ticket via Jira MCP if available; ot
 
 This unlocks the **requirements-alignment** check inside the reviewer agent — does the PR actually do what was asked?
 
-### Phase 4 — Dispatch the reviewer
+### Phase 4 — Dispatch the reviewer(s)
 
-`Task` dispatches `orc-pr-reviewer` (model: opus). The agent gets:
+`Task` always dispatches `orc-pr-reviewer` (model: opus, generalist).
+
+When the diff touches security-sensitive paths (auth, sessions, raw SQL, deserialization, file upload, request parsing, dependency surface), `orc-security-reviewer` is dispatched **in parallel**. Auto-detected from the changed-file list; the user can force-on or force-off via `AskUserQuestion`.
+
+Each agent gets:
 
 - `gh pr view 142 --json ...` output
 - `gh pr diff 142` output
 - CLAUDE.md content found in step 2
 - Requirements text from step 3
 
-The agent walks every changed file, looks for **real bugs** (logic errors, null derefs, off-by-one, race conditions, wrong operators), security issues, missing tests for non-trivial new behavior, inconsistencies (one call site updated, another forgotten), guideline violations.
+`orc-pr-reviewer` walks every changed file, looks for **real bugs** (logic errors, null derefs, off-by-one, race conditions, wrong operators), missing tests for non-trivial new behavior, inconsistencies (one call site updated, another forgotten), guideline violations.
+
+`orc-security-reviewer` (when dispatched) does a focused security pass: injection (SQL/cmd/template), auth/authz bypass, secret exposure, unsafe deserialization, SSRF/CSRF, insecure crypto, dependency CVEs. Each finding includes a concrete exploit scenario.
 
 It explicitly does NOT flag:
 
