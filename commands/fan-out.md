@@ -40,8 +40,13 @@ Create `.orc/<branch>/files/fan-out/` with one subdir per task: `task-01-<slug>/
 
 ### Phase 4 — Dispatch (parallel)
 
-For each task, dispatch a `Task` (subagent_type=general-purpose unless a more specific orc agent fits) with:
-- The task description
+For each task, pick the right agent:
+
+- **Plan-slice-shaped tasks** (the task is a vertical slice from a plan, with file ownership and a failing test) — dispatch `orc-implementer` with a 1-slice list and `mode: parallel`. The implementer returns a diff + test report rather than committing directly; phase 5 below merges and commits them in plan order. This is the right choice when fan-out tasks were derived from an `/orc:plan --issues` decomposition.
+- **Other tasks** (research, doc updates, exploratory investigation, anything not a plan slice) — dispatch `general-purpose` (or a more specific orc agent if one fits, e.g. `orc-debug-investigator` for a paralleled bug-investigation, `orc-pr-reviewer` for paralleled review of multiple PRs).
+
+Each `Task` dispatch gets:
+- The task description (or slice ID for implementer)
 - The task's working directory (worktree if available, else current)
 - The output path: `.orc/<branch>/files/fan-out/task-NN-<slug>/result.md`
 

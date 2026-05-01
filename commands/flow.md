@@ -145,14 +145,25 @@ Two modes, picked by the `--pause-at-implement` flag:
 
 #### Default: dispatch `orc-implementer` (autonomous)
 
-`Task` dispatches `orc-implementer` (model: opus) with:
+Read the plan and group slices into **dispatch batches**:
+- A **sequential batch** is one slice that can't run in parallel with others (depends on a prior slice's output, or shares files with siblings). Run as a single implementer dispatch with that one slice.
+- A **parallel batch** is N slices marked parallel-safe in the plan AND with disjoint file ownership. Dispatch N implementer instances **in parallel** (single response, multiple `Task` calls), each receiving a 1-slice list and `mode: parallel` so they return diffs instead of committing.
+
+Iterate batches in plan order. After each batch:
+- Sequential: implementer already committed; advance.
+- Parallel: collect all returned diffs + test reports, apply them in plan order via `orc:git-commit` (one commit per slice, in order), run the full suite once after all diffs are applied to confirm green.
+
+Each implementer instance gets:
 - The plan path (`.orc/<branch>/files/plan.md`) or diagnosis path for bugs.
 - The workspace directory.
 - The current branch + worktree path.
-- The failing test from Phase 4.
+- Its assigned slice list (1 slice in parallel mode, N in sequential).
+- The file-ownership boundary for those slices.
+- The failing test from Phase 4 (if slice 1 is in the list).
 - Project test/lint/type-check commands (auto-detected from `package.json`, `Makefile`, etc.).
+- Mode flag: `mode: sequential` (default) or `mode: parallel` (for parallel-batch members).
 
-The agent then drives the loop slice-by-slice — for each slice: read spec → write/confirm failing test → implement → run test green → run full suite → lint/type-check → refactor → commit via `orc:git-commit` → bump checkpoint → next slice.
+The agent then drives its assigned slice(s): read spec → write/confirm failing test → implement → run test green → run full suite → lint/type-check → refactor → commit (sequential) or return diff (parallel) → bump checkpoint → next slice in its list.
 
 The agent runs without further user gates UNLESS one of the **escalation conditions** triggers (see `agents/orc-implementer.md`):
 

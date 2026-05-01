@@ -2,7 +2,7 @@
 name: orc-pr-reviewer
 description: Reviews someone else's open GitHub PR end-to-end. Fetches diff via gh CLI, walks every changed file, and returns a terse, signal-only comment list — one line per finding. Used by /orc:code-review.
 tools: Read, Glob, Grep, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh api:*)
-model: opus
+model: sonnet
 color: blue
 maxTurns: 30
 permissionMode: plan
