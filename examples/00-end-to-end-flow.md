@@ -2,7 +2,9 @@
 
 ## Scenario
 
-You want orc to drive the whole feature lifecycle interactively. One command, `AskUserQuestion` gates at every phase, resumable across days.
+You want orc to drive the whole feature lifecycle. One command — gates at every *decision* phase via `AskUserQuestion`, autonomous (`orc-implementer`) at the *implementation* phase, resumable across days.
+
+The split is deliberate: decisions need you in the loop (which design? did the QA pass? open as draft or as-is?). Writing the code from a clear plan + failing test is mechanical enough that an opus agent can drive it slice-by-slice and only escalate when something genuinely needs your call.
 
 ## The single command
 
@@ -10,7 +12,7 @@ You want orc to drive the whole feature lifecycle interactively. One command, `A
 /orc:flow "add CSV export to reports page"
 ```
 
-That's it. orc walks the rest with you.
+That's it. orc walks the rest — gates where they matter, autonomy where it doesn't.
 
 ## The full session — what you'll see
 
@@ -297,11 +299,12 @@ orc: ✓ Worktree removed.
 
 ## Variants
 
-- **Bug instead of feature** — phase 3 becomes `/orc:debug`. The diagnosis substitutes for the plan.
+- **You want to write the code yourself** — pass `--pause-at-implement`. Phase 5 stops at Phase 4's failing test and hands back to you (the original behavior). Useful for exploratory refactors, learning a new codebase, or UI tweaks that are easier to do interactively. Everything else (gates, /orc:resume, autonomous QA dispatch, /orc:cleanup) stays the same.
+- **Bug instead of feature** — phase 3 becomes `/orc:debug`. The diagnosis substitutes for the plan; orc-implementer drives the regression test → fix loop in Phase 5.
 - **Multi-week effort** — pass `--rfc` (or pick "1–4 weeks" in triage) to insert phase 2 (RFC drafting) before planning. The RFC produces alternatives and a decision deadline before any code is touched.
 - **Docs only** — pass `--type=docs`. Phases 4 (TDD start) and 5 (implementation) collapse into a docs-writing conversation; phase 6 runs lint only.
 - **Verbose PR** — drop `--caveman`. Phase 7 uses the default verbose template with What/Why/How tested/Checklist sections.
-- **You don't want orc waiting between phases** — you can always invoke the per-phase commands directly (`/orc:plan`, `/orc:debug`, etc.) for fine-grained control.
+- **You want fine-grained control over a single phase** — invoke the per-phase commands directly (`/orc:plan`, `/orc:debug`, `/orc:qa`, `/orc:ship`, etc.) instead of `/orc:flow`. Useful when only one phase of the loop is interesting and the rest is already done.
 
 ## Iron rules in play
 

@@ -14,10 +14,31 @@
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
+## Mental model
+
+orc maps the senior IC / tech-lead / architect day to a small set of composite commands. Most work fits this loop:
+
+```
+  ┌──> /orc:plan ──> /orc:start ──> implement ──> /orc:qa ──> /orc:ship ──> /orc:cleanup
+  │                                                                              │
+  └──── (interrupted? /orc:resume) ──── (need status? /orc:status) ──────────────┘
+
+      debugging      → /orc:debug
+      someone's PR   → /orc:code-review
+      your PR        → /orc:address
+      decisions      → /orc:adr  (recorded)  /orc:rfc (proposed)
+      incidents      → /orc:postmortem
+      scaffolding    → /orc:scaffold
+      parallel work  → /orc:fan-out
+```
+
+Or skip the per-phase invocations and use **`/orc:flow`** to drive the whole loop — gates at every phase, autonomous implementation in between via `orc-implementer`.
+
 ## Common scenarios — pick one
 
 | You have ... | Read |
 |--------------|------|
+| A whole feature/bug to drive end-to-end | [examples/00 — End-to-end with /orc:flow](./examples/00-end-to-end-flow.md) |
 | A reproducible bug or failing test | [examples/01 — Fixing a bug](./examples/01-fixing-a-bug.md) |
 | Just had a production incident | [examples/02 — Writing a postmortem](./examples/02-incident-postmortem.md) |
 | A new feature to ship | [examples/03 — Adding a new feature](./examples/03-adding-a-new-feature.md) |
@@ -29,7 +50,7 @@ It exists for one reason: every time a senior developer sits down to work, they 
 | A multi-week design needing critique | [examples/09 — Writing an RFC](./examples/09-writing-an-rfc.md) |
 | A web change ready to ship | [examples/10 — Web QA before shipping](./examples/10-web-qa-before-shipping.md) |
 
-See [`examples/README.md`](./examples/README.md) for the full index.
+Each example follows the same shape — *Scenario → Flow → Walk-through → Artifacts → Done when → Variants → Iron rules in play* — so you can scan to the relevant section.
 
 ## Install / load locally
 
