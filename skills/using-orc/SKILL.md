@@ -75,16 +75,21 @@ No "QA passed" claim is accepted without the required artifacts in `qa/`. `orc:v
 | `orc:finishing-a-development-branch` | When implementation is complete and ready to integrate |
 | `orc:dispatching-parallel-agents` | When facing 2+ independent tasks that can run concurrently |
 | `orc:error-handling-patterns` | When implementing error handling, designing APIs, or improving resilience |
-| `orc:agent-browser` | When QA-ing a web application — drive a real browser; capture screenshots/video |
+| `orc:git-advanced-workflows` | When rebasing, cherry-picking, bisecting, using reflog/worktrees — senior git daily-driver |
+| `orc:architecture-patterns` | When designing or refactoring across modules — Clean Architecture, Hexagonal, DDD applied |
+| `orc:improve-codebase-architecture` | When the codebase needs structural review against ADRs/CONTEXT.md — drives `orc-refactor-architect` |
+| `orc:adr-writing` | When locking in a non-trivial architectural decision — authors `docs/adr/NNNN-*.md` |
+| `orc:rfc-writing` | When designing a system/feature pre-implementation — authors `docs/rfcs/NNNN-*.md` to surface alternatives |
+| `orc:postmortem` | After a production incident — blameless postmortem with timeline, root causes, action items |
 
 Stack-specific skills (load when working in that stack):
 
 | Pack | Skills |
 |------|--------|
-| **web-react** | `orc:next-best-practices`, `orc:vercel-react-best-practices`, `orc:vercel-composition-patterns`, `orc:frontend-design`, `orc:shadcn`, `orc:tailwind-design-system` |
+| **web-react** | `orc:next-best-practices`, `orc:vercel-react-best-practices`, `orc:vercel-composition-patterns`, `orc:frontend-design`, `orc:shadcn`, `orc:tailwind-design-system`, `orc:vitest` |
 | **backend** | `orc:nodejs-best-practices`, `orc:nestjs-best-practices`, `orc:typescript-advanced-types`, `orc:postgresql-table-design`, `orc:postgresql-optimization`, `orc:postgresql-code-review`, `orc:stripe-best-practices`, `orc:upgrade-stripe` |
 | **ios** | `orc:swiftui-pro`, `orc:mobile-ios-design` |
-| **workflow-extras** | `orc:docker-expert`, `orc:turborepo`, `orc:sentry-cli`, `orc:skill-creator`, `orc:write-a-skill`, `orc:documentation-writer`, `orc:create-readme`, `orc:to-prd`, `orc:to-issues`, `orc:grill-me` |
+| **workflow-extras** | `orc:docker-expert`, `orc:turborepo`, `orc:sentry-cli`, `orc:skill-creator`, `orc:write-a-skill`, `orc:documentation-writer`, `orc:create-readme`, `orc:to-prd`, `orc:to-issues`, `orc:grill-me`, `orc:agent-browser` |
 
 ## Available Commands
 

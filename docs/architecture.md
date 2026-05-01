@@ -10,7 +10,7 @@
 orc/
 ├── .claude-plugin/plugin.json     # manifest — what Claude Code reads to discover the plugin
 ├── .orc/                          # gitignored, ephemeral workspace state (per-session)
-├── skills/                        # 42 skills, namespaced /orc:<name>
+├── skills/                        # 49 skills, namespaced /orc:<name>
 ├── commands/                      # 11 composite slash commands /orc:<cmd>
 ├── agents/                        # 6 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) hooks
@@ -86,7 +86,9 @@ No "QA passed" claim is accepted without the required artifacts in `.orc/<branch
 
 ## Stack scope
 
-Curated skills cover four optional packs (all enabled): `web-react`, `backend` (Node/NestJS/Postgres/Stripe), `ios` (SwiftUI), `workflow-extras` (Docker/Turborepo/Sentry/skill-authoring/PRD-issue tooling).
+Curated skills cover four optional packs (all enabled): `web-react` (incl. vitest), `backend` (Node/NestJS/Postgres/Stripe), `ios` (SwiftUI), `workflow-extras` (Docker/Turborepo/Sentry/skill-authoring/PRD-issue tooling/agent-browser).
+
+Plus three skills authored fresh for senior/architect practice: `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem` (blameless incident postmortems).
 
 ## Relationship to compozy
 

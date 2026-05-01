@@ -2,3 +2,8 @@
 
 # orc workspace state — ephemeral, per-session checkpoints. Never commit.
 .orc/
+
+# Curation source directories — kept locally during dev, archived pre-publish
+# (per the plan). Never commit; the plugin loader doesn't read them.
+skills-database/
+skills-old/

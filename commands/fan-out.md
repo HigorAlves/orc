@@ -36,7 +36,7 @@ Invoke `orc:dispatching-parallel-agents`. The skill enforces that no two tasks s
 
 ### Phase 3 — Init workspace
 
-Create `.orc/<branch>/files/fan-out/` with one subdir per task: `task-01-<slug>/`, `task-02-<slug>/`, etc. Append entry to `.orc/orc.json` with the task count and per-task status.
+Create `.orc/<branch>/files/fan-out/` with one subdir per task: `task-01-<slug>/`, `task-02-<slug>/`, etc. Write `.orc/<branch>/files/checkpoint.md` (phase=3, status=in_progress, total_phases=6, command=fan-out, started_at=now). Append entry to `.orc/orc.json` central registry with the task count and per-task status.
 
 ### Phase 4 — Dispatch (parallel)
 
@@ -47,9 +47,11 @@ For each task, dispatch a `Task` (subagent_type=general-purpose unless a more sp
 
 All `Task` calls are issued in a single response (parallel execution). Cap by `--max`.
 
+Bump `checkpoint.md` to phase=4 immediately after dispatch (so a crashed orchestrator session can be resumed by `/orc:resume` and read the per-task result files when agents complete).
+
 ### Phase 5 — Collect
 
-After agents return, read each `result.md`. Update `.orc/<branch>/files/fan-out/summary.md` with one row per task: status, key artifact path, time elapsed.
+After agents return, read each `result.md`. Update `.orc/<branch>/files/fan-out/summary.md` with one row per task: status, key artifact path, time elapsed. Bump `checkpoint.md` to phase=5 with `last_artifact: fan-out/summary.md`.
 
 ### Phase 6 — Decide next
 
@@ -57,6 +59,8 @@ Use `AskUserQuestion`:
 - "All done — proceed"
 - "Re-run failed tasks: <list>"
 - "Continue with /orc:ship now"
+
+Whichever is chosen, mark `checkpoint.md` phase=done (or phase=5 if user re-runs) and update the central registry's status field accordingly.
 
 ## Iron rule
 

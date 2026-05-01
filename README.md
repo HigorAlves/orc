@@ -38,9 +38,11 @@ Reload after edits without restarting:
 
 ## Skill catalog
 
-**Core (14, always available):** `tdd`, `systematic-debugging`, `verification-before-completion`, `writing-plans`, `executing-plans`, `caveman-review`, `receiving-code-review`, `requesting-code-review`, `git-commit`, `gh-cli`, `using-git-worktrees`, `finishing-a-development-branch`, `dispatching-parallel-agents`, `error-handling-patterns`.
+**Core (17, always available):** `tdd`, `systematic-debugging`, `verification-before-completion`, `writing-plans`, `executing-plans`, `caveman-review`, `receiving-code-review`, `requesting-code-review`, `git-commit`, `gh-cli`, `using-git-worktrees`, `finishing-a-development-branch`, `dispatching-parallel-agents`, `error-handling-patterns`, `git-advanced-workflows`, `architecture-patterns`, `improve-codebase-architecture`.
 
-**Pack: web-react (6):** `next-best-practices`, `vercel-react-best-practices`, `vercel-composition-patterns`, `frontend-design`, `shadcn`, `tailwind-design-system`.
+**Senior/architect practice (3, authored for orc):** `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem` (blameless incident postmortems).
+
+**Pack: web-react (7):** `next-best-practices`, `vercel-react-best-practices`, `vercel-composition-patterns`, `frontend-design`, `shadcn`, `tailwind-design-system`, `vitest`.
 
 **Pack: backend (8):** `nodejs-best-practices`, `nestjs-best-practices`, `typescript-advanced-types`, `postgresql-table-design`, `postgresql-optimization`, `postgresql-code-review`, `stripe-best-practices`, `upgrade-stripe`.
 
@@ -48,7 +50,7 @@ Reload after edits without restarting:
 
 **Pack: workflow-extras (11):** `docker-expert`, `turborepo`, `sentry-cli`, `skill-creator`, `write-a-skill`, `documentation-writer`, `create-readme`, `to-prd`, `to-issues`, `grill-me`, `agent-browser` (drives a real browser for `/orc:qa` web mode).
 
-Plus the meta skill `using-orc` (auto-injected at SessionStart, encodes iron rules).
+Plus the meta skill `using-orc` (auto-injected at SessionStart, encodes iron rules). **Total: 49 skills.**
 
 ## Insight blocks
 
