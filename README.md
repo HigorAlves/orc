@@ -1,6 +1,12 @@
-# orc
+<p align="center">
+  <img src=".github/images/icon.png" alt="orc" width="200" />
+</p>
 
-> Personal Claude Code plugin orchestrating the **plan → debug → verify → ship** loop with curated skills and slash commands.
+<h1 align="center">orc</h1>
+
+<p align="center">
+  Personal Claude Code plugin orchestrating the <strong>plan → debug → verify → ship</strong> loop with curated skills and slash commands.
+</p>
 
 ## What it does
 
