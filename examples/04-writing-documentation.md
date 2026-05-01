@@ -10,12 +10,15 @@ orc treats docs as a first-class workflow, not an afterthought.
 
 ### Case A — New package/service from scratch
 
-```
-/orc:scaffold mailer --type=service
-       └─→ orc:create-readme   (README.md)
-              └─→ orc:documentation-writer  (Diátaxis-shaped docs/)
-                     └─→ orc:tdd  (first failing test)
-                            └─→ orc:git-commit  (initial commit)
+```mermaid
+flowchart TD
+    scaffold["/orc:scaffold mailer --type=service"]
+    readme[orc:create-readme<br/>README.md]
+    docs[orc:documentation-writer<br/>Diátaxis-shaped docs/]
+    tdd[orc:tdd<br/>first failing test]
+    commit[orc:git-commit<br/>initial commit]
+
+    scaffold --> readme --> docs --> tdd --> commit
 ```
 
 ### Case B — Documenting an existing system

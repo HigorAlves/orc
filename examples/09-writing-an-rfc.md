@@ -8,16 +8,19 @@ That's RFC-shaped.
 
 ## Flow
 
-```
-/orc:rfc "feature flag system: in-house vs LaunchDarkly" --grill
-       │
-       ├─→ Gate (warranted? — multi-week, technology lock-in, genuine uncertainty)
-       ├─→ Init workspace (.orc/<branch>/files/rfc-NNNN.md)
-       ├─→ Goals + Non-goals first (bounds everything else)
-       ├─→ Background, Proposed design, Alternatives, Risks, Success criteria
-       ├─→ orc:grill-me stress-test
-       ├─→ Set decision deadline (default 1 week)
-       └─→ Commit to docs/rfcs/, optionally open a discussion thread
+```mermaid
+flowchart TD
+    cmd["/orc:rfc 'feature flag system: in-house vs LaunchDarkly' --grill"]
+    gate{"Gate — warranted?<br/><i>multi-week / technology lock-in /<br/>genuine uncertainty</i>"}
+    init[Init workspace<br/>.orc/&lt;branch&gt;/files/rfc-NNNN.md]
+    goals[Goals + Non-goals FIRST<br/><i>bounds everything else</i>]
+    body[Background, Proposed design,<br/>Alternatives, Risks, Success criteria]
+    grill[orc:grill-me stress-test]
+    deadline[Set decision deadline<br/><i>default 1 week</i>]
+    commit[Commit to docs/rfcs/<br/>optionally open discussion thread]
+
+    cmd --> gate -->|"warranted"| init --> goals --> body --> grill --> deadline --> commit
+    gate -->|"not warranted"| smaller([Use /orc:plan or /orc:adr instead])
 ```
 
 ## Walk-through

@@ -8,14 +8,16 @@ This morning, you need to write the postmortem.
 
 ## Flow
 
-```
-/orc:postmortem checkout-degradation-2026-05-01 --severity sev-2
-       │
-       ├─→ Severity gate
-       ├─→ Build the timeline FIRST (forces real source citations)
-       ├─→ Root cause(s) via "why?" chain
-       ├─→ Action items → filed as gh issues with `postmortem,p0` labels
-       └─→ Commit doc; status flips to Final only when P0 issues close
+```mermaid
+flowchart TD
+    cmd["/orc:postmortem checkout-degradation-2026-05-01 --severity sev-2"]
+    gate{Severity gate}
+    timeline[Build the timeline FIRST<br/><i>forces real source citations</i>]
+    rc["Root cause(s) via 'why?' chain"]
+    actions[Action items filed as gh issues<br/>with postmortem,p0 labels]
+    commit[Commit doc; status flips to Final<br/>only when P0 issues close]
+
+    cmd --> gate --> timeline --> rc --> actions --> commit
 ```
 
 ## Walk-through

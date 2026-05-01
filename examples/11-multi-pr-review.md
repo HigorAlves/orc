@@ -14,16 +14,24 @@ That's `/orc:fan-out`.
 
 ## Flow
 
-```
-/orc:fan-out --agent orc-pr-reviewer "review PR #523, PR #524, PR #525"
-       │
-       ├─→ Phase 1: load tasks (3 PR refs)
-       ├─→ Phase 2: verify independence (always true for reviews of different PRs)
-       ├─→ Phase 3: init workspace (.orc/multi-pr-review-2026-05-09/files/fan-out/)
-       ├─→ Phase 4: dispatch — 3 orc-pr-reviewer instances IN PARALLEL
-       │      task-01-pr-523 / task-02-pr-524 / task-03-pr-525
-       ├─→ Phase 5: collect results, write summary.md
-       └─→ Phase 6: AskUserQuestion — submit / edit / re-run / continue
+```mermaid
+flowchart TD
+    cmd["/orc:fan-out --agent orc-pr-reviewer<br/>'review PR #523, #524, #525'"]
+    p1[Phase 1: load tasks<br/>3 PR refs]
+    p2[Phase 2: verify independence<br/><i>always true for different PRs</i>]
+    p3[Phase 3: init workspace<br/>.orc/multi-pr-review-2026-05-09/files/fan-out/]
+    p4{{"Phase 4: dispatch 3 orc-pr-reviewer<br/>instances IN PARALLEL"}}
+    r1[task-01-pr-523]
+    r2[task-02-pr-524]
+    r3[task-03-pr-525]
+    p5[Phase 5: collect results<br/>write summary.md]
+    p6[Phase 6: AskUserQuestion per PR<br/>submit / edit / re-run / continue]
+
+    cmd --> p1 --> p2 --> p3 --> p4
+    p4 --> r1 --> p5
+    p4 --> r2 --> p5
+    p4 --> r3 --> p5
+    p5 --> p6
 ```
 
 ## Walk-through

@@ -8,14 +8,17 @@ The temptation is to grep for `NaN`, find the line, slap a `|| 0` on it, and shi
 
 ## Flow
 
-```
-/orc:debug "billing page shows $NaN for users on the team plan"
-       └─→ orc-debug-investigator (root cause, not fix)
-              └─→ TDD: write failing regression test
-                     └─→ orc-code-fixer (apply the fix)
-                            └─→ orc:verification-before-completion
-                                   └─→ /orc:qa --web (browser evidence)
-                                          └─→ /orc:ship
+```mermaid
+flowchart TD
+    cmd["/orc:debug 'billing page shows $NaN'"]
+    inv[orc-debug-investigator<br/>root cause, not fix]
+    tdd[TDD: write failing regression test]
+    fixer[orc-code-fixer<br/>apply the fix]
+    verify[orc:verification-before-completion]
+    qa["/orc:qa --web<br/>browser evidence"]
+    ship["/orc:ship"]
+
+    cmd --> inv --> tdd --> fixer --> verify --> qa --> ship
 ```
 
 ## Walk-through

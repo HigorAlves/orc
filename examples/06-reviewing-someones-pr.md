@@ -8,14 +8,17 @@ You could read every line yourself. orc lets you do it with discipline and far l
 
 ## Flow
 
-```
-/orc:code-review 142 [--jira PROJ-1234] [--prd path/to/spec.md] [--context "..."]
-       └─→ Eligibility check (closed? draft? already reviewed?)
-              └─→ Project guidelines (CLAUDE.md scoped to changed files)
-                     └─→ Requirements context (Jira/PRD/--context)
-                            └─→ orc-pr-reviewer dispatched
-                                   └─→ User confirms findings
-                                          └─→ Submit as APPROVE / REQUEST_CHANGES / COMMENT
+```mermaid
+flowchart TD
+    cmd["/orc:code-review 142<br/>[--jira | --prd | --context]"]
+    elig[Eligibility check<br/><i>closed? draft? already reviewed?</i>]
+    guide[Project guidelines<br/><i>CLAUDE.md scoped to changed files</i>]
+    req[Requirements context<br/><i>Jira / PRD / --context</i>]
+    rev[orc-pr-reviewer dispatched<br/><i>+ orc-security-reviewer when sensitive</i>]
+    confirm[User confirms findings]
+    submit[Submit: APPROVE / REQUEST_CHANGES / COMMENT]
+
+    cmd --> elig --> guide --> req --> rev --> confirm --> submit
 ```
 
 ## Walk-through

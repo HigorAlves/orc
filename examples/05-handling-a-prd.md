@@ -8,19 +8,19 @@ orc maps this to a triage flow.
 
 ## The triage decision
 
-```
-PRD lands
-    │
-    ├─→ Is the design space settled? (small feature, clear precedent)
-    │       └─→ /orc:plan "<feature>"   ← skip RFC, go straight to plan
-    │
-    ├─→ Multiple valid designs, multi-week effort, multi-team?
-    │       └─→ /orc:rfc "<feature>"    ← surface alternatives first
-    │              └─→ (after approved) /orc:plan --issues
-    │
-    └─→ The PRD itself is unclear or incomplete?
-            └─→ orc:grill-me  (interview the PM)
-                   └─→ revised PRD → loop back
+```mermaid
+flowchart TD
+    prd([PRD lands])
+    triage{Triage}
+    plan["/orc:plan<br/>skip RFC, go straight to plan"]
+    rfc["/orc:rfc<br/>surface alternatives first"]
+    issues["/orc:plan --issues<br/>after RFC is approved"]
+    grill[orc:grill-me<br/>interview the PM]
+
+    prd --> triage
+    triage -->|"design settled, small feature"| plan
+    triage -->|"multi-week / multi-team / multiple valid designs"| rfc --> issues
+    triage -->|"PRD itself is unclear"| grill -.->|"revised PRD"| prd
 ```
 
 **Apply the RFC test.** If ≥ 2 weeks of effort OR multiple teams OR genuine uncertainty between alternatives — write the RFC.

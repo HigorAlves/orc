@@ -18,19 +18,25 @@ It exists for one reason: every time a senior developer sits down to work, they 
 
 orc maps the senior IC / tech-lead / architect day to a small set of composite commands. Most work fits this loop:
 
+```mermaid
+flowchart LR
+    plan["/orc:plan"] --> start["/orc:start"] --> impl["implement"] --> qa["/orc:qa"] --> ship["/orc:ship"] --> cleanup["/orc:cleanup"]
+    cleanup -.->|"interrupted? /orc:resume"| plan
+    cleanup -.->|"need status? /orc:status"| plan
 ```
-  ┌──> /orc:plan ──> /orc:start ──> implement ──> /orc:qa ──> /orc:ship ──> /orc:cleanup
-  │                                                                              │
-  └──── (interrupted? /orc:resume) ──── (need status? /orc:status) ──────────────┘
 
-      debugging      → /orc:debug
-      someone's PR   → /orc:code-review
-      your PR        → /orc:address
-      decisions      → /orc:adr  (recorded)  /orc:rfc (proposed)
-      incidents      → /orc:postmortem
-      scaffolding    → /orc:scaffold
-      parallel work  → /orc:fan-out
-```
+**Outside the loop** — reach for these directly when the situation isn't a fresh feature pipeline:
+
+| Situation | Command |
+|-----------|---------|
+| Debugging a known bug | `/orc:debug` |
+| Reviewing someone else's PR | `/orc:code-review` |
+| Responding to your PR's review comments | `/orc:address` |
+| Locking in an architectural decision | `/orc:adr` |
+| Proposing a system design before code | `/orc:rfc` |
+| Writing an incident postmortem | `/orc:postmortem` |
+| Bootstrapping a new package/service | `/orc:scaffold` |
+| Parallel-dispatching N independent tasks | `/orc:fan-out` |
 
 Or skip the per-phase invocations and use **`/orc:flow`** to drive the whole loop — gates at every phase, autonomous implementation in between via `orc-implementer`.
 

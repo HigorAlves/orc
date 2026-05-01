@@ -6,14 +6,17 @@ PM dropped a request: *"Let users export their report data to CSV — they keep 
 
 ## Flow
 
-```
-/orc:plan "add CSV export to reports page"
-       └─→ /orc:start (worktree + plan + first failing test)
-              └─→ implement (TDD red-green-refactor cycles)
-                     └─→ /orc:qa --web (browser evidence for UI parts)
-                            └─→ /orc:ship
-                                   └─→ (PR merges in GitHub)
-                                          └─→ /orc:cleanup
+```mermaid
+flowchart TD
+    plan["/orc:plan 'add CSV export to reports page'"]
+    start["/orc:start<br/>worktree + plan + first failing test"]
+    impl[implement<br/><i>TDD red-green-refactor cycles</i>]
+    qa["/orc:qa --web<br/>browser evidence for UI parts"]
+    ship["/orc:ship"]
+    merged([PR merges in GitHub])
+    cleanup["/orc:cleanup"]
+
+    plan --> start --> impl --> qa --> ship --> merged --> cleanup
 ```
 
 ## Walk-through

@@ -8,17 +8,22 @@ orc handles all four categories in parallel.
 
 ## Flow
 
-```
-/orc:address [<pr-number>]
-       │
-       ├─→ Fetch PR + unresolved review comments via gh CLI
-       ├─→ Categorize: ACTION / QUESTION / NITPICK / DISAGREE
-       ├─→ User confirms categorization
-       ├─→ Dispatch in parallel:
-       │      orc-code-fixer    (applies ACTION fixes + runs tests)
-       │      orc-reply-drafter (drafts replies for all categories)
-       ├─→ User reviews diff + drafts
-       └─→ Commit fixes, push, post replies via gh
+```mermaid
+flowchart TD
+    cmd["/orc:address [&lt;pr-number&gt;]"]
+    fetch[Fetch PR + unresolved review comments<br/>via gh CLI]
+    cat[Categorize:<br/>ACTION / QUESTION / NITPICK / DISAGREE]
+    confirm[User confirms categorization]
+    parallel{{Dispatch in parallel}}
+    fixer[orc-code-fixer<br/>applies ACTION fixes + runs tests]
+    drafter[orc-reply-drafter<br/>drafts replies for all categories]
+    review[User reviews diff + drafts]
+    finish[Commit fixes, push,<br/>post replies via gh]
+
+    cmd --> fetch --> cat --> confirm --> parallel
+    parallel --> fixer --> review
+    parallel --> drafter --> review
+    review --> finish
 ```
 
 ## Walk-through

@@ -8,14 +8,17 @@ That's an ADR-shaped gap.
 
 ## Flow
 
-```
-/orc:adr "use opaque server-side session IDs"
-       │
-       ├─→ Apply the ADR test (architectural? non-obvious? durable?)
-       ├─→ Find next NNNN in docs/adr/
-       ├─→ Draft via orc:adr-writing skill
-       ├─→ Show draft, get approval
-       └─→ Commit (docs(adr): NNNN — title)
+```mermaid
+flowchart TD
+    cmd["/orc:adr 'use opaque server-side session IDs'"]
+    test{Apply the ADR test<br/><i>architectural? non-obvious? durable?</i>}
+    seq[Find next NNNN in docs/adr/]
+    draft[Draft via orc:adr-writing skill]
+    review[Show draft, get approval]
+    commit["Commit: docs(adr): NNNN — title"]
+
+    cmd --> test -->|"all 3 yes"| seq --> draft --> review --> commit
+    test -->|"any no"| skip([Skip — write a code comment instead])
 ```
 
 ## Walk-through

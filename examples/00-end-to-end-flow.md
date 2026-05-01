@@ -14,6 +14,24 @@ The split is deliberate: decisions need you in the loop (which design? did the Q
 
 That's it. orc walks the rest — gates where they matter, autonomy where it doesn't.
 
+```mermaid
+flowchart TD
+    triage[Phase 1: Triage<br/><i>type + scope</i>]
+    rfc[Phase 2: RFC<br/><i>optional, multi-week work</i>]
+    plan[Phase 3: Plan]
+    start[Phase 4: Start<br/><i>worktree + first failing test</i>]
+    impl[Phase 5: Implement<br/><b>orc-implementer autonomous</b>]
+    qa[Phase 6: QA]
+    ship[Phase 7: Ship]
+    address[Phase 8: Address<br/><i>review comments loop</i>]
+    cleanup[Phase 9: Cleanup<br/><i>post-merge</i>]
+
+    triage --> rfc -.skipped if scope < 1 week.-> plan
+    triage --> plan
+    plan --> start --> impl --> qa --> ship --> address --> cleanup
+    address -.no comments.-> cleanup
+```
+
 ## The full session — what you'll see
 
 ### Day 1 — morning

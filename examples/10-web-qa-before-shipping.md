@@ -20,17 +20,22 @@ So we encode the discipline.
 
 ## Flow
 
-```
-/orc:qa --web http://localhost:3000
-       │
-       ├─→ Detect web vs code mode (heuristic on changed files)
-       ├─→ Tests + lint + type-check (orc:verification-before-completion)
-       ├─→ Self-review of diff (orc:caveman-review)
-       ├─→ Boot + browser QA via orc-qa-validator + agent-browser
-       │      └─→ golden path
-       │      └─→ edge cases (validation, empty, failure, slow network, auth states)
-       │      └─→ capture artifacts to .orc/<branch>/files/qa/
-       └─→ Verdict: pass | partial | fail
+```mermaid
+flowchart TD
+    cmd["/orc:qa --web http://localhost:3000"]
+    detect[Detect web vs code mode<br/><i>heuristic on changed files</i>]
+    verify[Tests + lint + type-check<br/>orc:verification-before-completion]
+    selfrev["Self-review of diff<br/>orc:caveman-review<br/>(+ orc-security-reviewer if sensitive)"]
+    boot[Boot + browser QA<br/>orc-qa-validator + agent-browser]
+    golden[Walk golden path]
+    edge[Walk edge cases<br/><i>validation, empty, failure,<br/>slow network, auth states</i>]
+    capture[Capture artifacts to<br/>.orc/&lt;branch&gt;/files/qa/]
+    verdict{Verdict:<br/>pass | partial | fail}
+
+    cmd --> detect --> verify --> selfrev --> boot
+    boot --> golden --> capture
+    boot --> edge --> capture
+    capture --> verdict
 ```
 
 ## Walk-through

@@ -117,21 +117,20 @@ Stack-specific skills (load when working in that stack):
 
 **Invoke relevant or requested skills BEFORE any response or action.** Even a 1% chance a skill might apply means you should invoke the skill to check. If an invoked skill turns out to be wrong for the situation, you don't need to use it.
 
-```dot
-digraph skill_flow {
-    "User message received" [shape=doublecircle];
-    "Might any orc skill apply?" [shape=diamond];
-    "Invoke Skill tool" [shape=box];
-    "Announce: 'Using [skill] to [purpose]'" [shape=box];
-    "Follow skill exactly" [shape=box];
-    "Respond" [shape=doublecircle];
+```mermaid
+flowchart TD
+    msg([User message received])
+    decide{Might any orc<br/>skill apply?}
+    invoke[Invoke Skill tool]
+    announce["Announce: 'Using [skill] to [purpose]'"]
+    follow[Follow skill exactly]
+    respond([Respond])
 
-    "User message received" -> "Might any orc skill apply?";
-    "Might any orc skill apply?" -> "Invoke Skill tool" [label="yes, even 1%"];
-    "Might any orc skill apply?" -> "Respond" [label="definitely not"];
-    "Invoke Skill tool" -> "Announce: 'Using [skill] to [purpose]'";
-    "Announce: 'Using [skill] to [purpose]'" -> "Follow skill exactly";
-}
+    msg --> decide
+    decide -->|yes, even 1%| invoke
+    decide -->|definitely not| respond
+    invoke --> announce
+    announce --> follow
 ```
 
 ## Red Flags
