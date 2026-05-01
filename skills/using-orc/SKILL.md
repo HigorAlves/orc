@@ -106,6 +106,9 @@ Stack-specific skills (load when working in that stack):
 | `/orc:scaffold` | Bootstrap a new package/service with README + docs | — |
 | `/orc:resume` | Resume an interrupted multi-phase orc command | reads ✅ |
 | `/orc:status` | Show all active `.orc/` workspaces | reads ✅ |
+| `/orc:adr` | Author an Architecture Decision Record (`docs/adr/NNNN-*.md`) | — |
+| `/orc:rfc` | Author a system-design RFC pre-implementation (`docs/rfcs/NNNN-*.md`) | ✅ |
+| `/orc:postmortem` | Author a blameless incident postmortem; files P0 action items as tracker issues | ✅ |
 
 ## The Rule
 

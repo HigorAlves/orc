@@ -35,6 +35,9 @@ Reload after edits without restarting:
 | `/orc:scaffold` | Bootstrap a new package/service with proper README + Diátaxis docs |
 | `/orc:resume` | Pick up an interrupted multi-phase command from its checkpoint |
 | `/orc:status` | Show all active `.orc/` workspaces |
+| `/orc:adr` | Author an Architecture Decision Record (`docs/adr/NNNN-*.md`) |
+| `/orc:rfc` | Author a system-design RFC pre-implementation (`docs/rfcs/NNNN-*.md`) |
+| `/orc:postmortem` | Author a blameless incident postmortem; files P0 action items as tracker issues |
 
 ## Skill catalog
 
