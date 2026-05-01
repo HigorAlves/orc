@@ -30,7 +30,7 @@ flowchart TD
     golden[Walk golden path]
     edge[Walk edge cases<br/><i>validation, empty, failure,<br/>slow network, auth states</i>]
     capture[Capture artifacts to<br/>.orc/&lt;branch&gt;/files/qa/]
-    verdict{Verdict:<br/>pass | partial | fail}
+    verdict{"Verdict:<br/>pass / partial / fail"}
 
     cmd --> detect --> verify --> selfrev --> boot
     boot --> golden --> capture
