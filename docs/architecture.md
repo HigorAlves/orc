@@ -29,7 +29,9 @@ orc/
 
 ## SessionStart hook
 
-`hooks/scripts/session-start-using-orc.sh` runs on `startup|resume|clear|compact`. It reads `skills/using-orc/SKILL.md` and emits it as additional session context. The model sees orc's iron rules + skill catalog **before** its first response — the user doesn't need to type "use orc."
+`hooks/scripts/session-start-using-orc.sh` runs on `startup|resume|clear|compact`. It reads `skills/using-orc/SKILL.md` and emits it as additional session context. The model sees orc's iron rules, skill catalog, and **the insight-block format** before its first response — the user doesn't need to type "use orc" and doesn't need a separate explanatory-output-style plugin loaded.
+
+The `★ Insight ─────────...` block was previously delivered by a sibling plugin (`explanatory-output-style/`); folding it into `using-orc/SKILL.md` collapses two SessionStart hooks into one and makes orc self-sufficient on this dimension.
 
 ## PreToolUse(Bash) hook
 

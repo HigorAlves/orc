@@ -50,6 +50,18 @@ Reload after edits without restarting:
 
 Plus the meta skill `using-orc` (auto-injected at SessionStart, encodes iron rules).
 
+## Insight blocks
+
+When orc is writing or modifying code, it surfaces 2–3 short, codebase-specific notes inline using:
+
+```
+`★ Insight ─────────────────────────────────────`
+[2–3 short, codebase-specific insights]
+`─────────────────────────────────────────────────`
+```
+
+This is baked into `skills/using-orc/SKILL.md` and injected at every SessionStart, so orc is self-sufficient — no separate explanatory-output-style plugin required.
+
 ## Iron rules (enforced by hooks + the using-orc skill)
 
 1. No commits to `main`/`master`/`develop` without `ORC_ALLOW_PROTECTED=1`.
