@@ -4,9 +4,26 @@
 
 ## What it does
 
-`orc` is a personal-workflow plugin: 42 curated skills, 11 composite slash commands, 6 specialist subagents, and 2 hooks that quietly enforce discipline (no commits to `main`, skill catalog injected at every session start).
+`orc` is a personal-workflow plugin: **49 curated skills, 15 composite slash commands, 6 specialist subagents, and 3 hook scripts** that quietly enforce discipline (no commits to `main`, dependency pre-flight check, skill catalog injected at every session start).
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
+
+## Common scenarios — pick one
+
+| You have ... | Read |
+|--------------|------|
+| A reproducible bug or failing test | [examples/01 — Fixing a bug](./examples/01-fixing-a-bug.md) |
+| Just had a production incident | [examples/02 — Writing a postmortem](./examples/02-incident-postmortem.md) |
+| A new feature to ship | [examples/03 — Adding a new feature](./examples/03-adding-a-new-feature.md) |
+| A new package/service or doc gap | [examples/04 — Writing documentation](./examples/04-writing-documentation.md) |
+| A PRD from PM | [examples/05 — Handling a PRD](./examples/05-handling-a-prd.md) |
+| Someone else's open PR | [examples/06 — Reviewing someone's PR](./examples/06-reviewing-someones-pr.md) |
+| Reviewer comments on your PR | [examples/07 — Responding to PR feedback](./examples/07-responding-to-pr-feedback.md) |
+| A non-trivial architectural decision | [examples/08 — Writing an ADR](./examples/08-writing-an-adr.md) |
+| A multi-week design needing critique | [examples/09 — Writing an RFC](./examples/09-writing-an-rfc.md) |
+| A web change ready to ship | [examples/10 — Web QA before shipping](./examples/10-web-qa-before-shipping.md) |
+
+See [`examples/README.md`](./examples/README.md) for the full index.
 
 ## Install / load locally
 
@@ -114,16 +131,19 @@ Without the required artifacts, "QA passed" is not an accepted claim. The `orc-q
 orc/
 ├── .claude-plugin/plugin.json   # manifest
 ├── .orc/                        # gitignored — workspace state per session
-├── skills/<name>/SKILL.md       # 42 skills
-├── commands/<name>.md           # 11 slash commands
+├── skills/<name>/SKILL.md       # 49 skills (1 authored + 48 curated)
+├── commands/<name>.md           # 15 slash commands
 ├── agents/orc-<role>.md         # 6 subagents
 ├── hooks/
 │   ├── hooks.json
-│   └── scripts/                 # session-start-using-orc.sh + pre-commit-branch-check.sh
+│   └── scripts/                 # session-start-using-orc.sh
+│                                # session-start-tool-check.sh
+│                                # pre-commit-branch-check.sh
 ├── lib/                         # shared prompt fragments + templates
 ├── docs/                        # architecture.md, contributing.md, adr/
-├── skills-database/             # curation source (kept during dev, archived pre-publish)
-└── skills-old/                  # legacy mirror (archived pre-publish)
+├── examples/                    # scenario walk-throughs (start here for usage)
+├── skills-database/             # curation source (gitignored, archived pre-publish)
+└── skills-old/                  # legacy mirror (gitignored, archived pre-publish)
 ```
 
 ## Development
