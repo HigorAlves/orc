@@ -1,0 +1,4 @@
+.DS_Store
+
+# orc workspace state — ephemeral, per-session checkpoints. Never commit.
+.orc/
