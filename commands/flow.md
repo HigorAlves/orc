@@ -1,6 +1,6 @@
 ---
 description: End-to-end feature/bug/refactor pipeline with interactive gates at every phase. Walks plan → start → implement → QA → ship → address → cleanup. Resumable from any phase via /orc:resume. Each phase ends with AskUserQuestion (select-from-list) for confirmation, iteration, skip, or abort.
-argument-hint: "[--type=feature|bug|refactor|docs] [--rfc] [--caveman] <one-line task description>"
+argument-hint: "[--type=feature|bug|refactor|docs] [--rfc] [--caveman] [--pause-at-implement] <one-line task description>"
 allowed-tools:
   - Read
   - Write
@@ -40,6 +40,7 @@ Use `/orc:flow` when you want orc to drive the whole loop. Skip it (use the per-
 - `--type=feature|bug|refactor|docs` — optional. If omitted, the first phase asks via `AskUserQuestion`. The type changes which phases run and which skills get invoked.
 - `--rfc` — for `--type=feature` or `--type=refactor`: insert an RFC phase before planning. Required when the work is multi-week, multi-team, or has genuine alternatives.
 - `--caveman` — pass through to `/orc:ship` and `/orc:address` so PR bodies and replies use the terse style.
+- `--pause-at-implement` — pause Phase 5 for the human to write the implementation manually. Default behavior is autonomous: dispatches `orc-implementer` to drive the implementation slice-by-slice. Use `--pause-at-implement` when you want to write the code yourself.
 
 ## Phases
 
@@ -138,19 +139,56 @@ AskUserQuestion (after failing test committed):
 - Abort
 ```
 
-### Phase 5 — Implement (orc pauses)
+### Phase 5 — Implement (autonomous by default)
 
-orc cannot drive the implementation. It writes:
+Two modes, picked by the `--pause-at-implement` flag:
+
+#### Default: dispatch `orc-implementer` (autonomous)
+
+`Task` dispatches `orc-implementer` (model: opus) with:
+- The plan path (`.orc/<branch>/files/plan.md`) or diagnosis path for bugs.
+- The workspace directory.
+- The current branch + worktree path.
+- The failing test from Phase 4.
+- Project test/lint/type-check commands (auto-detected from `package.json`, `Makefile`, etc.).
+
+The agent then drives the loop slice-by-slice — for each slice: read spec → write/confirm failing test → implement → run test green → run full suite → lint/type-check → refactor → commit via `orc:git-commit` → bump checkpoint → next slice.
+
+The agent runs without further user gates UNLESS one of the **escalation conditions** triggers (see `agents/orc-implementer.md`):
+
+- A test can't be made green after 3 attempts.
+- A slice spec is ambiguous (multiple valid implementations).
+- A new dependency needs to be installed.
+- The slice requires touching files outside its declared scope.
+- A pre-existing test breaks unexpectedly.
+- A security/architecture concern surfaces mid-implementation.
+- The plan is wrong (the slice as written would produce incorrect behavior).
+
+When the agent escalates, surface its 🛑 block via `AskUserQuestion`:
+
+```
+A. <option A from agent>
+B. <option B from agent>
+C. Pause flow — I'll come back to /orc:flow
+```
+
+User picks → re-dispatch the agent with the resolution, or pause the flow.
+
+When the agent reports all slices complete, advance to Phase 6 (QA) automatically — no extra gate needed (you can pre-approve advance via the agent's status echo, or the umbrella's Phase 6 will gate before running QA anyway).
+
+#### Opt-out: `--pause-at-implement` (human writes the code)
+
+If the flag is passed, fall back to the original behavior:
 
 ```
 checkpoint.md → phase=5, status=ready-for-implementation, last_artifact=<test-file>:<line>
 progress.md → "Implementation phase started. Run /orc:flow again (or /orc:resume) when ready for QA."
 ```
 
-Then echoes a clear handoff to the user:
+Echo to the user:
 
 ```
-✋ Implementation phase. orc paused.
+✋ Implementation phase. orc paused (--pause-at-implement).
 
 Worktree: <path>
 Failing test: <file>:<line>

@@ -78,24 +78,47 @@ orc: ⚙ Phase 4 — Start
 
 You: Test fails as expected
 
-orc: ✋ Phase 5 — Implementation. orc paused.
+orc: ⚙ Phase 5 — Implementation
+     [dispatching orc-implementer (opus) with plan, failing test, branch context]
 
-     Worktree: ~/wt/orc/feat-csv-export
-     Failing test: src/reports/__tests__/export.test.ts:14
-     Plan: .orc/feat-csv-export/files/plan.md (4 slices, slice 1 active)
+     ✓ Slice 1 — "GET endpoint scaffolding"
+       Files: src/reports/api.ts, src/reports/__tests__/api.test.ts
+       Tests: 48 pass, 0 fail (added 1)
+       Commit: a3f7b21 — feat(reports): scaffold CSV export endpoint
 
-     When you're done implementing, re-run /orc:flow (or /orc:resume).
-     The PreToolUse hook will keep you off main — commit per slice
-     using orc:git-commit.
+     ✓ Slice 2 — "CSV serialization"
+       Files: src/reports/csv.ts, src/reports/__tests__/csv.test.ts
+       Tests: 51 pass, 0 fail (added 3)
+       Commit: b8e2c4d — feat(reports): add CSV serialization
 
-You: (close laptop, go to lunch)
+     ✓ Slice 3 — "Wire UI export button"
+       Files: src/reports/components/Header.tsx, plus 2 test files
+       Tests: 55 pass, 0 fail (added 4)
+       Commit: c1d9f88 — feat(reports): wire export button in header
+
+     ✓ Slice 4 — "Update API docs"
+       Files: docs/reference/api.md
+       Tests: 55 pass, 0 fail (no new tests — docs slice)
+       Commit: d4ac2e1 — docs(api): document CSV export endpoint
+
+     ✓ Implementation complete: feat-csv-export
+       Slices: 4/4 complete
+       Total commits: 4
+       Tests: 47 → 55 (added 8, all green)
+       Files changed: 8
+
+     Ready for Phase 6 (QA).
+
+You: (had lunch while orc-implementer worked)
 ```
 
 ### Day 1 — afternoon
 
-You implement. You and Claude have a normal coding conversation in the chat. You write the CSV export module, you watch the test go green, you write the next slice's test, etc. orc isn't actively driving — but the iron rules are still active (no commits to main, evidence before claims, etc.) because the SessionStart hook is still in effect.
+You come back from lunch. orc-implementer drove all 4 slices autonomously while you were away. The agent followed the same iron rules you'd have followed yourself: no commits to main (worktree + feature branch), test-first per slice, full suite green between slices, Conventional Commits via `orc:git-commit`, no AI attribution. Worktree state visible via `git log` on the feature branch.
 
-You commit four times (one per slice, Conventional Commits). All four tests pass.
+If at any slice the agent had hit an escalation condition (ambiguous spec, dep needed, test stuck after 3 attempts, scope creep, pre-existing test broke) — it would have stopped with a `🛑 ESCALATION` block and `AskUserQuestion` would have surfaced the choice to you. None did, this run.
+
+(If you'd passed `--pause-at-implement` instead, orc would have paused and you'd write the code yourself in conversation, exactly as the original walk-through described.)
 
 ### Day 2 — morning
 
@@ -268,7 +291,7 @@ orc: ✓ Worktree removed.
 ## What you noticed
 
 - **Every phase asks before advancing.** No silent transitions. The select-from-list comes from `AskUserQuestion`.
-- **The flow paused for implementation.** orc doesn't write your business logic. It sets up the gate (failing test) and gets out of the way until you run `/orc:flow` again or `/orc:resume`.
+- **The implementation phase is autonomous by default.** `orc-implementer` (opus) drives the slice-by-slice loop — read spec, confirm/write failing test, implement, run suite, commit, next slice. The agent obeys the same iron rules you would (no commits to main, test-first, verify, root-cause). Pass `--pause-at-implement` if you want orc to stop at Phase 4's failing test and let you write the code yourself instead.
 - **Resume is automatic.** You don't pass any args on the second/third invocation — orc reads `.orc/orc.json`, finds the in-progress flow, jumps to the next pending phase.
 - **The PR description was synthesized from accumulated evidence**: plan.md (Why), the diff (What changed), qa/steps.md (How tested), and ticket links.
 
@@ -285,4 +308,4 @@ orc: ✓ Worktree removed.
 - **Every gate is a real gate.** `/orc:flow` never silently advances.
 - **Phase state is durable.** Crash mid-flow, resume tomorrow.
 - **Per-phase rules still apply** — web QA evidence, blameless framing, no AI attribution, no commits to main. `/orc:flow` doesn't bypass them; it composes them.
-- **Implementation isn't automated.** orc holds the discipline; you (and Claude in conversation) write the code.
+- **Implementation is autonomous by default but escalates honestly.** `orc-implementer` runs the whole loop without your involvement — UNTIL it hits an escalation condition (test stuck after 3 attempts, ambiguous spec, new dependency, scope creep, broken pre-existing test, security concern, plan-is-wrong). When it escalates, it surfaces a `🛑 ESCALATION` block with concrete options and a recommended path. You stay out of the loop until the agent genuinely needs you.

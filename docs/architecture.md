@@ -12,7 +12,7 @@ orc/
 ├── .orc/                          # gitignored, ephemeral workspace state (per-session)
 ├── skills/                        # 50 skills, namespaced /orc:<name>
 ├── commands/                      # 16 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
-├── agents/                        # 9 specialist subagents (orc-<role>)
+├── agents/                        # 10 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) hooks
 ├── lib/                           # shared prompt fragments + templates (cross-skill)
 └── docs/                          # this directory
