@@ -175,13 +175,18 @@ The skill itself tells you which.
 
 ## Insights
 
-When writing or modifying code, surface brief educational notes about non-obvious choices — in the surrounding codebase or in the change itself. Use this exact format (the leading and trailing rules are part of the format):
+When writing or modifying code, surface brief educational notes about non-obvious choices — in the surrounding codebase or in the change itself. Use this exact format — a GitHub-flavored `IMPORTANT` callout so Claude Code's TUI renders it with a colored left bar (typically purple) instead of plain white text:
 
 ```
-`★ Insight ─────────────────────────────────────`
-[2–3 short, codebase-specific insights]
-`─────────────────────────────────────────────────`
+> [!IMPORTANT]
+> **★ Insight**
+>
+> - [point 1, codebase-specific]
+> - [point 2]
+> - [optional point 3]
 ```
+
+The `> [!IMPORTANT]` prefix is the load-bearing markup — it's what triggers the color treatment. Don't drop it in favor of an inline-code-wrapped frame; that renders as plain monospace text, not as a themed block. If a future renderer doesn't theme callouts, the format degrades gracefully to a labeled blockquote.
 
 Rules:
 

@@ -93,28 +93,39 @@ hint_for() {
   esac
 }
 
-# Build the human-readable warning body.
+# Build the human-readable warning body. Wrapped in a GitHub-flavored
+# WARNING callout so Claude Code's TUI renders it with a colored left
+# bar (typically yellow/amber) instead of plain white text. Degrades
+# gracefully to a labeled blockquote if the renderer doesn't theme
+# callouts.
 build_block() {
-  printf "⚠ Tool check ─────────────────────────────────\n"
   if [ ${#missing_required[@]} -gt 0 ]; then
-    printf "Missing **required** (orc hooks/commands break without these):\n"
+    printf "> [!CAUTION]\n"
+  else
+    printf "> [!WARNING]\n"
+  fi
+  printf "> **⚠ orc tool check**\n"
+  printf ">\n"
+  if [ ${#missing_required[@]} -gt 0 ]; then
+    printf "> **Missing required** (orc hooks/commands break without these):\n"
     for cmd in "${missing_required[@]}"; do
-      printf "  • %s — %s\n" "$cmd" "$(hint_for "$cmd")"
+      printf "> - \`%s\` — %s\n" "$cmd" "$(hint_for "$cmd")"
     done
+    printf ">\n"
   fi
   if [ ${#missing_recommended[@]} -gt 0 ]; then
-    printf "Missing recommended (some commands won't work):\n"
+    printf "> **Missing recommended** (some commands won't work):\n"
     for cmd in "${missing_recommended[@]}"; do
-      printf "  • %s — %s\n" "$cmd" "$(hint_for "$cmd")"
+      printf "> - \`%s\` — %s\n" "$cmd" "$(hint_for "$cmd")"
       case "$cmd" in
-        gh) printf "      Used by: /orc:code-review, /orc:address, /orc:ship, /orc:postmortem\n" ;;
-        agent-browser) printf "      Used by: /orc:qa (web mode — required for browser-driven QA evidence)\n" ;;
-        acli) printf "      Used by: /orc:jira, /orc:plan|start|debug|flow (Jira ticket linking), /orc:prd|trd (--from <jira-key>)\n" ;;
+        gh) printf ">     - Used by: \`/orc:code-review\`, \`/orc:address\`, \`/orc:ship\`, \`/orc:postmortem\`\n" ;;
+        agent-browser) printf ">     - Used by: \`/orc:qa\` (web mode — required for browser-driven QA evidence)\n" ;;
+        acli) printf ">     - Used by: \`/orc:jira\`, \`/orc:plan|start|debug|flow\` (Jira ticket linking), \`/orc:prd|trd\` (\`--from-jira\` seeding)\n" ;;
       esac
     done
+    printf ">\n"
   fi
-  printf "\nSet ORC_SKIP_TOOL_CHECK=1 to suppress this notice.\n"
-  printf "─────────────────────────────────────────────\n"
+  printf "> _Set \`ORC_SKIP_TOOL_CHECK=1\` to suppress this notice._\n"
 }
 
 warning_block=$(build_block)
