@@ -12,7 +12,7 @@
         "source": "url",
         "url": "https://github.com/HigorAlves/orc.git"
       },
-      "description": "54 curated skills, 19 composite slash commands, 10 specialist subagents, and 3 hook scripts that quietly enforce discipline (no commits to main, dependency pre-flight, skill catalog injected at every session start). Drives the senior-IC loop end-to-end via /orc:flow."
+      "description": "54 curated skills, 19 composite slash commands, 10 specialist subagents, and 4 hook scripts that quietly enforce discipline (no commits to main, no AI-attribution trailers in commits/PRs, dependency pre-flight, skill catalog injected at every session start). Drives the senior-IC loop end-to-end via /orc:flow."
     }
   ]
 }

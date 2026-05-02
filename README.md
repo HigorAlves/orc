@@ -20,7 +20,7 @@
 
 ## What it does
 
-`orc` is a personal-workflow plugin: **54 curated skills, 19 composite slash commands, 10 specialist subagents, and 3 hook scripts** that quietly enforce discipline (no commits to `main`, dependency pre-flight check, skill catalog injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged" with `orc-implementer` writing the code slice-by-slice in between.
+`orc` is a personal-workflow plugin: **54 curated skills, 19 composite slash commands, 10 specialist subagents, and 4 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers in commits/PRs, dependency pre-flight check, skill catalog injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged" with `orc-implementer` writing the code slice-by-slice in between.
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
@@ -141,6 +141,7 @@ export ORC_SKIP_TOOL_CHECK=1
 |----------|--------|
 | `ORC_SKIP_TOOL_CHECK=1` | Suppress the SessionStart `⚠ Tool check` block when a recommended dependency is intentionally missing. |
 | `ORC_ALLOW_PROTECTED=1` | Allow `git commit` / `git push` on `main` / `master` / `develop`. The PreToolUse hook refuses by default; this flag opts in for the rare scaffold/hot-fix case. |
+| `ORC_ALLOW_AI_ATTRIBUTION=1` | Allow `Co-Authored-By: Claude`, `🤖 Generated with Claude Code`, or other AI-attribution trailers in commit messages and PR bodies. The PreToolUse hook refuses them by default (iron rule #5). Set only with explicit user consent. |
 | `ORC_JIRA_PR_KEYWORD` | PR-body trailer keyword used by `/orc:ship` when the active session has a bound `jiraTicket`. Defaults to `Resolves`. Set to `Closes` or `Fixes` for orgs whose Jira/GitHub integration uses a different keyword. |
 
 ## Day-one command catalog
@@ -232,6 +233,7 @@ orc/
 │   └── scripts/                 # session-start-using-orc.sh
 │                                # session-start-tool-check.sh
 │                                # pre-commit-branch-check.sh
+│                                # pre-commit-no-ai-attribution.sh
 ├── lib/                         # shared prompt fragments + templates
 ├── docs/                        # architecture.md, contributing.md, adr/
 ├── examples/                    # scenario walk-throughs (start here for usage)
