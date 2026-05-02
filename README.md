@@ -92,12 +92,18 @@ To pin a specific commit/tag, use the longhand source form in `~/.claude/setting
 {
   "extraKnownMarketplaces": {
     "orc": {
-      "source": { "source": "github", "repo": "HigorAlves/orc", "ref": "v0.1.0" }
+      "source": {
+        "source": "url",
+        "url": "https://github.com/HigorAlves/orc.git",
+        "ref": "v0.1.0"
+      }
     }
   },
   "enabledPlugins": { "orc@orc": true }
 }
 ```
+
+> The plugin uses an HTTPS clone URL explicitly so installation works on machines without GitHub SSH keys configured. If you have `git config --global url.git@github.com:.insteadOf https://github.com/` set, that rewrite will hit this URL too — temporarily disable the rewrite, or use the local plugin-dir flow below.
 
 ### Via local plugin-dir (recommended for development on this repo)
 
