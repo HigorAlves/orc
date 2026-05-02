@@ -73,7 +73,33 @@ Or skip the per-phase invocations and use **`/orc:flow`** to drive the whole loo
 
 Each example follows the same shape — *Scenario → Flow → Walk-through → Artifacts → Done when → Variants → Iron rules in play* — so you can scan to the relevant section.
 
-## Install / load locally
+## Install
+
+### Via the marketplace (recommended for friends / clean machines)
+
+orc is published as a single-plugin marketplace at this repo. Inside Claude Code:
+
+```
+/plugin marketplace add HigorAlves/orc
+/plugin install orc@orc
+```
+
+The first command registers `https://github.com/HigorAlves/orc` as a marketplace named `orc`; the second installs the `orc` plugin from it. Updates pull with `/plugin update orc@orc`.
+
+To pin a specific commit/tag, use the longhand source form in `~/.claude/settings.json`:
+
+```jsonc
+{
+  "extraKnownMarketplaces": {
+    "orc": {
+      "source": { "source": "github", "repo": "HigorAlves/orc", "ref": "v0.1.0" }
+    }
+  },
+  "enabledPlugins": { "orc@orc": true }
+}
+```
+
+### Via local plugin-dir (recommended for development on this repo)
 
 ```bash
 claude --plugin-dir /Users/higoralves/Developer/system/orc

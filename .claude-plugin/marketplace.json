@@ -1,0 +1,18 @@
+{
+  "name": "orc",
+  "owner": {
+    "name": "Higor Alves",
+    "email": "me@higoralves.dev"
+  },
+  "description": "Personal Claude Code marketplace for orc — the plan → debug → verify → ship workflow plugin.",
+  "plugins": [
+    {
+      "name": "orc",
+      "source": {
+        "source": "github",
+        "repo": "HigorAlves/orc"
+      },
+      "description": "53 curated skills, 19 composite slash commands, 10 specialist subagents, and 3 hook scripts that quietly enforce discipline (no commits to main, dependency pre-flight, skill catalog injected at every session start). Drives the senior-IC loop end-to-end via /orc:flow."
+    }
+  ]
+}
