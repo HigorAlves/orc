@@ -9,10 +9,10 @@ The split is deliberate: decisions need you in the loop (which design? did the Q
 ## The single command
 
 ```
-/orc:flow "add CSV export to reports page"
+/orc:flow --jira JRA-123 "add CSV export to reports page"
 ```
 
-That's it. orc walks the rest — gates where they matter, autonomy where it doesn't.
+That's it. orc walks the rest — gates where they matter, autonomy where it doesn't. The `--jira` flag is optional; if omitted, Phase 1 asks once whether to link a ticket. Either way the key persists in `.orc/` state and lands as `Resolves <KEY>` in the PR body.
 
 ```mermaid
 flowchart TD
@@ -37,9 +37,11 @@ flowchart TD
 ### Day 1 — morning
 
 ```
-You: /orc:flow "add CSV export to reports page"
+You: /orc:flow --jira JRA-123 "add CSV export to reports page"
 
 orc: ⚙ Phase 1 — Triage
+     Linked Jira: JRA-123 (--jira flag passed; link prompt skipped).
+
      What kind of work?
      ┌───────────────────────────────────────────────────┐
      │ ◉ feature                                          │
@@ -62,6 +64,7 @@ orc: Scope?
 You: 1–5 days
 
 orc: ⚙ Phase 1 done. Initialized .orc/feat-csv-export/files/.
+     jiraTicket: JRA-123 written to .orc/orc.json + checkpoint.md.
      ⚙ Phase 2 (RFC) — skipped (scope < 1 week, no --rfc).
      ⚙ Phase 3 — Plan
      [invokes orc:writing-plans, drafts plan to .orc/feat-csv-export/files/plan.md]
@@ -145,7 +148,7 @@ If at any slice the agent had hit an escalation condition (ambiguous spec, dep n
 ```
 You: /orc:flow
 
-orc: 📍 Resuming flow for feat-csv-export from .orc/orc.json
+orc: 📍 Resuming flow for feat-csv-export · [JRA-123] from .orc/orc.json
      Last completed phase: 5 (implementation)
      Next: Phase 6 — QA
 
@@ -200,6 +203,7 @@ orc: ⚙ Phase 7 — Ship
        Tests: 47 pass. QA: .orc/feat-csv-export/files/qa/steps.md.
 
        Closes #311
+       Resolves JRA-123
 
      Open?
      ┌───────────────────────────────────────────────────┐
@@ -314,6 +318,7 @@ orc: ✓ Worktree removed.
 - **The implementation phase is autonomous by default.** `orc-implementer` (opus) drives the slice-by-slice loop — read spec, confirm/write failing test, implement, run suite, commit, next slice. The agent obeys the same iron rules you would (no commits to main, test-first, verify, root-cause). Pass `--pause-at-implement` if you want orc to stop at Phase 4's failing test and let you write the code yourself instead.
 - **Resume is automatic.** You don't pass any args on the second/third invocation — orc reads `.orc/orc.json`, finds the in-progress flow, jumps to the next pending phase.
 - **The PR description was synthesized from accumulated evidence**: plan.md (Why), the diff (What changed), qa/steps.md (How tested), and ticket links.
+- **Jira followed the work end-to-end.** `JRA-123` was bound at Phase 1 (via `--jira` flag), persisted in `.orc/orc.json` + `checkpoint.md`, surfaced in every resume header, and emitted as a `Resolves JRA-123` trailer at PR composition. Override the keyword with `ORC_JIRA_PR_KEYWORD=Closes` (or `Fixes`) per shop convention.
 
 ## Variants
 
@@ -323,6 +328,8 @@ orc: ✓ Worktree removed.
 - **Docs only** — pass `--type=docs`. Phases 4 (TDD start) and 5 (implementation) collapse into a docs-writing conversation; phase 6 runs lint only.
 - **Verbose PR** — drop `--caveman`. Phase 7 uses the default verbose template with What/Why/How tested/Checklist sections.
 - **You want fine-grained control over a single phase** — invoke the per-phase commands directly (`/orc:plan`, `/orc:debug`, `/orc:qa`, `/orc:ship`, etc.) instead of `/orc:flow`. Useful when only one phase of the loop is interesting and the rest is already done.
+- **No Jira ticket yet (or this work has no tracker entry)** — drop `--jira`. Phase 1 asks once with options `Paste a key` / `Skip — I'll bind later via /orc:jira bind` / `No ticket`. The rest of the flow behaves identically; the `Resolves <KEY>` trailer is just omitted from the PR body. You can attach a ticket mid-flow with `/orc:jira bind <KEY>` from the worktree.
+- **Need to file the Jira ticket from inside the flow** — pause at Phase 1, run `/orc:jira create --summary "add CSV export" --project PLAT --type Story` (it will offer to bind the new key automatically), then re-run `/orc:flow` and pass `--jira <NEW-KEY>`. End-to-end walkthrough in `examples/12-link-jira-and-ship.md`.
 
 ## Iron rules in play
 
