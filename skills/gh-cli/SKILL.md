@@ -1161,6 +1161,97 @@ gh pr review 123 --comment --body "Some thoughts..."
 gh pr review 123 --dismiss
 ```
 
+> ⚠️ `gh pr review` posts a **top-level review only** — no inline comments, no suggestion blocks. For real GitHub PR reviews with comments anchored to specific files/lines (and one-click "Apply suggestion" buttons), see the next section. orc's `/orc:code-review` and the `orc:inline-review` skill use that path by default.
+
+### PR Review with inline comments + suggestions
+
+GitHub's REST API endpoint `POST /repos/{owner}/{repo}/pulls/{pr}/reviews` accepts a single payload that creates a review with N inline comments + an overall body + a review event. This is the GitHub-native way to post a structured review programmatically. Atomic: all comments post together with the event, or the call fails as a whole.
+
+**Atomic batched POST** (default path used by orc's `/orc:code-review`):
+
+```bash
+gh api repos/${OWNER}/${REPO}/pulls/${PR}/reviews \
+  --method POST \
+  --input - <<EOF
+{
+  "event": "REQUEST_CHANGES",
+  "body": "Overall framing paragraph for the review.",
+  "comments": [
+    {
+      "path": "src/auth.ts",
+      "line": 42,
+      "side": "RIGHT",
+      "body": "null deref when token absent — guard with early return.\n\n\`\`\`suggestion\nconst token = parseToken(req);\nif (!token) return res.status(401).end();\n\`\`\`"
+    },
+    {
+      "path": "src/api.ts",
+      "start_line": 118,
+      "line": 120,
+      "side": "RIGHT",
+      "body": "user input flows into raw SQL — parameterize via \`\$1\`/\`\$2\`."
+    }
+  ]
+}
+EOF
+```
+
+**`event` enum:**
+
+| Value | Meaning |
+|-------|---------|
+| `APPROVE` | LGTM — the review approves the PR |
+| `COMMENT` | Comments only, no approval/rejection |
+| `REQUEST_CHANGES` | Block the PR until comments addressed |
+
+**`comments[]` schema** (per inline comment):
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `path` | yes | Repo-relative POSIX path (e.g. `src/api/users.ts`). Not URL, not prefixed with `a/` or `b/`. |
+| `line` | yes | Line number in the **NEW** file (post-change). Not the diff hunk offset. For multi-line spans, this is the END line. |
+| `side` | yes | `"RIGHT"` for comments on added/changed code (almost always). `"LEFT"` is for comments on removed code. |
+| `start_line` | no | For multi-line spans, the START line. Single-line findings omit this or set it null. Must satisfy `start_line ≤ line`. |
+| `start_side` | no | Pairs with `start_line`; usually `"RIGHT"`. |
+| `body` | yes | Markdown. Comment text. May contain a triple-backtick `suggestion` block (see below) for one-click apply. |
+
+**Suggestion block format** (inside the comment `body`):
+
+````
+Brief prose description of the problem.
+
+```suggestion
+const token = parseToken(req);
+if (!token) return res.status(401).end();
+```
+
+Optional follow-up prose (caveat, edge case).
+````
+
+GitHub renders this as a "Apply suggestion" button. Standard markdown — no special API handling needed beyond putting the block inside the comment body. Use only for fixes that are < 6 lines AND fully resolve the issue (don't smuggle refactors).
+
+**After posting**, the response includes the new review's `html_url` and `id`. Capture with `--jq`:
+
+```bash
+REVIEW_URL=$(echo "$PAYLOAD" | gh api repos/${OWNER}/${REPO}/pulls/${PR}/reviews \
+  --method POST --input - --jq '.html_url')
+echo "Posted: $REVIEW_URL"
+```
+
+**Listing existing reviews** on a PR:
+
+```bash
+gh pr view 123 --json reviews
+gh api repos/${OWNER}/${REPO}/pulls/123/reviews
+```
+
+**Fetching a specific review** (after posting):
+
+```bash
+gh api repos/${OWNER}/${REPO}/pulls/${PR}/reviews/${REVIEW_ID}
+```
+
+For the full posting orchestration (severity → event mapping, preview gate, MCP fallback), see `orc:inline-review`.
+
 ### Update Branch
 
 ```bash

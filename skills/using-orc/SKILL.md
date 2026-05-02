@@ -84,6 +84,7 @@ No "QA passed" claim is accepted without the required artifacts in `qa/`. `orc:v
 | `orc:postmortem` | After a production incident — blameless postmortem with timeline, root causes, action items |
 | `orc:prd-writing` | When authoring a Product Requirements Document from scratch — interview-driven scaffolding, publishes to `docs/prds/NNNN-*.md` |
 | `orc:trd-writing` | When formalizing a technical contract derived from a PRD before RFC/plan — publishes to `docs/trds/NNNN-*.md` |
+| `orc:inline-review` | When posting a real GitHub PR review with inline comments + suggestion blocks; defines the severity → event mapping rule that prevents "approve while flagging bugs" contradictions. Used by `/orc:code-review`. |
 
 Stack-specific skills (load when working in that stack):
 
@@ -92,7 +93,7 @@ Stack-specific skills (load when working in that stack):
 | **web-react** | `orc:next-best-practices`, `orc:vercel-react-best-practices`, `orc:vercel-composition-patterns`, `orc:frontend-design`, `orc:shadcn`, `orc:tailwind-design-system`, `orc:vitest` |
 | **backend** | `orc:nodejs-best-practices`, `orc:nestjs-best-practices`, `orc:typescript-advanced-types`, `orc:postgresql-table-design`, `orc:postgresql-optimization`, `orc:postgresql-code-review`, `orc:stripe-best-practices`, `orc:upgrade-stripe` |
 | **ios** | `orc:swiftui-pro`, `orc:mobile-ios-design` |
-| **workflow-extras** | `orc:docker-expert`, `orc:turborepo`, `orc:sentry-cli`, `orc:jira-cli`, `orc:skill-creator`, `orc:write-a-skill`, `orc:documentation-writer`, `orc:create-readme`, `orc:to-prd`, `orc:to-issues`, `orc:grill-me`, `orc:agent-browser` |
+| **workflow-extras** | `orc:docker-expert`, `orc:turborepo`, `orc:sentry-cli`, `orc:jira-cli`, `orc:inline-review`, `orc:skill-creator`, `orc:write-a-skill`, `orc:documentation-writer`, `orc:create-readme`, `orc:to-prd`, `orc:to-issues`, `orc:grill-me`, `orc:agent-browser` |
 
 ## Available Commands
 

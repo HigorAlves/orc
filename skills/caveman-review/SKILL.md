@@ -9,6 +9,8 @@ description: >
 
 Write code review comments terse and actionable. One line per finding. Location, problem, fix. No throat-clearing.
 
+> **Scope:** This skill governs **review tone** (terse, signal-only, no praise, no nits). For the **posting mechanism** (inline GitHub PR comments, suggestion blocks, severity-event mapping that prevents "approve while flagging bugs" contradictions) see `orc:inline-review`. The two compose: comment bodies follow caveman-review tone; the inline-review skill handles how those bodies get posted.
+
 ## Rules
 
 **Format:** `L<line>: <problem>. <fix>.` — or `<file>:L<line>: ...` when reviewing multi-file diffs.

@@ -4,21 +4,22 @@
 
 A teammate opens PR #142 — "feat(billing): add proration on plan changes." 27 changed files, 480 lines added, 80 lines removed. You're the reviewer of record.
 
-You could read every line yourself. orc lets you do it with discipline and far less rework.
+You could read every line yourself. orc lets you do it with discipline and far less rework — and posts real GitHub inline comments anchored to the right lines, not a markdown wall the author has to manually navigate.
 
 ## Flow
 
 ```mermaid
 flowchart TD
-    cmd["/orc:code-review 142<br/>[--jira | --prd | --context]"]
-    elig[Eligibility check<br/><i>closed? draft? already reviewed?</i>]
-    guide[Project guidelines<br/><i>CLAUDE.md scoped to changed files</i>]
-    req[Requirements context<br/><i>Jira / PRD / --context</i>]
-    rev[orc-pr-reviewer dispatched<br/><i>+ orc-security-reviewer when sensitive</i>]
-    confirm[User confirms findings]
-    submit[Submit: APPROVE / REQUEST_CHANGES / COMMENT]
+    cmd["/orc:code-review 142<br/>[--jira | --prd | --context | --summary-only | --dry-run]"]
+    elig[Phase 1: Eligibility check<br/><i>closed? draft? already reviewed?</i>]
+    guide[Phase 2: Diff + project guidelines<br/><i>CLAUDE.md scoped to changed files</i>]
+    rev[Phase 3: agents dispatched<br/><i>orc-pr-reviewer + orc-security-reviewer (parallel)</i><br/><b>return structured JSON findings</b>]
+    merge[Phase 4: merge + sanity check<br/><i>compute event from severities;<br/>flag agent self-contradictions</i>]
+    compose[Phase 5: compose review payload<br/><i>overall body + comments array;<br/>cap at 15</i>]
+    preview[Phase 6: preview gate<br/><i>AskUserQuestion: post / edit / summary-only / cancel</i>]
+    post[Phase 7: post via gh api or GitHub MCP<br/><i>real inline comments + computed event</i>]
 
-    cmd --> elig --> guide --> req --> rev --> confirm --> submit
+    cmd --> elig --> guide --> rev --> merge --> compose --> preview --> post
 ```
 
 ## Walk-through
@@ -74,54 +75,112 @@ It explicitly does NOT flag:
 
 **Confidence rule:** if <80% sure a finding is real, it's dropped. False positives are worse than misses for trust.
 
-### Phase 5 — Confidence-graded output
+### Phase 5 — Structured JSON findings + merge
 
-The agent returns categorized findings using `orc:caveman-review` discipline (one line per finding, file:line format):
+Each agent returns **strict JSON** (per `orc:inline-review` schema), not markdown. Excerpt of `orc-pr-reviewer`'s output:
+
+```json
+{
+  "summary": "Adds proration on plan changes. Looks reasonable but has 2 real bugs in the proration math and an untested edge case at the cycle boundary.",
+  "findings": [
+    {
+      "path": "src/billing/proration.ts",
+      "line": 47,
+      "severity": "bug",
+      "title": "Off-by-one: range stops short of cycleEnd",
+      "body": "`for (let d = cycleStart; d < cycleEnd; d++)` excludes the final day of the cycle. Last day's proration is missing.",
+      "suggestion_code": "for (let d = cycleStart; d <= cycleEnd; d++) {",
+      "confidence": 0.93
+    },
+    {
+      "path": "src/billing/proration.ts",
+      "line": 88,
+      "severity": "bug",
+      "title": "Null deref on first-month users",
+      "body": "`previous_invoice` is undefined for users on their first month. The next line dereferences `.amount`. Guard with optional chaining or early return.",
+      "suggestion_code": "const prev = invoice.previous_invoice?.amount ?? 0;",
+      "confidence": 0.91
+    },
+    {
+      "path": "src/billing/proration.ts",
+      "line": 80,
+      "start_line": 55,
+      "severity": "test",
+      "title": "Cycle-boundary downgrade branch untested",
+      "body": "No test for `user downgrades on the last day of the cycle`. Add a test asserting the partial-credit calculation handles the boundary case.",
+      "suggestion_code": null,
+      "confidence": 0.85
+    },
+    {
+      "path": "src/api/billing.ts",
+      "line": 120,
+      "severity": "api-surface",
+      "title": "Endpoint reaches into BillingService internals",
+      "body": "`req.body` flows into `BillingService['_internalMethod']` (was private; this PR exposes it via bracket access). Re-expose a clean method or move the call inside the service.",
+      "suggestion_code": null,
+      "confidence": 0.82
+    }
+  ]
+}
+```
+
+`/orc:code-review` Phase 4 merges this with `orc-security-reviewer`'s output (which here returned `findings: []`), validates each finding's `path:line` is in the diff, drops `confidence < 0.8`, and **computes the review event mechanically**:
 
 ```
-## Bugs
-- src/billing/proration.ts:47 — off-by-one: range stops at <, should be <= for inclusive end-of-cycle — fix: `<= cycleEnd`
-- src/billing/proration.ts:88 — null deref when previous_invoice is undefined for first-month users — guard with optional chaining
-
-## Security
-(none)
-
-## Tests
-- src/billing/proration.ts:55–80 — refund-edge-case branch untested — add test for "user downgrades on the last day of cycle"
-
-## Architecture
-- src/api/billing.ts:120 — endpoint reaches into BillingService internals (formerly private) — re-expose a clean method or move the call inside
-
-## Nits
-(none — flagged only on explicit request)
+findings include severity ∈ {bug, security, api-surface}
+  → event = REQUEST_CHANGES
 ```
 
-If nothing's actionable: "No actionable issues. Approve."
+The agent's `summary` ("looks reasonable") is informational only; the severity rule overrides any verdict it implies. If the agent had written *"Approve, looks good"* the orchestrator would surface a contradiction warning at the preview gate (see below).
 
-### Phase 6 — Confirm
+### Phase 6 — Preview gate (mandatory)
 
-`AskUserQuestion`:
+`AskUserQuestion` — but first, the constructed payload is shown:
 
-- "Submit as REQUEST_CHANGES with these comments"
-- "Submit as APPROVE — looks good"
-- "Submit as COMMENT — for discussion only"
-- "Hold — let me edit findings first"
+```
+─────────────────────────────────────────────────────────
+Review for #142: feat(billing): add proration on plan changes
+Computed event: REQUEST_CHANGES
 
-### Phase 7 — Submit
+Overall body:
+  Adds proration on plan changes. 2 real bugs in the proration math, 1
+  untested cycle-boundary case, and 1 API-surface concern (private method
+  exposed via bracket access).
 
-If user confirms a non-pending submission:
+Comments (4):
+  src/billing/proration.ts:47        [bug]          Off-by-one: range stops short of cycleEnd
+  src/billing/proration.ts:88        [bug]          Null deref on first-month users
+  src/billing/proration.ts:55-80     [test]         Cycle-boundary downgrade branch untested
+  src/api/billing.ts:120             [api-surface]  Endpoint reaches into BillingService internals
+─────────────────────────────────────────────────────────
+```
+
+```
+- ◉ Post the review as shown
+- ○ Edit / drop specific comments
+- ○ Switch to summary-only mode (text dump, don't post)
+- ○ Cancel
+```
+
+Pick `Post the review as shown`.
+
+### Phase 7 — Post
+
+Default path uses `gh api` (atomic batched POST):
 
 ```bash
-gh pr review 142 --request-changes --body "<summary>"
-# Then for each inline finding:
-gh api repos/{owner}/{repo}/pulls/142/comments \
-  -f body="<finding>" \
-  -f path="<file>" \
-  -f line=<line> \
-  -f side="RIGHT"
+echo "$PAYLOAD_JSON" | gh api repos/${OWNER}/${REPO}/pulls/142/reviews \
+  --method POST --input - --jq '.html_url'
 ```
 
-Or use the GitHub MCP `add_comment_to_pending_review` if available — same effect.
+If the GitHub MCP plugin is installed, the orchestrator routes through `mcp__plugin_github_github__pull_request_review_write` (create-pending) → loop `add_comment_to_pending_review` → submit-pending instead. Same end-result on GitHub.
+
+orc echoes the posted review URL.
+
+The teammate opens PR #142 and sees:
+- A REQUEST_CHANGES review with the framing paragraph at the top
+- Four inline comments anchored to the exact files/lines
+- For two of them (bugs), a one-click "Apply suggestion" button rendering the suggested code fix
 
 ## Artifacts
 
@@ -143,12 +202,23 @@ Or use the GitHub MCP `add_comment_to_pending_review` if available — same effe
 
 ## Variants
 
+- **`/orc:code-review 142 --summary-only`** — produces the legacy markdown text-block (Bugs / Security / Tests sections) and does NOT post anything to GitHub. Useful when you want markdown to paste into Slack/Notion or you're researching a PR rather than reviewing it.
+- **`/orc:code-review 142 --dry-run`** — runs through the preview gate but never posts. The constructed payload is echoed as JSON for inspection. Pair with `--soft-tests` to see how the event would change if test gaps weren't blocking.
+- **`/orc:code-review 142 --soft-tests`** — `test`-severity findings drop to COMMENT instead of forcing REQUEST_CHANGES. For repos with weak test culture or PRs you explicitly want to land despite test gaps.
+- **Agent self-contradiction case** — say `orc-pr-reviewer` writes `summary: "Approve. Findings are non-blocking."` but `findings` includes a `bug`. The Phase 4 sanity-check fires:
+  > ⚠ Reviewer wrote "approve" but flagged 2 bug-severity findings.
+  >   Severity rule overrides verdict — posting as REQUEST_CHANGES.
+  
+  This is the failure mode the new severity rule was specifically designed to catch.
 - **PR is too big to review in one shot** — comment that the PR should be split, then APPROVE the trivial portion or REQUEST_CHANGES on the structural pieces. Don't pretend to review 60 files in one read.
-- **You disagree with a guideline the reviewer agent flagged** — override in the confirmation step. Add a comment to the doc/CLAUDE.md if the rule itself needs revision.
+- **You disagree with a finding** — pick `Edit / drop specific comments` at the preview gate; per-comment loop lets you keep / drop / rewrite each before posting.
 - **You want to do a "vibes" review without the agent** — fine, but you lose the systematic guideline + bug + security + tests + requirements pass. Use the agent for the systematic pass and add your "vibes" reading on top.
 
 ## Iron rules in play
 
+- **Severity-event mapping is computed mechanically.** Agents do NOT decide the verdict. Phase 4 catches and overrides any agent text saying "approve" while flagging bugs.
+- **Preview gate is mandatory.** No flag bypasses it; nothing posts until the user picks `Post the review as shown`.
+- **Max 15 inline comments.** Over-commenting erodes signal; the orchestrator surfaces the cap and asks the user to drop overflow.
+- **No false positives.** The agent's confidence rule (≥ 0.8) + the preview-gate's per-comment edit option both guard this.
 - **No AI attribution.** Reviews read as your voice. The agent is the lens, you are the reviewer.
-- **No false positives.** The agent's confidence rule + the user-confirm step both guard this.
 - **Insight blocks are not for PR comments.** Save the `★ Insight ─────` format for conversations, not GitHub threads — those need to read as engineer-to-engineer.

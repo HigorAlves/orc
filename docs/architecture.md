@@ -10,7 +10,7 @@
 orc/
 ├── .claude-plugin/plugin.json     # manifest — what Claude Code reads to discover the plugin
 ├── .orc/                          # gitignored, ephemeral workspace state (per-session)
-├── skills/                        # 53 skills, namespaced /orc:<name>
+├── skills/                        # 54 skills, namespaced /orc:<name>
 ├── commands/                      # 19 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
 ├── agents/                        # 10 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) hooks

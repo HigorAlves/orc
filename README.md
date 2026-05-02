@@ -20,7 +20,7 @@
 
 ## What it does
 
-`orc` is a personal-workflow plugin: **53 curated skills, 19 composite slash commands, 10 specialist subagents, and 3 hook scripts** that quietly enforce discipline (no commits to `main`, dependency pre-flight check, skill catalog injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged" with `orc-implementer` writing the code slice-by-slice in between.
+`orc` is a personal-workflow plugin: **54 curated skills, 19 composite slash commands, 10 specialist subagents, and 3 hook scripts** that quietly enforce discipline (no commits to `main`, dependency pre-flight check, skill catalog injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged" with `orc-implementer` writing the code slice-by-slice in between.
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
@@ -179,9 +179,9 @@ export ORC_SKIP_TOOL_CHECK=1
 
 **Pack: ios (2):** `swiftui-pro`, `mobile-ios-design`.
 
-**Pack: workflow-extras (12):** `docker-expert`, `turborepo`, `sentry-cli`, `jira-cli`, `skill-creator`, `write-a-skill`, `documentation-writer`, `create-readme`, `to-prd`, `to-issues`, `grill-me`, `agent-browser` (drives a real browser for `/orc:qa` web mode).
+**Pack: workflow-extras (13):** `docker-expert`, `turborepo`, `sentry-cli`, `jira-cli`, `inline-review`, `skill-creator`, `write-a-skill`, `documentation-writer`, `create-readme`, `to-prd`, `to-issues`, `grill-me`, `agent-browser` (drives a real browser for `/orc:qa` web mode).
 
-Plus the meta skill `using-orc` (auto-injected at SessionStart, encodes iron rules). **Total: 53 skills.**
+Plus the meta skill `using-orc` (auto-injected at SessionStart, encodes iron rules). **Total: 54 skills.**
 
 ## Insight blocks
 
@@ -224,7 +224,7 @@ Without the required artifacts, "QA passed" is not an accepted claim. The `orc-q
 orc/
 ├── .claude-plugin/plugin.json   # manifest
 ├── .orc/                        # gitignored — workspace state per session
-├── skills/<name>/SKILL.md       # 53 skills (7 authored + 46 curated)
+├── skills/<name>/SKILL.md       # 54 skills (8 authored + 46 curated)
 ├── commands/<name>.md           # 19 slash commands (incl. /orc:flow umbrella)
 ├── agents/orc-<role>.md         # 10 subagents (incl. orc-implementer for /orc:flow Phase 5)
 ├── hooks/
