@@ -70,13 +70,16 @@ Show the diff + drafted replies to the user via `AskUserQuestion`:
 3. For each reply: `gh api repos/{owner}/{repo}/pulls/{n}/comments/{comment-id}/replies -f body="..."`.
 4. Optionally re-request review: `gh pr edit <ref> --add-reviewer <reviewer>`.
 
+**Inline replies only. Never post a top-level PR comment summarizing what was addressed.** The inline reply on each thread already says what changed; a recap comment duplicates that signal and clutters the PR conversation. Specifically: do NOT call `gh pr comment`, do NOT call `gh api repos/{owner}/{repo}/issues/{n}/comments`, do NOT post any standalone "Addressed in <sha>:" rollup. One reply per thread, posted via the `/pulls/{n}/comments/{id}/replies` endpoint above. Nothing else.
+
 ### Phase 6 — Confirm
 
 Echo the result: number of comments addressed, fix commit SHA, replies posted.
 
-## Iron rule
+## Iron rules
 
-Never post a reply that has not been shown to the user first. The user is the engineer of record on every PR thread.
+1. Never post a reply that has not been shown to the user first. The user is the engineer of record on every PR thread.
+2. Inline replies only. No top-level recap PR comment. (See Phase 5.)
 
 ## Output
 
