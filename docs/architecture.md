@@ -10,8 +10,8 @@
 orc/
 ├── .claude-plugin/plugin.json     # manifest — what Claude Code reads to discover the plugin
 ├── .orc/                          # gitignored, ephemeral workspace state (per-session)
-├── skills/                        # 50 skills, namespaced /orc:<name>
-├── commands/                      # 16 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
+├── skills/                        # 53 skills, namespaced /orc:<name>
+├── commands/                      # 19 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
 ├── agents/                        # 10 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) hooks
 ├── lib/                           # shared prompt fragments + templates (cross-skill)
@@ -33,7 +33,7 @@ orc/
 
 1. **`session-start-using-orc.sh`** — reads `skills/using-orc/SKILL.md` and emits it as additional session context. The model sees orc's iron rules, skill catalog, and the insight-block format before its first response. The `★ Insight ─────...` block was previously delivered by a sibling plugin (`explanatory-output-style/`); folding it into `using-orc/SKILL.md` collapses that into one hook and makes orc self-sufficient on this dimension.
 
-2. **`session-start-tool-check.sh`** — pre-flight check for orc's CLI dependencies (`git`, `jq`, `gh`, `agent-browser`). Silent when everything's present; otherwise injects a `⚠ Tool check ─────...` block and instructs the model to surface it once at session start. Suppress with `ORC_SKIP_TOOL_CHECK=1`. Adding new tooling checks later is additive — drop another script alongside.
+2. **`session-start-tool-check.sh`** — pre-flight check for orc's CLI dependencies (`git`, `jq`, `gh`, `agent-browser`, `acli`). Silent when everything's present; otherwise injects a `⚠ Tool check ─────...` block and instructs the model to surface it once at session start. Suppress with `ORC_SKIP_TOOL_CHECK=1`. Adding new tooling checks later is additive — drop another script alongside.
 
 ## PreToolUse(Bash) hook
 
@@ -73,6 +73,16 @@ Multi-phase commands (`/orc:plan`, `/orc:start`, `/orc:debug`, `/orc:fan-out`, w
 4. **Status** — `/orc:status` reads `orc.json` (read-only); never modifies.
 5. **Cleanup** — done sessions stay until manually `rm -rf .orc/<branch>/`.
 
+### Optional `jiraTicket` field
+
+Every session entry in `.orc/orc.json` and every `checkpoint.md` frontmatter accepts an optional `jiraTicket: <KEY>` field linking the work to a Jira issue.
+
+- **Written by** `/orc:plan` (Phase 1 prompt or `--jira <KEY>` flag), `/orc:debug` (Phase 1 prompt or `--jira` flag), `/orc:flow` (Phase 1 triage prompt or `--jira` flag), and `/orc:start` (forwards `--jira` to `/orc:plan`). Also written explicitly by `/orc:jira bind <KEY>` and cleared by `/orc:jira unbind`.
+- **Read by** `/orc:status` (per-row `[<KEY>]` indicator), `/orc:ship` (appends `Resolves <KEY>` trailer to PR body — keyword overridable via `$ORC_JIRA_PR_KEYWORD`), and `/orc:resume` (echoes the bound key in the resume summary).
+- **Validated as** `^[A-Z][A-Z0-9_]*-\d+$` before any file write — typo'd keys are refused at the prompt.
+
+The field is purely additive: pre-existing `.orc/` state without `jiraTicket` continues to work unchanged. `/orc:jira bind`/`unbind` refuse to run when no in-progress session exists for the current branch.
+
 ## Web QA evidence (a hard rule)
 
 Any change touching a web surface goes through `/orc:qa --web` (or auto-detected). The `orc-qa-validator` agent drives a real browser via the [vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser) CLI (loaded via the `orc:agent-browser` skill), capturing **required** artifacts:
@@ -90,7 +100,7 @@ No "QA passed" claim is accepted without the required artifacts in `.orc/<branch
 
 Curated skills cover four optional packs (all enabled): `web-react` (incl. vitest), `backend` (Node/NestJS/Postgres/Stripe), `ios` (SwiftUI), `workflow-extras` (Docker/Turborepo/Sentry/skill-authoring/PRD-issue tooling/agent-browser).
 
-Plus three skills authored fresh for senior/architect practice: `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem` (blameless incident postmortems).
+Plus five skills authored fresh for senior/architect practice: `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem` (blameless incident postmortems), `prd-writing` (Product Requirements Documents), `trd-writing` (Technical Requirements Documents).
 
 ## Relationship to compozy
 

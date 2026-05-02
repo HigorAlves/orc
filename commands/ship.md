@@ -1,5 +1,5 @@
 ---
-description: Finalize and open the PR. Verifies tests pass, presents structured commit/branch/PR options, executes the chosen path. Last command before review.
+description: Finalize and open the PR. Verifies tests pass, presents structured commit/branch/PR options, executes the chosen path. Last command before review. If the active session has a bound jiraTicket in .orc/orc.json, the PR body gets a `Resolves <KEY>` trailer (configurable via $ORC_JIRA_PR_KEYWORD).
 argument-hint: "[--draft] [--base <branch>] [--caveman]"
 allowed-tools:
   - Read
@@ -11,6 +11,7 @@ allowed-tools:
   - Bash(gh pr create:*)
   - Bash(gh pr view:*)
   - Bash(gh pr list:*)
+  - Bash(jq *)
   - Bash(npm *:*)
   - Bash(pnpm *:*)
   - Bash(yarn *:*)
@@ -56,7 +57,14 @@ Invoke `orc:git-commit` if there are uncommitted changes. Then:
 2. Compose the body. Two modes:
    - **Default (verbose)** — sections: **What** (one-paragraph summary), **Why** (link to plan / issue / PRD if available; `.orc/<branch>/files/plan.md` if present), **How tested** (test commands run; browser QA artifacts if web change at `.orc/<branch>/files/qa/`), **Checklist** (boxes for the reviewer).
    - **`--caveman` mode** — invoke `orc:caveman-pr` and follow it exactly. Skips the verbose template; returns a tight title + body with only the sections that add signal (Why / What changed / How tested / Notes / trailers). Best when the diff is small or the PR template is heavyweight.
-3. Show the user the title + body via `AskUserQuestion`: `Open as-is` / `Edit first` / `Cancel`.
+3. **Append the Jira trailer if a ticket is bound.** Read the active session's `jiraTicket` from `.orc/orc.json` (find the entry whose `branch` matches the sanitized current branch). If present, append a single trailer line at the bottom of the body:
+
+   ```
+   <KEYWORD> <KEY>
+   ```
+
+   `KEYWORD` defaults to `Resolves`. Override per-shop with `export ORC_JIRA_PR_KEYWORD=Closes` (or `Fixes`). Both modes (verbose and caveman) get this trailer. Skip silently when no `jiraTicket` is set.
+4. Show the user the title + body via `AskUserQuestion`: `Open as-is` / `Edit first` / `Cancel`.
 
 ### Phase 5 — Push + create PR
 

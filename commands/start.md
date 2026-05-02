@@ -1,6 +1,6 @@
 ---
-description: Start a feature — set up an isolated worktree, draft the plan, and write the first failing test before any production code is touched.
-argument-hint: "[--worktree <path>] <feature description>"
+description: Start a feature — set up an isolated worktree, draft the plan, and write the first failing test before any production code is touched. Accepts --jira <KEY> to link a Jira ticket; the key informs the suggested branch name and is forwarded to /orc:plan (suppressing its Phase 1 prompt).
+argument-hint: "[--worktree <path>] [--jira <KEY>] <feature description>"
 allowed-tools:
   - Read
   - Write
@@ -10,6 +10,8 @@ allowed-tools:
   - Skill
   - AskUserQuestion
   - Bash(git *)
+  - Bash(acli jira workitem view:*)
+  - Bash(jq *)
   - Bash(npm *:*)
   - Bash(pnpm *:*)
   - Bash(yarn *:*)
@@ -25,6 +27,7 @@ Kick off a new feature with isolation, a written plan, and the first failing tes
 ## Arguments
 
 - `--worktree <path>` — optional explicit worktree directory. If omitted, the worktree skill picks one safely.
+- `--jira <KEY>` — optional. Link a Jira ticket key (e.g. `JRA-123`) to this session. Two effects: (1) Phase 1 fetches the ticket summary via `acli jira workitem view <KEY> --fields "summary" --json`, slugifies it, and offers `feat/<KEY>-<slug>` as the suggested branch name to `orc:using-git-worktrees`; (2) the flag is forwarded to `/orc:plan` in Phase 2, suppressing the Phase 1 link prompt and writing `jiraTicket: <KEY>` into the session's `.orc/` state. Validate against `^[A-Z][A-Z0-9_]*-\d+$`.
 
 ## Workflow
 
@@ -32,9 +35,11 @@ Kick off a new feature with isolation, a written plan, and the first failing tes
 
 Invoke `orc:using-git-worktrees`. Create an isolated worktree off the current default branch (typically `main`). Switch the session to that worktree. The PreToolUse hook will refuse subsequent commits to `main`/`master`/`develop`, so you must be on a feature branch from this point.
 
+If `--jira <KEY>` was passed: invoke `orc:jira-cli` and run `acli jira workitem view "$KEY" --fields "summary" --json | jq -r '.fields.summary'`. Slugify (lowercase, replace non-`[a-z0-9-]` with `-`, collapse repeats, trim leading/trailing `-`). Suggest `feat/<KEY>-<slug>` as the branch name to `orc:using-git-worktrees`. The user can accept or override.
+
 ### Phase 2 — Plan
 
-Invoke `/orc:plan` (skip `--issues`, skip `--grill` unless user opts in). The plan is written to `.orc/<branch>/files/plan.md`.
+Invoke `/orc:plan` (skip `--issues`, skip `--grill` unless user opts in). Forward `--jira <KEY>` if it was passed to `/orc:start` — `/orc:plan`'s Phase 1 prompt will be suppressed and the link recorded silently in `.orc/orc.json` + `checkpoint.md`. The plan is written to `.orc/<branch>/files/plan.md`.
 
 ### Phase 3 — First failing test
 

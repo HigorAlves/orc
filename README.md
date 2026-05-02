@@ -20,7 +20,7 @@
 
 ## What it does
 
-`orc` is a personal-workflow plugin: **50 curated skills, 16 composite slash commands, 10 specialist subagents, and 3 hook scripts** that quietly enforce discipline (no commits to `main`, dependency pre-flight check, skill catalog injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged" with `orc-implementer` writing the code slice-by-slice in between.
+`orc` is a personal-workflow plugin: **53 curated skills, 19 composite slash commands, 10 specialist subagents, and 3 hook scripts** that quietly enforce discipline (no commits to `main`, dependency pre-flight check, skill catalog injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged" with `orc-implementer` writing the code slice-by-slice in between.
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
@@ -42,11 +42,14 @@ flowchart LR
 | Debugging a known bug | `/orc:debug` |
 | Reviewing someone else's PR | `/orc:code-review` |
 | Responding to your PR's review comments | `/orc:address` |
+| Authoring a Product Requirements Document | `/orc:prd` |
+| Authoring a Technical Requirements Document | `/orc:trd` |
 | Locking in an architectural decision | `/orc:adr` |
 | Proposing a system design before code | `/orc:rfc` |
 | Writing an incident postmortem | `/orc:postmortem` |
 | Bootstrapping a new package/service | `/orc:scaffold` |
 | Parallel-dispatching N independent tasks | `/orc:fan-out` |
+| Filing/linking a Jira ticket from the terminal | `/orc:jira` |
 
 Or skip the per-phase invocations and use **`/orc:flow`** to drive the whole loop — gates at every phase, autonomous implementation in between via `orc-implementer`.
 
@@ -66,6 +69,7 @@ Or skip the per-phase invocations and use **`/orc:flow`** to drive the whole loo
 | A multi-week design needing critique | [examples/09 — Writing an RFC](./examples/09-writing-an-rfc.md) |
 | A web change ready to ship | [examples/10 — Web QA before shipping](./examples/10-web-qa-before-shipping.md) |
 | Multiple teammates' PRs to review (or any N independent tasks) | [examples/11 — Multi-PR review with /orc:fan-out](./examples/11-multi-pr-review.md) |
+| A Jira ticket to link to a session and close on PR merge | [examples/12 — Linking a Jira ticket and shipping with `Resolves <KEY>`](./examples/12-link-jira-and-ship.md) |
 
 Each example follows the same shape — *Scenario → Flow → Walk-through → Artifacts → Done when → Variants → Iron rules in play* — so you can scan to the relevant section.
 
@@ -91,12 +95,21 @@ orc's SessionStart pre-flight (`hooks/scripts/session-start-tool-check.sh`) veri
 | `jq` | required | hook scripts (parse Bash tool input) |
 | `gh` | recommended | `/orc:code-review`, `/orc:address`, `/orc:ship`, `/orc:postmortem` |
 | `agent-browser` | recommended | `/orc:qa` (web mode — browser-driven QA evidence) |
+| `acli` | recommended | `/orc:jira`, `/orc:plan\|start\|debug\|flow` (Jira ticket linking), `/orc:prd\|trd` (`--from-jira <KEY>` seeding) |
 
 Suppress the check on machines where missing tools are intentional:
 
 ```bash
 export ORC_SKIP_TOOL_CHECK=1
 ```
+
+## Environment variables
+
+| Variable | Effect |
+|----------|--------|
+| `ORC_SKIP_TOOL_CHECK=1` | Suppress the SessionStart `⚠ Tool check` block when a recommended dependency is intentionally missing. |
+| `ORC_ALLOW_PROTECTED=1` | Allow `git commit` / `git push` on `main` / `master` / `develop`. The PreToolUse hook refuses by default; this flag opts in for the rare scaffold/hot-fix case. |
+| `ORC_JIRA_PR_KEYWORD` | PR-body trailer keyword used by `/orc:ship` when the active session has a bound `jiraTicket`. Defaults to `Resolves`. Set to `Closes` or `Fixes` for orgs whose Jira/GitHub integration uses a different keyword. |
 
 ## Day-one command catalog
 
@@ -116,6 +129,9 @@ export ORC_SKIP_TOOL_CHECK=1
 | `/orc:status` | Show all active `.orc/` workspaces |
 | `/orc:adr` | Author an Architecture Decision Record (`docs/adr/NNNN-*.md`) |
 | `/orc:rfc` | Author a system-design RFC pre-implementation (`docs/rfcs/NNNN-*.md`) |
+| `/orc:prd` | Author a Product Requirements Document (`docs/prds/NNNN-*.md`); supports `--interview` and `--from-jira <KEY>` |
+| `/orc:trd` | Author a Technical Requirements Document (`docs/trds/NNNN-*.md`); supports `--from-prd NNNN` |
+| `/orc:jira` | Manage Jira tickets via `acli` (create/subtask/link/view/search/transition); `bind`/`unbind` a ticket key to the current `.orc/` session |
 | `/orc:postmortem` | Author a blameless incident postmortem; files P0 action items as tracker issues |
 | `/orc:cleanup` | Remove `.orc/` state, worktree, and (if merged) branch for completed sessions |
 
@@ -123,7 +139,7 @@ export ORC_SKIP_TOOL_CHECK=1
 
 **Core (18, always available):** `tdd`, `systematic-debugging`, `verification-before-completion`, `writing-plans`, `executing-plans`, `caveman-review`, `caveman-pr`, `receiving-code-review`, `requesting-code-review`, `git-commit`, `gh-cli`, `using-git-worktrees`, `finishing-a-development-branch`, `dispatching-parallel-agents`, `error-handling-patterns`, `git-advanced-workflows`, `architecture-patterns`, `improve-codebase-architecture`.
 
-**Senior/architect practice (3, authored for orc):** `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem` (blameless incident postmortems).
+**Senior/architect practice (5, authored for orc):** `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem` (blameless incident postmortems), `prd-writing` (Product Requirements Documents), `trd-writing` (Technical Requirements Documents).
 
 **Pack: web-react (7):** `next-best-practices`, `vercel-react-best-practices`, `vercel-composition-patterns`, `frontend-design`, `shadcn`, `tailwind-design-system`, `vitest`.
 
@@ -131,9 +147,9 @@ export ORC_SKIP_TOOL_CHECK=1
 
 **Pack: ios (2):** `swiftui-pro`, `mobile-ios-design`.
 
-**Pack: workflow-extras (11):** `docker-expert`, `turborepo`, `sentry-cli`, `skill-creator`, `write-a-skill`, `documentation-writer`, `create-readme`, `to-prd`, `to-issues`, `grill-me`, `agent-browser` (drives a real browser for `/orc:qa` web mode).
+**Pack: workflow-extras (12):** `docker-expert`, `turborepo`, `sentry-cli`, `jira-cli`, `skill-creator`, `write-a-skill`, `documentation-writer`, `create-readme`, `to-prd`, `to-issues`, `grill-me`, `agent-browser` (drives a real browser for `/orc:qa` web mode).
 
-Plus the meta skill `using-orc` (auto-injected at SessionStart, encodes iron rules). **Total: 50 skills.**
+Plus the meta skill `using-orc` (auto-injected at SessionStart, encodes iron rules). **Total: 53 skills.**
 
 ## Insight blocks
 
@@ -176,8 +192,8 @@ Without the required artifacts, "QA passed" is not an accepted claim. The `orc-q
 orc/
 ├── .claude-plugin/plugin.json   # manifest
 ├── .orc/                        # gitignored — workspace state per session
-├── skills/<name>/SKILL.md       # 50 skills (5 authored + 45 curated)
-├── commands/<name>.md           # 16 slash commands (incl. /orc:flow umbrella)
+├── skills/<name>/SKILL.md       # 53 skills (7 authored + 46 curated)
+├── commands/<name>.md           # 19 slash commands (incl. /orc:flow umbrella)
 ├── agents/orc-<role>.md         # 10 subagents (incl. orc-implementer for /orc:flow Phase 5)
 ├── hooks/
 │   ├── hooks.json

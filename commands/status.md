@@ -26,24 +26,24 @@ Read `.orc/orc.json`. If absent, output `No orc workspaces yet — nothing to re
 
 ### Phase 2 — Render
 
-Render a markdown table:
+Render a markdown table. If a session has `jiraTicket` set, append a `Jira` column showing `[<KEY>]`; if no session in the table has one, omit the column entirely (don't show empty cells everywhere just because one session is unlinked):
 
 ```
-| # | Command   | Branch              | Phase | Status        | Updated      |
-|---|-----------|--------------------|-------|---------------|--------------|
-| 1 | plan      | feat-142-notifs    | 3/5   | in_progress   | 2h ago       |
-| 2 | debug     | fix-cache-stale    | 2/6   | in_progress   | yesterday    |
-| 3 | fan-out   | refactor-billing   | 4/6   | in_progress   | 3 days ago   |
+| # | Command   | Branch                       | Phase | Status        | Updated     | Jira       |
+|---|-----------|------------------------------|-------|---------------|-------------|------------|
+| 1 | plan      | feat-142-notifs              | 3/5   | in_progress   | 2h ago      | [JRA-123]  |
+| 2 | debug     | fix-cache-stale              | 2/7   | in_progress   | yesterday   | —          |
+| 3 | fan-out   | refactor-billing             | 4/6   | in_progress   | 3 days ago  | [PLAT-99]  |
 ```
 
 Apply filters (`--all`, `--branch`) before rendering. Sort by `updated_at` descending.
 
 ### Phase 3 — Per-session detail
 
-After the table, for each in-progress session, render a 2-line summary:
+After the table, for each in-progress session, render a 2-line summary. Append `· [<KEY>]` to the title line when `jiraTicket` is set:
 
 ```
-1. plan / feat-142-notifs
+1. plan / feat-142-notifs · [JRA-123]
    Last artifact: .orc/feat-142-notifs/files/plan.md (last updated 2h ago)
    Next: phase 4 — confirm with user, then optionally `/orc:plan --issues`
 ```

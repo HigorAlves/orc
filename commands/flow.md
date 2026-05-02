@@ -1,6 +1,6 @@
 ---
-description: End-to-end feature/bug/refactor pipeline with interactive gates at every phase. Walks plan → start → implement → QA → ship → address → cleanup. Resumable from any phase via /orc:resume. Each phase ends with AskUserQuestion (select-from-list) for confirmation, iteration, skip, or abort.
-argument-hint: "[--type=feature|bug|refactor|docs] [--rfc] [--caveman] [--pause-at-implement] <one-line task description>"
+description: End-to-end feature/bug/refactor pipeline with interactive gates at every phase. Walks plan → start → implement → QA → ship → address → cleanup. Resumable from any phase via /orc:resume. Each phase ends with AskUserQuestion (select-from-list) for confirmation, iteration, skip, or abort. Phase 1 (Triage) always asks to link a Jira ticket; --jira <KEY> suppresses the prompt and links silently.
+argument-hint: "[--type=feature|bug|refactor|docs] [--rfc] [--caveman] [--pause-at-implement] [--jira <KEY>] <one-line task description>"
 allowed-tools:
   - Read
   - Write
@@ -22,6 +22,8 @@ allowed-tools:
   - Bash(node:*)
   - Bash(date:*)
   - Bash(agent-browser:*)
+  - Bash(acli *)
+  - Bash(jq *)
 ---
 
 # /orc:flow
@@ -41,6 +43,7 @@ Use `/orc:flow` when you want orc to drive the whole loop. Skip it (use the per-
 - `--rfc` — for `--type=feature` or `--type=refactor`: insert an RFC phase before planning. Required when the work is multi-week, multi-team, or has genuine alternatives.
 - `--caveman` — pass through to `/orc:ship` and `/orc:address` so PR bodies and replies use the terse style.
 - `--pause-at-implement` — pause Phase 5 for the human to write the implementation manually. Default behavior is autonomous: dispatches `orc-implementer` to drive the implementation slice-by-slice. Use `--pause-at-implement` when you want to write the code yourself.
+- `--jira <KEY>` — link a Jira ticket key (e.g. `JRA-123`) to this flow's session silently. Suppresses the Phase 1 link prompt. The key follows the work through every phase, surfaces in `/orc:status`, and lands as `Resolves <KEY>` in the Phase 7 PR body. Validate against `^[A-Z][A-Z0-9_]*-\d+$`.
 
 ## Phases
 
@@ -89,7 +92,15 @@ AskUserQuestion: Scope?
 - multi-quarter  — too big for /orc:flow; suggests breaking down with /orc:plan --issues first
 ```
 
-Initialize `.orc/<sanitized-branch>/files/` and write `checkpoint.md` (phase=1, command=flow, total_phases=9 — adjust for skipped phases). Append entry to `.orc/orc.json` with `command: "flow"`.
+**Resolve the Jira link.** Before initializing workspace state:
+
+- If `--jira <KEY>` was passed, validate against `^[A-Z][A-Z0-9_]*-\d+$`. Reject and stop on mismatch.
+- Otherwise, ask via `AskUserQuestion` — *"Link a Jira ticket to this flow?"* with options:
+  - `Paste a key` (then prompt for the key, validate the same way)
+  - `Skip — I'll bind later via /orc:jira bind`
+  - `No ticket — this work has no tracker entry`
+
+Initialize `.orc/<sanitized-branch>/files/` and write `checkpoint.md` (phase=1, command=flow, total_phases=9 — adjust for skipped phases). Add `jiraTicket: <KEY>` to the frontmatter when set. Append entry to `.orc/orc.json` with `command: "flow"` and `jiraTicket: <KEY>` (omit field if null).
 
 ### Phase 2 — RFC (optional)
 

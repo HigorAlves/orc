@@ -1,6 +1,6 @@
 ---
-description: Plan a feature or refactor — produces a TDD-shaped plan, with optional design grilling, and decomposes into independently shippable issues. Writes to .orc/<branch>/files/.
-argument-hint: "[--grill] [--issues] <feature description>"
+description: Plan a feature or refactor — produces a TDD-shaped plan, with optional design grilling, and decomposes into independently shippable issues. Writes to .orc/<branch>/files/. Phase 1 always asks to link a Jira ticket (skip-able); --jira <KEY> suppresses the prompt and links silently.
+argument-hint: "[--grill] [--issues] [--jira <KEY>] <feature description>"
 allowed-tools:
   - Read
   - Write
@@ -12,6 +12,7 @@ allowed-tools:
   - Bash(date:*)
   - Bash(git rev-parse:*)
   - Bash(git branch --show-current:*)
+  - Bash(jq *)
 ---
 
 # /orc:plan
@@ -22,6 +23,7 @@ Turn a feature or refactor request into a written, TDD-shaped implementation pla
 
 - `--grill` — after drafting the plan, invoke `orc:grill-me` to stress-test the design before committing.
 - `--issues` — after the plan is approved, run `orc:to-issues` to break it into independently grabbable issues.
+- `--jira <KEY>` — link a Jira ticket key (e.g. `PROJ-123`) to this session silently. Suppresses the Phase 1 link prompt. Validate against `^[A-Z][A-Z0-9_]*-\d+$`.
 - The feature description is the rest of the argument string.
 
 ## Workflow
@@ -42,8 +44,15 @@ If the input is short and clear, skip Phase 0 and go straight to Phase 1.
 1. Determine the current branch: `git branch --show-current`.
 2. Sanitize: `feat/142-foo` → `feat-142-foo`.
 3. Create `.orc/<sanitized-branch>/files/` if it doesn't exist.
-4. Append/update an entry in `.orc/orc.json` (central registry) with `command: "plan"`, `status: in_progress`, `current_phase: 1`, `total_phases: 4` (or 5 with `--issues`, 6 with `--grill --issues`).
-5. Write `checkpoint.md` (phase=1, status=in_progress, started_at).
+4. **Resolve the Jira link.**
+   - If `--jira <KEY>` was passed: validate against `^[A-Z][A-Z0-9_]*-\d+$`. Reject and stop on mismatch.
+   - Otherwise: ask via `AskUserQuestion` — *"Link a Jira ticket to this session?"* with options:
+     - `Paste a key` (then prompt for the key, validate the same way)
+     - `Skip — I'll bind later via /orc:jira bind`
+     - `No ticket — this work has no tracker entry`
+   - When a key is resolved, set `JIRA_TICKET=<KEY>`. Otherwise leave `JIRA_TICKET=null`.
+5. Append/update an entry in `.orc/orc.json` (central registry) with `command: "plan"`, `status: in_progress`, `current_phase: 1`, `total_phases: 4` (or 5 with `--issues`, 6 with `--grill --issues`), and `jiraTicket: <KEY>` (omit field if null).
+6. Write `checkpoint.md` with frontmatter including `jiraTicket: <KEY>` if set.
 
 ### Phase 2 — Draft the plan
 

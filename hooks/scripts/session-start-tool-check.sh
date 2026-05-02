@@ -17,7 +17,7 @@ fi
 REQUIRED=("git" "jq")
 # Strongly recommended (specific commands fail without them, but the rest of
 # the plugin still works).
-RECOMMENDED=("gh" "agent-browser")
+RECOMMENDED=("gh" "agent-browser" "acli")
 
 missing_required=()
 missing_recommended=()
@@ -80,6 +80,13 @@ hint_for() {
     agent-browser)
       echo "npm install -g agent-browser && agent-browser install"
       ;;
+    acli)
+      case "$platform" in
+        macos) echo "brew install --cask atlassian-acli  — then: acli jira auth login --web" ;;
+        debian|fedora|arch|linux) echo "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/  — then: acli jira auth login --web" ;;
+        *) echo "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/" ;;
+      esac
+      ;;
     *)
       echo "see your distro's package manager"
       ;;
@@ -102,6 +109,7 @@ build_block() {
       case "$cmd" in
         gh) printf "      Used by: /orc:code-review, /orc:address, /orc:ship, /orc:postmortem\n" ;;
         agent-browser) printf "      Used by: /orc:qa (web mode — required for browser-driven QA evidence)\n" ;;
+        acli) printf "      Used by: /orc:jira, /orc:plan|start|debug|flow (Jira ticket linking), /orc:prd|trd (--from <jira-key>)\n" ;;
       esac
     done
   fi

@@ -134,6 +134,8 @@ Each question should be **answerable** ("yes/no" or "pick one of these options")
 <one of>:
 - "Proceed to /orc:plan — PRD is clear enough; questions are P1/P2 only."
 - "Run /orc:rfc first — multiple valid designs depend on the P0 answers."
+- "Author /orc:prd first — input is too thin to call a PRD; formalize Problem / Audience / Success metrics before any design."
+- "Pin the contract via /orc:trd — product intent is clear, but the technical contract (interfaces, data, failure modes) needs to be settled before plan."
 - "Hold — too many P0 questions; loop back to PM before any engineering work."
 - "Reject scope — PRD is internally inconsistent; surface contradictions."
 ```

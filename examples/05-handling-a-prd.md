@@ -1,5 +1,7 @@
 # 05 — Handling a PRD
 
+> **Receiving vs. authoring** — this example is for *receiving* a PRD (PM hands you one). If you need to *author* a PRD from scratch, reach for **`/orc:prd`** instead (see `skills/prd-writing/SKILL.md`); for the *technical contract* downstream of a PRD, reach for **`/orc:trd`**.
+
 ## Scenario
 
 PM hands you a PRD: *"In-app notifications system — users see a bell icon with unread count, click to see a list, mark read, etc."* The PRD is 4 pages. You read it once, you have questions, and you need to decide whether to start coding or float a design first.

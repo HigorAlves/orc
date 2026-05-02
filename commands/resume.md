@@ -36,7 +36,7 @@ If a session ID/branch wasn't passed, render the active list via `AskUserQuestio
 ```
 Active orc sessions:
 1. plan       feat-142-notifs        phase 3/5  (started 2h ago)
-2. debug      fix-cache-stale        phase 2/6  (started yesterday)
+2. debug      fix-cache-stale        phase 2/7  (started yesterday)
 3. fan-out    refactor-billing       phase 4/6  (started 3 days ago)
 ```
 

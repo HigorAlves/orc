@@ -82,6 +82,8 @@ No "QA passed" claim is accepted without the required artifacts in `qa/`. `orc:v
 | `orc:adr-writing` | When locking in a non-trivial architectural decision — authors `docs/adr/NNNN-*.md` |
 | `orc:rfc-writing` | When designing a system/feature pre-implementation — authors `docs/rfcs/NNNN-*.md` to surface alternatives |
 | `orc:postmortem` | After a production incident — blameless postmortem with timeline, root causes, action items |
+| `orc:prd-writing` | When authoring a Product Requirements Document from scratch — interview-driven scaffolding, publishes to `docs/prds/NNNN-*.md` |
+| `orc:trd-writing` | When formalizing a technical contract derived from a PRD before RFC/plan — publishes to `docs/trds/NNNN-*.md` |
 
 Stack-specific skills (load when working in that stack):
 
@@ -90,7 +92,7 @@ Stack-specific skills (load when working in that stack):
 | **web-react** | `orc:next-best-practices`, `orc:vercel-react-best-practices`, `orc:vercel-composition-patterns`, `orc:frontend-design`, `orc:shadcn`, `orc:tailwind-design-system`, `orc:vitest` |
 | **backend** | `orc:nodejs-best-practices`, `orc:nestjs-best-practices`, `orc:typescript-advanced-types`, `orc:postgresql-table-design`, `orc:postgresql-optimization`, `orc:postgresql-code-review`, `orc:stripe-best-practices`, `orc:upgrade-stripe` |
 | **ios** | `orc:swiftui-pro`, `orc:mobile-ios-design` |
-| **workflow-extras** | `orc:docker-expert`, `orc:turborepo`, `orc:sentry-cli`, `orc:skill-creator`, `orc:write-a-skill`, `orc:documentation-writer`, `orc:create-readme`, `orc:to-prd`, `orc:to-issues`, `orc:grill-me`, `orc:agent-browser` |
+| **workflow-extras** | `orc:docker-expert`, `orc:turborepo`, `orc:sentry-cli`, `orc:jira-cli`, `orc:skill-creator`, `orc:write-a-skill`, `orc:documentation-writer`, `orc:create-readme`, `orc:to-prd`, `orc:to-issues`, `orc:grill-me`, `orc:agent-browser` |
 
 ## Available Commands
 
@@ -112,6 +114,9 @@ Stack-specific skills (load when working in that stack):
 | `/orc:rfc` | Author a system-design RFC pre-implementation (`docs/rfcs/NNNN-*.md`) | ✅ |
 | `/orc:postmortem` | Author a blameless incident postmortem; files P0 action items as tracker issues | ✅ |
 | `/orc:cleanup` | Remove `.orc/` state, worktree, and (if merged) branch for completed sessions | writes ✅ |
+| `/orc:prd` | Author a Product Requirements Document (`docs/prds/NNNN-*.md`) | — |
+| `/orc:trd` | Author a Technical Requirements Document (`docs/trds/NNNN-*.md`) | — |
+| `/orc:jira` | Manage Jira tickets via `acli` (create/subtask/link/view/search/transition); `bind`/`unbind` attach a ticket key to the current `.orc/` session | bind/unbind ✅ |
 
 ## The Rule
 
