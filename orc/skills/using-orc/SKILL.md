@@ -39,6 +39,7 @@ These apply at all times, regardless of context:
 4. **No fixes without root cause** — Find why it's broken before changing code. Defer to `orc:systematic-debugging`.
 5. **No AI attribution** — Never mention Claude, AI, or automation in code, commits, or PRs. Never add `Co-Authored-By` trailers or any co-author references to commits.
 6. **No multi-phase work without `.orc/` state** — Any command that takes more than one phase (`/orc:plan`, `/orc:start`, `/orc:debug`, `/orc:fan-out`, `/orc:qa` for web) MUST checkpoint after every phase to `.orc/<sanitized-branch>/files/checkpoint.md` and register the session in `.orc/orc.json`. State must survive interruption — `/orc:resume` depends on it.
+7. **No silent broadcast in workspace mode** — When the SessionStart banner reports `orc context: workspace[…]`, repo-touching commands (`/orc:flow`, `/orc:plan`, `/orc:start`, `/orc:ship`, `/orc:address`, `/orc:qa`, `/orc:debug`, `/orc:cleanup`, `/orc:resume`, `/orc:code-review`, `/orc:fan-out`) MUST NOT operate on more than the cwd's repo without an explicit flag (`--repos`, `--repo`, `--all-repos`, `--this-repo`) or a confirming `AskUserQuestion`. Defer to `orc:workspace-mode` for the precedence rules.
 
 ## Web QA evidence (hard rule)
 
@@ -56,6 +57,19 @@ For any change touching a web surface, `/orc:qa` MUST drive a real browser via t
 5. Optional bonus evidence (NOT required): `trace.json` (Chrome DevTools), `react-renders.json`, `vitals.json`, an OS-recorded `video.mov` for animated changes.
 
 No "QA passed" claim is accepted without the required artifacts in `qa/`. `orc:verification-before-completion` enforces this. agent-browser does NOT record video natively; if the change is animation-heavy and you need a video, capture an OS screen recording (e.g. `screencapture -v` on macOS) into `qa/video.mov`.
+
+## Workspace mode
+
+A **workspace** is a parent directory that contains 2+ sibling git repos under one logical product (e.g. `~/work/myapp/{api,ui,docs}`). The SessionStart hook auto-detects it and emits an `orc context: workspace[…]` banner; the same context is exposed to commands via `lib/workspace-detect.sh`.
+
+In workspace mode:
+
+- Shared state (the cross-repo plan, checkpoint, registry) lives at `<workspace>/.orc/`. Per-repo state stays at `<repo>/.orc/` and carries a `workspace-link.json` back-pointer.
+- Repo-touching commands take `--repos a,b` (broadcast), `--repo a` (narrow), `--all-repos` (skip prompt + broadcast), or `--this-repo` (pin to cwd). Default when no flag is given: prompt via `AskUserQuestion`.
+- `orc-implementer`, `orc-code-fixer`, `orc-test-author`, `orc-pr-reviewer`, `orc-qa-validator`, `orc-debug-investigator` all accept `repo` + `repoPath` inputs. Sibling repos are awareness-only — agents never edit across the boundary.
+- `/orc:ship` opens N PRs and second-passes each with reciprocal cross-links + merge order.
+
+Defer to `orc:workspace-mode` for full mechanics, branch-collision handling, and backward-compat rules.
 
 ## Available Skills
 
@@ -85,6 +99,7 @@ No "QA passed" claim is accepted without the required artifacts in `qa/`. `orc:v
 | `orc:prd-writing` | When authoring a Product Requirements Document from scratch — interview-driven scaffolding, publishes to `docs/prds/NNNN-*.md` |
 | `orc:trd-writing` | When formalizing a technical contract derived from a PRD before RFC/plan — publishes to `docs/trds/NNNN-*.md` |
 | `orc:inline-review` | When posting a real GitHub PR review with inline comments + suggestion blocks; defines the severity → event mapping rule that prevents "approve while flagging bugs" contradictions. Used by `/orc:code-review`. |
+| `orc:workspace-mode` | When working in a parent dir that contains multiple sibling git repos (e.g. `~/work/myapp/{api,ui}`) — flag precedence, per-repo agent dispatch, linked-PR mechanics, branch-collision recovery |
 
 Stack-specific skills (load when working in that stack):
 

@@ -54,6 +54,16 @@ After all tasks complete and verified:
 
 **Don't force through blockers** - stop and ask.
 
+## Workspace mode
+
+When the plan was authored in workspace mode (caller is `/orc:flow` or `/orc:plan` with `--repos`), each slice carries a `repo:` annotation. Execution rules:
+
+- Before each slice, **`cd` into the slice's `repoPath`** (passed by the caller as input). All git, test, lint, and edit commands MUST run inside that repo's tree.
+- **Sibling repos are off-limits.** A slice tagged `repo: api` may not edit files in `<workspaceRoot>/ui/`. The worktree-path boundary already enforces this physically; treat any urge to cross it as a bug in the plan, not in your execution — escalate.
+- The plan's **Cross-repo contract** section (when present) is frozen for the duration of execution. If a slice would change an endpoint shape, schema, or message format listed there, stop and surface — that's a plan change, not an implementation choice.
+- **Restore-before-act** extends to per-repo state. On resume, read both `<workspaceRoot>/.orc/<branch>/files/checkpoint.md` (workspace-level cursor) **and** `<repoPath>/.orc/<branch>/files/progress.md` (this repo's slice log) before executing the next slice.
+- When dispatched in parallel for a workspace plan (one implementer per repo), treat your `repo` + `repoPath` as your full universe — sibling implementers are operating in their own repos simultaneously.
+
 ## Remember
 - Review plan critically first
 - Follow plan steps exactly

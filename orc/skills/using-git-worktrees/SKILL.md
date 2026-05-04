@@ -17,6 +17,16 @@ Git worktrees create isolated workspaces sharing the same repository, allowing w
 
 Follow this priority order:
 
+### 0. Workspace mode (highest priority)
+
+If the caller already sourced `lib/workspace-detect.sh` and `ORC_CONTEXT=workspace`, prefer the workspace-shared trees root:
+
+```bash
+path="$ORC_WORKSPACE_ROOT/.orc/.worktrees/<repo>/<branch>"
+```
+
+This location is outside every child repo, so the `.gitignore` verification step is unnecessary by construction. Use this path when the caller provides a `repo` + `branch` pair (e.g. from `/orc:start` or `/orc:flow` Phase 4 in workspace mode). If the caller hasn't passed `repo`, fall through to the existing priority order — workspace-mode worktrees are always per-repo and always require a target repo.
+
 ### 1. Check Existing Directories
 
 ```bash
@@ -80,11 +90,17 @@ No .gitignore verification needed - outside project entirely.
 project=$(basename "$(git rev-parse --show-toplevel)")
 ```
 
+In workspace mode, project name is the explicit `repo` argument from the caller (e.g. `api`), not derived from `git rev-parse` (which would just return the repo basename and lose the workspace context). The caller passes both `repo` and `branch`.
+
 ### 2. Create Worktree
 
 ```bash
 # Determine full path
 case $LOCATION in
+  workspace)
+    # Workspace mode: caller supplied $ORC_WORKSPACE_ROOT, $REPO, $BRANCH_NAME
+    path="$ORC_WORKSPACE_ROOT/.orc/.worktrees/$REPO/$BRANCH_NAME"
+    ;;
   .worktrees|worktrees)
     path="$LOCATION/$BRANCH_NAME"
     ;;
@@ -93,7 +109,8 @@ case $LOCATION in
     ;;
 esac
 
-# Create worktree with new branch
+# Create worktree with new branch (workspace mode: cd into the repo first)
+[ "$LOCATION" = "workspace" ] && cd "$ORC_WORKSPACE_ROOT/$REPO"
 git worktree add "$path" -b "$BRANCH_NAME"
 cd "$path"
 ```

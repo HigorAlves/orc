@@ -1,6 +1,6 @@
 ---
-description: Parallel-dispatch N independent tasks that don't share state — paralleled investigations, multi-PR review, multi-repo work, doc bulk updates. For parallel-safe slices within a single feature plan, prefer /orc:flow (which dispatches parallel batches inside Phase 5 with the full lifecycle around them). /orc:fan-out is the standalone parallelism primitive, no surrounding lifecycle. Writes per-task results to .orc/<branch>/files/fan-out/.
-argument-hint: "[--from-plan] [--max <n>] [--agent <name>] <task list or 'use plan.md'>"
+description: Parallel-dispatch N independent tasks that don't share state — paralleled investigations, multi-PR review, multi-repo work, doc bulk updates. For parallel-safe slices within a single feature plan, prefer /orc:flow (which dispatches parallel batches inside Phase 5 with the full lifecycle around them). /orc:fan-out is the standalone parallelism primitive, no surrounding lifecycle. Writes per-task results to .orc/<branch>/files/fan-out/. Workspace-aware — task axis can be (slice × repo) for cross-repo plans.
+argument-hint: "[--from-plan] [--max <n>] [--agent <name>] [--repos a,b | --repo a | --all-repos | --this-repo] <task list or 'use plan.md'>"
 allowed-tools:
   - Read
   - Write
@@ -11,6 +11,7 @@ allowed-tools:
   - Task
   - AskUserQuestion
   - Bash(git *)
+  - Bash(. */lib/workspace-detect.sh*)
 ---
 
 # /orc:fan-out
@@ -33,10 +34,19 @@ The two are different abstraction levels: `/orc:flow` is a lifecycle, `/orc:fan-
 
 ## Workflow
 
+### Phase 0 — Detect context
+
+```bash
+. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
+eval "$(orc_detect_context)"
+```
+
+In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. The fan-out task axis becomes `(slice × repo)`: when a plan has slices tagged `repo: api` and `repo: ui`, each slice fans out to one implementer in its own repo. When tasks are not slice-shaped (research, multi-PR review, doc updates), the axis is just per-repo.
+
 ### Phase 1 — Load tasks
 
-If `--from-plan`: read the plan file, extract tasks marked as parallel-safe (the `orc:writing-plans` skill marks these explicitly).
-Otherwise: parse the user's argument list.
+If `--from-plan`: read the plan file at `${ORC_STATE_DIR}/<branch>/files/plan.md`, extract tasks marked as parallel-safe (the `orc:writing-plans` skill marks these explicitly). In workspace mode, also read each slice's `repo:` tag and use it as the dispatch's `repo` parameter.
+Otherwise: parse the user's argument list. In workspace mode, if the task list doesn't already carry repo annotations (e.g. `(repo=api) write health endpoint`), apply `targetRepos` as the cartesian axis: each task spawns one dispatch per target repo, unless the task explicitly names one.
 
 ### Phase 2 — Verify independence
 
@@ -44,7 +54,7 @@ Invoke `orc:dispatching-parallel-agents`. The skill enforces that no two tasks s
 
 ### Phase 3 — Init workspace
 
-Create `.orc/<branch>/files/fan-out/` with one subdir per task: `task-01-<slug>/`, `task-02-<slug>/`, etc. Write `.orc/<branch>/files/checkpoint.md` (phase=3, status=in_progress, total_phases=6, command=fan-out, started_at=now). Append entry to `.orc/orc.json` central registry with the task count and per-task status.
+Create `${ORC_STATE_DIR}/<branch>/files/fan-out/` with one subdir per task. In workspace mode the subdir naming includes the repo: `task-01-api-health/`, `task-01-ui-health/`. Write `${ORC_STATE_DIR}/<branch>/files/checkpoint.md` (phase=3, status=in_progress, total_phases=6, command=fan-out, started_at=now). Append entry to `${ORC_STATE_DIR}/orc.json` central registry with the task count and per-task status. In workspace mode, set `scope: "workspace"` and `repos: targetRepos` on the registry entry.
 
 ### Phase 4 — Dispatch (parallel)
 
@@ -56,7 +66,8 @@ For each task, pick the right agent:
 Each `Task` dispatch gets:
 - The task description (or slice ID for implementer)
 - The task's working directory (worktree if available, else current)
-- The output path: `.orc/<branch>/files/fan-out/task-NN-<slug>/result.md`
+- The output path: `${ORC_STATE_DIR}/<branch>/files/fan-out/task-NN-<slug>/result.md`
+- **Workspace mode only**: `repo`, `repoPath` (= `<workspaceRoot>/<repo>` or its worktree), `siblingRepos`. The dispatcher cd's into `repoPath` before invoking the agent so all per-task git/test commands run in that repo's tree.
 
 All `Task` calls are issued in a single response (parallel execution). Cap by `--max`.
 

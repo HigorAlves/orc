@@ -24,6 +24,17 @@ When dispatched, you'll get:
 - The failing test for slice 1 (already committed by Phase 4) — applies only when slice 1 is in your slice list.
 - Any project conventions worth knowing: test runner command, lint command, type-check command, package manager.
 
+### Workspace-mode inputs (optional)
+
+When the caller is running in workspace mode (multiple sibling repos under one parent), the dispatch also includes:
+
+- `repo` — the name of the repo you own for this dispatch (e.g. `api`).
+- `repoPath` — absolute path to that repo's worktree. Run all `git`, test, and edit commands inside this path.
+- `siblingRepos` — list of sibling repo names that other implementer instances are operating on **in parallel**. You must NOT touch files outside `repoPath`; sibling implementers are writing to their own repos concurrently.
+- `crossRepoContract` (optional) — pointer to a plan section describing the API/wire-format contract between repos (e.g. "ui calls `POST /export`; api implements it"). Treat this contract as **frozen** for the duration of your run — do not unilaterally change endpoint shapes, schemas, or message formats listed there.
+
+When these inputs are present, slices in your slice list are already filtered to those tagged `repo: <yourRepo>` in the plan. When absent, single-repo mode applies and behavior is unchanged.
+
 ## Single-slice vs multi-slice dispatch
 
 You operate on the **slice list** the caller passed. You don't decide whether to do the whole plan or just one slice — the caller orchestrates that.

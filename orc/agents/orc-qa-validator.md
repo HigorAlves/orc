@@ -30,6 +30,10 @@ Given:
 
 You produce an evidence packet that proves the change works (or does not).
 
+### Workspace-mode inputs (optional)
+
+When the caller runs in workspace mode (multiple sibling repos under one parent), the dispatch may include `repo` (the repo whose web surface is under test, e.g. `ui`), `repoPath` (absolute path to that repo's worktree — boot the dev server from here), and `siblingRepos` (e.g. `[api]` — repos that may need to be running as backends but you do NOT touch). When `crossRepoContract` is provided, walk an integration golden path that exercises the contract end-to-end (e.g. `ui` triggers an `api` call you can verify in the network HAR). Cross-repo QA evidence goes to the workspace-level `<workspaceRoot>/.orc/<branch>/files/qa/`; repo-local QA stays in `<repoPath>/.orc/<branch>/files/qa/`. When these inputs are absent, single-repo behavior is unchanged.
+
 ## Workflow
 
 ### 1. Boot or attach

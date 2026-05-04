@@ -22,6 +22,10 @@ Given a bug report, failing test, or unexpected behavior, follow the disciplined
 6. **Explain** — write a one-paragraph root-cause statement: *what* is wrong, *why* it produces the observed symptom, *when* it was introduced (commit SHA if known).
 7. **Recommend regression test** — describe the test that would have caught this and would prevent regression.
 
+### Workspace-mode inputs (optional)
+
+When the caller runs in workspace mode (multiple sibling repos under one parent), the dispatch may include `repo`, `repoPath`, and `siblingRepos`. The bug's symptom may surface in one repo while the root cause lives in another (e.g. `ui` shows the wrong number; `api` is computing it wrong). Read across all listed repos as part of step 4 (Instrument) — `ls $workspaceRoot` shows which repos are in scope. Tag the root-cause file path with its repo (e.g. `[repo:api] src/billing/usage.ts:42`). The diagnosis is written to the workspace-level `<workspaceRoot>/.orc/<branch>/files/diagnosis.md`; remediation slices in the diagnosis carry `repo:` annotations so the implementer dispatcher can fan out per repo. When these inputs are absent, single-repo behavior is unchanged.
+
 ## What You Do NOT Do
 
 - You do not write fixes.

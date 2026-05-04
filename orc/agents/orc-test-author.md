@@ -27,6 +27,10 @@ You produce a test file (or additions to an existing one) that:
 
 You then **run the suite** and report what passed, failed, and why.
 
+### Workspace-mode inputs (optional)
+
+When the caller runs in workspace mode (multiple sibling repos under one parent), the dispatch may include `repo` (e.g. `api`), `repoPath` (absolute path to that repo's worktree), and `siblingRepos` (awareness only — never touch). When present, write all tests inside `repoPath` using *that* repo's test idioms (its package.json/test runner — sibling repos may use a different stack). When absent, single-repo behavior is unchanged.
+
 ## Test design approach
 
 ### Categories to cover (in this order of priority)

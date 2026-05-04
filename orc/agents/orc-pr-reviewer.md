@@ -24,6 +24,10 @@ Given a PR number or URL, return **structured JSON findings**. The orchestrator 
    - **Inconsistencies** — one call site updated, another forgotten, drift between paired changes → severity `bug`
 4. For complex patches, `Read` the surrounding file (not the whole repo) to verify a finding before flagging it.
 
+### Workspace-mode inputs (optional)
+
+When the orchestrator is reviewing N linked PRs (workspace mode), the dispatch may include `repo` (e.g. `api`) and `repoPath` (absolute path to the repo's checkout). Tag every finding's file path as repo-relative (e.g. `src/auth.ts`, not absolute). The orchestrator merges findings across repos and prefixes each with `[repo:<name>]` when posting. If `siblingRepoPRs` is provided as awareness context (e.g. `[{ repo: ui, ref: org/ui#447 }]`), do not flag a "missing companion change" in your repo as a bug — the companion lives in a sibling PR. When these inputs are absent, single-repo behavior is unchanged.
+
 ## What You Do NOT Flag
 
 - Style, formatting, or opinions a linter could decide.

@@ -1,6 +1,6 @@
 ---
-description: Review someone else's open GitHub PR end-to-end via gh CLI. Posts a real GitHub PR review with inline comments anchored to specific lines and (when applicable) one-click suggestion blocks. Review event (APPROVE / COMMENT / REQUEST_CHANGES) computed mechanically from finding severities — agents do NOT decide the verdict. Mandatory preview gate before posting.
-argument-hint: "<pr-number-or-url> [--context <description>] [--summary-only] [--soft-tests] [--dry-run] [--include-nits]"
+description: Review someone else's open GitHub PR end-to-end via gh CLI. Posts a real GitHub PR review with inline comments anchored to specific lines and (when applicable) one-click suggestion blocks. Review event (APPROVE / COMMENT / REQUEST_CHANGES) computed mechanically from finding severities — agents do NOT decide the verdict. Mandatory preview gate before posting. Workspace-aware — accepts multiple PR refs to review a set of linked PRs as one logical change.
+argument-hint: "<pr-number-or-url> [--prs a#1,b#2,...] [--context <description>] [--summary-only] [--soft-tests] [--dry-run] [--include-nits]"
 allowed-tools:
   - Read
   - Glob
@@ -14,6 +14,7 @@ allowed-tools:
   - Bash(gh api:*)
   - Bash(gh api repos:*/pulls:*/reviews:*)
   - Bash(jq *)
+  - Bash(. */lib/workspace-detect.sh*)
 ---
 
 # /orc:code-review
@@ -24,7 +25,8 @@ The agents (`orc-pr-reviewer`, `orc-security-reviewer`) return structured JSON f
 
 ## Arguments
 
-- `<pr-number-or-url>` — required. Either `123` (current repo), `org/repo#123`, or a full URL.
+- `<pr-number-or-url>` — required (unless `--prs` is given). Either `123` (current repo), `org/repo#123`, or a full URL.
+- `--prs a#1,b#2,...` — workspace mode: review a **set** of linked PRs as one logical change. Each entry is `repo#pr` or full URL. Findings are tagged with `[repo:<name>]` and the merge order from the workspace plan is surfaced in the summary. Mutually exclusive with the positional `<pr-number-or-url>`.
 - `--context <description>` — optional. Describes what the PR is supposed to accomplish, used for requirements-alignment checks.
 - `--summary-only` — produce the legacy text-block markdown summary instead of posting inline. For when you want markdown to paste elsewhere or don't want to auto-post. Skips Phases 5–7.
 - `--soft-tests` — `test`-severity findings drop to COMMENT instead of forcing REQUEST_CHANGES. Use for repos with weak test culture or PRs you explicitly want to land despite test gaps.
@@ -32,6 +34,23 @@ The agents (`orc-pr-reviewer`, `orc-security-reviewer`) return structured JSON f
 - `--include-nits` — keep `nit`-severity findings (default: drop them). Bumps comment count but doesn't change the event.
 
 ## Workflow
+
+### Phase 0 — Detect context
+
+```bash
+. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
+eval "$(orc_detect_context)"
+```
+
+If `--prs` is given OR the workspace registry has an in-progress session whose `linkedPRs` matches the positional ref, the review is **multi-PR**. In multi-PR mode:
+
+- Resolve the full PR set (either from `--prs` or from the matching session's `linkedPRs`).
+- Each PR is reviewed in parallel by its own `orc-pr-reviewer` instance (one `Task` call per PR), each with `repo` + `repoPath` inputs.
+- Findings are merged across PRs and tagged `[repo:<name>]` at the top of each comment body.
+- The Phase 5 summary names every PR and surfaces merge order from the workspace plan ("Merge order: api → ui (per workspace plan)").
+- Phase 7 posts to **each** PR independently — every repo gets its own review event computed from the slice of findings tagged for that repo. **Cross-repo findings** (where one PR's bug requires fixing another) are surfaced via comments on both PRs referencing each other.
+
+If `--prs` is not given and no matching workspace session is found, this command behaves as today (single-PR review).
 
 ### Phase 1 — Eligibility check
 

@@ -1,6 +1,6 @@
 ---
-description: End-to-end feature/bug/refactor pipeline with interactive gates at every phase. Walks plan → start → implement → QA → ship → address → cleanup. Resumable from any phase via /orc:resume. Each phase ends with AskUserQuestion (select-from-list) for confirmation, iteration, skip, or abort. Phase 1 (Triage) always asks to link a Jira ticket; --jira <KEY> suppresses the prompt and links silently.
-argument-hint: "[--type=feature|bug|refactor|docs] [--rfc] [--caveman] [--pause-at-implement] [--jira <KEY>] <one-line task description>"
+description: End-to-end feature/bug/refactor pipeline with interactive gates at every phase. Walks plan → start → implement → QA → ship → address → cleanup. Resumable from any phase via /orc:resume. Each phase ends with AskUserQuestion (select-from-list) for confirmation, iteration, skip, or abort. Phase 1 (Triage) always asks to link a Jira ticket; --jira <KEY> suppresses the prompt and links silently. Workspace-aware: in workspace mode (cwd is a parent dir with ≥2 sibling git repos), the flow spans multiple repos with one shared plan, per-repo implementers, and N linked PRs.
+argument-hint: "[--type=feature|bug|refactor|docs] [--rfc] [--caveman] [--pause-at-implement] [--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <one-line task description>"
 allowed-tools:
   - Read
   - Write
@@ -24,6 +24,7 @@ allowed-tools:
   - Bash(agent-browser:*)
   - Bash(acli *)
   - Bash(jq *)
+  - Bash(. */lib/workspace-detect.sh*)
 ---
 
 # /orc:flow
@@ -44,6 +45,10 @@ Use `/orc:flow` when you want orc to drive the whole loop. Skip it (use the per-
 - `--caveman` — pass through to `/orc:ship` and `/orc:address` so PR bodies and replies use the terse style.
 - `--pause-at-implement` — pause Phase 5 for the human to write the implementation manually. Default behavior is autonomous: dispatches `orc-implementer` to drive the implementation slice-by-slice. Use `--pause-at-implement` when you want to write the code yourself.
 - `--jira <KEY>` — link a Jira ticket key (e.g. `JRA-123`) to this flow's session silently. Suppresses the Phase 1 link prompt. The key follows the work through every phase, surfaces in `/orc:status`, and lands as `Resolves <KEY>` in the Phase 7 PR body. Validate against `^[A-Z][A-Z0-9_]*-\d+$`.
+- `--repos <list>` — workspace mode: comma-separated repo names to target (e.g. `--repos api,ui`). Mutually exclusive with `--repo`, `--all-repos`, `--this-repo`.
+- `--repo <name>` — workspace mode: target one repo. Mutually exclusive with `--repos`.
+- `--all-repos` — workspace mode: skip the Phase 1 repo prompt and broadcast to every detected repo.
+- `--this-repo` — workspace mode: pin to cwd's repo (escape hatch from workspace prompts when cwd is inside one of the workspace's children).
 
 ## Phases
 
@@ -64,6 +69,19 @@ The pipeline is **9 phases**, all gated. Some phases are skipped based on type a
 For `--type=bug`, phases 2–3 collapse into a single `/orc:debug` invocation that produces the diagnosis, regression test, and plan all at once.
 
 ## Workflow
+
+### Phase 0 — Detect context
+
+Before Triage, source the helper to know whether we're in workspace mode:
+
+```bash
+. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
+eval "$(orc_detect_context)"
+```
+
+- `ORC_CONTEXT=repo` → standard single-repo flow. Skip workspace-only steps below.
+- `ORC_CONTEXT=workspace` → workspace flow. The state dir is `$ORC_STATE_DIR` (`<workspaceRoot>/.orc`); per-repo state dirs are `<workspaceRoot>/<repo>/.orc/`.
+- `ORC_CONTEXT=loose` → output `Cwd is neither a git repo nor a workspace parent — cannot run /orc:flow here.` and stop.
 
 ### Phase 1 — Triage
 
@@ -92,6 +110,20 @@ AskUserQuestion: Scope?
 - multi-quarter  — too big for /orc:flow; suggests breaking down with /orc:plan --issues first
 ```
 
+**Resolve repo selection (workspace mode only).** When `ORC_CONTEXT=workspace` and the user did not pass `--repos`, `--repo`, `--all-repos`, or `--this-repo`:
+
+```
+AskUserQuestion: This is a workspace with N repos: <list from $ORC_WORKSPACE_REPOS>. Scope this flow to which repos?
+- All N detected repos
+- Pick a subset (multi-select follow-up)
+- Just this repo (cwd) — only when cwd is inside a workspace child
+- Cancel
+```
+
+Record the resolved set as `targetRepos` in `checkpoint.md`. When the resolved set has exactly one repo and the user is inside that repo via `--this-repo`, treat the rest of the flow as a single-repo flow against that `repoPath` (no workspace state).
+
+**Iron rule (no silent broadcast):** workspace mode never proceeds past Triage without an explicit repo set.
+
 **Resolve the Jira link.** Before initializing workspace state:
 
 - If `--jira <KEY>` was passed, validate against `^[A-Z][A-Z0-9_]*-\d+$`. Reject and stop on mismatch.
@@ -100,7 +132,15 @@ AskUserQuestion: Scope?
   - `Skip — I'll bind later via /orc:jira bind`
   - `No ticket — this work has no tracker entry`
 
-Initialize `.orc/<sanitized-branch>/files/` and write `checkpoint.md` (phase=1, command=flow, total_phases=9 — adjust for skipped phases). Add `jiraTicket: <KEY>` to the frontmatter when set. Append entry to `.orc/orc.json` with `command: "flow"` and `jiraTicket: <KEY>` (omit field if null).
+Initialize `${ORC_STATE_DIR}/<sanitized-branch>/files/` and write `checkpoint.md` (phase=1, command=flow, total_phases=9 — adjust for skipped phases). Add `jiraTicket: <KEY>` to the frontmatter when set. Append entry to `${ORC_STATE_DIR}/orc.json` with `command: "flow"`, `jiraTicket: <KEY>` (omit field if null), and — in workspace mode — `scope: "workspace"`, `repos: targetRepos`, `perRepoState: { <repo>: { repoPath, currentSlice: 0, prUrl: null } }`.
+
+In workspace mode, also seed each target repo's `<workspaceRoot>/<repo>/.orc/<sanitized-branch>/workspace-link.json`:
+
+```json
+{ "scope": "workspace-member", "workspaceRoot": "<absolute path>", "workspaceName": "<name>", "sessionId": "<id>", "branch": "<branch>" }
+```
+
+This is the back-pointer `/orc:status` and `/orc:resume` follow when the user `cd`s into one repo.
 
 ### Phase 2 — RFC (optional)
 
@@ -116,7 +156,14 @@ AskUserQuestion (after RFC drafted):
 
 ### Phase 3 — Plan
 
-For `--type=feature|refactor`: invoke `orc:writing-plans`, optionally `orc:grill-me` if scope ≥ medium. Saves `.orc/<branch>/files/plan.md`.
+For `--type=feature|refactor`: invoke `orc:writing-plans`, optionally `orc:grill-me` if scope ≥ medium. Saves `${ORC_STATE_DIR}/<branch>/files/plan.md`.
+
+In workspace mode, the plan template MUST include:
+
+1. A **Repo touchpoints** section listing each target repo and what changes there (e.g. `api: new POST /export endpoint`, `ui: download button + progress state`).
+2. A **Cross-repo contract** section (when applicable) describing the API/wire-format shape both repos must respect — endpoint paths, schemas, message types. This contract is frozen during Phase 5.
+3. A **Merge order** line (e.g. `api → ui`) when there's a deploy ordering dependency. Omit if either order works.
+4. Each slice tagged with `repo: <name>` so the Phase 5 dispatcher knows which implementer instance owns it.
 
 For `--type=docs`: invoke `/orc:scaffold` if greenfield, or `orc:documentation-writer` if augmenting existing.
 
@@ -135,10 +182,37 @@ AskUserQuestion (after plan drafted):
 
 For code work (`feature`, `bug`, `refactor`): invoke `orc:using-git-worktrees` (worktree + branch), then write the first failing test.
 
+In workspace mode, repeat the worktree+branch step for every repo in `targetRepos`. Worktrees live at `${ORC_WORKSPACE_ROOT}/.orc/.worktrees/<repo>/<sanitized-branch>/`. Run the **branch-collision check** for every target repo before creating worktrees:
+
+```bash
+for r in $targetRepos; do
+  git -C "$ORC_WORKSPACE_ROOT/$r" show-ref --verify --quiet "refs/heads/<branch>"
+done
+```
+
+| Repo state | Action |
+|------------|--------|
+| Branch absent locally and on origin | OK — create. |
+| Branch absent locally, present on origin | OK — `git fetch && git worktree add -B`. |
+| Branch present, points at base HEAD | OK — adopt. |
+| Branch present, has divergent commits | **Conflict** — `AskUserQuestion` with the 5 recovery options below. |
+
+Recovery options on conflict (one prompt covering all conflicting repos at once):
+
+1. Suffix all repos with `-2` (or user-chosen short suffix).
+2. Suffix only conflicting repos (e.g. `feat/sso-login-api`); keep canonical name elsewhere.
+3. Adopt the existing branch (surface divergent commits in the plan-confirmation gate).
+4. Pick a different canonical name (restart this step).
+5. Abort the flow.
+
+Record any suffix overrides in `checkpoint.md` and `perRepoState[<repo>].branch` so `/orc:resume` and `/orc:ship` know the actual branch per repo.
+
+Then write the first failing test in whichever repo it naturally lives in (per the plan's slice-1 `repo:` tag):
+
 - **Simple first test** (single assertion, single function under test): invoke `orc:tdd` skill inline.
 - **Complex first test** (state machine, async coordination, integration boundary, multiple branches): dispatch `orc-test-author` via `Task`. The agent designs a comprehensive suite (happy path + boundary + error paths) using the project's test idioms, runs it, reports.
 
-Test MUST fail with the right message. Commit the failing test.
+Test MUST fail with the right message. Commit the failing test in its target repo.
 
 For `--type=docs`: skip; advance to phase 6.
 
@@ -156,7 +230,12 @@ Two modes, picked by the `--pause-at-implement` flag:
 
 #### Default: dispatch `orc-implementer` (autonomous)
 
-Read the plan and group slices into **dispatch batches**:
+Read the plan and group slices into **dispatch batches**.
+
+**Workspace mode pre-step:** group slices by their `repo:` tag first. Each repo group gets its own implementer dispatch chain. Repo groups run in parallel with each other (one implementer per repo, simultaneously). Within each repo group, the existing sequential/parallel-batch logic applies. The outer loop is `for repo in targetRepos: dispatch implementer(s)`. Each implementer receives `repo`, `repoPath: <workspaceRoot>/<repo>` (or its worktree path), `siblingRepos: [<other targets>]`, and (when present) `crossRepoContract: <plan section pointer>`. **Sibling implementers must not touch each other's files** — the worktree path boundary already guarantees this.
+
+After grouping by repo, for each repo's slices:
+
 - A **sequential batch** is one slice that can't run in parallel with others (depends on a prior slice's output, or shares files with siblings). Run as a single implementer dispatch with that one slice.
 - A **parallel batch** is N slices marked parallel-safe in the plan AND with disjoint file ownership. Dispatch N implementer instances **in parallel** (single response, multiple `Task` calls), each receiving a 1-slice list and `mode: parallel` so they return diffs instead of committing.
 
@@ -165,14 +244,15 @@ Iterate batches in plan order. After each batch:
 - Parallel: collect all returned diffs + test reports, apply them in plan order via `orc:git-commit` (one commit per slice, in order), run the full suite once after all diffs are applied to confirm green.
 
 Each implementer instance gets:
-- The plan path (`.orc/<branch>/files/plan.md`) or diagnosis path for bugs.
-- The workspace directory.
+- The plan path (`${ORC_STATE_DIR}/<branch>/files/plan.md`) or diagnosis path for bugs.
+- The workspace directory (per-repo `.orc/<branch>/files/` for `progress.md` writes; in workspace mode also the workspace-level `<workspaceRoot>/.orc/<branch>/files/`).
 - The current branch + worktree path.
 - Its assigned slice list (1 slice in parallel mode, N in sequential).
 - The file-ownership boundary for those slices.
 - The failing test from Phase 4 (if slice 1 is in the list).
 - Project test/lint/type-check commands (auto-detected from `package.json`, `Makefile`, etc.).
 - Mode flag: `mode: sequential` (default) or `mode: parallel` (for parallel-batch members).
+- **Workspace mode only**: `repo`, `repoPath`, `siblingRepos`, optional `crossRepoContract`. The slice list is pre-filtered to slices tagged `repo: <name>`.
 
 The agent then drives its assigned slice(s): read spec → write/confirm failing test → implement → run test green → run full suite → lint/type-check → refactor → commit (sequential) or return diff (parallel) → bump checkpoint → next slice in its list.
 
@@ -229,7 +309,7 @@ Detect web vs code mode (heuristic on changed files vs main). Invoke `orc:verifi
 
 When the diff touches security-sensitive paths (auth, sessions, raw SQL, deserialization, file upload, network egress, dependency surface) — dispatch `orc-security-reviewer` in parallel with the self-review. Merge findings before surfacing.
 
-For web changes, dispatch `orc-qa-validator` (drives `agent-browser`, captures evidence to `.orc/<branch>/files/qa/`).
+For web changes, dispatch `orc-qa-validator` (drives `agent-browser`, captures evidence to `.orc/<branch>/files/qa/`). In workspace mode, the validator picks the repo declared as the web surface in the plan's "Repo touchpoints" section (`repoPath = <workspaceRoot>/<that repo>`); cross-repo integration evidence (e.g. ui+api walks) lands at the workspace-level `<workspaceRoot>/.orc/<branch>/files/qa/`, repo-local QA stays per-repo.
 
 If verification flags untested branches, dispatch `orc-test-author` to fill them in before continuing.
 
@@ -250,6 +330,8 @@ Invoke `/orc:ship` logic:
 - `orc:git-commit` (if uncommitted)
 - PR composition: caveman-pr if `--caveman` was passed, otherwise the verbose template
 - `gh pr create`
+
+In workspace mode, `/orc:ship` opens **N PRs** — one per target repo — and second-passes each with `gh pr edit` to inject a "Linked PRs" cross-link block + merge order from the plan. Captured PR URLs are written into the workspace registry's `linkedPRs` array.
 
 ```
 AskUserQuestion (after PR composed):
@@ -280,6 +362,8 @@ After merge in GitHub, the user re-invokes `/orc:flow` and orc detects `gh pr vi
 - Remove worktree (if clean)
 - Remove local branch (if merged)
 - Update central registry
+
+In workspace mode, cleanup runs only when **every** PR in `linkedPRs` is merged (use `gh pr view` per URL). When some are merged and others are still open, surface that list and `AskUserQuestion`: wait, clean per-repo (using `--per-repo`), or abort. After all merge, clean each repo's worktree + per-repo `.orc/<branch>/` AND the workspace-level `<workspaceRoot>/.orc/<branch>/` together.
 
 ```
 AskUserQuestion (preview the cleanup plan):

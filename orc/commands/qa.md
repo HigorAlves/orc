@@ -1,6 +1,6 @@
 ---
-description: Pre-PR quality gate. For web changes, browser-driven QA via the agent-browser CLI — annotated screenshots, accessibility snapshot, console log, network HAR, and a step-by-step narrative saved to .orc/<branch>/files/qa/. No QA-passed claim without artifacts.
-argument-hint: "[--web <url>] [--no-web] <feature description>"
+description: Pre-PR quality gate. For web changes, browser-driven QA via the agent-browser CLI — annotated screenshots, accessibility snapshot, console log, network HAR, and a step-by-step narrative saved to .orc/<branch>/files/qa/. No QA-passed claim without artifacts. Workspace-aware — runs verification per repo; web QA stays singular against the repo declared as the web surface.
+argument-hint: "[--web <url>] [--no-web] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 allowed-tools:
   - Read
   - Write
@@ -20,6 +20,7 @@ allowed-tools:
   - Bash(node:*)
   - Bash(agent-browser:*)
   - Bash(npx agent-browser:*)
+  - Bash(. */lib/workspace-detect.sh*)
 ---
 
 # /orc:qa
@@ -37,6 +38,15 @@ Run a quality gate before opening a PR. Two modes:
 
 ## Workflow
 
+### Phase 0 — Detect context
+
+```bash
+. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
+eval "$(orc_detect_context)"
+```
+
+In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. Default in workspace mode is to verify every repo in the active workspace session's `repos` array. The web-QA target is always **one** repo — pick from the plan's "Repo touchpoints" section (the entry that owns the web surface) or prompt if ambiguous.
+
 ### Phase 1 — Detect web vs code
 
 If `--no-web`: code mode. If `--web`: web mode. Otherwise heuristic: glob the diff for web surfaces (`.tsx`, `.jsx`, `.vue`, `.svelte`, `app/**/*.ts`, `pages/**`, `components/**`). If found, web mode; else code mode.
@@ -44,6 +54,8 @@ If `--no-web`: code mode. If `--web`: web mode. Otherwise heuristic: glob the di
 ### Phase 2 — Tests + verification
 
 Invoke `orc:verification-before-completion`. Run the project's test suite. Run lint and type-check if available. Confirm green output. If anything fails, stop and surface — QA cannot pass.
+
+In workspace mode, run all three checks **per target repo**, in parallel where possible (each repo has its own toolchain). Aggregate results into one verdict: any single repo's failure stops QA — surface which repo + which check.
 
 ### Phase 3 — Self-review + (optional) security pass
 
@@ -55,11 +67,12 @@ If verification (Phase 2) flagged untested branches — dispatch **`orc-test-aut
 
 ### Phase 4 (web mode only) — Browser QA
 
-1. Init `.orc/<sanitized-branch>/files/qa/` directory.
+1. Init `${ORC_STATE_DIR}/<sanitized-branch>/files/qa/` directory. In workspace mode, the cross-repo QA evidence (e.g. ui+api integration walks) goes here; per-repo QA stays at `<repoPath>/.orc/<branch>/files/qa/`.
 2. Dispatch the `orc-qa-validator` subagent via `Task`. Pass:
    - The feature description.
    - The URL (or boot instructions).
    - The artifact directory.
+   - **Workspace mode only**: `repo` (the web-surface repo from Phase 0), `repoPath` (boot the dev server from here), `siblingRepos` (any backend repos that may need to run as dependencies but the agent does NOT touch), and `crossRepoContract` (when present in the plan — the agent walks an integration golden path that exercises the contract end-to-end).
 3. The agent walks the golden path + edge cases, captures screenshots/video/console.log, writes `steps.md`, returns a verdict.
 4. Read its `steps.md` and verdict. If `pass`, proceed. If `fail` or `partial`, surface the failure with the screenshot link to the user.
 

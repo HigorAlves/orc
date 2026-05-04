@@ -1,6 +1,6 @@
 ---
-description: Clean up after completed (or abandoned) orc sessions — removes the .orc/<branch>/ workspace state, removes the registry entry, removes any associated git worktree, and optionally deletes the merged feature branch. Destructive operation — always shows a preview and asks before doing anything.
-argument-hint: "[--dry-run] [--all-completed] [<session-id-or-branch>]"
+description: Clean up after completed (or abandoned) orc sessions — removes the .orc/<branch>/ workspace state, removes the registry entry, removes any associated git worktree, and optionally deletes the merged feature branch. Destructive operation — always shows a preview and asks before doing anything. Workspace-aware — by default waits until all linked PRs are merged before cleaning a workspace session.
+argument-hint: "[--dry-run] [--all-completed] [--per-repo] [<session-id-or-branch>]"
 allowed-tools:
   - Read
   - Write
@@ -13,7 +13,9 @@ allowed-tools:
   - Bash(git rev-parse:*)
   - Bash(git status:*)
   - Bash(git log:*)
+  - Bash(gh pr view:*)
   - Bash(rm -rf .orc:*)
+  - Bash(. */lib/workspace-detect.sh*)
 ---
 
 # /orc:cleanup
@@ -25,8 +27,26 @@ Close the loop on finished orc work — remove the workspace state, the worktree
 - `<session-id-or-branch>` — optional. Clean up exactly one session. Accepts the `session_id` from `.orc/orc.json` or a (sanitized or raw) branch name.
 - `--all-completed` — clean up every session whose `status` in `.orc/orc.json` is `completed` or `abandoned`. Respects all the safety checks below per session.
 - `--dry-run` — print what *would* happen but make no changes. Recommended for the first run.
+- `--per-repo` — workspace mode: clean each linked repo independently as its PR merges, instead of waiting for all to merge. Use only when you intend to abandon some repos (rare).
 
 ## Workflow
+
+### Phase 0 — Detect context
+
+```bash
+. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
+eval "$(orc_detect_context)"
+```
+
+In workspace mode, the registry to read in Phase 2 is `${ORC_STATE_DIR}/orc.json` (workspace-level). Workspace sessions have `scope: "workspace"` and a `repos` array. For each candidate workspace session, fetch PR merge status for every URL in `linkedPRs`:
+
+```bash
+for url in $(jq -r '.sessions[] | select(.session_id == "'$ID'") | .linkedPRs[].url' "$ORC_STATE_DIR/orc.json"); do
+  gh pr view "$url" --json state -q .state
+done
+```
+
+If **any** linked PR is not `MERGED`, **default behavior is to refuse** with a summary of which PRs are still open. The user must either: (a) wait, (b) pass `--per-repo` to clean only the merged ones, or (c) explicitly mark the session `abandoned` first to bypass the merge check.
 
 ### Phase 1 — Refuse to run from inside a soon-to-be-deleted worktree
 
@@ -114,6 +134,12 @@ For each session:
 2. **Worktree** — `git worktree remove <path>` ONLY if clean. If dirty, skip with a warning. Never use `--force` automatically; require an explicit `--force-dirty` flag in a future iteration if needed.
 3. **Branch** — `git branch -d <branch>` ONLY if merged into main. If unmerged, skip with a warning. Never use `-D` automatically.
 4. **Worktree prune** — after removals: `git worktree prune` to clean up any stale references.
+
+For workspace-mode sessions, repeat steps 1–4 **per repo** in `repos`:
+
+- For each repo `r`: `cd "$ORC_WORKSPACE_ROOT/$r"`, then `rm -rf .orc/<branch>/` (per-repo state, including the `workspace-link.json` back-pointer), `git worktree remove <perRepoState[$r].worktree>` (clean), `git branch -d <perRepoState[$r].branch>` (merged), `git worktree prune`.
+- Then clean the workspace-level state: `rm -rf $ORC_WORKSPACE_ROOT/.orc/<branch>/` and remove the session entry from `$ORC_STATE_DIR/orc.json`.
+- With `--per-repo`: only remove from repos whose PR is `MERGED`; leave others' state intact and update the workspace registry to reflect the partial cleanup (`perRepoState[$r]` removed, `repos` array trimmed).
 
 ### Phase 7 — Report
 

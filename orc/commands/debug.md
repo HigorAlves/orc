@@ -1,6 +1,6 @@
 ---
-description: Systematic root-cause investigation, then fix with TDD. Writes a diagnosis + regression test to .orc/<branch>/files/. Never proposes a fix without finding the cause first. Phase 1 always asks to link a Jira ticket (skip-able); --jira <KEY> suppresses the prompt and links silently.
-argument-hint: "[--jira <KEY>] <bug description or failing test name>"
+description: Systematic root-cause investigation, then fix with TDD. Writes a diagnosis + regression test to .orc/<branch>/files/. Never proposes a fix without finding the cause first. Phase 1 always asks to link a Jira ticket (skip-able); --jira <KEY> suppresses the prompt and links silently. Workspace-aware — investigator can read across sibling repos when a symptom in one repo is caused by another.
+argument-hint: "[--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <bug description or failing test name>"
 allowed-tools:
   - Read
   - Write
@@ -21,6 +21,7 @@ allowed-tools:
   - Bash(go *:*)
   - Bash(cargo *:*)
   - Bash(pytest *:*)
+  - Bash(. */lib/workspace-detect.sh*)
 ---
 
 # /orc:debug
@@ -34,10 +35,19 @@ Hard bugs and unexpected failures get the systematic-debugging discipline. NO FI
 
 ## Workflow
 
+### Phase 0 — Detect context
+
+```bash
+. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
+eval "$(orc_detect_context)"
+```
+
+In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. The default is the symptom-repo (the repo where the bug surfaces) plus any sibling repos the user suspects might be the actual cause — the investigator reads across all of them. Iron rule: no silent broadcast — confirm.
+
 ### Phase 1 — Initialize workspace + link
 
-1. Determine the current branch: `git branch --show-current`. Sanitize (`/` → `-`).
-2. Create `.orc/<sanitized-branch>/files/` if it doesn't exist.
+1. Determine the current branch: `git branch --show-current` (in workspace mode, prompt the user since cwd has no branch). Sanitize (`/` → `-`).
+2. Create `${ORC_STATE_DIR}/<sanitized-branch>/files/` if it doesn't exist. In workspace mode, also create per-repo `<workspaceRoot>/<repo>/.orc/<sanitized-branch>/` with `workspace-link.json` back-pointers for each target repo (the diagnosis is workspace-level; remediation slices land per repo).
 3. **Resolve the Jira link.**
    - If `--jira <KEY>` was passed: validate against `^[A-Z][A-Z0-9_]*-\d+$`. Reject and stop on mismatch.
    - Otherwise: ask via `AskUserQuestion` — *"Link a Jira ticket to this session?"* with options: `Paste a key` / `Skip — I'll bind later via /orc:jira bind` / `No ticket — this work has no tracker entry`.
@@ -49,8 +59,9 @@ Dispatch the `orc-debug-investigator` subagent via `Task`. Pass it:
 - The bug description / failing test name from arguments.
 - The current branch + recent commits (`git log -10 --oneline`).
 - Any relevant test output the user has already shared.
+- **Workspace mode only**: `repo` (the symptom repo), `repoPath`, `siblingRepos` (the other target repos — the investigator may read across these to find the cause). Diagnosis is written to `${ORC_STATE_DIR}/<branch>/files/diagnosis.md` (workspace-level), and each remediation slice in the diagnosis carries a `repo:` annotation so the Phase 5 fixer can fan out per repo.
 
-The agent returns a written diagnosis: root cause, evidence, recommended fix surface, recommended regression test. Save it to `.orc/<branch>/files/diagnosis.md`.
+The agent returns a written diagnosis: root cause, evidence, recommended fix surface, recommended regression test. Save it to `${ORC_STATE_DIR}/<branch>/files/diagnosis.md`.
 
 ### Phase 3 — Confirm with user
 
@@ -73,6 +84,8 @@ For **complex regression tests** (multi-branch state machines, async coordinatio
 ### Phase 5 — Fix and verify
 
 Hand the diagnosis + regression test to `orc-code-fixer` via `Task`. The agent applies the fix, re-runs tests. Read the report. If green, proceed. If red, return to Phase 2 (Investigate) with the new evidence.
+
+In workspace mode, group the diagnosis's remediation slices by their `repo:` tag and dispatch **one fixer per repo** (parallel, single response, multiple `Task` calls), each scoped to its own `repoPath`. Aggregate per-repo test reports into a single verdict before deciding green/red.
 
 ### Phase 6 — Verify thoroughly
 

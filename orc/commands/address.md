@@ -1,6 +1,6 @@
 ---
-description: Answer reviewer comments on YOUR open PR. Fetches unresolved comments, categorizes (ACTION/QUESTION/NITPICK/DISAGREE), dispatches code-fixer + reply-drafter in parallel, posts replies, pushes fixes.
-argument-hint: "[<pr-number>]  (omitted = current branch's PR)"
+description: Answer reviewer comments on YOUR open PR. Fetches unresolved comments, categorizes (ACTION/QUESTION/NITPICK/DISAGREE), dispatches code-fixer + reply-drafter in parallel, posts replies, pushes fixes. Workspace-aware — addresses all linked PRs together by default; --repo narrows.
+argument-hint: "[<pr-number>] [--repo <name>] [--repos a,b]  (omitted = current branch's PR / all linked PRs)"
 allowed-tools:
   - Read
   - Edit
@@ -16,6 +16,8 @@ allowed-tools:
   - Bash(npm *:*)
   - Bash(pnpm *:*)
   - Bash(yarn *:*)
+  - Bash(jq *)
+  - Bash(. */lib/workspace-detect.sh*)
 ---
 
 # /orc:address
@@ -28,12 +30,29 @@ Address the reviewer feedback on your own PR. Closes the loop: code fixes + thre
 
 ## Workflow
 
-### Phase 1 — Fetch the PR + unresolved comments
+### Phase 0 — Detect context
+
+```bash
+. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
+eval "$(orc_detect_context)"
+```
+
+In workspace mode, identify the active workspace session and resolve the PR set:
+
+- Read `${ORC_STATE_DIR}/orc.json`. Find the in-progress session whose `branch` matches the active branch (or whose `linkedPRs` includes the explicit `<pr-number>` if given).
+- The default address target is **every URL in `linkedPRs`** (broadcast across all linked PRs of the workspace flow).
+- `--repo <name>` narrows to one repo's PR; `--repos a,b` narrows to a subset. Iron rule: no silent broadcast — when no flag is given and `linkedPRs` has 2+ entries, prompt via `AskUserQuestion`: "Address comments on all N PRs / pick a subset / just one PR / cancel."
+
+When run from inside a workspace-member repo (cwd is one of the children), follow the `workspace-link.json` back-pointer up to the workspace registry and proceed.
+
+### Phase 1 — Fetch the PR(s) + unresolved comments
 
 ```
 gh pr view <ref> --json number,title,headRefName,url,reviewThreads
 gh api repos/{owner}/{repo}/pulls/{n}/comments --paginate
 ```
+
+In workspace mode, run both calls **per target PR** in parallel and bucket comments by repo (each comment carries the PR's repo name as its origin tag).
 
 Filter to comments where the thread is unresolved. (If the reviewThreads JSON includes a `isResolved: false` flag, use it; otherwise treat all comments as unresolved unless the user says otherwise.)
 
@@ -56,6 +75,8 @@ Two `Task` calls in the same response:
 1. **`orc-code-fixer`** — pass the list of `ACTION` items with file/line/intended change. Agent applies edits, runs tests, returns a diff + test summary.
 2. **`orc-reply-drafter`** — pass ALL comments (with categories + the diff from the code-fixer if available). Agent returns a JSON list of `{comment_id, reply}`.
 
+**Workspace mode**: dispatch one `orc-code-fixer` per repo (parallel, single response, multiple `Task` calls), each with `repo`, `repoPath`, `siblingRepos`, and the ACTION items filtered to that repo's PR. Reply-drafter stays singular — pass ALL comments across ALL linked PRs at once so it can write coherent replies that reference cross-repo context where appropriate. The dispatcher merges per-repo fixer outputs before Phase 4.
+
 ### Phase 4 — Review the artifacts
 
 Show the diff + drafted replies to the user via `AskUserQuestion`:
@@ -69,6 +90,8 @@ Show the diff + drafted replies to the user via `AskUserQuestion`:
 2. `git push`.
 3. For each reply: `gh api repos/{owner}/{repo}/pulls/{n}/comments/{comment-id}/replies -f body="..."`.
 4. Optionally re-request review: `gh pr edit <ref> --add-reviewer <reviewer>`.
+
+In workspace mode, run steps 1–2 **per repo** with fixes (cd into each repo's worktree first); steps 3–4 run per linked PR. Each repo gets its own commit and push; threads on each PR get their inline replies routed to that PR's `{owner}/{repo}` path.
 
 **Inline replies only. Never post a top-level PR comment summarizing what was addressed.** The inline reply on each thread already says what changed; a recap comment duplicates that signal and clutters the PR conversation. Specifically: do NOT call `gh pr comment`, do NOT call `gh api repos/{owner}/{repo}/issues/{n}/comments`, do NOT post any standalone "Addressed in <sha>:" rollup. One reply per thread, posted via the `/pulls/{n}/comments/{id}/replies` endpoint above. Nothing else.
 
