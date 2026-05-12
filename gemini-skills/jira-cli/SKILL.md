@@ -2,7 +2,6 @@
 name: jira-cli
 description: Atlassian CLI (acli) reference for Jira work-item operations — create tickets, create sub-tasks, link work items, view, search via JQL, and transition status. Use when the user asks to file/move/link a Jira ticket from the terminal, when /orc:jira is invoked, or when /orc:plan|debug|flow is asked to record a Jira ticket key for the current session.
 ---
-
 # Jira CLI (acli)
 
 Reference for Atlassian's `acli` — the supported CLI for Jira (and Confluence). orc commands lean on this skill whenever they touch a ticket: `/orc:jira`, the Phase 1 Jira-link prompt in `/orc:plan|debug|flow`, and `/orc:ship`'s "Resolves <KEY>" line in PR bodies.
