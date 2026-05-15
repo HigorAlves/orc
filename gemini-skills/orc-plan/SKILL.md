@@ -52,6 +52,14 @@ If the input is short and clear, skip Phase 0 and go straight to Phase 1.
 
 Invoke `orc:writing-plans`. Follow that skill exactly. Write the output to `${ORC_STATE_DIR}/<branch>/files/plan.md`. Update `checkpoint.md` (phase=2, last_artifact=plan.md).
 
+**Per-slice LOC budget contract (all modes)** — every slice MUST carry an `est_loc: <int>` field as part of its header. The estimate is the implementer's **contract**, not a precise prediction:
+
+- Heuristic for the planner: `est_loc ≈ (new_files * 80) + (modified_files * 30) + boilerplate_test_lines`. Adjust for known-large files.
+- If a slice's estimate exceeds `${ORC_PR_LOC_BUDGET:-300}`, **split the slice further** OR mark it `ships_as_stack: true` to signal the implementer should expect to invoke `/orc:stack-pr` at ship time.
+- During Phase 5 (implement), if a slice's actual diff exceeds `est_loc * 1.5`, the implementer **escalates** rather than balloons the slice silently. This is enforced by `orc-implementer`'s escalation conditions.
+
+Defer to `orc:pr-size-budget` for the budget resolution order and exclusion list.
+
 **Workspace mode plan template additions** — when `targetRepos` has 2+ entries, the plan MUST include:
 
 1. **Repo touchpoints** — a section listing each target repo and the changes it owns:
@@ -76,9 +84,10 @@ Invoke `orc:writing-plans`. Follow that skill exactly. Write the output to `${OR
    ### Slice 3 — POST /export endpoint
    - repo: api
    - files owned: src/routes/export.ts, test/export.test.ts
+   - est_loc: 140
    - …
    ```
-   The Phase 5 dispatcher reads this tag to fan out implementers per repo.
+   The Phase 5 dispatcher reads `repo:` to fan out implementers per repo, and `est_loc:` to enforce the per-slice budget contract.
 
 ### Phase 3 (optional, with `--grill`) — Stress-test the design
 

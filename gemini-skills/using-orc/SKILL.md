@@ -39,6 +39,7 @@ These apply at all times, regardless of context:
 5. **No AI attribution** — Never mention Claude, AI, or automation in code, commits, or PRs. Never add `Co-Authored-By` trailers or any co-author references to commits.
 6. **No multi-phase work without `.orc/` state** — Any command that takes more than one phase (`/orc:plan`, `/orc:start`, `/orc:debug`, `/orc:fan-out`, `/orc:qa` for web) MUST checkpoint after every phase to `.orc/<sanitized-branch>/files/checkpoint.md` and register the session in `.orc/orc.json`. State must survive interruption — `/orc:resume` depends on it.
 7. **No silent broadcast in workspace mode** — When the SessionStart banner reports `orc context: workspace[…]`, repo-touching commands (`/orc:flow`, `/orc:plan`, `/orc:start`, `/orc:ship`, `/orc:address`, `/orc:qa`, `/orc:debug`, `/orc:cleanup`, `/orc:resume`, `/orc:code-review`, `/orc:fan-out`) MUST NOT operate on more than the cwd's repo without an explicit flag (`--repos`, `--repo`, `--all-repos`, `--this-repo`) or a confirming `AskUserQuestion`. Defer to `orc:workspace-mode` for the precedence rules.
+8. **No PR over the size budget without a recorded choice** — Default budget is **300 LOC** (additions + deletions, post-exclusion — lockfiles, generated code, snapshots, build artifacts, and migrations don't count). `/orc:ship` and `/orc:flow` Phase 7 compute the diff vs the base and, when over budget, prompt the user with three options: **stack** via `/orc:stack-pr`, **open big** with a one-line `Size-budget-override:` PR-body trailer, or **abort**. Configurable via `$ORC_PR_LOC_BUDGET` or `<repo>/.orc/pr-budget.json#budget`. Bypassable per-invocation with `--no-size-gate` (emergencies only). Defer to `orc:pr-size-budget` for mechanics.
 
 ## Web QA evidence (hard rule)
 
@@ -99,6 +100,8 @@ Defer to `orc:workspace-mode` for full mechanics, branch-collision handling, and
 | `orc:trd-writing` | When formalizing a technical contract derived from a PRD before RFC/plan — publishes to `docs/trds/NNNN-*.md` |
 | `orc:inline-review` | When posting a real GitHub PR review with inline comments + suggestion blocks; defines the severity → event mapping rule that prevents "approve while flagging bugs" contradictions. Used by `/orc:code-review`. |
 | `orc:workspace-mode` | When working in a parent dir that contains multiple sibling git repos (e.g. `~/work/myapp/{api,ui}`) — flag precedence, per-repo agent dispatch, linked-PR mechanics, branch-collision recovery |
+| `orc:pr-size-budget` | When opening or sizing a PR — defines the soft 300 LOC iron-rule budget, exclusion list, and the canonical gate prompt shared by `/orc:ship`, `/orc:flow`, and `/orc:stack-pr` |
+| `orc:stack-pr` | When breaking a too-big branch into a stack of smaller chained PRs — commit-based default, `--smart` agent-reshape path, `gh-stack` detection, recovery via backup branch |
 
 Stack-specific skills (load when working in that stack):
 
@@ -120,7 +123,8 @@ Stack-specific skills (load when working in that stack):
 | `/orc:qa` | Pre-PR quality gate; for web changes, full browser QA with evidence | ✅ (web) |
 | `/orc:code-review` | Review SOMEONE ELSE'S PR via gh CLI | — |
 | `/orc:address` | Answer reviewer comments on YOUR open PR | — |
-| `/orc:ship` | Finalize and open the PR | — |
+| `/orc:ship` | Finalize and open the PR (Phase 4.5 size-gate prompts to stack / open-big-with-reason / abort when over budget) | — |
+| `/orc:stack-pr` | Break a too-big branch into a stack of smaller chained PRs (commit-based default; `--smart` for messy branches) | writes `linkedPRs[]` ✅ |
 | `/orc:fan-out` | Dispatch parallel independent tasks | ✅ |
 | `/orc:scaffold` | Bootstrap a new package/service with README + docs | — |
 | `/orc:resume` | Resume an interrupted multi-phase orc command | reads ✅ |

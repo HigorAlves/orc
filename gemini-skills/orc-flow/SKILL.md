@@ -20,6 +20,8 @@ Use `/orc:flow` when you want orc to drive the whole loop. Skip it (use the per-
 - `--caveman` — pass through to `/orc:ship` and `/orc:address` so PR bodies and replies use the terse style.
 - `--pause-at-implement` — pause Phase 5 for the human to write the implementation manually. Default behavior is autonomous: dispatches `orc-implementer` to drive the implementation slice-by-slice. Use `--pause-at-implement` when you want to write the code yourself.
 - `--jira <KEY>` — link a Jira ticket key (e.g. `JRA-123`) to this flow's session silently. Suppresses the Phase 1 link prompt. The key follows the work through every phase, surfaces in `/orc:status`, and lands as `Resolves <KEY>` in the Phase 7 PR body. Validate against `^[A-Z][A-Z0-9_]*-\d+$`.
+- `--max-loc <N>` — pass-through to `/orc:ship`'s Phase 4.5 size gate (default: 300, configurable via `$ORC_PR_LOC_BUDGET` or `<repo>/.orc/pr-budget.json`). Phase 7 also pre-flights the gate with one extra option ("Stack from plan slices") that single-repo `/orc:ship` doesn't have.
+- `--no-size-gate` — pass-through to `/orc:ship`. Skips both the Phase 7 pre-flight and `/orc:ship`'s gate. Use sparingly.
 - `--repos <list>` — workspace mode: comma-separated repo names to target (e.g. `--repos api,ui`). Mutually exclusive with `--repo`, `--all-repos`, `--this-repo`.
 - `--repo <name>` — workspace mode: target one repo. Mutually exclusive with `--repos`.
 - `--all-repos` — workspace mode: skip the Phase 1 repo prompt and broadcast to every detected repo.
@@ -299,14 +301,44 @@ AskUserQuestion (after QA verdict):
 
 ### Phase 7 — Ship
 
-Invoke `/orc:ship` logic:
+Pre-flight the **size gate** before invoking `/orc:ship`. Defer to `orc:pr-size-budget` for canonical mechanics. Skip when `--no-size-gate` is set.
+
+```bash
+. "${CLAUDE_PLUGIN_ROOT}/lib/pr-size-budget.sh"
+# In workspace mode, iterate per target repo; in single-repo, run once.
+```
+
+For each target repo, compute `loc = orc_pr_loc <base>` and `budget = orc_pr_budget "$ARG_MAX_LOC"`. If `loc > budget`, surface a **flow-enriched 4-option** `AskUserQuestion` (the standalone `/orc:ship` gate has only the first three — Phase 7 adds option A because the flow knows the plan):
+
+```
+PR size gate (repo: <r>)
+Diff vs origin/<base>: <loc> LOC vs <budget> budget — OVER by <delta>.
+<top-contributors table>
+<excluded summary>
+
+Options:
+  A. Stack from plan slices (Recommended, flow-only)
+     Use the existing per-slice commits as the stack scaffold. One PR per Phase 5 batch.
+     (Only enabled when commits map 1:1 to plan slices.)
+  B. Stack via /orc:stack-pr [--smart]
+     Standalone analyzer; same outcome as A but doesn't rely on commit/slice alignment.
+  C. Open as one big PR — requires a one-line reason (Size-budget-override: trailer).
+  D. Abort to implement — go back, resize, re-run /orc:flow.
+```
+
+A is enabled iff `n_commits_on_branch == n_slices_in_plan` AND each commit subject contains the slice name (best-effort match). When the heuristic fails, hide A and present B/C/D only.
+
+Per-repo decisions are independent: in workspace mode, repo `api` can pick A while `ui` picks C. Record each decision in `checkpoint.md` (so `/orc:resume` knows we already gated this repo).
+
+Then invoke `/orc:ship` logic with the gate decision pre-applied (pass `--no-size-gate` to ship to avoid re-prompting):
+
 - `orc:requesting-code-review` (gap check vs the plan)
 - `orc:finishing-a-development-branch` (presents structured options)
 - `orc:git-commit` (if uncommitted)
 - PR composition: caveman-pr if `--caveman` was passed, otherwise the verbose template
-- `gh pr create`
+- `gh pr create` — UNLESS this repo picked A or B above, in which case `/orc:stack-pr` already opened the PRs and Phase 7 only records the stack metadata in `linkedPRs`.
 
-In workspace mode, `/orc:ship` opens **N PRs** — one per target repo — and second-passes each with `gh pr edit` to inject a "Linked PRs" cross-link block + merge order from the plan. Captured PR URLs are written into the workspace registry's `linkedPRs` array.
+In workspace mode, `/orc:ship` opens **N PRs** — one per target repo — and second-passes each with `gh pr edit` to inject a "Linked PRs" cross-link block + merge order from the plan. Captured PR URLs are written into the workspace registry's `linkedPRs` array (with `stackId`/`stackPosition`/`stackedOn` populated for repos that stacked).
 
 ```
 AskUserQuestion (after PR composed):

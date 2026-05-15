@@ -1,5 +1,7 @@
 # ORC for Gemini CLI
 
+**Version:** 0.4.0
+
 This directory contains the Gemini CLI version of the ORC ecosystem. It is a modularized port of the original Claude Code plugin, designed to follow Gemini CLI best practices for token efficiency and progressive disclosure.
 
 ## Architecture
@@ -68,6 +70,9 @@ You can trigger the ORC workflow using natural language. Gemini CLI will semanti
 3. **No claims without verification** (run the command, check the output).
 4. **No fixes without root cause** investigation.
 5. **No AI attribution** in commits, code, or PRs.
+6. **No multi-phase work without `.orc/` state** (checkpoint every phase).
+7. **No silent broadcast in workspace mode** (explicit `--repos`/`--repo`/`--all-repos`/`--this-repo` or confirm).
+8. **No PR over the size budget without a recorded choice** (default 300 LOC; over-budget prompts to stack via `orc-stack-pr`, open big with a `Size-budget-override:` trailer, or abort).
 
 ---
 "Zug zug." - Let the orcs do the work.

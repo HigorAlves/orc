@@ -13,6 +13,7 @@ These iron rules apply at all times, regardless of context:
 5. **No AI attribution** — Never mention Gemini, AI, or automation in code, commits, or PRs. Never add `Co-Authored-By` trailers.
 6. **No multi-phase work without `.orc/` state** — Any command that takes more than one phase MUST checkpoint after every phase to `.orc/<branch>/files/checkpoint.md`.
 7. **No silent broadcast in workspace mode** — In workspace mode, repo-touching commands MUST NOT operate on more than the cwd's repo without an explicit flag or confirmation.
+8. **No PR over the size budget without a recorded choice** — Default 300 LOC (additions + deletions, post-exclusion — lockfiles, generated, snapshots, build artifacts, migrations don't count). `orc-ship` and `orc-flow` Phase 7 compute the diff and, when over budget, prompt: stack via `orc-stack-pr`, open big with a `Size-budget-override:` trailer, or abort. Configurable via `$ORC_PR_LOC_BUDGET` or `<repo>/.orc/pr-budget.json#budget`. Defer to `pr-size-budget` for mechanics.
 
 ## Web QA Evidence (Hard Rule)
 

@@ -42,6 +42,25 @@ This structure informs the task decomposition. Each task should produce self-con
 - "Run the tests and make sure they pass" - step
 - "Commit" - step
 
+## LOC Budget Heuristic
+
+Each task should produce a diff small enough to review in one sitting. Target **≤ 300 LOC per task** (additions + deletions, post-exclusion — lockfiles, generated code, snapshots, and migrations don't count). Defer to `orc:pr-size-budget` for the exclusion list and resolution order (env var, per-repo config, default).
+
+Add an `est_loc: <int>` field to every task header. Heuristic for the estimate:
+
+```
+est_loc ≈ (new_files * 80) + (modified_files * 30) + boilerplate_test_lines
+```
+
+Adjust upward for known-large files (config, fixtures), downward for one-line tweaks.
+
+When a task's natural decomposition would exceed **1.5× the budget** (~450 LOC), that's a planning signal:
+
+- **Split the task further.** Usually there's a refactor-then-feature seam that hasn't been surfaced yet.
+- **OR mark `ships_as_stack: true`** in the task header to signal the implementer that this task is expected to ship as a stacked PR group via `/orc:stack-pr`. Don't quietly accept a 600-LOC task.
+
+The estimate is a **budget contract**, not a precision prediction — the implementer escalates when actual exceeds `est_loc * 1.5` rather than ballooning silently.
+
 ## Plan Document Header
 
 **Every plan MUST start with this header:**

@@ -83,6 +83,30 @@ Branch merged into main? <yes|no>
 Unpushed commits? <count>
 ```
 
+**Stack-aware enrichment.** If `linkedPRs[]` contains any entry with `stackId != null`, group by `stackId` and fetch each PR's merge state:
+
+```bash
+# Per stack: ordered list of {position, url, branch, state}
+jq -r --arg sid "$SESSION_ID" '
+  .sessions[] | select(.session_id == $sid) | .linkedPRs
+  | map(select(.stackId != null))
+  | group_by(.stackId)
+  | map({
+      stackId: .[0].stackId,
+      members: sort_by(.stackPosition)
+    })
+' "$ORC_STATE_DIR/orc.json"
+
+# For each member, fetch merge state via gh pr view (state).
+```
+
+For each stack member, derive a per-branch deletion gate:
+
+- **Position 1 (root)**: deletable iff its own PR is `MERGED` (same as the existing rule).
+- **Position N > 1**: deletable iff its own PR is `MERGED` **AND** the position N-1 PR is also `MERGED`. The child branch's history rests on the parent branch; deleting the parent's local branch before the parent merges leaves the child orphaned. Deleting the child first when the parent is unmerged is fine — but deleting the parent first is not.
+
+Practically: enforce **bottom-up branch deletion** within each stack. Any stack member whose parent is still open is **kept** with a "waiting on parent #N" note in the preview, even if the child itself merged.
+
 ### Phase 5 — Render the cleanup plan + confirm
 
 For every candidate, list exactly what will be done:
@@ -103,6 +127,23 @@ Will clean up:
   ⚠ branch fix-cache-stale not merged into main — SKIP branch deletion
 ```
 
+**Stack-aware preview block** (rendered when a session has stack members):
+
+```
+[feat-export]   stack <stackId> (3 PRs, bottom-up)
+  ✓ 01 api#311  MERGED  → branch feat/export/01-... deletable
+  ✓ 02 api#312  MERGED  → branch feat/export/02-... deletable (parent merged)
+  ⊘ 03 ui#447   OPEN    → keep until merge
+     · child branches stay (waiting for #447)
+```
+
+When a child shows as `MERGED` but its parent is still `OPEN`:
+
+```
+  ⚠ 03 ui#447   MERGED  → branch DEFERRED — parent #312 still OPEN
+     · pass --per-repo to delete the child branch out of order
+```
+
 Show the full plan via `AskUserQuestion`:
 - "Proceed — apply the plan as shown"
 - "Edit plan — pick individual items to skip"
@@ -118,6 +159,8 @@ For each session:
 2. **Worktree** — `git worktree remove <path>` ONLY if clean. If dirty, skip with a warning. Never use `--force` automatically; require an explicit `--force-dirty` flag in a future iteration if needed.
 3. **Branch** — `git branch -d <branch>` ONLY if merged into main. If unmerged, skip with a warning. Never use `-D` automatically.
 4. **Worktree prune** — after removals: `git worktree prune` to clean up any stale references.
+
+For sessions with **stack members**, branch deletion (step 3) iterates the stack **bottom-up** and refuses to delete any branch whose parent (position N-1) is still `OPEN`. `--per-repo` is the explicit override.
 
 For workspace-mode sessions, repeat steps 1–4 **per repo** in `repos`:
 
@@ -150,6 +193,7 @@ Untouched branches:
 - **No deletion when running from inside a candidate.** Refuse and tell the user where to `cd` first.
 - **`.orc/orc.json` updates are atomic.** Read, modify in memory, Write the full file. Never partial.
 - **`--dry-run` always prints the plan and exits.** Even if the user confirms during the AskUserQuestion before realizing they should have used `--dry-run`, treat the flag as a final gate.
+- **Stack child branches respect parent merge state.** A stack member at position N is only deletable if positions 1..N-1 are all `MERGED`. Bypassed only by `--per-repo` (with explicit consent).
 
 ## When to invoke
 
