@@ -9,33 +9,70 @@ Reference for Atlassian's `acli` — the supported CLI for Jira (and Confluence)
 
 **Verified version:** acli 1.3.18-stable (2026-05-02). Help text used to author this skill came from `acli jira workitem [subcommand] --help` on that version.
 
-## Iron rule: Jira wiki markup, not Markdown
+## Iron rule: ADF JSON for rich bodies on Jira Cloud
 
 <EXTREMELY-IMPORTANT>
-Every text body you send to Jira — summaries, descriptions, comments, sub-task bodies, `--description-file` contents, text fields inside `--from-json` payloads — MUST be written in **Jira wiki markup**, never Markdown. Jira does not render Markdown; `**bold**`, `# heading`, ` ```code``` `, and `[text](url)` come through as literal characters and make tickets look broken.
+Jira Cloud's REST API v3 stores rich-text fields (description, comments, sub-task bodies) as **ADF (Atlassian Document Format) JSON**. It does not render Markdown, and it does not render wiki markup either — anything you pass as plain text is wrapped in a single text node and shown verbatim. `**bold**`, `# heading`, ` ```code``` `, `h3. Title`, `*bold*`, `{code} … {code}` all come through as literal characters and make tickets look broken.
 
-Before any `acli jira workitem create|edit|comment` (or any other verb that accepts a text body), scan the body for Markdown syntax and rewrite to wiki markup. Do not skip this step.
+For anything richer than a single paragraph of plain prose, build an ADF document and pass it via `--description-file ./body.adf.json` (or the equivalent ADF object inside a `--from-json` payload). Generate a starter shape with `acli jira workitem create --generate-json` and look at the `description` field — that is the canonical ADF shape acli expects.
+
+Plain one-line summaries and short single-paragraph descriptions can still be passed as bare strings via `--summary` / `--description`; acli wraps them in an ADF text node for you. Everything else (headings, lists, tables, code blocks, links, bold/italic) is ADF or nothing.
 </EXTREMELY-IMPORTANT>
 
-| Need          | Markdown (do NOT send to Jira) | Jira wiki markup (use)              |
-|---------------|--------------------------------|-------------------------------------|
-| Heading 1     | `# Title`                      | `h1. Title`                         |
-| Heading 2     | `## Section`                   | `h2. Section`                       |
-| Bold          | `**bold**`                     | `*bold*`                            |
-| Italic        | `*italic*` / `_italic_`        | `_italic_`                          |
-| Inline code   | `` `code` ``                   | `{{code}}`                          |
-| Code block    | ` ```lang … ``` `              | `{code:lang} … {code}`              |
-| No-format     | (4-space indent)               | `{noformat} … {noformat}`           |
-| Quote (block) | `> quoted`                     | `bq. quoted` or `{quote} … {quote}` |
-| Bullet list   | `- item`                       | `* item`                            |
-| Numbered list | `1. item`                      | `# item`                            |
-| Link          | `[text](https://…)`            | `[text|https://…]`                  |
-| Mention       | `@user`                        | `[~accountid:abc123]`               |
-| Strikethrough | `~~text~~`                     | `-text-`                            |
-| Horizontal rule | `---`                        | `----`                              |
-| Panel/note    | (none)                         | `{panel:title=…} … {panel}` / `{info} … {info}` |
+### Minimal ADF skeleton
 
-If a description body originates as Markdown (e.g. pasted from a PRD), convert it before passing it to `--description` or `--description-file`. Treat `--description-file ./foo.md` as a smell: rename the file or convert its contents — a `.md` extension does not make Jira render Markdown.
+```json
+{
+  "type": "doc",
+  "version": 1,
+  "content": [
+    { "type": "paragraph", "content": [
+      { "type": "text", "text": "Plain paragraph with " },
+      { "type": "text", "text": "bold", "marks": [{ "type": "strong" }] },
+      { "type": "text", "text": " and " },
+      { "type": "text", "text": "a link", "marks": [{ "type": "link", "attrs": { "href": "https://example.com" } }] },
+      { "type": "text", "text": "." }
+    ]}
+  ]
+}
+```
+
+### Markdown → ADF node cheatsheet
+
+| Need            | Markdown (do NOT send) | ADF node shape                                                                                          |
+|-----------------|------------------------|---------------------------------------------------------------------------------------------------------|
+| Heading (1–6)   | `## Section`           | `{ "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "text": "Section" }] }`    |
+| Paragraph       | (default)              | `{ "type": "paragraph", "content": [{ "type": "text", "text": "…" }] }`                                 |
+| Bold            | `**bold**`             | text node + `"marks": [{ "type": "strong" }]`                                                            |
+| Italic          | `*italic*`             | text node + `"marks": [{ "type": "em" }]`                                                                |
+| Strikethrough   | `~~text~~`             | text node + `"marks": [{ "type": "strike" }]`                                                            |
+| Inline code     | `` `code` ``           | text node + `"marks": [{ "type": "code" }]`                                                              |
+| Code block      | ` ```lang … ``` `      | `{ "type": "codeBlock", "attrs": { "language": "ts" }, "content": [{ "type": "text", "text": "…" }] }`  |
+| Link            | `[text](https://…)`    | text node + `"marks": [{ "type": "link", "attrs": { "href": "https://…" } }]`                            |
+| Bullet list     | `- item`               | `{ "type": "bulletList", "content": [{ "type": "listItem", "content": [{ "type": "paragraph", … }] }] }` |
+| Numbered list   | `1. item`              | `{ "type": "orderedList", "content": [{ "type": "listItem", … }] }`                                      |
+| Blockquote      | `> quoted`             | `{ "type": "blockquote", "content": [{ "type": "paragraph", … }] }`                                      |
+| Horizontal rule | `---`                  | `{ "type": "rule" }`                                                                                     |
+| Table           | (none)                 | `{ "type": "table", "content": [{ "type": "tableRow", "content": [{ "type": "tableHeader" \| "tableCell", "content": [{ "type": "paragraph", … }] }] }] }` |
+| Mention         | `@user`                | `{ "type": "mention", "attrs": { "id": "<accountId>", "text": "@Name" } }` (inline, inside a paragraph)  |
+| Panel/note      | (none)                 | `{ "type": "panel", "attrs": { "panelType": "info" }, "content": [{ "type": "paragraph", … }] }`         |
+
+A few invariants that catch most authoring bugs:
+
+- The root is always `{ "type": "doc", "version": 1, "content": [ … ] }`.
+- Inline nodes (`text`, `mention`, `hardBreak`) only live inside a block node like `paragraph`, `heading`, `codeBlock`, or a list item's paragraph.
+- `listItem` content is a list of block nodes — almost always at least one `paragraph`.
+- `codeBlock.attrs.language` is optional but improves rendering; `panel.attrs.panelType` must be one of `info | note | warning | success | error`.
+- Don't use both `code` and other marks on the same text node — Jira drops the others.
+
+### When a PRD/spec arrives as Markdown
+
+Treat `--description-file ./foo.md` as a smell. Either:
+
+1. Convert the Markdown to ADF first and pass `--description-file ./foo.adf.json`, or
+2. Build the ADF programmatically (most reliable when the body has tables, code, or many headings).
+
+Renaming a `.md` file to `.json` does **not** make acli parse it as ADF; the file's *contents* must be a valid ADF document.
 
 ## Prerequisites
 
@@ -148,12 +185,16 @@ acli jira workitem create \
 # Open editor for summary + description (multi-line)
 acli jira workitem create --project "PLAT" --type "Task" --editor
 
-# From a file (description in plain text or ADF)
+# Rich description from a file — MUST be ADF JSON for anything beyond a single paragraph.
+# See "Iron rule: ADF JSON" above for the document shape.
 acli jira workitem create \
   --summary "Refactor session middleware" \
   --project "PLAT" \
   --type "Task" \
-  --description-file ./session-refactor-prd.md
+  --description-file ./session-refactor.adf.json
+
+# Updating an existing ticket's description with ADF works the same way:
+acli jira workitem edit PLAT-1234 --description-file ./session-refactor.adf.json
 ```
 
 **Required:** `--summary`, `--project`, `--type`. **Type values** (case sensitive — match what your project allows): typically `Task`, `Story`, `Bug`, `Epic`, `Sub-task`. Misspelling silently creates the wrong type or 400s.
@@ -292,7 +333,7 @@ acli jira workitem create --from-json /tmp/workitem.json
 - **`transition --status` rejects** — the target status isn't reachable from the ticket's current state in the workflow, or the spelling is wrong. List the ticket's current allowed transitions before retrying.
 - **Auth tokens expire silently** — a `401` after weeks of working commands usually means a token rotation, not a CLI bug. Re-run `acli jira auth login --web`.
 - **Don't paste real ticket keys into committed files** — examples in skills, commands, and docs should use placeholders like `PROJ-123` or `JRA-123`. Real keys leak project structure.
-- **Markdown in description/comment bodies** — Jira renders wiki markup, not Markdown. `**bold**` and `# heading` come through literally. See the "Iron rule: Jira wiki markup, not Markdown" section above and convert before sending.
+- **Markdown or wiki markup in description/comment bodies** — Jira Cloud's REST v3 stores rich-text fields as ADF JSON. Both `**bold**` *and* `h3. Title` / `*bold*` come through as literal characters, because acli wraps any non-JSON body in a single ADF text node. See the "Iron rule: ADF JSON" section above and build a proper ADF doc before sending anything richer than a one-paragraph plain string.
 
 ## Using jira-cli with orc
 
