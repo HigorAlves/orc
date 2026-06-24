@@ -1,6 +1,6 @@
 ---
 name: inline-review
-description: Use when posting a real GitHub PR review with inline comments anchored to specific lines and optional one-click change suggestions. Defines the posting mechanism (gh api default + GitHub MCP fallback), the severity → review-event mapping rule that prevents "approve while flagging bugs" contradictions, suggestion block formatting, and the mandatory preview gate. Invoked by /orc:code-review Phase 6+ after agents return structured findings.
+description: Post a real GitHub PR review with inline comments anchored to lines, plus optional one-click suggestions. Use when posting line-level PR feedback; invoked by /orc:code-review after findings.
 ---
 
 # Inline GitHub PR Review

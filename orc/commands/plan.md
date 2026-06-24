@@ -1,5 +1,5 @@
 ---
-description: Plan a feature or refactor — produces a TDD-shaped plan, with optional design grilling, and decomposes into independently shippable issues. Writes to .orc/<branch>/files/. Phase 1 always asks to link a Jira ticket (skip-able); --jira <KEY> suppresses the prompt and links silently. Workspace-aware — in workspace mode the plan is written at the workspace level with per-slice repo: tags.
+description: Plan a feature or refactor — produces a TDD-shaped plan, optionally design-grilled, and decomposes it into independently shippable issues. --jira <KEY> links a ticket. Workspace-aware.
 argument-hint: "[--grill] [--issues] [--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 allowed-tools:
   - Read

@@ -20,7 +20,7 @@
 
 ## What it does
 
-`orc` is a personal-workflow plugin: **54 curated skills, 19 composite slash commands, 10 specialist subagents, and 4 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers in commits/PRs, dependency pre-flight check, skill catalog injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged" with `orc-implementer` writing the code slice-by-slice in between.
+`orc` is a personal-workflow plugin: **57 curated skills, 20 composite slash commands, 11 specialist subagents, and 4 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers in commits/PRs, dependency pre-flight check, skill catalog injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged" with `orc-implementer` writing the code slice-by-slice in between.
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
@@ -174,13 +174,13 @@ export ORC_SKIP_TOOL_CHECK=1
 
 **Senior/architect practice (5, authored for orc):** `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem` (blameless incident postmortems), `prd-writing` (Product Requirements Documents), `trd-writing` (Technical Requirements Documents).
 
-**Pack: web-react (7):** `next-best-practices`, `vercel-react-best-practices`, `vercel-composition-patterns`, `frontend-design`, `shadcn`, `tailwind-design-system`, `vitest`.
+**Pack: web-react (6):** `next-best-practices`, `vercel-react-best-practices`, `vercel-composition-patterns`, `shadcn`, `tailwind-design-system`, `vitest`.
 
-**Pack: backend (8):** `nodejs-best-practices`, `nestjs-best-practices`, `typescript-advanced-types`, `postgresql-table-design`, `postgresql-optimization`, `postgresql-code-review`, `stripe-best-practices`, `upgrade-stripe`.
+**Pack: backend (7):** `nodejs-best-practices`, `nestjs-best-practices`, `typescript-advanced-types`, `postgresql-table-design`, `postgresql-optimization`, `stripe-best-practices`, `upgrade-stripe`.
 
 **Pack: ios (2):** `swiftui-pro`, `mobile-ios-design`.
 
-**Pack: workflow-extras (13):** `docker-expert`, `turborepo`, `sentry-cli`, `jira-cli`, `inline-review`, `skill-creator`, `write-a-skill`, `documentation-writer`, `create-readme`, `to-prd`, `to-issues`, `grill-me`, `agent-browser` (drives a real browser for `/orc:qa` web mode).
+**Pack: workflow-extras (14):** `docker-expert`, `turborepo`, `sentry-cli`, `jira-cli`, `inline-review`, `skill-creator`, `write-a-skill`, `documentation-writer`, `doc-writing`, `create-readme`, `to-prd`, `to-issues`, `grill-me`, `agent-browser` (drives a real browser for `/orc:qa` web mode).
 
 Plus the meta skill `using-orc` (auto-injected at SessionStart, encodes iron rules). **Total: 54 skills.**
 

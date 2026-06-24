@@ -1,5 +1,5 @@
 ---
-description: Author a blameless incident postmortem — timeline, root causes, action items — and file each P0 action item as a tracker issue. Multi-phase; checkpoints to .orc/<branch>/files/. Status moves to Final only when all P0 items close.
+description: Author a blameless incident postmortem — timeline, root causes, action items — filing each P0 action item as a tracker issue. Status reaches Final only when all P0 items close.
 argument-hint: "[<short-slug>] [--severity sev-1|sev-2|sev-3]"
 allowed-tools:
   - Read

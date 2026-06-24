@@ -1,6 +1,6 @@
 ---
 name: stack-pr
-description: Use when breaking a too-big branch into a stack of smaller chained PRs — defines the commit-based default, the --smart agent-reshape path, gh-stack tooling detection, body cross-link decoration, and recovery via backup branch. Invoked by /orc:stack-pr and by /orc:ship's size gate.
+description: "Use when breaking a too-big branch into a stack of smaller chained PRs — commit-based default, --smart agent-reshape, gh-stack detection, cross-links. Invoked by /orc:stack-pr and /orc:ship's size gate."
 ---
 
 # Stack PR

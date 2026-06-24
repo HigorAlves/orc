@@ -1,5 +1,5 @@
 ---
-description: Finalize and open the PR. Verifies tests pass, presents structured commit/branch/PR options, executes the chosen path. Includes a soft size-budget gate (default 300 LOC, configurable) that prompts to stack / open big with reason / abort when over budget. Last command before review. If the active session has a bound jiraTicket in .orc/orc.json, the PR body gets a `Resolves <KEY>` trailer (configurable via $ORC_JIRA_PR_KEYWORD). Workspace-aware — opens N linked PRs with reciprocal cross-links + merge order; size gate fires per repo.
+description: Finalize and open the PR — verifies tests, presents commit/branch/PR options, executes the chosen path, with a soft LOC size-budget gate. Last command before review; adds a Jira Resolves trailer when bound. Workspace-aware.
 argument-hint: "[--draft] [--base <branch>] [--caveman] [--max-loc <N>] [--no-size-gate] [--repos a,b | --repo a | --all-repos | --this-repo]"
 allowed-tools:
   - Read

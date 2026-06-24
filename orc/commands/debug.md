@@ -1,5 +1,5 @@
 ---
-description: Systematic root-cause investigation, then fix with TDD. Writes a diagnosis + regression test to .orc/<branch>/files/. Never proposes a fix without finding the cause first. Phase 1 always asks to link a Jira ticket (skip-able); --jira <KEY> suppresses the prompt and links silently. Workspace-aware — investigator can read across sibling repos when a symptom in one repo is caused by another.
+description: Systematic root-cause investigation, then fix with TDD — never proposes a fix before finding the cause. Writes a diagnosis + regression test. --jira <KEY> links a ticket. Workspace-aware across sibling repos.
 argument-hint: "[--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <bug description or failing test name>"
 allowed-tools:
   - Read

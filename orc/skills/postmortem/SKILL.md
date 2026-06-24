@@ -1,9 +1,11 @@
 ---
 name: postmortem
-description: Author blameless incident postmortems — structured analysis of a production incident with timeline, root cause(s), contributing factors, and concrete action items. Use after any production-affecting incident (outage, data loss, security event, customer-visible regression), when the user says "let's write the postmortem" / "PM for last night's incident", or when retrospectively documenting a near-miss. Distinct from systematic-debugging (which fixes the bug) — postmortem learns from the system around the bug.
+description: Author blameless incident postmortems — timeline, root cause(s), contributing factors, action items. Use after a production incident (outage, data loss, security event, regression) or a near-miss.
 ---
 
 # Postmortem
+
+> **Defer to `orc:doc-writing`** for the shared scaffolding: the doc-type map (postmortem vs PRD/TRD/RFC/ADR, and how it differs from `systematic-debugging`), the shared section outline, the publication & numbering convention, and the review gates. This skill carries only the postmortem-specific template, blameless rules, and tone. Note: postmortems are date-keyed, not monotonically numbered (see the publication note in `orc:doc-writing`).
 
 A postmortem is the artifact that turns an incident into organizational learning. The fix lands in code; the postmortem lands in the team's collective memory.
 
@@ -33,12 +35,7 @@ If you find yourself writing "should have", stop and reframe.
 
 ## Where they live
 
-Two patterns:
-
-1. **In-repo** — `docs/postmortems/YYYY-MM-DD-<short-slug>.md`. Good for engineering-team-only postmortems.
-2. **Shared doc tool** (Notion, Confluence, Google Doc) — required when leadership, support, or non-engineering stakeholders need read access.
-
-For orc projects, default to in-repo. Mirror to a shared doc only when the audience requires it.
+`docs/postmortems/YYYY-MM-DD-<short-slug>.md`. Good for engineering-team-only postmortems; mirror to a shared doc tool (Notion, Confluence, Google Doc) when leadership, support, or non-engineering stakeholders need read access. For orc projects, default to in-repo (see the publication note in `orc:doc-writing`).
 
 ## Template
 

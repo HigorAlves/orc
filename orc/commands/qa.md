@@ -1,5 +1,5 @@
 ---
-description: Pre-PR quality gate. For web changes, browser-driven QA via the agent-browser CLI — annotated screenshots, accessibility snapshot, console log, network HAR, and a step-by-step narrative saved to .orc/<branch>/files/qa/. No QA-passed claim without artifacts. Workspace-aware — runs verification per repo; web QA stays singular against the repo declared as the web surface.
+description: Pre-PR quality gate — browser-driven QA for web changes (screenshots, a11y snapshot, console, HAR, narrative) via agent-browser. No QA-passed claim without artifacts. Workspace-aware.
 argument-hint: "[--web <url>] [--no-web] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 allowed-tools:
   - Read

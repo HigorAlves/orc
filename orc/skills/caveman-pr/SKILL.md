@@ -1,11 +1,6 @@
 ---
 name: caveman-pr
-description: >
-  Ultra-compressed pull request descriptions. Same family as caveman-commit
-  and caveman-review — terse, signal-only PR body. Use when opening a PR
-  (via /orc:ship or gh pr create), when user says "write a PR description",
-  "PR body", "draft the PR", or invokes /caveman-pr. Skips boilerplate the
-  reviewer can read from the diff.
+description: Ultra-compressed, signal-only pull request descriptions. Use when opening a PR or when the user says "write a PR description", "PR body", "draft the PR", or invokes /caveman-pr.
 ---
 
 Write PR descriptions terse and exact. Reviewers don't need a tour of your diff — they need a *why*, a *how-tested*, and (if relevant) a heads-up.

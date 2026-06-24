@@ -1,9 +1,11 @@
 ---
 name: prd-writing
-description: Author Product Requirements Documents (PRDs) from scratch — interview-driven scaffolding, opinionated template, publication to docs/prds/NNNN-*.md. Use when the user says "write a PRD for X" / "let's spec this product" / "I have an idea, help me PRD it", when starting a new feature whose intent isn't already settled, or when /orc:prd is invoked. Distinct from orc:to-prd (which transforms existing conversation into a PRD shape) and orc:rfc-writing (which debates *how* after PRD has settled *what & why*).
+description: Author Product Requirements Documents (PRDs) from scratch — interview-driven, templated, published to docs/prds/NNNN-*.md. Use for "write a PRD for X", an unsettled new feature, or /orc:prd.
 ---
 
 # PRD Writing
+
+> **Defer to `orc:doc-writing`** for the shared scaffolding: the doc-type map (PRD vs TRD vs RFC vs ADR vs postmortem, and how PRD differs from `orc:to-prd`), the shared section outline, the `docs/<type>s/NNNN-*.md` numbering & publication convention, and the review gates. This skill carries only the PRD-specific template, fields, and tone.
 
 A PRD is the contract between product intent and engineering execution. It captures **what we're building, for whom, and why now** — *before* anyone argues about architecture. A good PRD makes the design conversation that follows it 10× faster because half the questions are pre-answered.
 
@@ -21,24 +23,6 @@ Don't write a PRD for:
 - Tactical bug fixes → just fix it.
 - One-day features that have no audience question (e.g. "add `--verbose` flag for engineers") → a plan or issue is enough.
 - A decision that's already made and documented elsewhere → `orc:adr-writing` to record it.
-
-## PRD vs RFC vs ADR vs plan
-
-| Document | Primary question it answers | Audience |
-|----------|----------------------------|----------|
-| **PRD** | "What are we building, for whom, and why?" | PM, design, engineering, leadership |
-| **RFC** | "How should we build it? What are the alternatives?" | Engineering (and sometimes wider review) |
-| **TRD** | "What's the technical contract — interfaces, data, failure modes?" | Engineering |
-| **ADR** | "We decided X; here's why." | Future-you and successors |
-| **Plan** | "In what order do we ship the slices?" | Whoever is implementing |
-
-A typical lineage: PRD → (TRD) → (RFC if alternatives exist) → plan → ADRs as decisions lock in.
-
-## Where they live
-
-`docs/prds/NNNN-<kebab-feature-name>.md`, where `NNNN` is a four-digit zero-padded sequence (`0001`, `0002`, …). Sequence is monotonic — never reuse a number, even for archived PRDs.
-
-If `docs/prds/` doesn't exist yet, create it and add a one-line `docs/prds/README.md` pointing to this skill.
 
 ## Interview checklist (before drafting)
 
@@ -125,9 +109,9 @@ How does this get to users?
 
 1. **Confirm a PRD is warranted** — apply the "all of these are true" test above. If borderline, surface the call to the user (PRD / smaller-issue / nothing).
 2. **Run the interview** if input is sparse — go through the seven checklist questions, but skip any already answered in context. Batch into 2–3 `AskUserQuestion` calls; don't drip one at a time.
-3. **Find the next sequence number** — `ls docs/prds 2>/dev/null | grep -E '^[0-9]{4}-' | sort | tail -1` and increment. Pad to four digits.
+3. **Find the next sequence number** in `docs/prds/` (see the numbering convention in `orc:doc-writing`).
 4. **Draft from the template.** Fill every section with real content. **Delete sections that genuinely have no content** (e.g. no counter-metric, no appendix) rather than writing `TBD`.
-5. **Show the draft to the user for review** before committing. Use `AskUserQuestion`: "Looks good — commit" / "Edit before commit" / "Save as Draft (status flag flipped)".
+5. **Show the draft to the user for review** before committing (review gates in `orc:doc-writing`).
 6. **Commit** via `orc:git-commit`. Suggested message: `docs(prd): NNNN — <kebab title>`.
 7. **Cross-link.** If the PRD relates to existing tickets, RFCs, ADRs — link FROM those to the PRD (the link should be the entry point, not the reverse).
 
@@ -143,12 +127,3 @@ Plain prose, written by a product-minded engineer for product-and-engineering re
 - **PRDs that read like specs.** If half the content is API shapes and database tables, you're writing a TRD or RFC — promote it accordingly.
 - **PRDs without "Out of scope".** Without explicit exclusions, every reviewer will paste in their pet feature and the work doubles.
 - **One-line problem statements.** "Users want CSV export" is not a problem statement; it's a solution. The PRD should articulate *the problem CSV export solves*.
-
-## Relationship to `orc:to-prd`
-
-`orc:to-prd` and `prd-writing` solve different problems and coexist:
-
-- **`prd-writing`** (this skill) — author from scratch, interview-driven, scaffolding, publish to `docs/prds/`. Used by `/orc:prd`.
-- **`orc:to-prd`** — synthesize an existing conversation into a PRD shape and ship it to an issue tracker (Linear/Jira). Used when the design conversation has already happened in chat and you just need the artifact.
-
-If the user's input is "we just talked through this; write it up" → reach for `orc:to-prd`. If it's "I have an idea, help me PRD it" → reach for `prd-writing`.

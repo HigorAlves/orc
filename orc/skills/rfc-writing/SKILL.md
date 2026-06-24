@@ -1,9 +1,11 @@
 ---
 name: rfc-writing
-description: Author RFCs (Request for Comments) — design documents that propose a non-trivial system or feature change before implementation, surface alternatives, and invite critique. Use when the user says "let's design this" / "I want to write an RFC" / "let me float a design", when a feature touches multiple services or teams, or when a plan is too big to start coding cold. RFCs differ from plans (which assume design is settled) and from ADRs (which record a decided choice, post-hoc).
+description: Author RFCs — design docs that propose a non-trivial change before implementation, surface alternatives, and invite critique, in docs/rfcs/NNNN-*.md. Use for "write an RFC" or a multi-team feature.
 ---
 
 # RFC Writing
+
+> **Defer to `orc:doc-writing`** for the shared scaffolding: the doc-type map (RFC vs PRD vs TRD vs ADR vs postmortem, and how RFCs differ from plans and ADRs), the shared section outline, the `docs/<type>s/NNNN-*.md` numbering & publication convention, and the review gates. This skill carries only the RFC-specific template, process, and tone.
 
 RFCs make design decisions visible BEFORE code commits to them. They cost a few hours of writing to save days of misaligned implementation.
 
@@ -21,15 +23,6 @@ Don't write an RFC for:
 - A single file/module change inside one team's scope
 - Work that has clear precedent in the codebase already
 - Something you'd implement in a day even if wrong
-
-## Where they live
-
-Two valid patterns:
-
-1. **In-repo** — `docs/rfcs/NNNN-<kebab-name>.md` (mirrors `docs/adr/`). Lifecycle is git-native.
-2. **External tool** — Notion, Linear, GitHub Discussions, or a wiki. Use when reviewers don't easily clone the repo, or when the discussion threading is more important than diff history.
-
-For orc projects, default to in-repo. Move to external only if the discussion volume justifies it.
 
 ## Template
 
@@ -121,14 +114,6 @@ How do we know this RFC's implementation is successful 3 months in? Be measurabl
 4. **Approval ≠ implementation.** When approved, follow-up issues / `/orc:plan` produce the work breakdown. The RFC is the *why*; the plan is the *how*.
 5. **Reject is fine.** A rejected RFC is a successful one — the team learned that approach was wrong without paying for the implementation. Mark it Rejected, leave the document, link from future ADRs that benefit from the analysis.
 
-## RFC vs ADR vs Plan — when to reach for which
-
-| Document | Primary question it answers | Lives until |
-|----------|----------------------------|-------------|
-| **RFC** | "Should we build X this way?" — exploratory, opens debate | Decision is made; status moves to Approved/Rejected |
-| **ADR** | "We decided X; here's why." — durable record | Superseded by another ADR or the project ends |
-| **Plan** | "Now that we're building X, in what order?" — step-by-step | Work is shipped |
-
 An RFC that gets approved typically spawns 1–N ADRs (one per durable decision it locks in) and 1 plan (work breakdown).
 
 ## Tone
@@ -138,7 +123,7 @@ Engineer-to-engineer, plain prose. Bullet over prose where it helps. Diagrams wh
 ## What to do as the model
 
 1. Apply the "any of these are true" test. If the user is asking for an RFC for something too small, push back gently and suggest a plan or a single-paragraph design note instead.
-2. Locate `docs/rfcs/` (create if needed) and find the next sequence number.
+2. Locate `docs/rfcs/` (create if needed) and find the next sequence number — see the numbering convention in `orc:doc-writing`. RFCs may also live in an external tool when discussion threading matters more than diff history (see publication notes in `orc:doc-writing`).
 3. Draft from the template. Fill `Goals` and `Non-goals` first — they bound the rest.
 4. Default `Decision deadline` to 1 week from today; user can adjust.
-5. After draft, surface to the user, ask whether to commit or open a discussion thread first.
+5. After draft, surface to the user (review gates in `orc:doc-writing`), ask whether to commit or open a discussion thread first.

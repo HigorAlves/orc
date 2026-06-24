@@ -1,5 +1,5 @@
 ---
-description: Review someone else's open GitHub PR end-to-end via gh CLI. Posts a real GitHub PR review with inline comments anchored to specific lines and (when applicable) one-click suggestion blocks. Review event (APPROVE / COMMENT / REQUEST_CHANGES) computed mechanically from finding severities — agents do NOT decide the verdict. Mandatory preview gate before posting. Workspace-aware — accepts multiple PR refs to review a set of linked PRs as one logical change.
+description: Review someone else's open GitHub PR — posts a real PR review with line-anchored inline comments and suggestions. Verdict computed mechanically from severities; mandatory preview gate before posting. Workspace-aware.
 argument-hint: "<pr-number-or-url> [--prs a#1,b#2,...] [--context <description>] [--summary-only] [--soft-tests] [--dry-run] [--include-nits]"
 allowed-tools:
   - Read

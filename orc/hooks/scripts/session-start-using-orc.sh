@@ -65,7 +65,7 @@ if [ -n "$context_banner" ]; then
   context_banner_escaped=$(escape_for_json "$context_banner")
   context_banner_escaped="**orc context (auto-detected at session start):**\n${context_banner_escaped}\n\n"
 fi
-session_context="<EXTREMELY_IMPORTANT>\nYou have orc.\n\n${context_banner_escaped}**Below is the full content of your 'orc:using-orc' skill — your introduction to using orc skills. For all other skills, use the 'Skill' tool:**\n\n${using_orc_escaped}\n</EXTREMELY_IMPORTANT>"
+session_context="<EXTREMELY_IMPORTANT>\nYou have orc.\n\n${context_banner_escaped}**Below are the core rules of orc (your 'orc:using-orc' skill) — your introduction to using orc skills. For all other skills, use the 'Skill' tool:**\n\n${using_orc_escaped}\n</EXTREMELY_IMPORTANT>"
 
 # Claude Code hooks expect hookSpecificOutput.additionalContext;
 # other platforms expect additional_context.

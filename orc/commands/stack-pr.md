@@ -1,5 +1,5 @@
 ---
-description: Break a too-big branch into a stack of smaller chained PRs. Default strategy is commit-based (one PR per Conventional Commit on base..HEAD). Use --smart to dispatch the orc-stack-analyzer agent for messy branches. Detects gh-stack; falls back to plain-gh if absent. Writes per-PR stack metadata into .orc/orc.json#linkedPRs[]. Workspace-aware — operates per repo.
+description: Break a too-big branch into a stack of smaller chained PRs — commit-based by default (one PR per Conventional Commit), or --smart for messy branches. Detects gh-stack, falls back to plain gh. Workspace-aware.
 argument-hint: "[--smart] [--base <branch>] [--draft] [--max-loc <N>] [--repos a,b | --repo a | --all-repos | --this-repo]"
 allowed-tools:
   - Read
