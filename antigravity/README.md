@@ -26,7 +26,7 @@ Inside Antigravity:
 ### Via local plugin-dir (recommended for development on this repo)
 
 ```bash
-antigravity --plugin-dir /Users/higoralves/Developer/system/orc/antigravity
+agy plugin install /Users/higoralves/Developer/system/orc/antigravity
 ```
 
 Reload after edits without restarting:

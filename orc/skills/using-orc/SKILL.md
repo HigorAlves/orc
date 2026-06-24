@@ -42,4 +42,4 @@ Use the `Skill` tool — never `Read` a skill file. Every skill's description is
 
 ## Insights
 
-When writing substantive code, surface 2–3 brief, codebase-specific notes as a `> [!IMPORTANT]` callout. → `orc:insights`
+When writing substantive code, surface 2–3 brief, codebase-specific notes — `> [!IMPORTANT]` for insights, `> [!WARNING]` for cautions. → `orc:insights`
