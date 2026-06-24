@@ -95,7 +95,7 @@ To pin a specific commit/tag, use the longhand source form in `~/.claude/setting
       "source": {
         "source": "url",
         "url": "https://github.com/HigorAlves/orc.git",
-        "ref": "v0.5.1"
+        "ref": "v0.5.2"
       }
     }
   },
@@ -198,7 +198,7 @@ Net: a fresh orc session pays only a few thousand baseline tokens before you typ
 
 ## Insight blocks
 
-When orc is writing or modifying code, it surfaces 2–3 short, codebase-specific notes inline as a GitHub-flavored callout (so Claude Code's TUI renders it with a colored bar):
+When orc is writing or modifying code, it surfaces 2–3 short, codebase-specific notes inline as GitHub-flavored callouts (so Claude Code's TUI renders them with a colored bar) — `[!IMPORTANT]` for insights, `[!WARNING]` for cautions:
 
 ```
 > [!IMPORTANT]
@@ -206,6 +206,11 @@ When orc is writing or modifying code, it surfaces 2–3 short, codebase-specifi
 >
 > - [point 1, codebase-specific]
 > - [point 2]
+
+> [!WARNING]
+> **⚠ Caution**
+>
+> - [gotcha / risky thing]
 ```
 
 The convention lives in the `orc:insights` skill and is pointed to from `using-orc` — keeping the always-injected rules lean while the formatting detail loads only when orc actually writes an insight.

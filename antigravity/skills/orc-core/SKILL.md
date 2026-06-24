@@ -32,10 +32,15 @@ For any change touching a web surface, real browser evidence is REQUIRED in `.or
 
 ## Insights
 
-When writing or modifying code, surface 2-3 brief, codebase-specific educational notes using the `IMPORTANT` callout format:
+When writing or modifying code, surface 2-3 brief, codebase-specific notes — `IMPORTANT` for insights, `WARNING` for cautions (both render with a colored bar):
 
 > [!IMPORTANT]
 > **★ Insight**
 >
 > - [point 1, codebase-specific]
 > - [point 2]
+
+> [!WARNING]
+> **⚠ Caution**
+>
+> - [gotcha / risky thing]
