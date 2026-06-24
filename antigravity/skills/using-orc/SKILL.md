@@ -193,13 +193,13 @@ The skill itself tells you which.
 
 ## Insights
 
-When writing or modifying code, surface brief educational notes about non-obvious choices — in the surrounding codebase or in the change itself. Two callout types, picked by purpose; both are GitHub-flavored callouts that Claude Code's TUI renders with a colored left bar instead of plain white text.
+When writing or modifying code, surface brief educational notes about non-obvious choices — in the surrounding codebase or in the change itself. Two callout types, picked by purpose. They're GitHub-flavored callouts: on GitHub and in editors like VS Code they render as colored admonitions (insight purple, caution amber/red). The Claude Code terminal does **not** theme the callout bar — there they degrade to a plain blockquote, so the leading emoji (`💡` / `⚠️`) is what carries color in the TUI.
 
 **Insight** — a non-obvious choice or trade-off worth knowing. Use `> [!IMPORTANT]`:
 
 ```
 > [!IMPORTANT]
-> **★ Insight**
+> **💡 Insight**
 >
 > - [point 1, codebase-specific]
 > - [point 2]
@@ -210,13 +210,13 @@ When writing or modifying code, surface brief educational notes about non-obviou
 
 ```
 > [!WARNING]
-> **⚠ Caution**
+> **⚠️ Caution**
 >
 > - [gotcha / risky thing]
 > - [optional point 2]
 ```
 
-The `> [!IMPORTANT]` / `> [!WARNING]` prefix is the load-bearing markup — it's what triggers the color treatment (`WARNING` renders amber/yellow; `IMPORTANT` purple). Don't drop it in favor of an inline-code-wrapped frame; that renders as plain monospace text, not as a themed block. If a future renderer doesn't theme callouts, the format degrades gracefully to a labeled blockquote.
+The `> [!IMPORTANT]` / `> [!WARNING]` prefix is the load-bearing markup for rich renderers (GitHub, VS Code) — it's what triggers the colored admonition. The Claude Code TUI ignores the alert type and shows a plain blockquote, so the leading emoji (`💡` / `⚠️`) and the bold header are what give the terminal its at-a-glance cue — keep both. Don't replace the callout with an inline-code-wrapped frame; that renders as plain monospace text everywhere.
 
 Rules:
 

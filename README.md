@@ -198,17 +198,17 @@ Net: a fresh orc session pays only a few thousand baseline tokens before you typ
 
 ## Insight blocks
 
-When orc is writing or modifying code, it surfaces 2–3 short, codebase-specific notes inline as GitHub-flavored callouts (so Claude Code's TUI renders them with a colored bar) — `[!IMPORTANT]` for insights, `[!WARNING]` for cautions:
+When orc is writing or modifying code, it surfaces 2–3 short, codebase-specific notes inline as GitHub-flavored callouts — `[!IMPORTANT]` for insights, `[!WARNING]` for cautions. They render as colored admonitions on GitHub and in editors like VS Code; in the Claude Code terminal the callout bar isn't themed, so the leading 💡/⚠️ emoji carries the color cue:
 
 ```
 > [!IMPORTANT]
-> **★ Insight**
+> **💡 Insight**
 >
 > - [point 1, codebase-specific]
 > - [point 2]
 
 > [!WARNING]
-> **⚠ Caution**
+> **⚠️ Caution**
 >
 > - [gotcha / risky thing]
 ```
