@@ -1,5 +1,5 @@
 ---
-description: Author a system-design RFC — proposes a non-trivial change BEFORE implementation, surfaces alternatives, invites critique. Multi-phase; checkpoints to .orc/<branch>/files/. Differs from /orc:plan (assumes design is settled) and /orc:adr (records a decided choice).
+description: Author a system-design RFC — proposes a non-trivial change BEFORE implementation, surfaces alternatives, and invites critique. Differs from /orc:plan (design settled) and /orc:adr (decision recorded).
 argument-hint: "[--grill] [--review <path>] [<title>]"
 allowed-tools:
   - Read

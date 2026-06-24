@@ -1,5 +1,5 @@
 ---
-description: Clean up after completed (or abandoned) orc sessions — removes the .orc/<branch>/ workspace state, removes the registry entry, removes any associated git worktree, and optionally deletes the merged feature branch. Destructive operation — always shows a preview and asks before doing anything. Workspace-aware — by default waits until all linked PRs are merged before cleaning a workspace session.
+description: Clean up after completed or abandoned orc sessions — removes workspace state, registry entry, git worktree, and optionally the merged branch. Destructive; always previews and asks first. Workspace-aware.
 argument-hint: "[--dry-run] [--all-completed] [--per-repo] [<session-id-or-branch>]"
 allowed-tools:
   - Read

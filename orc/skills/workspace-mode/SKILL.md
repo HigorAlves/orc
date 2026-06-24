@@ -1,6 +1,6 @@
 ---
 name: workspace-mode
-description: Use when cwd is a parent directory containing multiple sibling git repos (e.g. ~/work/myapp/{api,ui,docs}) — defines auto-detection, --repos/--repo/--all-repos/--this-repo precedence, per-repo agent dispatch, linked-PR mechanics, branch-collision recovery, and workspace ↔ single-repo backward compatibility.
+description: Use when cwd is a parent dir holding multiple sibling git repos — defines repo auto-detection, --repos/--repo/--all-repos/--this-repo precedence, per-repo dispatch, and linked-PR mechanics.
 ---
 
 # Workspace mode

@@ -1,6 +1,6 @@
 ---
 name: pr-size-budget
-description: Use when opening a PR or planning slices — defines the soft 300 LOC iron-rule budget, the exclusion list, the canonical gate prompt that ship/flow/stack-pr all share, and the override syntax. Single source of truth so the three commands cannot drift.
+description: Use when opening a PR or planning slices — defines the soft 300 LOC budget, the exclusion list, the shared gate prompt for ship/flow/stack-pr, and the override syntax.
 ---
 
 # PR size budget

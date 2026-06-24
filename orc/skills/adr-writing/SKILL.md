@@ -1,9 +1,11 @@
 ---
 name: adr-writing
-description: Author and update Architecture Decision Records (ADRs) — the durable record of a technical decision and its trade-offs. Use when locking in a non-trivial architectural decision (database choice, framework choice, boundary lines, protocol choice, deprecation), when the user says "let's write this down" / "ADR for this" / "what was the decision on X", or when an existing ADR needs supersession.
+description: Author and update Architecture Decision Records (ADRs) — the durable record of a decision and its trade-offs, in docs/adr/NNNN-*.md. Use to lock in an architectural decision or to supersede an ADR.
 ---
 
 # ADR Writing
+
+> **Defer to `orc:doc-writing`** for the shared scaffolding: the doc-type map (ADR vs PRD vs TRD vs RFC vs postmortem, and how ADRs differ from RFCs and plans), the shared section outline, the `docs/<type>s/NNNN-*.md` numbering & publication convention, and the review gates. This skill carries only the ADR-specific template, status transitions, and tone.
 
 ADRs are the contract between past-you and future-you. They capture *why* a decision was made, not just *what* was chosen, so a year later nobody has to reverse-engineer the trade-offs from code.
 
@@ -21,11 +23,7 @@ Don't write ADRs for:
 - Naming choices inside a single file
 - Decisions you'll revisit next sprint
 
-## Where they live
-
-`docs/adr/NNNN-<kebab-decision-name>.md`, where `NNNN` is a four-digit zero-padded sequence (`0001`, `0002`, ...). Sequence is monotonic across the project — never reuse a number, even for superseded ADRs.
-
-If `docs/adr/` doesn't exist yet, create it and add a one-line `docs/adr/README.md` pointing to this skill.
+Note: ADRs live at `docs/adr/NNNN-<kebab-decision-name>.md` (singular `adr` dir name by convention). All other numbering mechanics are the shared convention in `orc:doc-writing`.
 
 ## Template
 
@@ -91,9 +89,9 @@ ADRs are written by engineers, for engineers, in plain prose. No marketing voice
 ## What to do as the model
 
 1. Confirm with the user that an ADR is warranted (apply the "all of these are true" test above). If borderline, surface that and ask.
-2. Find the next sequence number: `ls docs/adr | sort | tail -1` and increment.
+2. Find the next sequence number in `docs/adr/` (see the numbering convention in `orc:doc-writing`).
 3. Draft using the template, filling each section with real content. Don't leave placeholder text like "TBD" — if a section truly has no content, delete it rather than leave a stub.
-4. Show the draft to the user for review before committing.
+4. Show the draft to the user for review before committing (review gates in `orc:doc-writing`).
 5. After acceptance, link the ADR from any code comment or doc that depends on the decision, so the link is the entry point not the reverse.
 
 ## Anti-patterns

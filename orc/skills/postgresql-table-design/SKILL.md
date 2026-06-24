@@ -1,6 +1,6 @@
 ---
 name: postgresql-table-design
-description: Use this skill when designing or reviewing a PostgreSQL-specific schema. Covers best-practices, data types, indexing, constraints, performance patterns, and advanced features
+description: 'Design or review a PostgreSQL-specific schema: data types, indexing, constraints, partitioning, RLS, performance patterns, and advanced features. Use when modeling or auditing PG tables.'
 ---
 
 # PostgreSQL Table Design

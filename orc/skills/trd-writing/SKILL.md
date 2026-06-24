@@ -1,9 +1,11 @@
 ---
 name: trd-writing
-description: Author Technical Requirements Documents (TRDs) — the technical contract that translates a settled PRD into interfaces, data shapes, failure modes, and constraints, before RFC debate or implementation plans. Use when the user says "write a TRD" / "spec the technical contract" / "we have the PRD, now what are the interfaces", when /orc:trd is invoked, or when a PRD's "How" needs to be pinned down before plan or RFC. Distinct from rfc-writing (which debates alternatives) and adr-writing (which records a single decision).
+description: Author Technical Requirements Documents (TRDs) — turn a settled PRD into interfaces, data shapes, failure modes, and constraints in docs/trds/NNNN-*.md. Use for "write a TRD" or /orc:trd.
 ---
 
 # TRD Writing
+
+> **Defer to `orc:doc-writing`** for the shared scaffolding: the doc-type map (TRD vs PRD vs RFC vs ADR vs postmortem, and how TRD differs from each), the shared section outline, the `docs/<type>s/NNNN-*.md` numbering & publication convention, and the review gates. This skill carries only the TRD-specific template, fields, and tone.
 
 A TRD turns "what & why" into "what we will build, technically." It pins down interfaces, data, failure modes, and constraints — the things engineering will commit to producing — *before* the design debate (RFC) or the implementation breakdown (plan).
 
@@ -24,25 +26,7 @@ Don't write a TRD for:
 - Locking in a single architectural decision after debate → that's `orc:adr-writing`.
 - Anything where the PRD itself is unsettled → write/finish the PRD first (`orc:prd-writing`).
 
-## TRD vs PRD vs RFC vs ADR vs plan
-
-| Document | Primary question it answers | Stable when |
-|----------|----------------------------|-------------|
-| **PRD** | "What & why for the user?" | Product intent locked in |
-| **TRD** | "What's the technical contract — interfaces, data, failure modes?" | Engineering team agrees on the contract |
-| **RFC** | "How should we build it? Which alternative wins?" | Decision made (Approved or Rejected) |
-| **ADR** | "We decided X; here's why." | Forever (until superseded) |
-| **Plan** | "In what order do we ship the slices?" | Work shipped |
-
-A typical lineage: PRD → TRD → (RFC if alternatives exist) → plan → ADRs as decisions lock in.
-
 A TRD without a PRD is a TRD answering a question nobody asked. A TRD with no contract section is just an RFC mislabeled.
-
-## Where they live
-
-`docs/trds/NNNN-<kebab-name>.md`. Same numbering convention as ADRs/RFCs — four-digit zero-padded, monotonic across the project, never reused.
-
-If `docs/trds/` doesn't exist, create it and add a one-line `docs/trds/README.md` pointing to this skill.
 
 ## Interview checklist (before drafting)
 
@@ -175,9 +159,9 @@ What could go wrong that the contract doesn't address? What evidence would chang
 1. **Confirm a TRD is warranted** — apply the "all of these are true" test. If borderline, surface (TRD / single design note in code / an RFC instead).
 2. **Locate or read the linked PRD.** A TRD without a PRD reference (or equivalent product context) is suspect — surface that and ask.
 3. **Run the interview** if input is sparse. Skip questions answered by the linked PRD or earlier in conversation.
-4. **Find the next sequence number** — `ls docs/trds 2>/dev/null | grep -E '^[0-9]{4}-' | sort | tail -1` and increment. Pad to four digits.
+4. **Find the next sequence number** in `docs/trds/` (see the numbering convention in `orc:doc-writing`).
 5. **Draft from the template.** Fill every section. **Delete sections that have no content** rather than writing `TBD`. The "Public interfaces & contracts" section is the load-bearing one — if it's thin, the TRD isn't ready.
-6. **Show the draft to the user for review** before committing. `AskUserQuestion`: "Looks good — commit" / "Edit before commit" / "Save as Draft".
+6. **Show the draft to the user for review** before committing (review gates in `orc:doc-writing`).
 7. **Commit** via `orc:git-commit`. Suggested message: `docs(trd): NNNN — <kebab title>`.
 8. **Cross-link.** From the linked PRD, from any tickets, from any code that will conform to the contract.
 

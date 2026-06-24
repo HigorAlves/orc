@@ -1,5 +1,5 @@
 ---
-description: Answer reviewer comments on YOUR open PR. Fetches unresolved comments, categorizes (ACTION/QUESTION/NITPICK/DISAGREE), dispatches code-fixer + reply-drafter in parallel, posts replies, pushes fixes. Workspace-aware — addresses all linked PRs together by default; --repo narrows.
+description: Answer reviewer comments on YOUR open PR — categorize unresolved threads, push fixes, and post replies. Workspace-aware across linked PRs.
 argument-hint: "[<pr-number>] [--repo <name>] [--repos a,b]  (omitted = current branch's PR / all linked PRs)"
 allowed-tools:
   - Read

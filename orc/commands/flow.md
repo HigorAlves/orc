@@ -1,5 +1,5 @@
 ---
-description: End-to-end feature/bug/refactor pipeline with interactive gates at every phase. Walks plan → start → implement → QA → ship → address → cleanup. Resumable from any phase via /orc:resume. Each phase ends with AskUserQuestion (select-from-list) for confirmation, iteration, skip, or abort. Phase 1 (Triage) always asks to link a Jira ticket; --jira <KEY> suppresses the prompt and links silently. Workspace-aware: in workspace mode (cwd is a parent dir with ≥2 sibling git repos), the flow spans multiple repos with one shared plan, per-repo implementers, and N linked PRs.
+description: End-to-end feature/bug/refactor pipeline (plan → start → implement → QA → ship → address → cleanup) with an interactive gate at every phase. Resumable via /orc:resume. --jira <KEY> links a ticket. Workspace-aware.
 argument-hint: "[--type=feature|bug|refactor|docs] [--rfc] [--caveman] [--pause-at-implement] [--jira <KEY>] [--max-loc <N>] [--no-size-gate] [--repos a,b | --repo a | --all-repos | --this-repo] <one-line task description>"
 allowed-tools:
   - Read

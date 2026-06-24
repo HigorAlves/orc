@@ -1,5 +1,5 @@
 ---
-description: Parallel-dispatch N independent tasks that don't share state — paralleled investigations, multi-PR review, multi-repo work, doc bulk updates. For parallel-safe slices within a single feature plan, prefer /orc:flow (which dispatches parallel batches inside Phase 5 with the full lifecycle around them). /orc:fan-out is the standalone parallelism primitive, no surrounding lifecycle. Writes per-task results to .orc/<branch>/files/fan-out/. Workspace-aware — task axis can be (slice × repo) for cross-repo plans.
+description: Parallel-dispatch N independent tasks that share no state — investigations, multi-PR review, multi-repo or bulk-doc work. Standalone parallelism primitive with no surrounding lifecycle. Workspace-aware.
 argument-hint: "[--from-plan] [--max <n>] [--agent <name>] [--repos a,b | --repo a | --all-repos | --this-repo] <task list or 'use plan.md'>"
 allowed-tools:
   - Read

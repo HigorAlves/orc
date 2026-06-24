@@ -20,7 +20,7 @@
 
 ## What it does
 
-`orc` is a personal-workflow plugin: **54 curated skills, 19 composite slash commands, 10 specialist subagents, and 4 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers in commits/PRs, dependency pre-flight check, skill catalog injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged" with `orc-implementer` writing the code slice-by-slice in between.
+`orc` is a personal-workflow plugin: **57 curated skills, 20 composite slash commands, 11 specialist subagents, and 4 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers in commits/PRs, dependency pre-flight check, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged" with `orc-implementer` writing the code slice-by-slice in between.
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
@@ -95,7 +95,7 @@ To pin a specific commit/tag, use the longhand source form in `~/.claude/setting
       "source": {
         "source": "url",
         "url": "https://github.com/HigorAlves/orc.git",
-        "ref": "v0.1.0"
+        "ref": "v0.5.0"
       }
     }
   },
@@ -172,29 +172,43 @@ export ORC_SKIP_TOOL_CHECK=1
 
 **Core (18, always available):** `tdd`, `systematic-debugging`, `verification-before-completion`, `writing-plans`, `executing-plans`, `caveman-review`, `caveman-pr`, `receiving-code-review`, `requesting-code-review`, `git-commit`, `gh-cli`, `using-git-worktrees`, `finishing-a-development-branch`, `dispatching-parallel-agents`, `error-handling-patterns`, `git-advanced-workflows`, `architecture-patterns`, `improve-codebase-architecture`.
 
+**Orc mechanics (3, authored for orc):** `workspace-mode` (cross-repo flag precedence), `pr-size-budget` (the soft 300-LOC gate), `stack-pr` (split a big branch into a chained PR stack).
+
 **Senior/architect practice (5, authored for orc):** `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem` (blameless incident postmortems), `prd-writing` (Product Requirements Documents), `trd-writing` (Technical Requirements Documents).
 
-**Pack: web-react (7):** `next-best-practices`, `vercel-react-best-practices`, `vercel-composition-patterns`, `frontend-design`, `shadcn`, `tailwind-design-system`, `vitest`.
+**Pack: web-react (6):** `next-best-practices`, `vercel-react-best-practices`, `vercel-composition-patterns`, `shadcn`, `tailwind-design-system`, `vitest`.
 
-**Pack: backend (8):** `nodejs-best-practices`, `nestjs-best-practices`, `typescript-advanced-types`, `postgresql-table-design`, `postgresql-optimization`, `postgresql-code-review`, `stripe-best-practices`, `upgrade-stripe`.
+**Pack: backend (7):** `nodejs-best-practices`, `nestjs-best-practices`, `typescript-advanced-types`, `postgresql-table-design`, `postgresql-optimization`, `stripe-best-practices`, `upgrade-stripe`.
 
 **Pack: ios (2):** `swiftui-pro`, `mobile-ios-design`.
 
-**Pack: workflow-extras (13):** `docker-expert`, `turborepo`, `sentry-cli`, `jira-cli`, `inline-review`, `skill-creator`, `write-a-skill`, `documentation-writer`, `create-readme`, `to-prd`, `to-issues`, `grill-me`, `agent-browser` (drives a real browser for `/orc:qa` web mode).
+**Pack: workflow-extras (14):** `docker-expert`, `turborepo`, `sentry-cli`, `jira-cli`, `inline-review`, `skill-creator`, `write-a-skill`, `documentation-writer`, `doc-writing`, `create-readme`, `to-prd`, `to-issues`, `grill-me`, `agent-browser` (drives a real browser for `/orc:qa` web mode).
 
-Plus the meta skill `using-orc` (auto-injected at SessionStart, encodes iron rules). **Total: 54 skills.**
+Plus the meta skills `using-orc` (auto-injected at SessionStart, encodes the iron rules + routing) and `insights` (the inline insight-callout convention). **Total: 57 skills.**
+
+## Designed to stay lean
+
+Claude Code loads every skill/command/agent **description** into context at session start (that's how it routes you to the right one), but loads a skill's **body** only when the skill is actually invoked. orc is built around that split, so it costs almost nothing until you reach for it:
+
+- **Thin always-on core.** The `using-orc` rules injected at every SessionStart are ~3.5 KB — iron rules + routing only. The full skill/command catalog is *not* re-listed there, because Claude Code already loads it natively. (Re-listing it was the single biggest source of per-session bloat; removing it cut that injection ~80%.)
+- **Progressive disclosure.** Large reference skills (`gh-cli`, `turborepo`, `typescript-advanced-types`, `postgresql-optimization`, …) are a short index plus `references/*.md` loaded on demand — invoking one pulls only the topic you need, not the whole manual. (`gh-cli` is a 97-line index over 10 reference files instead of one 2,278-line wall.)
+- **One-line descriptions.** Every skill/command description is a ≤200-char trigger; the detail lives in the body.
+
+Net: a fresh orc session pays only a few thousand baseline tokens before you type anything, and a 2,000-line reference skill costs ~100 lines until you actually use it.
 
 ## Insight blocks
 
-When orc is writing or modifying code, it surfaces 2–3 short, codebase-specific notes inline using:
+When orc is writing or modifying code, it surfaces 2–3 short, codebase-specific notes inline as a GitHub-flavored callout (so Claude Code's TUI renders it with a colored bar):
 
 ```
-`★ Insight ─────────────────────────────────────`
-[2–3 short, codebase-specific insights]
-`─────────────────────────────────────────────────`
+> [!IMPORTANT]
+> **★ Insight**
+>
+> - [point 1, codebase-specific]
+> - [point 2]
 ```
 
-This is baked into `skills/using-orc/SKILL.md` and injected at every SessionStart, so orc is self-sufficient — no separate explanatory-output-style plugin required.
+The convention lives in the `orc:insights` skill and is pointed to from `using-orc` — keeping the always-injected rules lean while the formatting detail loads only when orc actually writes an insight.
 
 ## Iron rules (enforced by hooks + the using-orc skill)
 
@@ -223,22 +237,21 @@ Without the required artifacts, "QA passed" is not an accepted claim. The `orc-q
 
 ```
 orc/
-├── .claude-plugin/plugin.json   # manifest
+├── .claude-plugin/plugin.json   # manifest (v0.5.0)
 ├── .orc/                        # gitignored — workspace state per session
-├── skills/<name>/SKILL.md       # 54 skills (8 authored + 46 curated)
-├── commands/<name>.md           # 19 slash commands (incl. /orc:flow umbrella)
-├── agents/orc-<role>.md         # 10 subagents (incl. orc-implementer for /orc:flow Phase 5)
+├── skills/<name>/SKILL.md       # 57 skills — a thin index per skill
+│   └── <name>/references/*.md   #   lazy-loaded detail for large skills (139 files, 15 skills)
+├── commands/<name>.md           # 20 slash commands (incl. /orc:flow umbrella)
+├── agents/orc-<role>.md         # 11 subagents (incl. orc-implementer for /orc:flow Phase 5)
 ├── hooks/
 │   ├── hooks.json
 │   └── scripts/                 # session-start-using-orc.sh
 │                                # session-start-tool-check.sh
 │                                # pre-commit-branch-check.sh
 │                                # pre-commit-no-ai-attribution.sh
-├── lib/                         # shared prompt fragments + templates
-├── docs/                        # architecture.md, contributing.md, adr/
-├── examples/                    # scenario walk-throughs (start here for usage)
-├── skills-database/             # curation source (gitignored, archived pre-publish)
-└── skills-old/                  # legacy mirror (gitignored, archived pre-publish)
+├── lib/                         # shared bash helpers (workspace-detect, pr-size-budget)
+├── docs/                        # architecture.md, contributing.md, STACKED-PRS.md
+└── examples/                    # scenario walk-throughs (start here for usage)
 ```
 
 ## Development

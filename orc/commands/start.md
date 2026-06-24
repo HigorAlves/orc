@@ -1,5 +1,5 @@
 ---
-description: Start a feature — set up an isolated worktree, draft the plan, and write the first failing test before any production code is touched. Accepts --jira <KEY> to link a Jira ticket; the key informs the suggested branch name and is forwarded to /orc:plan (suppressing its Phase 1 prompt). Workspace-aware — in workspace mode creates a worktree+branch per target repo with collision gating.
+description: Start a feature — set up an isolated worktree, draft the plan, and write the first failing test before any production code. --jira <KEY> links a ticket and informs the branch name. Workspace-aware.
 argument-hint: "[--worktree <path>] [--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 allowed-tools:
   - Read
