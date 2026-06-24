@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # SessionStart hook: pre-flight check for CLI dependencies orc relies on.
-# If anything's missing, injects a warning into session context. The model
-# surfaces it to the user using the ⚠ Tool check format defined below.
-# Silent (exit 0 with no additionalContext) when everything's present.
+# If anything's missing, surfaces a warning to the user via the top-level
+# `systemMessage` field — Claude Code renders this DIRECTLY (once per
+# session), so the callout's coloring no longer depends on the model
+# faithfully re-emitting the markdown. A short, neutral note still goes to
+# the model's context so it can offer install help if the user asks.
+# Silent (exit 0 with no output fields) when everything's present.
 #
 # Suppress the check entirely with: ORC_SKIP_TOOL_CHECK=1
 
@@ -94,10 +97,11 @@ hint_for() {
 }
 
 # Build the human-readable warning body. Wrapped in a GitHub-flavored
-# WARNING callout so Claude Code's TUI renders it with a colored left
-# bar (typically yellow/amber) instead of plain white text. Degrades
-# gracefully to a labeled blockquote if the renderer doesn't theme
-# callouts.
+# WARNING callout so Claude Code renders it with a colored left bar
+# (typically yellow/amber) instead of plain white text. Emitted via
+# `systemMessage` (see below) so the harness renders it directly rather
+# than relying on the model to reproduce the callout. Degrades gracefully
+# to a labeled blockquote if the renderer doesn't theme callouts.
 build_block() {
   if [ ${#missing_required[@]} -gt 0 ]; then
     printf "> [!CAUTION]\n"
@@ -143,24 +147,37 @@ escape_for_json() {
 
 warning_escaped=$(escape_for_json "$warning_block")
 
-# Wrap as a directive the model reads at session start. The model surfaces
-# the ⚠ block VERBATIM as its first response, then proceeds with whatever
-# the user asked. The block is shown ONCE per session.
-session_context="<EXTREMELY_IMPORTANT>\norc tool-availability check (SessionStart). Some CLI dependencies are missing.\n\nSurface the following block to the user as your first response, exactly as shown (preserve formatting). Show it ONCE per session — do not repeat in later turns. Then proceed with whatever the user asked.\n\n${warning_escaped}\n</EXTREMELY_IMPORTANT>"
+# The user-facing warning goes in the top-level `systemMessage` field —
+# Claude Code displays it directly to the user (once, at session start),
+# independent of the model. This is what restores deterministic callout
+# coloring: the harness renders the markdown itself instead of the model
+# re-emitting it.
+#
+# A short, neutral note still goes to the model's context so it can offer
+# install help if the user asks — but it is NOT a "surface this verbatim"
+# directive, so the model won't also re-print the warning.
+req_list="none"
+[ ${#missing_required[@]} -gt 0 ] && req_list="${missing_required[*]}"
+rec_list="none"
+[ ${#missing_recommended[@]} -gt 0 ] && rec_list="${missing_recommended[*]}"
+model_note="orc tool check (SessionStart): some CLI dependencies are missing — required: ${req_list}; recommended: ${rec_list}. The user has already been shown install hints directly. Do not re-print the warning; offer install help only if asked."
+model_note_escaped=$(escape_for_json "$model_note")
 
 if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
   cat <<EOF
 {
+  "systemMessage": "${warning_escaped}",
   "hookSpecificOutput": {
     "hookEventName": "SessionStart",
-    "additionalContext": "${session_context}"
+    "additionalContext": "${model_note_escaped}"
   }
 }
 EOF
 else
   cat <<EOF
 {
-  "additional_context": "${session_context}"
+  "systemMessage": "${warning_escaped}",
+  "additional_context": "${model_note_escaped}"
 }
 EOF
 fi
