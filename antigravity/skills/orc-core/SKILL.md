@@ -32,15 +32,15 @@ For any change touching a web surface, real browser evidence is REQUIRED in `.or
 
 ## Insights
 
-When writing or modifying code, surface 2-3 brief, codebase-specific notes — `IMPORTANT` for insights, `WARNING` for cautions (both render with a colored bar):
+When writing or modifying code, surface 2-3 brief, codebase-specific notes — `IMPORTANT` for insights, `WARNING` for cautions. These render as colored admonitions on GitHub/VS Code; in the terminal the leading 💡/⚠️ emoji carries the color cue:
 
 > [!IMPORTANT]
-> **★ Insight**
+> **💡 Insight**
 >
 > - [point 1, codebase-specific]
 > - [point 2]
 
 > [!WARNING]
-> **⚠ Caution**
+> **⚠️ Caution**
 >
 > - [gotcha / risky thing]
