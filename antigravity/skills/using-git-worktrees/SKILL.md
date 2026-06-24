@@ -14,102 +14,72 @@ Git worktrees create isolated workspaces sharing the same repository, allowing w
 
 ## Directory Selection Process
 
-Follow this priority order:
+**Iron rule: orc worktrees always live under `.orc/.worktrees/` — at the repo root or, in workspace mode, the workspace root. Never under `$HOME`, never elsewhere.** `.orc/` is always git-ignored in an orc project, so worktree contents can never pollute the tree. There is no "ask the user where", no global location, and no CLAUDE.md location override — the location is fixed by design.
 
-### 0. Workspace mode (highest priority)
+Exactly two cases:
 
-If the caller already sourced `lib/workspace-detect.sh` and `ORC_CONTEXT=workspace`, prefer the workspace-shared trees root:
+### Workspace mode
+
+If the caller sourced `lib/workspace-detect.sh` and `ORC_CONTEXT=workspace`, use the workspace-shared trees root, keyed per repo:
 
 ```bash
 path="$ORC_WORKSPACE_ROOT/.orc/.worktrees/<repo>/<branch>"
 ```
 
-This location is outside every child repo, so the `.gitignore` verification step is unnecessary by construction. Use this path when the caller provides a `repo` + `branch` pair (e.g. from `/orc:start` or `/orc:flow` Phase 4 in workspace mode). If the caller hasn't passed `repo`, fall through to the existing priority order — workspace-mode worktrees are always per-repo and always require a target repo.
+Use this when the caller provides a `repo` + `branch` pair (e.g. from `/orc:start` or `/orc:flow` Phase 4 in workspace mode). Workspace-mode worktrees are always per-repo and always require a target repo — if the caller hasn't passed `repo`, treat it as repo mode for the current repo instead.
 
-### 1. Check Existing Directories
+### Repo mode (default)
 
-```bash
-# Check in priority order
-ls -d .worktrees 2>/dev/null     # Preferred (hidden)
-ls -d worktrees 2>/dev/null      # Alternative
-```
-
-**If found:** Use that directory. If both exist, `.worktrees` wins.
-
-### 2. Check CLAUDE.md
+Otherwise use the current repo's own `.orc/.worktrees/`:
 
 ```bash
-grep -i "worktree.*director" CLAUDE.md 2>/dev/null
-```
-
-**If preference specified:** Use it without asking.
-
-### 3. Ask User
-
-If no directory exists and no CLAUDE.md preference:
-
-```
-No worktree directory found. Where should I create worktrees?
-
-1. .worktrees/ (project-local, hidden)
-2. ~/.config/superpowers/worktrees/<project-name>/ (global location)
-
-Which would you prefer?
+path="$(git rev-parse --show-toplevel)/.orc/.worktrees/<branch>"
 ```
 
 ## Safety Verification
 
-### For Project-Local Directories (.worktrees or worktrees)
-
-**MUST verify directory is ignored before creating worktree:**
+**MUST confirm `.orc/` is ignored before creating the worktree.** It almost always is (orc scaffolds it into `.gitignore`), but verify — a worktree inside a tracked `.orc/` would get its entire checkout staged.
 
 ```bash
-# Check if directory is ignored (respects local, global, and system gitignore)
-git check-ignore -q .worktrees 2>/dev/null || git check-ignore -q worktrees 2>/dev/null
+# Workspace mode: check the workspace root; repo mode: check the repo root.
+root="${ORC_WORKSPACE_ROOT:-$(git rev-parse --show-toplevel)}"
+git -C "$root" check-ignore -q .orc
 ```
 
-**If NOT ignored:**
+**If NOT ignored** (non-zero exit), fix it immediately before proceeding:
+1. Append `.orc/` to the root `.gitignore`
+2. Commit that change
+3. Then create the worktree
 
-Per Jesse's rule "Fix broken things immediately":
-1. Add appropriate line to .gitignore
-2. Commit the change
-3. Proceed with worktree creation
-
-**Why critical:** Prevents accidentally committing worktree contents to repository.
-
-### For Global Directory (~/.config/superpowers/worktrees)
-
-No .gitignore verification needed - outside project entirely.
+**Why critical:** Prevents accidentally committing worktree contents to the repository.
 
 ## Creation Steps
 
-### 1. Detect Project Name
+### 1. Resolve Roots and Branch
 
 ```bash
-project=$(basename "$(git rev-parse --show-toplevel)")
-```
+# Repo mode
+repo_root="$(git rev-parse --show-toplevel)"
 
-In workspace mode, project name is the explicit `repo` argument from the caller (e.g. `api`), not derived from `git rev-parse` (which would just return the repo basename and lose the workspace context). The caller passes both `repo` and `branch`.
+# Workspace mode: the caller supplies $ORC_WORKSPACE_ROOT, $REPO, $BRANCH_NAME.
+# Project name is the explicit `repo` argument (e.g. `api`), NOT derived from
+# git rev-parse (which would lose the workspace context).
+```
 
 ### 2. Create Worktree
 
 ```bash
-# Determine full path
-case $LOCATION in
-  workspace)
-    # Workspace mode: caller supplied $ORC_WORKSPACE_ROOT, $REPO, $BRANCH_NAME
-    path="$ORC_WORKSPACE_ROOT/.orc/.worktrees/$REPO/$BRANCH_NAME"
-    ;;
-  .worktrees|worktrees)
-    path="$LOCATION/$BRANCH_NAME"
-    ;;
-  ~/.config/superpowers/worktrees/*)
-    path="~/.config/superpowers/worktrees/$project/$BRANCH_NAME"
-    ;;
-esac
+# Determine full path — always under .orc/.worktrees/, never under $HOME
+if [ "$ORC_CONTEXT" = "workspace" ] && [ -n "$REPO" ]; then
+  # Workspace mode: caller supplied $ORC_WORKSPACE_ROOT, $REPO, $BRANCH_NAME
+  path="$ORC_WORKSPACE_ROOT/.orc/.worktrees/$REPO/$BRANCH_NAME"
+  cd "$ORC_WORKSPACE_ROOT/$REPO"
+else
+  # Repo mode: the current repo's own .orc/.worktrees/
+  path="$(git rev-parse --show-toplevel)/.orc/.worktrees/$BRANCH_NAME"
+fi
 
-# Create worktree with new branch (workspace mode: cd into the repo first)
-[ "$LOCATION" = "workspace" ] && cd "$ORC_WORKSPACE_ROOT/$REPO"
+# Create worktree with new branch
 git worktree add "$path" -b "$BRANCH_NAME"
 cd "$path"
 ```
@@ -161,11 +131,9 @@ Ready to implement <feature-name>
 
 | Situation | Action |
 |-----------|--------|
-| `.worktrees/` exists | Use it (verify ignored) |
-| `worktrees/` exists | Use it (verify ignored) |
-| Both exist | Use `.worktrees/` |
-| Neither exists | Check CLAUDE.md → Ask user |
-| Directory not ignored | Add to .gitignore + commit |
+| Repo mode | `<repo-root>/.orc/.worktrees/<branch>` |
+| Workspace mode (repo + branch given) | `<workspace-root>/.orc/.worktrees/<repo>/<branch>` |
+| `.orc/` not ignored | Add `.orc/` to .gitignore + commit, then proceed |
 | Tests fail during baseline | Report failures + ask |
 | No package.json/Cargo.toml | Skip dependency install |
 
@@ -174,12 +142,12 @@ Ready to implement <feature-name>
 ### Skipping ignore verification
 
 - **Problem:** Worktree contents get tracked, pollute git status
-- **Fix:** Always use `git check-ignore` before creating project-local worktree
+- **Fix:** Always confirm `.orc/` is ignored before creating the worktree
 
-### Assuming directory location
+### Creating worktrees outside `.orc/`
 
-- **Problem:** Creates inconsistency, violates project conventions
-- **Fix:** Follow priority: existing > CLAUDE.md > ask
+- **Problem:** Worktrees under `$HOME`, `.worktrees/`, or a sibling dir scatter state, escape cleanup, and violate orc convention
+- **Fix:** Always use `.orc/.worktrees/` — repo root in repo mode, workspace root in workspace mode
 
 ### Proceeding with failing tests
 
@@ -196,13 +164,13 @@ Ready to implement <feature-name>
 ```
 You: I'm using the using-git-worktrees skill to set up an isolated workspace.
 
-[Check .worktrees/ - exists]
-[Verify ignored - git check-ignore confirms .worktrees/ is ignored]
-[Create worktree: git worktree add .worktrees/auth -b feature/auth]
+[Resolve repo root: /Users/dev/myproject]
+[Verify ignored - git check-ignore confirms .orc/ is ignored]
+[Create worktree: git worktree add /Users/dev/myproject/.orc/.worktrees/feature-auth -b feature/auth]
 [Run npm install]
 [Run npm test - 47 passing]
 
-Worktree ready at /Users/jesse/myproject/.worktrees/auth
+Worktree ready at /Users/dev/myproject/.orc/.worktrees/feature-auth
 Tests passing (47 tests, 0 failures)
 Ready to implement auth feature
 ```
@@ -210,15 +178,15 @@ Ready to implement auth feature
 ## Red Flags
 
 **Never:**
-- Create worktree without verifying it's ignored (project-local)
+- Create a worktree anywhere but `.orc/.worktrees/` (repo root or workspace root)
+- Create a worktree under `$HOME`, `.worktrees/`, or a sibling directory
+- Create the worktree without confirming `.orc/` is ignored
 - Skip baseline test verification
 - Proceed with failing tests without asking
-- Assume directory location when ambiguous
-- Skip CLAUDE.md check
 
 **Always:**
-- Follow directory priority: existing > CLAUDE.md > ask
-- Verify directory is ignored for project-local
+- Place worktrees under `.orc/.worktrees/` — repo root in repo mode, workspace root in workspace mode
+- Confirm `.orc/` is ignored before creating the worktree
 - Auto-detect and run project setup
 - Verify clean test baseline
 
