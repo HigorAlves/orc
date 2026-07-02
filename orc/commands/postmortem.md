@@ -37,7 +37,7 @@ Invoke `orc:postmortem`. Confirm a postmortem is warranted:
 - near-miss with a real defect, OR
 - recurrence of the same incident type.
 
-If borderline (e.g. caught in CI, no production impact), surface via `AskUserQuestion`:
+If borderline (e.g. caught in CI, no production impact), print the Gate headline (`> [!NOTE]` + `**⛔ Gate — postmortem-worthy?**`, per `orc:insights`), then `AskUserQuestion`:
 - "Write a full postmortem anyway"
 - "Write a one-paragraph near-miss note instead (no full template)"
 - "Skip — caught early, no learning to capture"
@@ -104,7 +104,7 @@ Bump checkpoint to phase=6.
 
 ### Phase 7 — Place, commit, set status
 
-Use `AskUserQuestion`:
+Print the Gate headline (`**⛔ Gate — postmortem placement**`), then `AskUserQuestion`:
 - "Commit to `docs/postmortems/...` and mark status `In review`"
 - "Commit and mark status `Action items in flight` (P0 issues are filed but not closed)"
 - "Save as draft only"

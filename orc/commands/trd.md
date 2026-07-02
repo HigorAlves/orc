@@ -36,7 +36,7 @@ Invoke `orc:trd-writing`. Apply its "all of these are true" test:
 - Non-trivial technical surface area (new APIs / data / failure modes / dependencies / contracts).
 - Multiple engineers / services / repos need to agree on the contract.
 
-If borderline, surface via `AskUserQuestion`:
+If borderline, print the Gate headline (`> [!NOTE]` + `**⛔ Gate — is this TRD-worthy?**`, per `orc:insights`), then `AskUserQuestion`:
 
 - "Yes, write the TRD"
 - "Smaller — single design note in code instead"
@@ -77,7 +77,7 @@ Author `docs/trds/NNNN-<kebab-title>.md` using the template from `orc:trd-writin
 
 ### Phase 5 — Review
 
-Show the draft to the user via `AskUserQuestion`:
+Print the Gate headline (`**⛔ Gate — TRD review**`), show the draft, then `AskUserQuestion`:
 
 - "Looks good — commit"
 - "Edit before commit" (loop back to Phase 4)

@@ -91,11 +91,20 @@ For workspace sessions, the "Last artifact" line points at the workspace plan pa
 
 ### Phase 5 — Resume hint
 
-End with: `Run /orc:resume to continue any session.` In workspace mode add: `Pass --repo <name> to /orc:resume to drill into one repo.`
+End with:
+
+```markdown
+> [!TIP]
+> **➡️ Next**
+>
+> Run `/orc:resume` to continue any session.
+```
+
+In workspace mode add to the same callout body: `Pass --repo <name> to /orc:resume to drill into one repo.`
 
 ## Iron rule
 
-This command is read-only. It does NOT modify `.orc/orc.json` or any workspace artifact. If anything looks stale (e.g. a session marked in_progress but the branch is long-deleted), surface it as a warning — but don't auto-clean.
+This command is read-only. It does NOT modify `.orc/orc.json` or any workspace artifact. If anything looks stale (e.g. a session marked in_progress but the branch is long-deleted), surface it as a `[!WARNING]` **⚠️ Caution** callout naming the dangling session — but don't auto-clean.
 
 ## Output
 

@@ -113,7 +113,13 @@ The orc-specific glue. Persists the linked Jira ticket key into `.orc/` state.
    ```
    Sanitize: replace `/` with `-`. The session entry to mutate is the one in `.orc/orc.json` whose `branch` field matches the sanitized name AND whose `status` is `in_progress`.
 3. **Iron rule:** If no in-progress session exists for this branch, REFUSE. Surface:
-   `No active orc session for branch '<sanitized>'. Run /orc:plan, /orc:start, /orc:debug, or /orc:flow first to create one.`
+
+   ```markdown
+   > [!NOTE]
+   > **📋 No active session**
+   >
+   > No active orc session for branch `<sanitized>`. Run `/orc:plan`, `/orc:start`, `/orc:debug`, or `/orc:flow` first to create one.
+   ```
 4. **Mutate `.orc/orc.json`** — set `jiraTicket` on the matching entry. Use `jq`:
    ```bash
    jq --arg b "$SANITIZED_BRANCH" --arg k "$KEY" \
@@ -131,7 +137,7 @@ Same session-resolution as `bind`. Then clear:
 2. Remove the `jiraTicket:` line from `checkpoint.md` frontmatter.
 3. Echo: `✓ Unbound <PREVIOUS-KEY> from session on branch <sanitized-branch>.`
 
-If no `jiraTicket` was set, exit silently with `No ticket bound to this session.`
+If no `jiraTicket` was set, exit with a one-line `> [!NOTE]` (`**📋 Nothing to unbind** — no ticket bound to this session.`).
 
 ### Verb: `view [KEY]`
 

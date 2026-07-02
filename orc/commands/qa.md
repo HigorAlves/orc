@@ -103,7 +103,14 @@ For any web-mode QA, the `qa/` directory MUST contain all of:
 
 Optional bonus evidence (NOT required): `trace.json` (Chrome DevTools trace), `react-renders.json`, `vitals.json`, an OS-recorded `video.mov`. Add these only when relevant to the change.
 
-If any required artifact is missing, surface it and stop. The user must address the gap before any "ready to PR" claim.
+If any required artifact is missing, surface it and stop — the user must address the gap before any "ready to PR" claim:
+
+```markdown
+> [!CAUTION]
+> **🛑 Blocked — QA evidence incomplete**
+>
+> Missing: <artifact list>. No "QA passed" claim without the full evidence packet.
+```
 
 ## Output
 
