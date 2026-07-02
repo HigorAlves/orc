@@ -1,6 +1,6 @@
 ---
 description: End-to-end feature/bug/refactor pipeline (plan → start → implement → QA → ship → address → cleanup) with an interactive gate at every phase. Resumable via /orc:resume. --jira <KEY> links a ticket. Workspace-aware.
-argument-hint: "[--type=feature|bug|refactor|docs] [--rfc] [--caveman] [--pause-at-implement] [--jira <KEY>] [--max-loc <N>] [--no-size-gate] [--repos a,b | --repo a | --all-repos | --this-repo] <one-line task description>"
+argument-hint: "[--type=feature|bug|refactor|docs] [--rfc] [--verbose] [--pause-at-implement] [--jira <KEY>] [--max-loc <N>] [--no-size-gate] [--repos a,b | --repo a | --all-repos | --this-repo] <one-line task description>"
 allowed-tools:
   - Read
   - Write
@@ -54,7 +54,7 @@ Use `/orc:flow` when you want orc to drive the whole loop. Skip it (use the per-
 - `<task description>` — required. One sentence describing the work.
 - `--type=feature|bug|refactor|docs` — optional. If omitted, the first phase asks via `AskUserQuestion`. The type changes which phases run and which skills get invoked.
 - `--rfc` — for `--type=feature` or `--type=refactor`: insert an RFC phase before planning. Required when the work is multi-week, multi-team, or has genuine alternatives.
-- `--caveman` — pass through to `/orc:ship` and `/orc:address` so PR bodies and replies use the terse style.
+- `--verbose` — pass through to `/orc:ship` so the PR body uses the long-form template. Default everywhere is terse (`orc:caveman-pr` bodies, `orc:caveman-review` tone). (`--caveman` is accepted as a deprecated no-op alias of the default.)
 - `--pause-at-implement` — pause Phase 5 for the human to write the implementation manually. Default behavior is autonomous: dispatches `orc-implementer` to drive the implementation slice-by-slice. Use `--pause-at-implement` when you want to write the code yourself.
 - `--jira <KEY>` — link a Jira ticket key (e.g. `JRA-123`) to this flow's session silently. Suppresses the Phase 1 link prompt. The key follows the work through every phase, surfaces in `/orc:status`, and lands as `Resolves <KEY>` in the Phase 7 PR body. Validate against `^[A-Z][A-Z0-9_]*-\d+$`.
 - `--max-loc <N>` — pass-through to `/orc:ship`'s Phase 4.5 size gate (default: 300, configurable via `$ORC_PR_LOC_BUDGET` or `<repo>/.orc/pr-budget.json`). Phase 7 also pre-flights the gate with one extra option ("Stack from plan slices") that single-repo `/orc:ship` doesn't have.
@@ -76,7 +76,7 @@ The pipeline is **9 phases**, all gated. Some phases are skipped based on type a
 | 4 | Start — worktree + failing test (`/orc:start` logic) | for code | type=docs skips |
 | 5 | Implement — RETURN TO CONVERSATION; orc pauses | for code | type=docs writes the docs in conversation directly |
 | 6 | QA — pre-PR quality gate (`/orc:qa` logic + skill) | yes | type=docs runs lint only |
-| 7 | Ship — open the PR (`/orc:ship` logic + caveman-pr if flagged) | yes | — |
+| 7 | Ship — open the PR (`/orc:ship` logic; caveman-pr body by default) | yes | — |
 | 8 | Address — if reviewer comments arrive (`/orc:address` logic) | optional loop | no comments → skip |
 | 9 | Cleanup — post-merge (`/orc:cleanup` logic) | yes | — |
 
@@ -376,7 +376,7 @@ Then invoke `/orc:ship` logic with the gate decision pre-applied (pass `--no-siz
 - `orc:requesting-code-review` (gap check vs the plan)
 - `orc:finishing-a-development-branch` (presents structured options)
 - `orc:git-commit` (if uncommitted)
-- PR composition: caveman-pr if `--caveman` was passed, otherwise the verbose template
+- PR composition: `orc:caveman-pr` by default; the long-form template only if `--verbose` was passed
 - `gh pr create` — UNLESS this repo picked A or B above, in which case `/orc:stack-pr` already opened the PRs and Phase 7 only records the stack metadata in `linkedPRs`.
 
 In workspace mode, `/orc:ship` opens **N PRs** — one per target repo — and second-passes each with `gh pr edit` to inject a "Linked PRs" cross-link block + merge order from the plan. Captured PR URLs are written into the workspace registry's `linkedPRs` array (with `stackId`/`stackPosition`/`stackedOn` populated for repos that stacked).

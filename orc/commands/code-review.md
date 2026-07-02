@@ -122,8 +122,8 @@ Each agent gets:
 
 Invoke `orc:inline-review`. Build:
 
-- **Overall body** (1 paragraph): a brief framing of the PR + a one-line summary per finding category. Example:
-  > "Adds CSV export for /reports endpoint. 2 bugs flagged in the serialization path, 1 untested branch in the API layer, plus a couple of nits."
+- **Overall body** — hard cap: **≤ 2 sentences, ~40 words**, caveman tone. One clause on what the PR does + finding counts by severity. Never restate the inline comments (they carry the detail), never praise, never hedge, no per-category prose recap. Example:
+  > "CSV export for /reports. 2 bugs (serialization), 1 untested branch, 2 nits."
 - **Comments[]**: one per finding, per the `orc:inline-review` schema:
   - `path`, `line`, `start_line?`, `side: "RIGHT"`
   - `body`: the finding's `body` (caveman-review tone), with the suggestion block appended if `suggestion_code` is set and meets the suggestion-block rules from `orc:inline-review`.
@@ -233,7 +233,7 @@ Echo to the user. No GitHub posting happens in this branch.
 
 ## Tone discipline (handed to the agents)
 
-Defer to `orc:caveman-review` for tone — terse, signal-only, one finding per comment, no praise. Comment bodies follow that style. The overall body (Phase 5) gets one extra sentence of framing but stays short.
+Defer to `orc:caveman-review` for tone — terse, signal-only, one finding per comment, no praise. Comment bodies follow that style. The overall body (Phase 5) is hard-capped at 2 sentences — a framing clause + severity counts, nothing more.
 
 ## Iron rules
 

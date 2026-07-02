@@ -120,7 +120,7 @@ Only generates the PR description (title + body) as a code block ready to paste 
 - modify the diff
 - amend a previous PR
 
-Composes well with `/orc:ship` Phase 4 (PR composition) — `/orc:ship --caveman` invokes this skill for the body.
+This skill is `/orc:ship`'s **default** body composer (Phase 4); `/orc:ship --verbose` opts out into the long-form template.
 
 ## When to revert to verbose
 
