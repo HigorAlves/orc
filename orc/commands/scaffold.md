@@ -31,7 +31,7 @@ Stand up a new package/service shell with the structure that future-you will not
 
 ### Phase 1 — Confirm intent
 
-Use `AskUserQuestion`:
+Print the Gate headline (`> [!NOTE]` + `**⛔ Gate — scaffold shape**`, per `orc:insights`), then `AskUserQuestion`:
 - Where does this live? (project root / `packages/<name>/` / `services/<name>/` / `apps/<name>/`)
 - Language? (TypeScript / Go / Rust / Python)
 - License? (MIT / Apache-2.0 / inherit from repo)
@@ -67,4 +67,11 @@ Invoke `orc:git-commit`. Conventional Commits format. Title: `chore(scaffold): i
 - New directory with proper layout for the chosen type
 - `README.md`, `docs/` Diátaxis quadrants, license file
 - One failing test, one commit
-- Echo the path to the new package + the next command suggestion (`/orc:start` to begin real work)
+- Echo the path to the new package, then close with the handoff:
+
+```markdown
+> [!TIP]
+> **➡️ Next**
+>
+> Run `/orc:start` to begin real work in `<path>`.
+```

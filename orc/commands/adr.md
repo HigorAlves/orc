@@ -32,7 +32,7 @@ Invoke `orc:adr-writing`. Apply its "all of these are true" test:
 - non-obvious (real alternatives exist)
 - durable (≥ 3 months expected lifetime)
 
-If borderline, surface via `AskUserQuestion`:
+If borderline, print the Gate headline (`> [!NOTE]` + `**⛔ Gate — is this ADR-worthy?**`, one line on which criterion is borderline, per `orc:insights`), then `AskUserQuestion`:
 - "Yes, write the ADR"
 - "Smaller — propose a single-paragraph design note in the relevant code instead"
 - "Skip — this isn't really an architectural decision"
@@ -57,7 +57,7 @@ If `--supersede NNNN` was passed:
 
 ### Phase 4 — Review
 
-Show the draft to the user via `AskUserQuestion`:
+Print the Gate headline (`**⛔ Gate — ADR review**`), show the draft, then `AskUserQuestion`:
 - "Looks good — commit"
 - "Edit before commit" (loop back to Phase 3)
 - "Save as draft (Status: Proposed)" — commits with status flag flipped

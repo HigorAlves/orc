@@ -41,7 +41,7 @@ Pick the registry to read from `$ORC_CONTEXT`:
 - `repo` — the registry is `$ORC_STATE_DIR/orc.json` (`<repoRoot>/.orc/orc.json`). Standard single-repo behavior.
 - `repo` **and** `<repoRoot>/.orc/<branch>/workspace-link.json` exists — this repo is a workspace member. Read `workspaceRoot` from the link file, resolve it against `$ORC_REPO_ROOT`, and use `<workspaceRoot>/.orc/orc.json` as the registry. Filter sessions to those with `repos` containing this repo's name.
 - `workspace` — the registry is `$ORC_STATE_DIR/orc.json` (`<workspaceRoot>/.orc/orc.json`). Workspace sessions have `scope: "workspace"` and a `repos` array.
-- `loose` — output `Cwd is neither a git repo nor a workspace parent — nothing to resume.` and stop.
+- `loose` — surface a `[!WARNING]` **⚠️ Caution** callout (`Cwd is neither a git repo nor a workspace parent — nothing to resume.`) and stop.
 
 If the chosen registry is missing or has no `in_progress` sessions, tell the user and stop.
 

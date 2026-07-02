@@ -36,7 +36,7 @@ Invoke `orc:prd-writing`. Apply its "all of these are true" test:
 - non-obvious intent (real product question)
 - non-trivial work (multi-day or coordinated)
 
-If borderline, surface via `AskUserQuestion`:
+If borderline, print the Gate headline (`> [!NOTE]` + `**⛔ Gate — is this PRD-worthy?**`, per `orc:insights`), then `AskUserQuestion`:
 
 - "Yes, write the PRD"
 - "Smaller — issue or design note instead"
@@ -75,7 +75,7 @@ Author `docs/prds/NNNN-<kebab-title>.md` using the template from `orc:prd-writin
 
 ### Phase 5 — Review
 
-Show the draft to the user via `AskUserQuestion`:
+Print the Gate headline (`**⛔ Gate — PRD review**`), show the draft, then `AskUserQuestion`:
 
 - "Looks good — commit"
 - "Edit before commit" (loop back to Phase 4)

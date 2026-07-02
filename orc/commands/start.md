@@ -64,6 +64,15 @@ done
 | Branch present, points at base HEAD | OK — adopt. |
 | Branch present, has divergent commits | **Conflict** — `AskUserQuestion`. |
 
+On conflict, print first (then the table above stays as the detail):
+
+```markdown
+> [!WARNING]
+> **⚠️ Branch collision**
+>
+> `<branch>` already exists with divergent commits in: <repo list>.
+```
+
 Conflict recovery options (one prompt covering all conflicting repos at once):
 
 1. Suffix all repos with `-2` (or user-chosen short suffix) — workspace stays branch-aligned.

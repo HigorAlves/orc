@@ -34,7 +34,7 @@ Invoke `orc:rfc-writing`. Apply its "any of these are true" test:
 - locks in technology, protocol, or interface
 - you're genuinely unsure between alternatives
 
-If none are true, surface via `AskUserQuestion`:
+If none are true, print the Gate headline (`> [!NOTE]` + `**⛔ Gate — is this RFC-worthy?**`, per `orc:insights`), then `AskUserQuestion`:
 - "Smaller scope — use `/orc:plan` instead (assumes design is settled)"
 - "Even smaller — use `/orc:adr` (recording a decision already made)"
 - "Override — proceed with the RFC anyway"
@@ -67,7 +67,7 @@ Invoke `orc:grill-me` against the draft. Update the document with answers to que
 
 ### Phase 6 — Place + commit
 
-Use `AskUserQuestion`:
+Print the Gate headline (`**⛔ Gate — RFC placement**`), then `AskUserQuestion`:
 - "Commit to `docs/rfcs/NNNN-<kebab-title>.md` and open a GitHub Discussion / PR thread"
 - "Commit only — no thread yet"
 - "Save as draft only — keep in `.orc/` for now"

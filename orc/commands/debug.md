@@ -65,7 +65,7 @@ The agent returns a written diagnosis: root cause, evidence, recommended fix sur
 
 ### Phase 3 — Confirm with user
 
-Use `AskUserQuestion`:
+Print the Gate headline (`> [!NOTE]` + `**⛔ Gate — diagnosis**`, one line on the root cause, per `orc:insights`), then `AskUserQuestion`:
 - "Diagnosis looks right — proceed with fix"
 - "Need more investigation — re-dispatch investigator with this hint: …"
 - "Diagnosis is wrong — abort"
@@ -76,7 +76,7 @@ Invoke `orc:tdd`. Write the test described in the diagnosis. Run the suite — i
 
 For **complex regression tests** (multi-branch state machines, async coordination, integration boundaries) — dispatch the `orc-test-author` subagent via `Task` instead of writing inline. Pass it the diagnosis's "recommended regression test" section + the affected file. The agent returns a comprehensive test (happy path + boundary + error paths) using the project's existing test idioms, runs the suite, reports.
 
-`AskUserQuestion`:
+Print the Gate headline (`**⛔ Gate — regression-test author**`), then `AskUserQuestion`:
 - "Write inline (orc:tdd)" — for simple single-assertion regressions
 - "Dispatch orc-test-author" — for complex test scenarios
 - "Auto-pick — orc decides based on diagnosis depth"
