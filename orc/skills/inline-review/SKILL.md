@@ -194,7 +194,7 @@ If `suggestion_code` is set on a finding but doesn't meet the rules above, drop 
 Before posting, ALWAYS show the user the constructed payload. No `--no-confirm` flag. Open with a `[!NOTE]` `**📋 Preview — review for #<PR>**` headline (per the `orc:insights` palette); the aligned comment list goes in a fence after it. The preview lists:
 
 - The computed event (`APPROVE` / `COMMENT` / `REQUEST_CHANGES`)
-- The overall body (1 paragraph)
+- The overall body (≤ 2 sentences — see the cap below)
 - One line per comment: `<path>:<line> [severity] <title>`
 - Total comment count
 - Any self-contradiction warnings (see severity-event rule above)
@@ -218,7 +218,7 @@ This is the single most important UX rule. Auto-posting reviews is a trust-erodi
 
 ## Tone
 
-The comment body should follow `orc:caveman-review` discipline — terse, actionable, signal-only. The overall review body (the framing paragraph) gets one extra sentence of context but stays short. No throat-clearing, no praise per finding. One line per problem in the body, suggestion block underneath if applicable.
+The comment body should follow `orc:caveman-review` discipline — terse, actionable, signal-only. The overall review body is hard-capped at **2 sentences (~40 words)**: one clause framing the PR + finding counts by severity (e.g. "CSV export for /reports. 2 bugs, 1 untested branch, 2 nits."). It never restates inline comments, never praises, never hedges — the inline comments carry all detail. No throat-clearing, no praise per finding. One line per problem in the comment body, suggestion block underneath if applicable.
 
 ## Comment-body templates
 

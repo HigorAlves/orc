@@ -57,7 +57,7 @@ Return **strict JSON only** (no surrounding markdown, no prose preamble). Schema
 
 ```json
 {
-  "summary": "One-paragraph framing of the PR — what it does, your overall read. Informational; does NOT decide the event. Keep to 2-3 sentences.",
+  "summary": "≤ 2 sentences, ~40 words: one clause on what the PR does + your finding counts by severity. Informational; does NOT decide the event. No praise, no hedging, no restating findings.",
   "findings": [
     {
       "path": "src/auth.ts",

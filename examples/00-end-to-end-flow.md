@@ -190,7 +190,7 @@ You: Yes
 orc: ⚙ Phase 7 — Ship
      [orc:requesting-code-review → no gaps vs plan]
      [orc:finishing-a-development-branch → option: open PR]
-     [composes PR via caveman-pr (because --caveman was passed earlier)]
+     [composes PR via caveman-pr (the default terse body)]
 
      PR title: feat(reports): add CSV export
      PR body:
@@ -326,7 +326,7 @@ orc: ✓ Worktree removed.
 - **Bug instead of feature** — phase 3 becomes `/orc:debug`. The diagnosis substitutes for the plan; orc-implementer drives the regression test → fix loop in Phase 5.
 - **Multi-week effort** — pass `--rfc` (or pick "1–4 weeks" in triage) to insert phase 2 (RFC drafting) before planning. The RFC produces alternatives and a decision deadline before any code is touched.
 - **Docs only** — pass `--type=docs`. Phases 4 (TDD start) and 5 (implementation) collapse into a docs-writing conversation; phase 6 runs lint only.
-- **Verbose PR** — drop `--caveman`. Phase 7 uses the default verbose template with What/Why/How tested/Checklist sections.
+- **Verbose PR** — pass `--verbose`. Phase 7 swaps the default terse `orc:caveman-pr` body for the long-form What/Why/How tested/Checklist template.
 - **You want fine-grained control over a single phase** — invoke the per-phase commands directly (`/orc:plan`, `/orc:debug`, `/orc:qa`, `/orc:ship`, etc.) instead of `/orc:flow`. Useful when only one phase of the loop is interesting and the rest is already done.
 - **No Jira ticket yet (or this work has no tracker entry)** — drop `--jira`. Phase 1 asks once with options `Paste a key` / `Skip — I'll bind later via /orc:jira bind` / `No ticket`. The rest of the flow behaves identically; the `Resolves <KEY>` trailer is just omitted from the PR body. You can attach a ticket mid-flow with `/orc:jira bind <KEY>` from the worktree.
 - **Need to file the Jira ticket from inside the flow** — pause at Phase 1, run `/orc:jira create --summary "add CSV export" --project PLAT --type Story` (it will offer to bind the new key automatically), then re-run `/orc:flow` and pass `--jira <NEW-KEY>`. End-to-end walkthrough in `examples/12-link-jira-and-ship.md`.
