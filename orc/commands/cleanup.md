@@ -126,7 +126,14 @@ Practically: enforce **bottom-up branch deletion** within each stack. Any stack 
 
 ### Phase 5 — Render the cleanup plan + confirm
 
-For every candidate, list exactly what will be done:
+Open with the danger callout, then list exactly what will be done in a fence (the ✓/⚠/⊘ plan lines stay in the fence — alignment matters):
+
+```markdown
+> [!CAUTION]
+> **🛑 Destructive preview**
+>
+> The plan below removes workspace state, worktrees, and branches. Skipped items (⚠/⊘) stay untouched.
+```
 
 ```
 Will clean up:
@@ -173,8 +180,8 @@ If `--dry-run`: print the plan and exit; never apply.
 For each session:
 
 1. **Workspace state** — `rm -rf .orc/<sanitized-branch>/`. Update `.orc/orc.json` to remove the entry (use Read + Write to preserve the JSON).
-2. **Worktree** — `git worktree remove <path>` ONLY if clean. If dirty, skip with a warning. Never use `--force` automatically; require an explicit `--force-dirty` flag in a future iteration if needed.
-3. **Branch** — `git branch -d <branch>` ONLY if merged into main. If unmerged, skip with a warning. Never use `-D` automatically.
+2. **Worktree** — `git worktree remove <path>` ONLY if clean. If dirty, skip and surface a `**⚠️ Skipped — dirty worktree**` `[!WARNING]` callout. Never use `--force` automatically; require an explicit `--force-dirty` flag in a future iteration if needed.
+3. **Branch** — `git branch -d <branch>` ONLY if merged into main. If unmerged, skip and surface a `**⚠️ Skipped — unmerged branch**` `[!WARNING]` callout. Never use `-D` automatically.
 4. **Worktree prune** — after removals: `git worktree prune` to clean up any stale references.
 
 For sessions with **stack members**, branch deletion (step 3) iterates the stack **bottom-up** and refuses to delete any branch whose parent (position N-1) is still `OPEN`:
@@ -202,7 +209,7 @@ For workspace-mode sessions, repeat steps 1–4 **per repo** in `repos`:
 
 ### Phase 7 — Report
 
-Echo a summary:
+Echo a summary (optionally headlined with `> [!NOTE]` `**📋 Cleanup report**`; the aligned list stays fenced):
 
 ```
 Cleaned up: 2 / 3 candidates
