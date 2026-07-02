@@ -97,7 +97,17 @@ done
 
 ### Two-pass body decoration
 
-PR #1 cannot reference PR #2's URL at creation time (#2 doesn't exist yet). So all bodies are written with a placeholder, then rewritten in pass 2 once every URL is known:
+PR #1 cannot reference PR #2's URL at creation time (#2 doesn't exist yet). So all bodies are written with a placeholder, then rewritten in pass 2 once every URL is known.
+
+Default (terse) block:
+
+```
+## Stack ({i}/{N}, id: {stackId})
+1 api#311 · 2 api#312 (this) · 3 ui#447
+order: bottom-up
+```
+
+`--verbose` variant (only when the caller shipped with `--verbose` bodies):
 
 ```markdown
 ## Stacked PR ({i}/{N})
@@ -110,14 +120,6 @@ Merge bottom-up. See [docs/STACKED-PRS.md](../docs/STACKED-PRS.md).
 | 1 | feat(api): add row stream  | org/api#311 | parent |
 | 2 | feat(api): wire export job | org/api#312 | **this** |
 | 3 | feat(ui): download button  | org/ui#447  | child |
-```
-
-Caveman variant (when `--caveman` is in scope):
-
-```
-## Stack ({i}/{N}, id: {stackId})
-1 api#311 · 2 api#312 (this) · 3 ui#447
-order: bottom-up
 ```
 
 Update each PR via `gh pr edit <url> --body "<rewritten>"`.
