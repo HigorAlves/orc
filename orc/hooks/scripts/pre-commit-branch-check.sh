@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# PreToolUse(Bash) guard: refuses `git commit` and `git push` on protected
-# branches (main, master, develop) unless ORC_ALLOW_PROTECTED=1 is set.
-# Reads the tool input as JSON on stdin.
+# PreToolUse(Bash) guard: intercepts `git commit` and `git push` on protected
+# branches (main, master, develop) and downgrades them to a confirm prompt via
+# permissionDecision "ask" — one keystroke to proceed deliberately, no env-var
+# escape hatch. Reads the tool input as JSON on stdin (PreToolUse contract).
 
 set -euo pipefail
 
@@ -14,11 +15,6 @@ case "$command" in
   *) exit 0 ;;
 esac
 
-# Explicit override.
-if [ "${ORC_ALLOW_PROTECTED:-}" = "1" ]; then
-  exit 0
-fi
-
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
 
 case "$branch" in
@@ -27,15 +23,15 @@ case "$branch" in
     case "$command" in
       git\ push*) op="push" ;;
     esac
-    cat >&2 <<EOF
-BLOCKED: cannot $op directly on protected branch '$branch'.
-
-Create a feature branch first:
-  git checkout -b feat/your-feature-name
-
-Or, if intentional, set ORC_ALLOW_PROTECTED=1 and re-run.
-EOF
-    exit 2
+    reason="orc iron rule #1: '$branch' is a protected branch. Prefer a feature branch (git checkout -b feat/…). Approve only if the user explicitly chose to $op on '$branch'."
+    jq -n --arg reason "$reason" '{
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "ask",
+        permissionDecisionReason: $reason
+      }
+    }'
+    exit 0
     ;;
 esac
 

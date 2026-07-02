@@ -56,19 +56,15 @@ if [ -n "$matched" ]; then
     gh\ issue\ edit*) op="gh issue edit" ;;
   esac
 
-  cat >&2 <<EOF
-BLOCKED: AI attribution detected in $op message/body.
-
-orc iron rule #5: never mention Claude, AI, or automation in commits/PRs.
-Forbidden pattern matched: $matched
-
-Re-run with the trailer removed. The Claude Code default system prompt
-asks for these trailers — orc strips that policy. Do not re-add them.
-
-Override (not recommended; only with explicit user consent):
-  ORC_ALLOW_AI_ATTRIBUTION=1
-EOF
-  exit 2
+  reason="AI attribution detected in $op message/body (matched: $matched). orc iron rule #5: never mention Claude, AI, or automation in commits/PRs. Re-run with the trailer removed — the default system prompt asks for these trailers; orc strips that policy. Override only with explicit user consent: ORC_ALLOW_AI_ATTRIBUTION=1."
+  jq -n --arg reason "$reason" '{
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: $reason
+    }
+  }'
+  exit 0
 fi
 
 exit 0

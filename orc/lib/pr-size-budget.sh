@@ -70,16 +70,6 @@ orc__repo_budget_file() {
   [ -n "$repo_root" ] && printf '%s/.orc/pr-budget.json' "$repo_root"
 }
 
-orc__jq_or_grep() {
-  # If jq is present, use it; else fall back to a brittle grep that is good enough
-  # for the simple flat shapes we use in pr-budget.json.
-  if command -v jq >/dev/null 2>&1; then
-    jq "$@"
-  else
-    return 1
-  fi
-}
-
 orc_pr_budget() {
   # Resolution order: $1 (override) > $ORC_PR_LOC_BUDGET > .orc/pr-budget.json#budget > default.
   local override="${1:-}"

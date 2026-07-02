@@ -105,10 +105,11 @@ hint_for() {
 build_block() {
   if [ ${#missing_required[@]} -gt 0 ]; then
     printf "> [!CAUTION]\n"
+    printf "> **🛑 orc tool check**\n"
   else
     printf "> [!WARNING]\n"
+    printf "> **⚠️ orc tool check**\n"
   fi
-  printf "> **⚠ orc tool check**\n"
   printf ">\n"
   if [ ${#missing_required[@]} -gt 0 ]; then
     printf "> **Missing required** (orc hooks/commands break without these):\n"
@@ -134,19 +135,6 @@ build_block() {
 
 warning_block=$(build_block)
 
-# JSON-escape the block (same approach as session-start-using-orc.sh).
-escape_for_json() {
-  local s="$1"
-  s="${s//\\/\\\\}"
-  s="${s//\"/\\\"}"
-  s="${s//$'\n'/\\n}"
-  s="${s//$'\r'/\\r}"
-  s="${s//$'\t'/\\t}"
-  printf '%s' "$s"
-}
-
-warning_escaped=$(escape_for_json "$warning_block")
-
 # The user-facing warning goes in the top-level `systemMessage` field —
 # Claude Code displays it directly to the user (once, at session start),
 # independent of the model. This is what restores deterministic callout
@@ -161,23 +149,35 @@ req_list="none"
 rec_list="none"
 [ ${#missing_recommended[@]} -gt 0 ] && rec_list="${missing_recommended[*]}"
 model_note="orc tool check (SessionStart): some CLI dependencies are missing — required: ${req_list}; recommended: ${rec_list}. The user has already been shown install hints directly. Do not re-print the warning; offer install help only if asked."
-model_note_escaped=$(escape_for_json "$model_note")
 
-if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+# jq owns the JSON encoding — with one exception: when jq ITSELF is the
+# missing dependency this script exists to report, fall back to minimal
+# hand escaping so the warning still reaches the user.
+if command -v jq >/dev/null 2>&1; then
+  jq -n --arg warn "$warning_block" --arg note "$model_note" '{
+    systemMessage: $warn,
+    hookSpecificOutput: {
+      hookEventName: "SessionStart",
+      additionalContext: $note
+    }
+  }'
+else
+  esc() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    s="${s//$'\n'/\\n}"
+    s="${s//$'\r'/\\r}"
+    s="${s//$'\t'/\\t}"
+    printf '%s' "$s"
+  }
   cat <<EOF
 {
-  "systemMessage": "${warning_escaped}",
+  "systemMessage": "$(esc "$warning_block")",
   "hookSpecificOutput": {
     "hookEventName": "SessionStart",
-    "additionalContext": "${model_note_escaped}"
+    "additionalContext": "$(esc "$model_note")"
   }
-}
-EOF
-else
-  cat <<EOF
-{
-  "systemMessage": "${warning_escaped}",
-  "additional_context": "${model_note_escaped}"
 }
 EOF
 fi

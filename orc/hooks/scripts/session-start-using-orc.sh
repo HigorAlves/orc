@@ -48,42 +48,30 @@ if [ -f "${PLUGIN_ROOT}/lib/workspace-detect.sh" ]; then
   )
 fi
 
-# JSON-escape the skill body using bash parameter substitution.
-escape_for_json() {
-    local s="$1"
-    s="${s//\\/\\\\}"
-    s="${s//\"/\\\"}"
-    s="${s//$'\n'/\\n}"
-    s="${s//$'\r'/\\r}"
-    s="${s//$'\t'/\\t}"
-    printf '%s' "$s"
-}
-
-using_orc_escaped=$(escape_for_json "$using_orc_content")
-context_banner_escaped=""
+banner_section=""
 if [ -n "$context_banner" ]; then
-  context_banner_escaped=$(escape_for_json "$context_banner")
-  context_banner_escaped="**orc context (auto-detected at session start):**\n${context_banner_escaped}\n\n"
-fi
-session_context="<EXTREMELY_IMPORTANT>\nYou have orc.\n\n${context_banner_escaped}**Below are the core rules of orc (your 'orc:using-orc' skill) — your introduction to using orc skills. For all other skills, use the 'Skill' tool:**\n\n${using_orc_escaped}\n</EXTREMELY_IMPORTANT>"
+  banner_section="**orc context (auto-detected at session start):**
+${context_banner}
 
-# Claude Code hooks expect hookSpecificOutput.additionalContext;
-# other platforms expect additional_context.
-if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
-  cat <<EOF
-{
-  "hookSpecificOutput": {
-    "hookEventName": "SessionStart",
-    "additionalContext": "${session_context}"
-  }
-}
-EOF
-else
-  cat <<EOF
-{
-  "additional_context": "${session_context}"
-}
-EOF
+"
 fi
+
+session_context="<EXTREMELY_IMPORTANT>
+You have orc.
+
+${banner_section}**Below are the core rules of orc (your 'orc:using-orc' skill) — your introduction to using orc skills. For all other skills, use the 'Skill' tool:**
+
+${using_orc_content}
+</EXTREMELY_IMPORTANT>"
+
+# jq owns the JSON encoding — it's a hard required dependency; if it's
+# absent, degrade silently (the tool-check hook reports the missing dep).
+command -v jq >/dev/null 2>&1 || exit 0
+jq -n --arg ctx "$session_context" '{
+  hookSpecificOutput: {
+    hookEventName: "SessionStart",
+    additionalContext: $ctx
+  }
+}'
 
 exit 0
