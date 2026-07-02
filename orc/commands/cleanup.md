@@ -209,7 +209,7 @@ For workspace-mode sessions, repeat steps 1–4 **per repo** in `repos`:
 
 ### Phase 7 — Report
 
-Echo a summary (optionally headlined with `> [!NOTE]` `**📋 Cleanup report**`; the aligned list stays fenced):
+Echo a summary (plain fenced block — reports stay plain, no callout):
 
 ```
 Cleaned up: 2 / 3 candidates

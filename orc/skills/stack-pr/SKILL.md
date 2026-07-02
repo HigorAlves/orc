@@ -150,7 +150,7 @@ Use when commits are messy (multiple WIP commits, fixups, no clean Conventional 
 git branch "${original_branch}-pre-stack-backup"
 ```
 
-The skill MUST refuse to proceed without this branch existing. On any error, surface the recovery command in a `[!CAUTION]` callout (see "Failure recovery" below).
+The skill MUST refuse to proceed without this branch existing. On any error, surface the recovery command in a `[!CAUTION]` callout (see "Recovery" below).
 
 ### Dispatch the analyzer
 
@@ -220,15 +220,24 @@ For each entry in `rebase_plan`:
 git checkout "$base_ref"
 git checkout -b "$branch"
 for sha in "${cherry_pick[@]}"; do
-  git cherry-pick --no-edit "$sha" || {
-    echo "Cherry-pick of $sha failed."
-    echo "Recover: git cherry-pick --abort && git reset --hard ${original_branch}-pre-stack-backup"
-    exit 1
-  }
+  git cherry-pick --no-edit "$sha" || exit 1
 done
 ```
 
-**Never** use `git rebase -i` — only the non-interactive composition above. The analyzer is responsible for ordering commits to minimize conflicts; on any conflict, abort and surface the recovery command.
+On cherry-pick failure, surface the danger callout with the abort commands fenced below (same shape as `/orc:stack-pr`'s Strategy-A failure path):
+
+```markdown
+> [!CAUTION]
+> **🛑 Cherry-pick of <sha> failed**
+>
+> Your original branch is safe in `${original_branch}-pre-stack-backup`.
+```
+
+```
+git cherry-pick --abort && git reset --hard ${original_branch}-pre-stack-backup
+```
+
+**Never** use `git rebase -i` — only the non-interactive composition above. The analyzer is responsible for ordering commits to minimize conflicts; on any conflict, abort and surface the recovery callout.
 
 After the reshape, push + open PRs identically to Strategy A (Pass 1, then Pass 2 body rewrite).
 

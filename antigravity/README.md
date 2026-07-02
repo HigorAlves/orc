@@ -4,6 +4,8 @@
 
 This directory contains the Antigravity CLI version of the ORC ecosystem. It is a direct port of the original Claude Code plugin, designed to follow the Antigravity way for state-of-the-art agentic workflows, taking full advantage of Antigravity's native support for agents, commands, and skills.
 
+> **Convention divergence (orc ≥ 0.6.0):** the Claude Code plugin's output conventions — GitHub-flavored callouts (`[!IMPORTANT]`/`[!WARNING]`/`[!CAUTION]`/`[!NOTE]`/`[!TIP]`) and the modern hook JSON contract (`permissionDecision`) — are Claude-Code-specific and intentionally **not** mirrored here. This port also has known broken hook paths (`hooks.json` references `gemini-skills/`; `hooks/session-start.sh` resolves `orc-core` at `antigravity/orc-core/` instead of `antigravity/skills/orc-core/`, injecting a literal error string) — see `docs/roadmap.md` (C5) for the fix-or-archive decision.
+
 ## Architecture
 
 ORC for Antigravity is built using the official plugin directory structure:

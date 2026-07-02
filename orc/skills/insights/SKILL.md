@@ -27,7 +27,7 @@ One shape for every block:
 | Purpose | Alert | Header | Use for |
 |---|---|---|---|
 | Insight | `[!IMPORTANT]` | `**💡 Insight**` | non-obvious choice, trade-off, thing worth knowing |
-| Caution | `[!WARNING]` | `**⚠️ Caution**` (variant `**⚠️ Skipped — <reason>**`) | gotchas, footguns, skip-with-warning, non-blocking anomalies |
+| Caution | `[!WARNING]` | `**⚠️ Caution**` (variants `**⚠️ Caution — <what>**`, `**⚠️ Skipped — <reason>**`) | gotchas, footguns, skip-with-warning, non-blocking anomalies |
 | Danger | `[!CAUTION]` | `**🛑 <what>**` | destructive previews, discard confirms, escalations, blocked states |
 | Gate | `[!NOTE]` — `[!WARNING]` when fired by a problem | `**⛔ Gate — <name>**` | 1–3 context lines immediately before an `AskUserQuestion` |
 | Preview | `[!NOTE]` | `**📋 Preview — <action>**` | headline over an about-to-act payload |

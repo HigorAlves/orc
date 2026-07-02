@@ -4,7 +4,7 @@
 
 You want orc to drive the whole feature lifecycle. One command — gates at every *decision* phase via `AskUserQuestion`, autonomous (`orc-implementer`) at the *implementation* phase, resumable across days.
 
-The split is deliberate: decisions need you in the loop (which design? did the QA pass? open as draft or as-is?). Writing the code from a clear plan + failing test is mechanical enough that an opus agent can drive it slice-by-slice and only escalate when something genuinely needs your call.
+The split is deliberate: decisions need you in the loop (which design? did the QA pass? open as draft or as-is?). Writing the code from a clear plan + failing test is mechanical enough that the implementer agent can drive it slice-by-slice and only escalate when something genuinely needs your call.
 
 ## The single command
 
@@ -82,7 +82,7 @@ orc: ⚙ Phase 1 done. Initialized .orc/feat-csv-export/files/.
 You: Yes — proceed
 
 orc: ⚙ Phase 4 — Start
-     [invokes orc:using-git-worktrees → ~/wt/orc/feat-csv-export]
+     [invokes orc:using-git-worktrees → .orc/.worktrees/orc/feat-csv-export]
      [invokes orc:tdd → writes failing test for slice 1]
      [runs the test → fails with "Cannot find module '../export/csv'"]
      [commits the failing test on branch feat/csv-export]
@@ -102,7 +102,7 @@ orc: ⚙ Phase 4 — Start
 You: Test fails as expected
 
 orc: ⚙ Phase 5 — Implementation
-     [dispatching orc-implementer (opus) with plan, failing test, branch context]
+     [dispatching orc-implementer (sonnet) with plan, failing test, branch context]
 
      ✓ Slice 1 — "GET endpoint scaffolding"
        Files: src/reports/api.ts, src/reports/__tests__/api.test.ts
@@ -139,7 +139,7 @@ You: (had lunch while orc-implementer worked)
 
 You come back from lunch. orc-implementer drove all 4 slices autonomously while you were away. The agent followed the same iron rules you'd have followed yourself: no commits to main (worktree + feature branch), test-first per slice, full suite green between slices, Conventional Commits via `orc:git-commit`, no AI attribution. Worktree state visible via `git log` on the feature branch.
 
-If at any slice the agent had hit an escalation condition (ambiguous spec, dep needed, test stuck after 3 attempts, scope creep, pre-existing test broke) — it would have stopped with a `🛑 ESCALATION` block and `AskUserQuestion` would have surfaced the choice to you. None did, this run.
+If at any slice the agent had hit an escalation condition (ambiguous spec, dep needed, test stuck after 3 attempts, scope creep, pre-existing test broke) — it would have stopped with a `[!CAUTION]` `🛑 Escalation — slice <N>` callout and `AskUserQuestion` would have surfaced the choice to you. None did, this run.
 
 (If you'd passed `--pause-at-implement` instead, orc would have paused and you'd write the code yourself in conversation, exactly as the original walk-through described.)
 
@@ -285,7 +285,7 @@ orc: 📍 Resuming. PR #523 status: MERGED at 2026-05-03T14:22Z.
 
      Plan:
      ✓ rm -rf .orc/feat-csv-export/
-     ✓ git worktree remove ~/wt/orc/feat-csv-export   (clean)
+     ✓ git worktree remove .orc/.worktrees/orc/feat-csv-export   (clean)
      ✓ git branch -d feat/csv-export                   (merged into main)
 
      Apply?
@@ -315,7 +315,7 @@ orc: ✓ Worktree removed.
 ## What you noticed
 
 - **Every phase asks before advancing.** No silent transitions. The select-from-list comes from `AskUserQuestion`.
-- **The implementation phase is autonomous by default.** `orc-implementer` (opus) drives the slice-by-slice loop — read spec, confirm/write failing test, implement, run suite, commit, next slice. The agent obeys the same iron rules you would (no commits to main, test-first, verify, root-cause). Pass `--pause-at-implement` if you want orc to stop at Phase 4's failing test and let you write the code yourself instead.
+- **The implementation phase is autonomous by default.** `orc-implementer` (sonnet) drives the slice-by-slice loop — read spec, confirm/write failing test, implement, run suite, commit, next slice. The agent obeys the same iron rules you would (no commits to main, test-first, verify, root-cause). Pass `--pause-at-implement` if you want orc to stop at Phase 4's failing test and let you write the code yourself instead.
 - **Resume is automatic.** You don't pass any args on the second/third invocation — orc reads `.orc/orc.json`, finds the in-progress flow, jumps to the next pending phase.
 - **The PR description was synthesized from accumulated evidence**: plan.md (Why), the diff (What changed), qa/steps.md (How tested), and ticket links.
 - **Jira followed the work end-to-end.** `JRA-123` was bound at Phase 1 (via `--jira` flag), persisted in `.orc/orc.json` + `checkpoint.md`, surfaced in every resume header, and emitted as a `Resolves JRA-123` trailer at PR composition. Override the keyword with `ORC_JIRA_PR_KEYWORD=Closes` (or `Fixes`) per shop convention.
@@ -336,4 +336,4 @@ orc: ✓ Worktree removed.
 - **Every gate is a real gate.** `/orc:flow` never silently advances.
 - **Phase state is durable.** Crash mid-flow, resume tomorrow.
 - **Per-phase rules still apply** — web QA evidence, blameless framing, no AI attribution, no commits to main. `/orc:flow` doesn't bypass them; it composes them.
-- **Implementation is autonomous by default but escalates honestly.** `orc-implementer` runs the whole loop without your involvement — UNTIL it hits an escalation condition (test stuck after 3 attempts, ambiguous spec, new dependency, scope creep, broken pre-existing test, security concern, plan-is-wrong). When it escalates, it surfaces a `🛑 ESCALATION` block with concrete options and a recommended path. You stay out of the loop until the agent genuinely needs you.
+- **Implementation is autonomous by default but escalates honestly.** `orc-implementer` runs the whole loop without your involvement — UNTIL it hits an escalation condition (test stuck after 3 attempts, ambiguous spec, new dependency, scope creep, broken pre-existing test, security concern, plan-is-wrong). When it escalates, it surfaces a `[!CAUTION]` `🛑 Escalation` callout with concrete options and a recommended path. You stay out of the loop until the agent genuinely needs you.

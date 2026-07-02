@@ -133,15 +133,9 @@ loc=$(orc_pr_loc "origin/$base")
 budget=$(orc_pr_budget "$ARG_MAX_LOC")     # CLI override > env > .orc/pr-budget.json > 300
 
 if [ "$loc" -gt "$budget" ]; then
-  echo "PR size gate"; echo
-  echo "Diff vs origin/$base:"
-  echo "  Counted: $loc LOC"
-  echo "  Budget:  $budget LOC"
-  echo "  Verdict: OVER by $((loc - budget)) LOC"
-  echo
-  echo "Top contributors:"
+  # Render the [!WARNING] "⛔ Gate — PR size" callout from "The gate prompt"
+  # section above (the canonical shape), with the fenced breakdown built from:
   orc_pr_loc_breakdown "origin/$base"
-  echo
   orc_pr_excluded_summary "origin/$base"
   # ...then AskUserQuestion as above
 fi

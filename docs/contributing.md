@@ -4,7 +4,7 @@ orc is a personal plugin, but the conventions here keep future-you sane. Read th
 
 ## Iron rules (mirror `skills/using-orc/SKILL.md`)
 
-1. No commits to `main`/`master`/`develop` without `ORC_ALLOW_PROTECTED=1`.
+1. No commits to `main`/`master`/`develop` — the PreToolUse hook downgrades them to a confirm prompt; approve only with explicit user consent. (The full 8-rule list lives in `skills/using-orc/SKILL.md`; these five are the ones that bite contributors.)
 2. New skills get a failing test before they ship (the test is "does invoking this skill produce the expected behavior?" — usually a manual smoke test for skills).
 3. Don't claim a feature works without verifying. The plugin must `claude --plugin-dir` load cleanly.
 4. Don't fix a bug in a skill without finding the root cause first. Don't paper over.
@@ -22,7 +22,7 @@ orc is a personal plugin, but the conventions here keep future-you sane. Read th
    ```
 3. The body is the instructions the model follows when the skill triggers.
 4. For "rich" skills, add supporting files in the same directory: `references/*.md` for progressive-disclosure detail, `rules/*.md` for granular rules, `scripts/*` for executables.
-5. Update `skills/using-orc/SKILL.md` to list the new skill in the **Available Skills** table — otherwise the model won't know it exists.
+5. The skill's `description:` frontmatter is its only trigger surface — Claude Code loads every description automatically; there is no catalog table to update. Spend the effort making the description say *when* to invoke it.
 6. Reload: `/reload-plugins` inside Claude Code.
 
 ## Adding a new command
@@ -44,7 +44,7 @@ orc is a personal plugin, but the conventions here keep future-you sane. Read th
    ```
 3. The body describes the workflow as numbered phases. Each phase invokes a skill, dispatches a `Task`, or asks the user via `AskUserQuestion`.
 4. **State-aware commands** must write to `.orc/<sanitized-branch>/files/` after every phase. Update `checkpoint.md` and the central `.orc/orc.json` registry.
-5. Update `skills/using-orc/SKILL.md` **Available Commands** table.
+5. No catalog table to update — the command's `description:` frontmatter is what surfaces in `/orc:` autocomplete.
 6. Reload.
 
 ## Adding a new subagent
@@ -59,7 +59,7 @@ orc is a personal plugin, but the conventions here keep future-you sane. Read th
    model: opus | sonnet | haiku                # opus for deep reasoning, sonnet for execution, haiku for cheap checks
    color: red | blue | green | purple | orange | cyan
    maxTurns: 15-50
-   permissionMode: plan | default              # plan = read-only investigation, default = can edit
+   disallowedTools: Write, Edit, NotebookEdit  # for read-only investigator agents (permissionMode is IGNORED for plugin agents — don't use it)
    ---
    ```
 3. The body describes the role, what it looks for, output format, tone.
@@ -69,20 +69,20 @@ orc is a personal plugin, but the conventions here keep future-you sane. Read th
 ## Adding a hook
 
 1. Add a script to `hooks/scripts/<event>-<purpose>.sh`. Make it executable (`chmod +x`).
-2. Wire it in `hooks/hooks.json`:
+2. Wire it in `hooks/hooks.json` — add an `"if"` permission-rule filter so the script only spawns for the commands it guards:
    ```json
    "PreToolUse": [
      {
        "matcher": "Bash",
        "hooks": [
-         { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/<your-script>.sh", "async": false }
+         { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/<your-script>.sh", "async": false, "if": "Bash(git commit*)" }
        ]
      }
    ]
    ```
 3. Use `${CLAUDE_PLUGIN_ROOT}` for all paths — keeps the plugin relocatable.
-4. The script reads tool input as JSON on stdin (PreToolUse) or returns JSON on stdout (SessionStart). See existing scripts for the contract.
-5. Exit codes: 0 = allow, 2 = block (PreToolUse only). Print blocking reasons to stderr.
+4. The script reads tool input as JSON on stdin and always exits 0. Decisions go on stdout as JSON: PreToolUse hooks emit `{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "allow|deny|ask", "permissionDecisionReason": "…"}}`; SessionStart hooks emit `hookSpecificOutput.additionalContext` (model-facing) and/or top-level `systemMessage` (user-facing). See existing scripts for the contract.
+5. Let jq own the JSON encoding (`jq -n --arg …`) — no hand-rolled escaping.
 
 ## File-naming conventions
 
@@ -97,7 +97,7 @@ orc is a personal plugin, but the conventions here keep future-you sane. Read th
 claude --plugin-dir /Users/higoralves/Developer/system/orc
 # inside Claude Code:
 /reload-plugins
-/orc:                  # autocomplete should list all 11 commands
+/orc:                  # autocomplete should list all 20 commands
 ```
 
 ## Commit hygiene
@@ -109,9 +109,8 @@ claude --plugin-dir /Users/higoralves/Developer/system/orc
 ## When you change something
 
 If you change a skill's name, description, or invocation surface, update:
-1. The `Available Skills` table in `skills/using-orc/SKILL.md`.
-2. Any command in `commands/` that references it.
-3. `docs/architecture.md` if the change affects the high-level shape.
-4. The README skill catalog.
+1. Any command in `commands/` that references it.
+2. `docs/architecture.md` if the change affects the high-level shape.
+3. The README skill catalog and the counts in `.claude-plugin/marketplace.json`.
 
-Drift between these surfaces is the most common bug in personal plugins.
+Drift between these surfaces is the most common bug in personal plugins. Run `claude plugin validate ./orc --strict` before pushing.

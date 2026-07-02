@@ -48,9 +48,9 @@ Example plan tasks:
 /orc:start
 ```
 
-Composes `using-git-worktrees` + `writing-plans` (re-loads from `.orc/`) + `tdd`. Creates an isolated worktree (e.g. `~/wt/orc/feat-csv-export`), creates the feature branch (`feat/csv-export`), drafts the first failing test from slice 1.
+Composes `using-git-worktrees` + `writing-plans` (re-loads from `.orc/`) + `tdd`. Creates an isolated worktree (pinned under `.orc/.worktrees/`, e.g. `.orc/.worktrees/orc/feat-csv-export`), creates the feature branch (`feat/csv-export`), drafts the first failing test from slice 1.
 
-The PreToolUse hook is now active for this branch — committing to `main` is blocked from here on.
+From here on, any commit to `main` triggers the PreToolUse hook's confirm prompt — the feature branch is the only frictionless path.
 
 ### Phase 3 — Implement
 

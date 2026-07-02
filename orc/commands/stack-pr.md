@@ -87,10 +87,10 @@ Any failure → surface the specific check + repo in a `[!WARNING]` **⚠️ Cau
 If `n_commits == 1`, surface and exit 0:
 
 ```markdown
-> [!NOTE]
-> **📋 Nothing to stack**
+> [!TIP]
+> **➡️ Next**
 >
-> Single commit on the branch — use `/orc:ship`.
+> Single commit on the branch — nothing to stack. Use `/orc:ship`.
 ```
 
 ### Phase 3 — Analyze
@@ -169,7 +169,7 @@ for sha in "${cherry_pick[@]}"; do
 done
 ```
 
-On cherry-pick failure, surface the danger callout (recovery commands in the fence, per the `orc:stack-pr` skill's Recovery section):
+On cherry-pick failure, surface the danger callout with the quick abort commands fenced below (for full teardown of a partial stack, the `orc:stack-pr` skill's Recovery section applies):
 
 ```markdown
 > [!CAUTION]

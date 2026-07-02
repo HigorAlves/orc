@@ -170,4 +170,4 @@ That's it. ADRs don't write to `.orc/` — they're durable by design.
 ## Iron rules in play
 
 - **No AI attribution.** ADRs are engineering records. They read as if a senior engineer wrote them.
-- **Insight blocks aren't ADR content.** Save `★ Insight ─────` for conversations.
+- **Insight callouts aren't ADR content.** Save the `> [!IMPORTANT]` **💡 Insight** format for conversations.

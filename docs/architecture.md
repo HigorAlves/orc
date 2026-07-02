@@ -10,9 +10,9 @@
 orc/
 ├── .claude-plugin/plugin.json     # manifest — what Claude Code reads to discover the plugin
 ├── .orc/                          # gitignored, ephemeral workspace state (per-session)
-├── skills/                        # 54 skills, namespaced /orc:<name>
-├── commands/                      # 19 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
-├── agents/                        # 10 specialist subagents (orc-<role>)
+├── skills/                        # 57 skills, namespaced /orc:<name>
+├── commands/                      # 20 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
+├── agents/                        # 11 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) hooks
 ├── lib/                           # shared prompt fragments + templates (cross-skill)
 └── docs/                          # this directory
@@ -25,19 +25,22 @@ orc/
 | **Skills** | Reusable knowledge units the model can invoke on demand. | `orc:tdd` is invoked any time the user starts new code. |
 | **Commands** | Thin orchestrators with a known shape. Each composes 2+ skills and (often) writes to `.orc/`. | `/orc:debug` invokes `systematic-debugging` → `tdd` → `error-handling-patterns`. |
 | **Agents** | Long-running specialists with isolated context. Used when work needs a fresh window. | `orc-debug-investigator` is dispatched by `/orc:debug` to find root cause without polluting the main session. |
-| **Hooks** | Run automatically (no user invocation). Establish discipline at session start; intercept dangerous operations. | `pre-commit-branch-check` refuses commits to `main`. |
+| **Hooks** | Run automatically (no user invocation). Establish discipline at session start; intercept dangerous operations. | `pre-commit-branch-check` downgrades commits to `main` to a confirm prompt. |
 
-## SessionStart hooks (two scripts, same matcher)
+## SessionStart hooks (two scripts, two matchers)
 
-`hooks/hooks.json` wires two scripts to the `startup|resume|clear|compact` matcher:
+`hooks/hooks.json` wires two scripts:
 
-1. **`session-start-using-orc.sh`** — reads `skills/using-orc/SKILL.md` and emits it as additional session context. The model sees orc's iron rules, skill catalog, and the insight-block format before its first response. The `★ Insight ─────...` block was previously delivered by a sibling plugin (`explanatory-output-style/`); folding it into `using-orc/SKILL.md` collapses that into one hook and makes orc self-sufficient on this dimension.
+1. **`session-start-using-orc.sh`** (matcher `startup|resume|clear|compact`) — reads `skills/using-orc/SKILL.md` and emits it as additional session context. The model sees orc's iron rules, skill routing, and the callout-palette pointer (`orc:insights` — GitHub-flavored `[!IMPORTANT]`/`[!WARNING]`/`[!CAUTION]`/`[!NOTE]`/`[!TIP]` blocks with emoji headers) before its first response.
 
-2. **`session-start-tool-check.sh`** — pre-flight check for orc's CLI dependencies (`git`, `jq`, `gh`, `agent-browser`, `acli`). Silent when everything's present; otherwise injects a `⚠ Tool check ─────...` block and instructs the model to surface it once at session start. Suppress with `ORC_SKIP_TOOL_CHECK=1`. Adding new tooling checks later is additive — drop another script alongside.
+2. **`session-start-tool-check.sh`** (matcher `startup` only — binaries don't vanish mid-session) — pre-flight check for orc's CLI dependencies (`git`, `jq`, `gh`, `agent-browser`, `acli`). Silent when everything's present; otherwise delivers a `[!WARNING]`/`[!CAUTION]` callout directly to the user via `systemMessage` and a short do-not-reprint note to the model. Suppress with `ORC_SKIP_TOOL_CHECK=1`. Adding new tooling checks later is additive — drop another script alongside.
 
-## PreToolUse(Bash) hook
+## PreToolUse(Bash) hooks
 
-`hooks/scripts/pre-commit-branch-check.sh` intercepts every Bash tool call. If the command is `git commit` or `git push` and the current branch is `main`/`master`/`develop`, it exits 2 with a clear error. Override with `ORC_ALLOW_PROTECTED=1` for the rare case (initial scaffold, hot-fix to a release branch, etc.).
+`hooks/hooks.json` narrows both commit guards with `"if"` permission-rule filters so they only spawn on `git commit`/`git push` (branch check) and `git commit`/`gh pr`/`gh issue` (attribution check):
+
+- **`pre-commit-branch-check.sh`** — on protected branches (`main`/`master`/`develop`) it emits `permissionDecision: "ask"`, downgrading the commit/push to a one-keystroke confirm prompt with the reason attached. No env-var escape; the confirm *is* the override.
+- **`pre-commit-no-ai-attribution.sh`** — denies (JSON `permissionDecision: "deny"`) any commit/PR/issue body carrying AI-attribution markers. Override only with `ORC_ALLOW_AI_ATTRIBUTION=1`.
 
 ## `.orc/` workspace state
 
@@ -46,6 +49,7 @@ Multi-phase commands (`/orc:plan`, `/orc:start`, `/orc:debug`, `/orc:fan-out`, w
 ```
 .orc/
 ├── orc.json                                 # central registry of active sessions
+├── .worktrees/                              # pinned git worktrees (never $HOME) — <repo>/<branch>
 └── feat-142-notification-prefs/
     └── files/
         ├── checkpoint.md                    # phase + status — the resume entry point
@@ -55,7 +59,8 @@ Multi-phase commands (`/orc:plan`, `/orc:start`, `/orc:debug`, `/orc:fan-out`, w
         ├── progress.md                      # phase-by-phase log
         ├── qa/                              # if web-mode /orc:qa ran
         │   ├── screenshot-NN-step.png
-        │   ├── video.mp4
+        │   ├── snapshot-final.txt
+        │   ├── network.har
         │   ├── steps.md
         │   └── console.log
         └── fan-out/                         # if /orc:fan-out ran
@@ -106,7 +111,7 @@ Plus five skills authored fresh for senior/architect practice: `adr-writing` (Ar
 
 orc borrows compozy's session-state idea, hook layout, and YAML-frontmatter conventions. It diverges in two places:
 1. Workspace state is **hidden + gitignored** (`.orc/`) instead of committed (`compozy/`). orc is a personal plugin; nothing needs sharing.
-2. Command surface is smaller and more focused on the personal loop (11 commands vs compozy's 13), with explicit web-QA evidence as a first-class concern.
+2. Command surface is focused on the personal loop (20 commands, all composing the same plan → debug → verify → ship spine), with explicit web-QA evidence as a first-class concern.
 
 ## See also
 

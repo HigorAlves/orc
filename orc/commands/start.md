@@ -68,7 +68,7 @@ On conflict, print first (then the table above stays as the detail):
 
 ```markdown
 > [!WARNING]
-> **⚠️ Branch collision**
+> **⛔ Gate — branch collision**
 >
 > `<branch>` already exists with divergent commits in: <repo list>.
 ```

@@ -51,7 +51,7 @@ This unlocks the **requirements-alignment** check inside the reviewer agent — 
 
 ### Phase 4 — Dispatch the reviewer(s)
 
-`Task` always dispatches `orc-pr-reviewer` (model: opus, generalist).
+`Task` always dispatches `orc-pr-reviewer` (model: sonnet, generalist).
 
 When the diff touches security-sensitive paths (auth, sessions, raw SQL, deserialization, file upload, request parsing, dependency surface), `orc-security-reviewer` is dispatched **in parallel**. Auto-detected from the changed-file list; the user can force-on or force-off via `AskUserQuestion`.
 
@@ -205,9 +205,7 @@ The teammate opens PR #142 and sees:
 - **`/orc:code-review 142 --summary-only`** — produces the legacy markdown text-block (Bugs / Security / Tests sections) and does NOT post anything to GitHub. Useful when you want markdown to paste into Slack/Notion or you're researching a PR rather than reviewing it.
 - **`/orc:code-review 142 --dry-run`** — runs through the preview gate but never posts. The constructed payload is echoed as JSON for inspection. Pair with `--soft-tests` to see how the event would change if test gaps weren't blocking.
 - **`/orc:code-review 142 --soft-tests`** — `test`-severity findings drop to COMMENT instead of forcing REQUEST_CHANGES. For repos with weak test culture or PRs you explicitly want to land despite test gaps.
-- **Agent self-contradiction case** — say `orc-pr-reviewer` writes `summary: "Approve. Findings are non-blocking."` but `findings` includes a `bug`. The Phase 4 sanity-check fires:
-  > ⚠ Reviewer wrote "approve" but flagged 2 bug-severity findings.
-  >   Severity rule overrides verdict — posting as REQUEST_CHANGES.
+- **Agent self-contradiction case** — say `orc-pr-reviewer` writes `summary: "Approve. Findings are non-blocking."` but `findings` includes a `bug`. The Phase 4 sanity-check fires a `[!WARNING]` **⚠️ Caution** callout: *Reviewer wrote "approve" but flagged 2 bug-severity findings. Severity rule overrides verdict — posting as REQUEST_CHANGES.*
   
   This is the failure mode the new severity rule was specifically designed to catch.
 - **PR is too big to review in one shot** — comment that the PR should be split, then APPROVE the trivial portion or REQUEST_CHANGES on the structural pieces. Don't pretend to review 60 files in one read.
@@ -221,4 +219,4 @@ The teammate opens PR #142 and sees:
 - **Max 15 inline comments.** Over-commenting erodes signal; the orchestrator surfaces the cap and asks the user to drop overflow.
 - **No false positives.** The agent's confidence rule (≥ 0.8) + the preview-gate's per-comment edit option both guard this.
 - **No AI attribution.** Reviews read as your voice. The agent is the lens, you are the reviewer.
-- **Insight blocks are not for PR comments.** Save the `★ Insight ─────` format for conversations, not GitHub threads — those need to read as engineer-to-engineer.
+- **Insight callouts are not for PR comments.** Save the `> [!IMPORTANT]` **💡 Insight** format for conversations, not GitHub threads — those need to read as engineer-to-engineer.
