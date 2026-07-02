@@ -51,7 +51,7 @@ This unlocks the **requirements-alignment** check inside the reviewer agent — 
 
 ### Phase 4 — Dispatch the reviewer(s)
 
-`Task` always dispatches `orc-pr-reviewer` (model: opus, generalist).
+`Task` always dispatches `orc-pr-reviewer` (model: sonnet, generalist).
 
 When the diff touches security-sensitive paths (auth, sessions, raw SQL, deserialization, file upload, request parsing, dependency surface), `orc-security-reviewer` is dispatched **in parallel**. Auto-detected from the changed-file list; the user can force-on or force-off via `AskUserQuestion`.
 
@@ -221,4 +221,4 @@ The teammate opens PR #142 and sees:
 - **Max 15 inline comments.** Over-commenting erodes signal; the orchestrator surfaces the cap and asks the user to drop overflow.
 - **No false positives.** The agent's confidence rule (≥ 0.8) + the preview-gate's per-comment edit option both guard this.
 - **No AI attribution.** Reviews read as your voice. The agent is the lens, you are the reviewer.
-- **Insight blocks are not for PR comments.** Save the `★ Insight ─────` format for conversations, not GitHub threads — those need to read as engineer-to-engineer.
+- **Insight callouts are not for PR comments.** Save the `> [!IMPORTANT]` **💡 Insight** format for conversations, not GitHub threads — those need to read as engineer-to-engineer.

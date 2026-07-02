@@ -190,4 +190,4 @@ docs/adr/0007-use-kafka-for-events.md        # new ADR
 ## Iron rules in play
 
 - **No AI attribution.** Docs read as if a human wrote them.
-- **Insight blocks are conversation-only.** Don't insert `★ Insight ──...` blocks into doc files; that's Claude-vs-user space, not document content.
+- **Insight callouts are conversation-only.** Don't insert `> [!IMPORTANT]` **💡 Insight** blocks into doc files; that's Claude-vs-user space, not document content.
