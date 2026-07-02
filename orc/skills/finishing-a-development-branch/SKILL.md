@@ -24,13 +24,17 @@ Guide completion of development work by presenting clear options and handling ch
 npm test / cargo test / pytest / go test ./...
 ```
 
-**If tests fail:**
+**If tests fail** — surface the blocked callout, then the failures in a fence:
+
+```markdown
+> [!CAUTION]
+> **🛑 Blocked — <N> test failures**
+>
+> Cannot proceed with merge/PR until tests pass.
 ```
-Tests failing (<N> failures). Must fix before completing:
 
+```
 [Show failures]
-
-Cannot proceed with merge/PR until tests pass.
 ```
 
 Stop. Don't proceed to Step 2.
@@ -48,7 +52,7 @@ Or ask: "This branch split from main - is that correct?"
 
 ### Step 3: Present Options
 
-Present exactly these 4 options:
+Print the Gate headline (`> [!NOTE]` + `**⛔ Gate — branch completion**`, one line: tests green, N commits on `<branch>`, per `orc:insights`), then present exactly these 4 options (via `AskUserQuestion` when available):
 
 ```
 Implementation complete. What would you like to do?
@@ -114,13 +118,12 @@ Report: "Keeping branch <name>. Worktree preserved at <path>."
 #### Option 4: Discard
 
 **Confirm first:**
-```
-This will permanently delete:
-- Branch <name>
-- All commits: <commit-list>
-- Worktree at <path>
 
-Type 'discard' to confirm.
+```markdown
+> [!CAUTION]
+> **🛑 Destructive — type 'discard' to confirm**
+>
+> This permanently deletes branch `<name>`, all its commits (<commit-list>), and the worktree at `<path>`.
 ```
 
 Wait for exact confirmation.

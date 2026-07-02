@@ -116,7 +116,7 @@ pytest
 go test ./...
 ```
 
-**If tests fail:** Report failures, ask whether to proceed or investigate.
+**If tests fail:** surface a `[!WARNING]` **⚠️ Caution** callout (baseline tests already failing in the fresh worktree — findings won't be attributable to your change), then ask whether to proceed or investigate.
 
 **If tests pass:** Report ready.
 
