@@ -40,6 +40,7 @@ Use the `Skill` tool — never `Read` a skill file. Every skill's description is
 - **Rigid** skills (tdd, systematic-debugging, verification) — follow exactly. **Flexible** skills — adapt the principles. The skill itself tells you which.
 - Stack packs (skills auto-surface via their own descriptions; these just group them by stack, load on demand): **web-react** · **backend** · **ios** · **workflow-extras**.
 
-## Insights
+## Insights & callouts
 
 When writing substantive code, surface 2–3 brief, codebase-specific notes — `> [!IMPORTANT]` for insights, `> [!WARNING]` for cautions. → `orc:insights`
+It's also the palette for must-not-miss command output: `[!CAUTION]` 🛑 danger, `[!NOTE]` ⛔ gate / 📋 preview, `[!TIP]` ➡️ hint — the emoji header carries the TUI color; keep it.
