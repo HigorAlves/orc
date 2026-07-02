@@ -34,6 +34,17 @@ Drive a piece of work from "I want to do X" to "PR merged, workspace cleaned up.
 
 This command is interactive by design. Every phase ends with an `AskUserQuestion` select-from-list — you choose advance, iterate, skip, or abort. **Never silently advances past a gate.**
 
+Immediately before each phase's `AskUserQuestion`, print a one-line Gate callout (per the `orc:insights` palette; `[!WARNING]` instead of `[!NOTE]` when the gate fired because something is wrong):
+
+```markdown
+> [!NOTE]
+> **⛔ Gate — <phase name>**
+>
+> [1–2 lines: what was produced, what's being decided]
+```
+
+Options never go inside the callout — the question widget renders them natively.
+
 ## When to use
 
 Use `/orc:flow` when you want orc to drive the whole loop. Skip it (use the per-phase commands directly: `/orc:plan`, `/orc:debug`, `/orc:qa`, `/orc:ship`, etc.) when you want fine-grained control over a single phase, or when the work clearly fits a single command.
@@ -84,7 +95,14 @@ eval "$(orc_detect_context)"
 
 - `ORC_CONTEXT=repo` → standard single-repo flow. Skip workspace-only steps below.
 - `ORC_CONTEXT=workspace` → workspace flow. The state dir is `$ORC_STATE_DIR` (`<workspaceRoot>/.orc`); per-repo state dirs are `<workspaceRoot>/<repo>/.orc/`.
-- `ORC_CONTEXT=loose` → output `Cwd is neither a git repo nor a workspace parent — cannot run /orc:flow here.` and stop.
+- `ORC_CONTEXT=loose` → surface and stop:
+
+  ```markdown
+  > [!WARNING]
+  > **⚠️ Caution**
+  >
+  > Cwd is neither a git repo nor a workspace parent — cannot run /orc:flow here.
+  ```
 
 ### Phase 1 — Triage
 
@@ -269,7 +287,7 @@ The agent runs without further user gates UNLESS one of the **escalation conditi
 - A security/architecture concern surfaces mid-implementation.
 - The plan is wrong (the slice as written would produce incorrect behavior).
 
-When the agent escalates, surface its 🛑 block via `AskUserQuestion`:
+When the agent escalates, re-print its `[!CAUTION]` **🛑 Escalation** callout verbatim (see `agents/orc-implementer.md` — the agent already emits palette shape), then `AskUserQuestion`:
 
 ```
 A. <option A from agent>
@@ -290,19 +308,22 @@ checkpoint.md → phase=5, status=ready-for-implementation, last_artifact=<test-
 progress.md → "Implementation phase started. Run /orc:flow again (or /orc:resume) when ready for QA."
 ```
 
-Echo to the user:
+Echo to the user — the gate callout, then the handoff details in a fence:
+
+```markdown
+> [!NOTE]
+> **⛔ Gate — paused at implementation**
+>
+> orc paused (`--pause-at-implement`). Re-run `/orc:flow` (or `/orc:resume`) when you're done implementing and flow picks up at QA.
+```
 
 ```
-✋ Implementation phase. orc paused (--pause-at-implement).
-
-Worktree: <path>
+Worktree:     <path>
 Failing test: <file>:<line>
-Plan: .orc/<branch>/files/plan.md
-
-When you're done implementing, re-run /orc:flow (or /orc:resume) and
-flow will pick up at QA. The PreToolUse hook will keep you off main —
-commit per slice (Conventional Commits via orc:git-commit).
+Plan:         .orc/<branch>/files/plan.md
 ```
+
+Remind: the PreToolUse hook keeps you off main — commit per slice (Conventional Commits via `orc:git-commit`).
 
 The next invocation of `/orc:flow` (or `/orc:resume`) reads the checkpoint and jumps to phase 6.
 
@@ -334,22 +355,16 @@ Pre-flight the **size gate** before invoking `/orc:ship`. Defer to `orc:pr-size-
 # In workspace mode, iterate per target repo; in single-repo, run once.
 ```
 
-For each target repo, compute `loc = orc_pr_loc <base>` and `budget = orc_pr_budget "$ARG_MAX_LOC"`. If `loc > budget`, surface a **flow-enriched 4-option** `AskUserQuestion` (the standalone `/orc:ship` gate has only the first three — Phase 7 adds option A because the flow knows the plan):
+For each target repo, compute `loc = orc_pr_loc <base>` and `budget = orc_pr_budget "$ARG_MAX_LOC"`. If `loc > budget`, render the gate exactly as `orc:pr-size-budget` specifies (the `[!WARNING]` **⛔ Gate — PR size** callout — in workspace mode add `(repo: <r>)` to the header — then the fenced breakdown), and surface a **flow-enriched 4-option** `AskUserQuestion` (the standalone `/orc:ship` gate has only the first three — Phase 7 adds option A because the flow knows the plan):
 
 ```
-PR size gate (repo: <r>)
-Diff vs origin/<base>: <loc> LOC vs <budget> budget — OVER by <delta>.
-<top-contributors table>
-<excluded summary>
-
-Options:
-  A. Stack from plan slices (Recommended, flow-only)
-     Use the existing per-slice commits as the stack scaffold. One PR per Phase 5 batch.
-     (Only enabled when commits map 1:1 to plan slices.)
-  B. Stack via /orc:stack-pr [--smart]
-     Standalone analyzer; same outcome as A but doesn't rely on commit/slice alignment.
-  C. Open as one big PR — requires a one-line reason (Size-budget-override: trailer).
-  D. Abort to implement — go back, resize, re-run /orc:flow.
+A. Stack from plan slices (Recommended, flow-only)
+   Use the existing per-slice commits as the stack scaffold. One PR per Phase 5 batch.
+   (Only enabled when commits map 1:1 to plan slices.)
+B. Stack via /orc:stack-pr [--smart]
+   Standalone analyzer; same outcome as A but doesn't rely on commit/slice alignment.
+C. Open as one big PR — requires a one-line reason (Size-budget-override: trailer).
+D. Abort to implement — go back, resize, re-run /orc:flow.
 ```
 
 A is enabled iff `n_commits_on_branch == n_slices_in_plan` AND each commit subject contains the slice name (best-effort match). When the heuristic fails, hide A and present B/C/D only.
@@ -458,4 +473,13 @@ After the entire flow:
 
 Total active time: ~2 days (paused 14h overnight Mon→Tue)
 Active orc sessions remaining: 0
+```
+
+Close with one `[!TIP]` handoff when anything remains for the user (skip it when the summary already says "0 sessions remaining" and nothing is pending):
+
+```markdown
+> [!TIP]
+> **➡️ Next**
+>
+> [the single most useful next command, e.g. `/orc:status` or `/orc:resume`]
 ```
