@@ -122,13 +122,18 @@ You **MUST** stop and use `AskUserQuestion` (via the dispatching command's gate)
 - A security or architecture concern surfaces mid-implementation that the plan didn't address.
 - The plan is wrong — the slice as written would produce buggy or incorrect behavior. Surface and ask whether to revise the plan.
 
-When you escalate, output a single block:
+When you escalate, output a single block — the `[!CAUTION]` callout (palette shape; `/orc:flow` re-prints it verbatim), then the context fence:
+
+```markdown
+> [!CAUTION]
+> **🛑 Escalation — slice <N>**
+>
+> Reason: <one of the conditions above>
+>
+> Recommended: <A | B | C — your honest call>
+```
 
 ```
-🛑 ESCALATION — slice <N>
-
-Reason: <one of the conditions above>
-
 Context:
 <file>:<line>
 <failure / ambiguity / unexpected finding, in 3-5 lines>
@@ -137,8 +142,6 @@ Options:
 A. <path A — concrete>
 B. <path B — concrete>
 C. Pause flow — I'll come back
-
-Recommended: <A | B | C — your honest call>
 ```
 
 Then stop. The dispatching command (`/orc:flow`) will surface the escalation via `AskUserQuestion` to the user.

@@ -206,6 +206,8 @@ done
 | Branch present, points at base HEAD | OK — adopt. |
 | Branch present, has divergent commits | **Conflict — escalate via `AskUserQuestion`.** |
 
+On conflict, print the Gate headline first (`> [!WARNING]` + `**⛔ Gate — branch collision**`, one line naming the conflicting repos, per `orc:insights`).
+
 Recovery options on conflict (one prompt covering all conflicting repos at once):
 
 1. **Suffix all repos** — append `-2` to the branch name everywhere so the workspace stays aligned (`feat/sso-login-2` in all repos). The suffix is recorded in the registry.
