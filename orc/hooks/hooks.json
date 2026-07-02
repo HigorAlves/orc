@@ -8,7 +8,12 @@
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-start-using-orc.sh\"",
             "async": false
-          },
+          }
+        ]
+      },
+      {
+        "matcher": "startup",
+        "hooks": [
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-start-tool-check.sh\"",
@@ -24,12 +29,32 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-commit-branch-check.sh\"",
-            "async": false
+            "async": false,
+            "if": "Bash(git commit*)"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-commit-branch-check.sh\"",
+            "async": false,
+            "if": "Bash(git push*)"
           },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-commit-no-ai-attribution.sh\"",
-            "async": false
+            "async": false,
+            "if": "Bash(git commit*)"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-commit-no-ai-attribution.sh\"",
+            "async": false,
+            "if": "Bash(gh pr *)"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-commit-no-ai-attribution.sh\"",
+            "async": false,
+            "if": "Bash(gh issue *)"
           }
         ]
       }

@@ -1,6 +1,8 @@
 ---
 name: using-orc
 description: orc's iron rules, instruction priority, and skill-routing discipline. Injected at every SessionStart; required reading before your first action.
+disable-model-invocation: true
+user-invocable: false
 ---
 
 <SUBAGENT-STOP>
@@ -25,7 +27,7 @@ Use the `Skill` tool — never `Read` a skill file. Every skill's description is
 
 ## Iron rules
 
-1. **No commits to main/master/develop** — branch first; check the branch before any commit. The PreToolUse hook blocks it; override only with `ORC_ALLOW_PROTECTED=1` and explicit user consent.
+1. **No commits to main/master/develop** — branch first; check the branch before any commit. The PreToolUse hook downgrades protected-branch commits/pushes to a confirm prompt — approve it only with explicit user consent.
 2. **No code without a failing test** — write it, watch it fail, then implement. → `orc:tdd`
 3. **No claim without verification** — run it, read the output, then claim the result. → `orc:verification-before-completion`
 4. **No fix without root cause** — find why it's broken before changing code. → `orc:systematic-debugging`
