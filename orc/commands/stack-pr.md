@@ -82,9 +82,16 @@ n_commits=$(git rev-list --count "$base"..HEAD)     # must be ≥ 2
 git rev-list "@{u}..HEAD" --count 2>/dev/null       # should be 0; warn if not
 ```
 
-Any failure → surface the specific check + repo, stop. Don't try to "fix it for them."
+Any failure → surface the specific check + repo in a `[!WARNING]` **⚠️ Caution** callout, stop. Don't try to "fix it for them."
 
-If `n_commits == 1`, surface: "Single commit on the branch — there's nothing to stack. Use `/orc:ship`." and exit 0.
+If `n_commits == 1`, surface and exit 0:
+
+```markdown
+> [!NOTE]
+> **📋 Nothing to stack**
+>
+> Single commit on the branch — use `/orc:ship`.
+```
 
 ### Phase 3 — Analyze
 
@@ -112,22 +119,30 @@ Read the returned JSON. If `unsplittable: true`, surface the agent's rationale a
 
 ### Phase 4 — Preview & confirm
 
-Render the stack table:
+Render the preview headline, then the stack table in a fence (tables never go inside callouts):
+
+```markdown
+> [!NOTE]
+> **📋 Preview — stack plan**
+>
+> 3 PRs from feat/export, base = origin/main — 315 LOC total (avg 105 LOC/PR, all under 300 budget).
+```
 
 ```
-Proposed stack (3 PRs from feat/export, base = origin/main)
-
 | # | Branch                                       | Subject                                      | LOC | Commits |
 |---|----------------------------------------------|----------------------------------------------|-----|---------|
 | 1 | feat/export/01-refactor-extract-row-stream   | refactor: extract row-stream interface       |  80 | 2       |
 | 2 | feat/export/02-feat-wire-export-job          | feat(api): wire export job through stream    | 140 | 1       |
 | 3 | feat/export/03-feat-download-button          | feat(ui): download button + progress         |  95 | 1       |
+```
 
-Total: 315 LOC across 3 PRs (avg 105 LOC/PR, all under 300 budget).
+`--smart` only — analyzer warnings go in a `[!WARNING]` callout after the fence:
 
-[--smart only]
-Warnings:
-  - Commit e4f5g6h modifies one line in ExportJob.ts (slice 2). Proposed as-is.
+```markdown
+> [!WARNING]
+> **⚠️ Caution**
+>
+> - Commit e4f5g6h modifies one line in ExportJob.ts (slice 2). Proposed as-is.
 ```
 
 `AskUserQuestion`:
@@ -150,12 +165,21 @@ Apply the rebase plan. For each slice in order:
 git checkout "$base_ref"
 git checkout -b "$slice_branch"
 for sha in "${cherry_pick[@]}"; do
-  git cherry-pick --no-edit "$sha" || {
-    echo "Cherry-pick of $sha failed."
-    echo "Recover: git cherry-pick --abort && git reset --hard ${current_branch}-pre-stack-backup"
-    exit 1
-  }
+  git cherry-pick --no-edit "$sha" || exit 1
 done
+```
+
+On cherry-pick failure, surface the danger callout (recovery commands in the fence, per the `orc:stack-pr` skill's Recovery section):
+
+```markdown
+> [!CAUTION]
+> **🛑 Cherry-pick of <sha> failed**
+>
+> Your original branch is safe in `${current_branch}-pre-stack-backup`.
+```
+
+```
+git cherry-pick --abort && git reset --hard ${current_branch}-pre-stack-backup
 ```
 
 Push and open PRs:
