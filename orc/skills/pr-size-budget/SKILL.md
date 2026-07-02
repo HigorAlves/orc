@@ -81,16 +81,16 @@ When `loc > budget`, the calling command MUST surface this `AskUserQuestion` sha
 >
 > 3. **Abort** — Go back to the implementation, resize, then re-run.
 
-Before the prompt, **always** print:
+Before the prompt, **always** print the Gate callout (per the `orc:insights` palette — `[!WARNING]` because the gate fired on a problem), then the breakdown in a fence (never inside the callout — blockquotes reflow and break alignment):
+
+```markdown
+> [!WARNING]
+> **⛔ Gate — PR size**
+>
+> Diff vs <base>: **<loc> LOC** across <N> files vs the **<budget> LOC** budget — OVER by <loc - budget> LOC.
+```
 
 ```
-PR size gate
-
-Diff vs <base>:
-  Counted:   <loc> LOC across <N> files
-  Budget:    <budget> LOC
-  Verdict:   OVER by <loc - budget> LOC
-
 Top contributors:
 <orc_pr_loc_breakdown table — first 10 files>
 

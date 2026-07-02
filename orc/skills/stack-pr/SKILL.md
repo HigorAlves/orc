@@ -23,7 +23,7 @@ A stack is N chained PRs where each branch's base is the previous branch (not `m
 4. **At least 2 commits** on `base..HEAD`. A single commit isn't a stack — use `/orc:ship`.
 5. **Branch is pushed-clean** — local matches `origin` (no unpushed work that the user might lose to the rebase).
 
-If any precondition fails, surface a clear message and **stop**. Don't try to "fix it for them" — these are user decisions.
+If any precondition fails, surface a `[!WARNING]` **⚠️ Caution** callout naming the failed precondition and **stop**. Don't try to "fix it for them" — these are user decisions.
 
 ## Strategy A — commit-based (default)
 
@@ -150,13 +150,7 @@ Use when commits are messy (multiple WIP commits, fixups, no clean Conventional 
 git branch "${original_branch}-pre-stack-backup"
 ```
 
-The skill MUST refuse to proceed without this branch existing. Recovery is one command if anything fails:
-
-```bash
-git reset --hard "${original_branch}-pre-stack-backup"
-```
-
-The skill prints this line in red on any error.
+The skill MUST refuse to proceed without this branch existing. On any error, surface the recovery command in a `[!CAUTION]` callout (see "Failure recovery" below).
 
 ### Dispatch the analyzer
 
@@ -203,7 +197,16 @@ Expected JSON output (analyzer never runs anything destructive):
 
 ### Preview & confirm
 
-Render the slice table + warnings + rebase plan. `AskUserQuestion`:
+Render the preview headline, then the slice table + rebase plan in a fence (never inside the callout), then any analyzer warnings as a separate `[!WARNING]` callout after the fence:
+
+```markdown
+> [!NOTE]
+> **📋 Preview — stack plan**
+>
+> <N> slices from <M> commits; est. <total> LOC across the stack.
+```
+
+`AskUserQuestion`:
 
 1. **Apply** — execute the rebase plan exactly as proposed.
 2. **Edit** — open the JSON in `$EDITOR` for manual tweaks; re-validate.
@@ -253,17 +256,21 @@ If absent, `AskUserQuestion`:
 
 ## Recovery (always print on error)
 
-If any step fails after the backup branch exists, print exactly:
+If any step fails after the backup branch exists, print the danger callout, then the recovery commands in a fence:
+
+```markdown
+> [!CAUTION]
+> **🛑 Stack construction failed at <step>**
+>
+> Your original branch is safe in `${original_branch}-pre-stack-backup`. Recover with the commands below.
+```
 
 ```
-Stack construction failed at <step>.
-
-To recover:
-    git checkout "${original_branch}-pre-stack-backup"
-    git branch -D "${original_branch}"
-    git branch -m "${original_branch}-pre-stack-backup" "${original_branch}"
-    # then delete any partial stack branches:
-    git branch | grep "^  ${original_branch}/" | xargs -r git branch -D
+git checkout "${original_branch}-pre-stack-backup"
+git branch -D "${original_branch}"
+git branch -m "${original_branch}-pre-stack-backup" "${original_branch}"
+# then delete any partial stack branches:
+git branch | grep "^  ${original_branch}/" | xargs -r git branch -D
 ```
 
 Echo the partial state too: which branches were created, which PRs were opened. The user shouldn't have to dig through `git reflog` to figure out what happened.

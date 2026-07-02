@@ -98,7 +98,7 @@ budget=$(orc_pr_budget "$ARG_MAX_LOC")
 
 If `loc <= budget`, fall through to Phase 5.
 
-If `loc > budget`, print the gate summary (counted LOC, budget, top contributors via `orc_pr_loc_breakdown`, excluded summary via `orc_pr_excluded_summary`) and surface `AskUserQuestion`:
+If `loc > budget`, render the gate exactly as `orc:pr-size-budget` specifies (the `[!WARNING]` **⛔ Gate — PR size** callout, then the fenced breakdown via `orc_pr_loc_breakdown` + `orc_pr_excluded_summary`) and surface `AskUserQuestion`:
 
 1. **Stack it (Recommended)** — invoke `/orc:stack-pr` **inline as a skill** (load `stack-pr` skill in this session, run its phases). When stack-pr completes, this Phase 4.5 records the resulting `linkedPRs[]` entries and **short-circuits Phase 5** for this repo (PRs are already open). Continue the per-repo loop.
 2. **Open as one big PR** — prompt for a one-line reason (free text). Append to the PR body as the trailer:
@@ -174,7 +174,14 @@ Echo all N PR URLs to the user.
 
 If the user opted for "merge after CI" rather than "wait for review," surface a reminder to come back with `/orc:address` if reviewers leave comments.
 
-After the PR merges in GitHub, the user should run **`/orc:cleanup`** to remove the `.orc/<branch>/` workspace state, the associated git worktree (if `using-git-worktrees` was used), and the local feature branch (if it merged cleanly). Surface this hint as the last line of `/orc:ship`'s output so the lifecycle closes properly.
+After the PR merges in GitHub, the user should run **`/orc:cleanup`** to remove the `.orc/<branch>/` workspace state, the associated git worktree (if `using-git-worktrees` was used), and the local feature branch (if it merged cleanly). Surface this as the last block of `/orc:ship`'s output so the lifecycle closes properly:
+
+```markdown
+> [!TIP]
+> **➡️ Next**
+>
+> After the PR merges, run `/orc:cleanup` to remove the `.orc/<branch>/` state, the worktree, and the merged branch.
+```
 
 ## Output
 
