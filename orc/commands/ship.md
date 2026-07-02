@@ -1,6 +1,6 @@
 ---
 description: Finalize and open the PR — verifies tests, presents commit/branch/PR options, executes the chosen path, with a soft LOC size-budget gate. Last command before review; adds a Jira Resolves trailer when bound. Workspace-aware.
-argument-hint: "[--draft] [--base <branch>] [--caveman] [--max-loc <N>] [--no-size-gate] [--repos a,b | --repo a | --all-repos | --this-repo]"
+argument-hint: "[--draft] [--base <branch>] [--verbose] [--max-loc <N>] [--no-size-gate] [--repos a,b | --repo a | --all-repos | --this-repo]"
 allowed-tools:
   - Read
   - Glob
@@ -29,7 +29,7 @@ You're done implementing. Time to integrate. This command runs the structured br
 
 - `--draft` — open the PR as a draft.
 - `--base <branch>` — target a non-default base (e.g. `develop`, `release/v2`).
-- `--caveman` — compose the PR title and body using `orc:caveman-pr` (terse, signal-only). Default is the verbose template documented in Phase 4.
+- `--verbose` — compose the PR body with the long-form template documented in Phase 4. Default is terse, signal-only composition via `orc:caveman-pr`. (`--caveman` is accepted as a deprecated no-op alias of the default.)
 - `--max-loc <N>` — override the per-PR LOC budget enforced by Phase 4.5 (default: 300, configurable via `$ORC_PR_LOC_BUDGET` or `<repo_root>/.orc/pr-budget.json#budget`). See `orc:pr-size-budget`.
 - `--no-size-gate` — bypass Phase 4.5 entirely. Use for emergency hot-fixes where review-cycle time dominates. Records nothing in the PR body.
 
@@ -73,15 +73,15 @@ Invoke `orc:git-commit` if there are uncommitted changes. Then:
 
 1. Determine PR title from the branch name + recent commit subjects.
 2. Compose the body. Two modes:
-   - **Default (verbose)** — sections: **What** (one-paragraph summary), **Why** (link to plan / issue / PRD if available; `.orc/<branch>/files/plan.md` if present), **How tested** (test commands run; browser QA artifacts if web change at `.orc/<branch>/files/qa/`), **Checklist** (boxes for the reviewer).
-   - **`--caveman` mode** — invoke `orc:caveman-pr` and follow it exactly. Skips the verbose template; returns a tight title + body with only the sections that add signal (Why / What changed / How tested / Notes / trailers). Best when the diff is small or the PR template is heavyweight.
+   - **Default (terse)** — invoke `orc:caveman-pr` and follow it exactly: a tight title + body with only the sections that add signal (Why / What changed / How tested / Notes / trailers). Reviewers need a why and a how-tested, not a tour of the diff.
+   - **`--verbose` mode** — the long-form template: **What** (one-paragraph summary), **Why** (link to plan / issue / PRD if available; `.orc/<branch>/files/plan.md` if present), **How tested** (test commands run; browser QA artifacts if web change at `.orc/<branch>/files/qa/`), **Checklist** (boxes for the reviewer). Use when the change genuinely needs narrative context (big migrations, multi-team reviews).
 3. **Append the Jira trailer if a ticket is bound.** Read the active session's `jiraTicket` from `.orc/orc.json` (find the entry whose `branch` matches the sanitized current branch). If present, append a single trailer line at the bottom of the body:
 
    ```
    <KEYWORD> <KEY>
    ```
 
-   `KEYWORD` defaults to `Resolves`. Override per-shop with `export ORC_JIRA_PR_KEYWORD=Closes` (or `Fixes`). Both modes (verbose and caveman) get this trailer. Skip silently when no `jiraTicket` is set.
+   `KEYWORD` defaults to `Resolves`. Override per-shop with `export ORC_JIRA_PR_KEYWORD=Closes` (or `Fixes`). Both modes (terse and verbose) get this trailer. Skip silently when no `jiraTicket` is set.
 4. Show the user the title + body via `AskUserQuestion`: `Open as-is` / `Edit first` / `Cancel`.
 
 ### Phase 4.5 — Size gate
@@ -147,7 +147,14 @@ done
 
 For each PR, `gh pr edit <url> --body "$(updated body)"` where the updated body appends:
 
-Verbose template:
+Default (terse) template:
+```
+## Linked
+api#311 (this) · ui#447
+order: api → ui
+```
+
+`--verbose` template:
 ```
 ## Linked PRs
 
@@ -157,13 +164,6 @@ This PR is part of a workspace change spanning N repos:
 - org/ui#447 — UI changes
 
 Merge order: api → ui (per workspace plan).
-```
-
-Caveman template (when `--caveman`):
-```
-## Linked
-api#311 (this) · ui#447
-order: api → ui
 ```
 
 Merge order is sourced from the plan's "Merge order" line; omit the line if absent.
