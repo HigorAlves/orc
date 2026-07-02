@@ -36,7 +36,7 @@ flowchart TD
 What happens:
 
 1. `orc:using-git-worktrees` is invoked. `/orc:start` fetches the ticket summary via `acli jira workitem view JRA-123 --fields "summary" --json`, slugifies it, and proposes the branch name `feat/JRA-123-webhook-retries`. You can accept or override.
-2. Worktree created at `~/Developer/orc-worktrees/orc-feat-JRA-123-webhook-retries/`. New branch `feat/JRA-123-webhook-retries` checked out.
+2. Worktree created at `.orc/.worktrees/orc/feat-JRA-123-webhook-retries/`. New branch `feat/JRA-123-webhook-retries` checked out.
 3. `/orc:start` Phase 2 delegates to `/orc:plan`. Because `--jira JRA-123` was forwarded, `/orc:plan`'s Phase 1 prompt is **suppressed** — the link is set silently.
 4. `.orc/feat-JRA-123-webhook-retries/files/checkpoint.md` is written with frontmatter:
 
@@ -136,7 +136,7 @@ Removes `.orc/feat-JRA-123-webhook-retries/`, the worktree, and (if merged) the 
 
 ## Iron rules in play
 
-- **#1 — No commits to main.** The worktree branch is enforced; PreToolUse hook blocks main.
+- **#1 — No commits to main.** The worktree branch is enforced; the PreToolUse hook downgrades any commit to main to a confirm prompt.
 - **#6 — No multi-phase work without `.orc/` checkpoints.** The `jiraTicket` field is part of the checkpoint contract — survives `/orc:resume`.
 - **#5 — No AI attribution in PRs.** `Resolves JRA-123` is the only added trailer; no `Co-Authored-By` lines.
 - **`/orc:jira` iron rule — `bind`/`unbind` require an active session.** No state mutation outside an in-progress orc workspace.

@@ -205,9 +205,7 @@ The teammate opens PR #142 and sees:
 - **`/orc:code-review 142 --summary-only`** — produces the legacy markdown text-block (Bugs / Security / Tests sections) and does NOT post anything to GitHub. Useful when you want markdown to paste into Slack/Notion or you're researching a PR rather than reviewing it.
 - **`/orc:code-review 142 --dry-run`** — runs through the preview gate but never posts. The constructed payload is echoed as JSON for inspection. Pair with `--soft-tests` to see how the event would change if test gaps weren't blocking.
 - **`/orc:code-review 142 --soft-tests`** — `test`-severity findings drop to COMMENT instead of forcing REQUEST_CHANGES. For repos with weak test culture or PRs you explicitly want to land despite test gaps.
-- **Agent self-contradiction case** — say `orc-pr-reviewer` writes `summary: "Approve. Findings are non-blocking."` but `findings` includes a `bug`. The Phase 4 sanity-check fires:
-  > ⚠ Reviewer wrote "approve" but flagged 2 bug-severity findings.
-  >   Severity rule overrides verdict — posting as REQUEST_CHANGES.
+- **Agent self-contradiction case** — say `orc-pr-reviewer` writes `summary: "Approve. Findings are non-blocking."` but `findings` includes a `bug`. The Phase 4 sanity-check fires a `[!WARNING]` **⚠️ Caution** callout: *Reviewer wrote "approve" but flagged 2 bug-severity findings. Severity rule overrides verdict — posting as REQUEST_CHANGES.*
   
   This is the failure mode the new severity rule was specifically designed to catch.
 - **PR is too big to review in one shot** — comment that the PR should be split, then APPROVE the trivial portion or REQUEST_CHANGES on the structural pieces. Don't pretend to review 60 files in one read.

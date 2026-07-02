@@ -108,7 +108,7 @@ build_block() {
     printf "> **🛑 orc tool check**\n"
   else
     printf "> [!WARNING]\n"
-    printf "> **⚠️ orc tool check**\n"
+    printf "> **⚠️ Caution — orc tool check**\n"
   fi
   printf ">\n"
   if [ ${#missing_required[@]} -gt 0 ]; then

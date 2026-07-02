@@ -115,8 +115,8 @@ The orc-specific glue. Persists the linked Jira ticket key into `.orc/` state.
 3. **Iron rule:** If no in-progress session exists for this branch, REFUSE. Surface:
 
    ```markdown
-   > [!NOTE]
-   > **📋 No active session**
+   > [!CAUTION]
+   > **🛑 Blocked — no active session**
    >
    > No active orc session for branch `<sanitized>`. Run `/orc:plan`, `/orc:start`, `/orc:debug`, or `/orc:flow` first to create one.
    ```
@@ -137,7 +137,7 @@ Same session-resolution as `bind`. Then clear:
 2. Remove the `jiraTicket:` line from `checkpoint.md` frontmatter.
 3. Echo: `✓ Unbound <PREVIOUS-KEY> from session on branch <sanitized-branch>.`
 
-If no `jiraTicket` was set, exit with a one-line `> [!NOTE]` (`**📋 Nothing to unbind** — no ticket bound to this session.`).
+If no `jiraTicket` was set, exit with a plain one-line echo: `No ticket bound to this session.` (status echoes stay plain — no callout).
 
 ### Verb: `view [KEY]`
 

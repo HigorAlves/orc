@@ -119,7 +119,7 @@ Reload after edits without restarting:
 
 ## Requirements
 
-orc's SessionStart pre-flight (`hooks/scripts/session-start-tool-check.sh`) verifies these CLI tools are installed and surfaces a `⚠ Tool check ─────` warning if anything's missing.
+orc's SessionStart pre-flight (`hooks/scripts/session-start-tool-check.sh`) verifies these CLI tools are installed and, if anything's missing, delivers a `[!WARNING]`/`[!CAUTION]` "orc tool check" callout directly to you via `systemMessage`.
 
 | Tool | Tier | Used by |
 |------|------|---------|
@@ -139,8 +139,7 @@ export ORC_SKIP_TOOL_CHECK=1
 
 | Variable | Effect |
 |----------|--------|
-| `ORC_SKIP_TOOL_CHECK=1` | Suppress the SessionStart `⚠ Tool check` block when a recommended dependency is intentionally missing. |
-| `ORC_ALLOW_PROTECTED=1` | Allow `git commit` / `git push` on `main` / `master` / `develop`. The PreToolUse hook refuses by default; this flag opts in for the rare scaffold/hot-fix case. |
+| `ORC_SKIP_TOOL_CHECK=1` | Suppress the SessionStart tool-check callout when a recommended dependency is intentionally missing. |
 | `ORC_ALLOW_AI_ATTRIBUTION=1` | Allow `Co-Authored-By: Claude`, `🤖 Generated with Claude Code`, or other AI-attribution trailers in commit messages and PR bodies. The PreToolUse hook refuses them by default (iron rule #5). Set only with explicit user consent. |
 | `ORC_JIRA_PR_KEYWORD` | PR-body trailer keyword used by `/orc:ship` when the active session has a bound `jiraTicket`. Defaults to `Resolves`. Set to `Closes` or `Fixes` for orgs whose Jira/GitHub integration uses a different keyword. |
 
@@ -152,7 +151,7 @@ export ORC_SKIP_TOOL_CHECK=1
 | `/orc:plan` | Plan a feature/refactor; writes a TDD-shaped plan to `.orc/<branch>/files/` |
 | `/orc:start` | Worktree + plan + first failing test (TDD red light) |
 | `/orc:debug` | Root-cause investigation, then fix with TDD; never papers over |
-| `/orc:qa` | Pre-PR quality gate; for web changes, full browser QA with screenshots/video/steps |
+| `/orc:qa` | Pre-PR quality gate; for web changes, full browser QA with screenshots/snapshot/HAR/steps |
 | `/orc:code-review` | Review someone else's open PR; terse, signal-only output |
 | `/orc:address` | Answer reviewer comments on YOUR PR; parallel code-fixer + reply-drafter |
 | `/orc:ship` | Finalize and open the PR |
@@ -217,12 +216,14 @@ The convention lives in the `orc:insights` skill and is pointed to from `using-o
 
 ## Iron rules (enforced by hooks + the using-orc skill)
 
-1. No commits to `main`/`master`/`develop` without `ORC_ALLOW_PROTECTED=1`.
+1. No commits to `main`/`master`/`develop` — the PreToolUse hook downgrades them to a confirm prompt; approve only with explicit user consent.
 2. No code without a failing test first.
 3. No claims without verification (run the command, read the output).
 4. No fixes without a found root cause.
 5. No AI attribution in code, commits, or PRs.
 6. No multi-phase work without `.orc/` checkpoints.
+7. No silent broadcast in workspace mode — repo-touching commands need an explicit `--repos`/`--repo`/`--all-repos`/`--this-repo` or a confirming prompt.
+8. No PR over the size budget (default 300 LOC) without a recorded choice — stack it, record a `Size-budget-override:` trailer, or abort.
 
 ## Web QA evidence is a hard rule
 
@@ -255,7 +256,7 @@ orc/
 │                                # pre-commit-branch-check.sh
 │                                # pre-commit-no-ai-attribution.sh
 ├── lib/                         # shared bash helpers (workspace-detect, pr-size-budget)
-├── docs/                        # architecture.md, contributing.md, STACKED-PRS.md
+├── docs/                        # architecture.md, contributing.md, STACKED-PRS.md, roadmap.md
 └── examples/                    # scenario walk-throughs (start here for usage)
 ```
 

@@ -139,7 +139,7 @@ You: (had lunch while orc-implementer worked)
 
 You come back from lunch. orc-implementer drove all 4 slices autonomously while you were away. The agent followed the same iron rules you'd have followed yourself: no commits to main (worktree + feature branch), test-first per slice, full suite green between slices, Conventional Commits via `orc:git-commit`, no AI attribution. Worktree state visible via `git log` on the feature branch.
 
-If at any slice the agent had hit an escalation condition (ambiguous spec, dep needed, test stuck after 3 attempts, scope creep, pre-existing test broke) — it would have stopped with a `🛑 ESCALATION` block and `AskUserQuestion` would have surfaced the choice to you. None did, this run.
+If at any slice the agent had hit an escalation condition (ambiguous spec, dep needed, test stuck after 3 attempts, scope creep, pre-existing test broke) — it would have stopped with a `[!CAUTION]` `🛑 Escalation — slice <N>` callout and `AskUserQuestion` would have surfaced the choice to you. None did, this run.
 
 (If you'd passed `--pause-at-implement` instead, orc would have paused and you'd write the code yourself in conversation, exactly as the original walk-through described.)
 
@@ -336,4 +336,4 @@ orc: ✓ Worktree removed.
 - **Every gate is a real gate.** `/orc:flow` never silently advances.
 - **Phase state is durable.** Crash mid-flow, resume tomorrow.
 - **Per-phase rules still apply** — web QA evidence, blameless framing, no AI attribution, no commits to main. `/orc:flow` doesn't bypass them; it composes them.
-- **Implementation is autonomous by default but escalates honestly.** `orc-implementer` runs the whole loop without your involvement — UNTIL it hits an escalation condition (test stuck after 3 attempts, ambiguous spec, new dependency, scope creep, broken pre-existing test, security concern, plan-is-wrong). When it escalates, it surfaces a `🛑 ESCALATION` block with concrete options and a recommended path. You stay out of the loop until the agent genuinely needs you.
+- **Implementation is autonomous by default but escalates honestly.** `orc-implementer` runs the whole loop without your involvement — UNTIL it hits an escalation condition (test stuck after 3 attempts, ambiguous spec, new dependency, scope creep, broken pre-existing test, security concern, plan-is-wrong). When it escalates, it surfaces a `[!CAUTION]` `🛑 Escalation` callout with concrete options and a recommended path. You stay out of the loop until the agent genuinely needs you.

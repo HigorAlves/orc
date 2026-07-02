@@ -17,11 +17,12 @@ set -euo pipefail
 input=$(cat)
 command=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null || echo "")
 
-# Only intercept message-bearing commands.
-case "$command" in
-  git\ commit*|gh\ pr\ create*|gh\ pr\ edit*|gh\ issue\ create*|gh\ issue\ edit*) ;;
-  *) exit 0 ;;
-esac
+# Only intercept message-bearing commands — including compound commands
+# (`true && git commit …`) and `git -C <path> commit`.
+msg_cmd_re='(^|[;&|][[:space:]]*)(git([[:space:]]+-[Cc][[:space:]]*[^[:space:]]+)*[[:space:]]+commit|gh[[:space:]]+(pr|issue)[[:space:]]+(create|edit))([[:space:]]|$)'
+if ! printf '%s' "$command" | grep -qE "$msg_cmd_re"; then
+  exit 0
+fi
 
 # Explicit per-shop override.
 if [ "${ORC_ALLOW_AI_ATTRIBUTION:-}" = "1" ]; then
