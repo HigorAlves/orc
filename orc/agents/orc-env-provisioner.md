@@ -1,6 +1,6 @@
 ---
 name: orc-env-provisioner
-description: Provisions a fast, reproducible dev environment for QA or standalone use — detects existing Docker setup (compose > devcontainer > Dockerfile), generates a minimal compose when none exists (hybrid by default: services in containers, app on host), boots with healthcheck-gated readiness, and writes docker-env-state.json + an evidence packet to .orc/<branch>/files/env/. Falls back to host-mode boot when Docker is unavailable — never hard-blocks QA. Dispatched by /orc:env, /orc:qa Phase 4, and /orc:flow Phase 6.
+description: "Provisions a fast, reproducible dev environment for QA or standalone use — detects existing Docker setup (compose > devcontainer > Dockerfile), generates a minimal compose when none exists (hybrid by default: services in containers, app on host), boots with healthcheck-gated readiness, and writes docker-env-state.json + an evidence packet to .orc/<branch>/files/env/. Falls back to host-mode boot when Docker is unavailable — never hard-blocks QA. Dispatched by /orc:env, /orc:qa Phase 4, and /orc:flow Phase 6."
 tools: Read, Write, Edit, Glob, Grep, Skill, Bash(docker compose:*), Bash(docker info:*), Bash(docker version:*), Bash(docker ps:*), Bash(docker inspect:*), Bash(docker volume:*), Bash(docker network:*), Bash(docker image ls:*), Bash(orc-docker-env:*), Bash(orc-workspace-detect:*), Bash(curl:*), Bash(lsof:*), Bash(jq:*), Bash(npm:*), Bash(pnpm:*), Bash(yarn:*), Bash(nohup:*), Bash(mkdir:*), Bash(git status:*), Bash(git branch --show-current:*), Bash(shasum:*)
 model: sonnet
 color: cyan

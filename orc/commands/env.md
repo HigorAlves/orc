@@ -1,5 +1,5 @@
 ---
-description: Provision a fast containerized dev environment for the current repo or workspace — detects existing Docker setup (compose > devcontainer > Dockerfile) or generates one, boots with healthchecks, stays up for reuse across QA runs. Verbs: up (default) | status | down.
+description: "Provision a fast containerized dev environment for the current repo or workspace — detects existing Docker setup (compose > devcontainer > Dockerfile) or generates one, boots with healthchecks, stays up for reuse across QA runs. Verbs: up (default) | status | down."
 argument-hint: "[up|status|down] [--containerize-app] [--rebuild] [--fresh] [--down-volumes] [--wait-timeout <s>] [--repos a,b | --repo a | --all-repos | --this-repo]"
 arguments: [verb]
 allowed-tools:
