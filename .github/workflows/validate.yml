@@ -1,0 +1,60 @@
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Syntax-check hook scripts, libs, bin
+        run: |
+          status=0
+          for f in orc/hooks/scripts/*.sh orc/lib/*.sh orc/bin/*; do
+            [ -e "$f" ] || continue
+            bash -n "$f" || status=1
+          done
+          exit "$status"
+
+      - name: Validate all JSON
+        run: git ls-files '*.json' | xargs -n1 jq empty
+
+      - name: Callout lint (palette-only callouts)
+        run: |
+          bad=$(grep -rn '\[!' orc --include='*.md' | grep -vE '\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION|TYPE)\]' || true)
+          if [ -n "$bad" ]; then
+            echo "Non-palette callouts found:"
+            echo "$bad"
+            exit 1
+          fi
+
+      - name: Count drift (README + marketplace.json)
+        run: |
+          skills=$(ls -d orc/skills/*/ | wc -l | xargs)
+          commands=$(ls orc/commands/*.md | wc -l | xargs)
+          agents=$(ls orc/agents/*.md | wc -l | xargs)
+          hooks=$(ls orc/hooks/scripts/*.sh | wc -l | xargs)
+          fail() { echo "Count drift: expected '$1' (actual: ${skills} skills / ${commands} commands / ${agents} agents / ${hooks} hooks)"; exit 1; }
+          grep -q "${skills} curated skills" README.md                    || fail "${skills} curated skills in README.md"
+          grep -q "Total: ${skills} skills" README.md                     || fail "Total: ${skills} skills in README.md"
+          grep -q "${commands} composite slash commands" README.md        || fail "${commands} composite slash commands in README.md"
+          grep -q "# ${commands} slash commands" README.md                || fail "# ${commands} slash commands in README.md layout"
+          grep -q "${agents} specialist subagents" README.md              || fail "${agents} specialist subagents in README.md"
+          grep -q "${hooks} hook scripts" README.md                       || fail "${hooks} hook scripts in README.md"
+          grep -q "${skills} curated skills" .claude-plugin/marketplace.json || fail "${skills} curated skills in marketplace.json"
+
+  plugin-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Validate plugin manifest (strict)
+        run: claude plugin validate ./orc --strict
