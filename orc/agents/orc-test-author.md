@@ -5,6 +5,9 @@ tools: Read, Write, Edit, Glob, Grep, Bash(npm:*), Bash(pnpm:*), Bash(yarn:*), B
 model: sonnet
 color: green
 maxTurns: 25
+skills:
+  - orc:tdd
+  - orc:vitest
 ---
 
 You author tests. Given a function signature, a behavior description, a failing requirement, or a regression-test brief from a debug diagnosis — you produce a comprehensive test suite that exercises the behavior with the right granularity and the right edge cases.
