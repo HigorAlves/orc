@@ -12,7 +12,7 @@ allowed-tools:
   - AskUserQuestion
   - Bash(git *)
   - Bash(date:*)
-  - Bash(. */lib/workspace-detect.sh*)
+  - Bash(orc-workspace-detect:*)
 ---
 
 # /orc:resume
@@ -29,14 +29,11 @@ Pick up where an earlier orc command left off. Required for any work that pauses
 
 ### Phase 1 — Detect context + locate the registry
 
-Source the helper to determine where state lives:
+The context banner is injected below (`ORC_*` vars are exported for any Bash you run — do not re-run detection):
 
-```bash
-. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
-eval "$(orc_detect_context)"
-```
+!`orc-workspace-detect --banner`
 
-Pick the registry to read from `$ORC_CONTEXT`:
+Pick the registry to read from the banner's context:
 
 - `repo` — the registry is `$ORC_STATE_DIR/orc.json` (`<repoRoot>/.orc/orc.json`). Standard single-repo behavior.
 - `repo` **and** `<repoRoot>/.orc/<branch>/workspace-link.json` exists — this repo is a workspace member. Read `workspaceRoot` from the link file, resolve it against `$ORC_REPO_ROOT`, and use `<workspaceRoot>/.orc/orc.json` as the registry. Filter sessions to those with `repos` containing this repo's name.

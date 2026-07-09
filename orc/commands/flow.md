@@ -24,7 +24,7 @@ allowed-tools:
   - Bash(agent-browser:*)
   - Bash(acli *)
   - Bash(jq *)
-  - Bash(. */lib/workspace-detect.sh*)
+  - Bash(orc-workspace-detect:*)
   - Bash(. */lib/pr-size-budget.sh*)
 ---
 
@@ -86,12 +86,9 @@ For `--type=bug`, phases 2–3 collapse into a single `/orc:debug` invocation th
 
 ### Phase 0 — Detect context
 
-Before Triage, source the helper to know whether we're in workspace mode:
+The context banner is injected below (`ORC_*` vars are also exported for any Bash you run — do not re-run detection):
 
-```bash
-. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
-eval "$(orc_detect_context)"
-```
+!`orc-workspace-detect --banner`
 
 - `ORC_CONTEXT=repo` → standard single-repo flow. Skip workspace-only steps below.
 - `ORC_CONTEXT=workspace` → workspace flow. The state dir is `$ORC_STATE_DIR` (`<workspaceRoot>/.orc`); per-repo state dirs are `<workspaceRoot>/<repo>/.orc/`.

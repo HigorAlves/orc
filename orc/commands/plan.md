@@ -13,7 +13,7 @@ allowed-tools:
   - Bash(git rev-parse:*)
   - Bash(git branch --show-current:*)
   - Bash(jq *)
-  - Bash(. */lib/workspace-detect.sh*)
+  - Bash(orc-workspace-detect:*)
 ---
 
 # /orc:plan
@@ -43,11 +43,10 @@ If the input is short and clear, skip Phase 0 and go straight to Phase 1.
 
 ### Phase 1 — Initialize workspace
 
-0. **Detect context**:
-   ```bash
-   . "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
-   eval "$(orc_detect_context)"
-   ```
+0. **Detect context** — injected below (`ORC_*` vars are exported for any Bash you run — do not re-run detection):
+
+   !`orc-workspace-detect --banner`
+
    In workspace mode, resolve `targetRepos` from `--repos`/`--repo`/`--all-repos`/`--this-repo` or via `AskUserQuestion` (same prompt shape as `/orc:flow` Phase 1). Iron rule: no silent broadcast.
 1. Determine the current branch: in repo mode `git branch --show-current`; in workspace mode prompt the user for the branch name (no cwd repo to read from), or accept it from a parent flow's checkpoint when called from `/orc:flow`.
 2. Sanitize: `feat/142-foo` → `feat-142-foo`.

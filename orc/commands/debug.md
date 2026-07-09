@@ -21,7 +21,7 @@ allowed-tools:
   - Bash(go *:*)
   - Bash(cargo *:*)
   - Bash(pytest *:*)
-  - Bash(. */lib/workspace-detect.sh*)
+  - Bash(orc-workspace-detect:*)
 ---
 
 # /orc:debug
@@ -37,10 +37,9 @@ Hard bugs and unexpected failures get the systematic-debugging discipline. NO FI
 
 ### Phase 0 — Detect context
 
-```bash
-. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
-eval "$(orc_detect_context)"
-```
+!`orc-workspace-detect --banner`
+
+Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection).
 
 In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. The default is the symptom-repo (the repo where the bug surfaces) plus any sibling repos the user suspects might be the actual cause — the investigator reads across all of them. Iron rule: no silent broadcast — confirm.
 

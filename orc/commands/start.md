@@ -18,7 +18,7 @@ allowed-tools:
   - Bash(go *:*)
   - Bash(cargo *:*)
   - Bash(pytest *:*)
-  - Bash(. */lib/workspace-detect.sh*)
+  - Bash(orc-workspace-detect:*)
 ---
 
 # /orc:start
@@ -34,10 +34,9 @@ Kick off a new feature with isolation, a written plan, and the first failing tes
 
 ### Phase 0 — Detect context
 
-```bash
-. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
-eval "$(orc_detect_context)"
-```
+!`orc-workspace-detect --banner`
+
+Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection).
 
 In workspace mode, resolve `targetRepos` from `--repos`/`--repo`/`--all-repos`/`--this-repo` or via `AskUserQuestion`. Iron rule: no silent broadcast.
 

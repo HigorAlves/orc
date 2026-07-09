@@ -16,7 +16,7 @@ allowed-tools:
   - Bash(gh pr view:*)
   - Bash(rm -rf .orc:*)
   - Bash(jq *)
-  - Bash(. */lib/workspace-detect.sh*)
+  - Bash(orc-workspace-detect:*)
 ---
 
 # /orc:cleanup
@@ -34,10 +34,9 @@ Close the loop on finished orc work — remove the workspace state, the worktree
 
 ### Phase 0 — Detect context
 
-```bash
-. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
-eval "$(orc_detect_context)"
-```
+!`orc-workspace-detect --banner`
+
+Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection).
 
 In workspace mode, the registry to read in Phase 2 is `${ORC_STATE_DIR}/orc.json` (workspace-level). Workspace sessions have `scope: "workspace"` and a `repos` array. For each candidate workspace session, fetch PR merge status for every URL in `linkedPRs`:
 
