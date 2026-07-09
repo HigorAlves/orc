@@ -38,7 +38,7 @@ orc is a personal plugin, but the conventions here keep future-you sane. Read th
      - Glob
      - Grep
      - Skill
-     - Bash(git *)         # be specific
+     - Bash(git:*)         # be specific
      - Bash(gh pr view:*)  # whitelist the verb
    ---
    ```
@@ -63,7 +63,7 @@ orc is a personal plugin, but the conventions here keep future-you sane. Read th
    ---
    ```
 3. The body describes the role, what it looks for, output format, tone.
-4. Tools whitelist: never grant blanket `Bash`. Use `Bash(npm *:*)`, `Bash(gh pr view:*)`, etc.
+4. Tools whitelist: never grant blanket `Bash`. Use `Bash(npm:*)`, `Bash(gh pr view:*)`, etc.
 5. The agent is invoked via `Task` from a command — not directly by the user.
 
 ## Adding a hook

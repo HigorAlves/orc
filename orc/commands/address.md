@@ -12,11 +12,11 @@ allowed-tools:
   - Bash(gh pr view:*)
   - Bash(gh pr list:*)
   - Bash(gh api:*)
-  - Bash(git *)
-  - Bash(npm *:*)
-  - Bash(pnpm *:*)
-  - Bash(yarn *:*)
-  - Bash(jq *)
+  - Bash(git:*)
+  - Bash(npm:*)
+  - Bash(pnpm:*)
+  - Bash(yarn:*)
+  - Bash(jq:*)
   - Bash(orc-workspace-detect:*)
 ---
 

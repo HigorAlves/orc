@@ -2,7 +2,7 @@
 name: shadcn
 description: Add, search, fix, debug, style, and compose shadcn/ui components. Applies to shadcn/ui, component registries, --preset codes, or any project with a components.json. Triggers on "shadcn init".
 user-invocable: false
-allowed-tools: Bash(npx shadcn@latest *), Bash(pnpm dlx shadcn@latest *), Bash(bunx --bun shadcn@latest *)
+allowed-tools: Bash(npx shadcn@latest:*), Bash(pnpm dlx shadcn@latest:*), Bash(bunx --bun shadcn@latest:*)
 ---
 
 # shadcn/ui

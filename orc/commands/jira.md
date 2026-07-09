@@ -9,8 +9,8 @@ allowed-tools:
   - Grep
   - Skill
   - AskUserQuestion
-  - Bash(acli *)
-  - Bash(jq *)
+  - Bash(acli:*)
+  - Bash(jq:*)
   - Bash(git branch --show-current:*)
   - Bash(date:*)
 ---

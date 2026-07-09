@@ -9,15 +9,15 @@ allowed-tools:
   - Grep
   - Skill
   - AskUserQuestion
-  - Bash(git *)
+  - Bash(git:*)
   - Bash(acli jira workitem view:*)
-  - Bash(jq *)
-  - Bash(npm *:*)
-  - Bash(pnpm *:*)
-  - Bash(yarn *:*)
-  - Bash(go *:*)
-  - Bash(cargo *:*)
-  - Bash(pytest *:*)
+  - Bash(jq:*)
+  - Bash(npm:*)
+  - Bash(pnpm:*)
+  - Bash(yarn:*)
+  - Bash(go:*)
+  - Bash(cargo:*)
+  - Bash(pytest:*)
   - Bash(orc-workspace-detect:*)
 ---
 

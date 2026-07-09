@@ -10,7 +10,7 @@ allowed-tools:
   - Skill
   - AskUserQuestion
   - Bash(mkdir:*)
-  - Bash(git *)
+  - Bash(git:*)
   - Bash(npm init:*)
   - Bash(pnpm init:*)
   - Bash(yarn init:*)

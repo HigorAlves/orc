@@ -10,7 +10,7 @@ allowed-tools:
   - Skill
   - AskUserQuestion
   - Bash(ls:*)
-  - Bash(git *)
+  - Bash(git:*)
   - Bash(date:*)
 ---
 

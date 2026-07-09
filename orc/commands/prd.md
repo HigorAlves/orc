@@ -10,10 +10,10 @@ allowed-tools:
   - Skill
   - AskUserQuestion
   - Bash(ls:*)
-  - Bash(git *)
+  - Bash(git:*)
   - Bash(date:*)
   - Bash(acli jira workitem view:*)
-  - Bash(jq *)
+  - Bash(jq:*)
 ---
 
 # /orc:prd

@@ -10,7 +10,7 @@ allowed-tools:
   - Agent
   - Bash(orc-workspace-detect:*)
   - Bash(orc-pr-size:*)
-  - Bash(git *)
+  - Bash(git:*)
   - Bash(gh extension install:*)
   - Bash(gh stack:*)
   - Bash(gh-stack:*)
@@ -19,7 +19,7 @@ allowed-tools:
   - Bash(gh pr edit:*)
   - Bash(gh pr view:*)
   - Bash(gh api:*)
-  - Bash(jq *)
+  - Bash(jq:*)
   - Bash(GIT_SEQUENCE_EDITOR=* git rebase:*)
   - Bash(git rebase --onto:*)
   - Bash(git rebase --exec:*)

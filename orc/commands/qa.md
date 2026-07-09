@@ -10,12 +10,12 @@ allowed-tools:
   - Skill
   - Task
   - AskUserQuestion
-  - Bash(npm *:*)
-  - Bash(pnpm *:*)
-  - Bash(yarn *:*)
-  - Bash(go *:*)
-  - Bash(cargo *:*)
-  - Bash(pytest *:*)
+  - Bash(npm:*)
+  - Bash(pnpm:*)
+  - Bash(yarn:*)
+  - Bash(go:*)
+  - Bash(cargo:*)
+  - Bash(pytest:*)
   - Bash(curl:*)
   - Bash(node:*)
   - Bash(agent-browser:*)
