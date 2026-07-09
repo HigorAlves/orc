@@ -60,6 +60,9 @@ Workspace = `~/work/myapp/`, branch = `feat/sso-login` → sanitized `feat-sso-l
 │   │   ├── plan.md                                # SHARED plan, slices tagged repo:
 │   │   ├── checkpoint.md                          # flow-level phase tracking
 │   │   ├── progress.md                            # rollup of per-repo logs
+│   │   ├── docker-env-state.json                  # workspace Docker env (orc:env-provisioning)
+│   │   ├── docker/                                # generated compose files (never committed)
+│   │   ├── env/                                   # env evidence: ps.json, readiness.txt, boot.log
 │   │   └── qa/                                    # cross-repo QA evidence
 │   └── .worktrees/
 │       ├── api/feat-sso-login/                    # workspace-default tree location

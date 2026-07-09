@@ -1,6 +1,6 @@
 ---
 description: Clean up after completed or abandoned orc sessions — removes workspace state, registry entry, git worktree, and optionally the merged branch. Destructive; always previews and asks first. Workspace-aware.
-argument-hint: "[--dry-run] [--all-completed] [--per-repo] [<session-id-or-branch>]"
+argument-hint: "[--dry-run] [--all-completed] [--per-repo] [--down-volumes] [<session-id-or-branch>]"
 disable-model-invocation: true
 allowed-tools:
   - Read
@@ -18,6 +18,10 @@ allowed-tools:
   - Bash(rm -rf .orc:*)
   - Bash(jq:*)
   - Bash(orc-workspace-detect:*)
+  - Bash(orc-docker-env:*)
+  - Bash(docker compose:*)
+  - Bash(kill:*)
+  - Bash(ps:*)
 ---
 
 # /orc:cleanup
@@ -30,6 +34,7 @@ Close the loop on finished orc work — remove the workspace state, the worktree
 - `--all-completed` — clean up every session whose `status` in `.orc/orc.json` is `completed` or `abandoned`. Respects all the safety checks below per session.
 - `--dry-run` — print what *would* happen but make no changes. Recommended for the first run.
 - `--per-repo` — workspace mode: clean each linked repo independently as its PR merges, instead of waiting for all to merge. Use only when you intend to abandon some repos (rare).
+- `--down-volumes` — when tearing down a session's Docker environment, also remove its named volumes (default keeps them: the next boot on that branch reuses DB data).
 
 ## Workflow
 
@@ -89,6 +94,8 @@ git branch --merged main | grep -E "^[* ] $branch_name$"
 git log "origin/$branch_name..$branch_name" --oneline 2>/dev/null | wc -l
 ```
 
+Also read `<state-dir>/<branch>/files/docker-env-state.json` when present — the session may have a live Docker environment (`orc-docker-env teardown-preview <state-file>` gives the preview lines). Run the orphan sweep once per cleanup: `orc-docker-env orphans <known-projects...>` where known projects come from every candidate's state file.
+
 Build a per-session summary:
 
 ```
@@ -96,6 +103,7 @@ Session: <session-id>
 Branch: <branch>
 Workspace: .orc/<sanitized-branch>/  (size: <N> files)
 Worktree:  <path or "none">           (dirty: <yes|no>)
+Docker env: <project or "none">       (live: <yes|no>, volumes: <list>)
 Branch merged into main? <yes|no>
 Unpushed commits? <count>
 ```
@@ -139,6 +147,7 @@ Open with the danger callout, then list exactly what will be done in a fence (th
 Will clean up:
 
 [feat-142-notifs]
+  ✓ docker compose -p orc-myapp-feat-142-notifs down   (volumes kept — --down-volumes to remove)
   ✓ rm -rf .orc/feat-142-notifs/
   ✓ remove from .orc/orc.json
   ✓ git worktree remove ../wt-feat-142-notifs   (clean)
@@ -168,6 +177,14 @@ When a child shows as `MERGED` but its parent is still `OPEN` (rare, usually the
      · pass --per-repo to delete the child branch out of order
 ```
 
+**Orphaned environments block** (rendered when the orphan sweep found any):
+
+```
+Orphaned orc environments (no registered session):
+  ⚠ orc-zzz-old-branch   (2 containers running)
+     · not auto-removed — include in plan? (per-item choice in "Edit plan")
+```
+
 Show the full plan via `AskUserQuestion`:
 - "Proceed — apply the plan as shown"
 - "Edit plan — pick individual items to skip"
@@ -179,6 +196,7 @@ If `--dry-run`: print the plan and exit; never apply.
 
 For each session:
 
+0. **Docker environment** — BEFORE state removal (the state file holds the teardown command; delete it first and the environment is orphaned): execute the state file's `teardownCommand` (append `-v` only with `--down-volumes`); kill recorded `hostProcesses[]` PIDs after verifying via `ps` that the PID still runs the recorded command — a reused PID is surfaced, never killed. Then proceed.
 1. **Workspace state** — `rm -rf .orc/<sanitized-branch>/`. Update `.orc/orc.json` to remove the entry (use Read + Write to preserve the JSON).
 2. **Worktree** — `git worktree remove <path>` ONLY if clean. If dirty, skip and surface a `**⚠️ Skipped — dirty worktree**` `[!WARNING]` callout. Never use `--force` automatically; require an explicit `--force-dirty` flag in a future iteration if needed.
 3. **Branch** — `git branch -d <branch>` ONLY if merged into main. If unmerged, skip and surface a `**⚠️ Skipped — unmerged branch**` `[!WARNING]` callout. Never use `-D` automatically.
@@ -233,6 +251,8 @@ Untouched branches:
 - **`.orc/orc.json` updates are atomic.** Read, modify in memory, Write the full file. Never partial.
 - **`--dry-run` always prints the plan and exits.** Even if the user confirms during the AskUserQuestion before realizing they should have used `--dry-run`, treat the flag as a final gate.
 - **Stack child branches respect parent merge state.** A stack member at position N is only deletable if positions 1..N-1 are all `MERGED`. Bypassed only by `--per-repo` (with explicit consent).
+- **Never `docker compose down` a project not matching the `orc-` prefix.** Orphans are always previewed and individually opted into — never auto-removed.
+- **Named volumes survive by default.** Removal requires the explicit `--down-volumes` flag; DB data is user work.
 
 ## When to invoke
 
