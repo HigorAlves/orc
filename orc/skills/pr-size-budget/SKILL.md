@@ -9,7 +9,7 @@ description: Use when opening a PR or planning slices — defines the soft 300 L
 
 Big PRs starve review quality. orc enforces a **soft iron rule** at PR-creation time: the diff (additions + deletions, post-exclusion) is computed against the base branch and compared to a budget. When over budget, the user picks one of three paths — never silently ignored, never hard-blocked.
 
-This skill is the single source of truth. `/orc:ship`, `/orc:flow`, and `/orc:stack-pr` all source `lib/pr-size-budget.sh` and present the gate prompt defined here. If you're tempted to reimplement LOC math or the prompt elsewhere — don't.
+This skill is the single source of truth. `/orc:ship`, `/orc:flow`, and `/orc:stack-pr` all call the `orc-pr-size` CLI (plugin `bin/`, on PATH while orc is enabled) and present the gate prompt defined here. If you're tempted to reimplement LOC math or the prompt elsewhere — don't.
 
 **Announce at start:** "I'm using the pr-size-budget skill because this command opens or sizes a PR."
 
@@ -121,34 +121,30 @@ Examples of **not** acceptable (the reviewer will roll their eyes):
 
 The skill doesn't lint the reason text — that's a social contract between the engineer and the reviewer. But surfacing the trailer in the PR body makes the override visible.
 
-## Helper functions (from `lib/pr-size-budget.sh`)
+## The CLI (`bin/orc-pr-size`, on PATH while orc is enabled)
 
-Source the helper, then use:
+One call powers the whole gate:
 
 ```bash
-. "${CLAUDE_PLUGIN_ROOT}/lib/pr-size-budget.sh"
-
 base=$(git symbolic-ref refs/remotes/origin/HEAD --short | sed 's@^origin/@@')
-loc=$(orc_pr_loc "origin/$base")
-budget=$(orc_pr_budget "$ARG_MAX_LOC")     # CLI override > env > .orc/pr-budget.json > 300
-
-if [ "$loc" -gt "$budget" ]; then
-  # Render the [!WARNING] "⛔ Gate — PR size" callout from "The gate prompt"
-  # section above (the canonical shape), with the fenced breakdown built from:
-  orc_pr_loc_breakdown "origin/$base"
-  orc_pr_excluded_summary "origin/$base"
-  # ...then AskUserQuestion as above
-fi
+orc-pr-size gate --base "origin/$base" ${ARG_MAX_LOC:+--max-loc "$ARG_MAX_LOC"}
+# → base:/loc:/budget:/verdict: lines, then the top-10 breakdown table,
+#   then the excluded-files one-liner.
+# verdict: over → render the [!WARNING] "⛔ Gate — PR size" callout from
+# "The gate prompt" section above, then AskUserQuestion as above.
 ```
 
-Functions exposed:
+Subcommands:
 
-| Function | Returns |
+| Subcommand | Returns |
 |---|---|
-| `orc_pr_loc <base> [<repo_root>]` | Integer — net `additions+deletions`, post-exclusion. |
-| `orc_pr_loc_breakdown <base> [<repo_root>]` | Markdown table — top-10 contributors by LOC. |
-| `orc_pr_excluded_summary <base> [<repo_root>]` | One-line summary of what was excluded. |
-| `orc_pr_budget [<override>]` | Integer — resolved budget (CLI > env > config > default). |
+| `gate [--base <ref>] [--max-loc <N>]` | One-shot: loc + budget + verdict + breakdown + exclusions. |
+| `loc [--base <ref>]` | Integer — net `additions+deletions`, post-exclusion. |
+| `breakdown [--base <ref>]` | Markdown table — top-10 contributors by LOC. |
+| `excluded [--base <ref>]` | One-line summary of what was excluded. |
+| `budget [--max-loc <N>]` | Integer — resolved budget (`--max-loc` > env > config > default). |
+
+For sourcing from hook scripts, `lib/pr-size-budget.sh` still exposes the same logic as functions: `orc_pr_loc`, `orc_pr_loc_breakdown`, `orc_pr_excluded_summary`, `orc_pr_budget`.
 
 ## Workspace mode
 

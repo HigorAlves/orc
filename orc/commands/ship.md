@@ -18,7 +18,7 @@ allowed-tools:
   - Bash(pnpm *:*)
   - Bash(yarn *:*)
   - Bash(orc-workspace-detect:*)
-  - Bash(. */lib/pr-size-budget.sh*)
+  - Bash(orc-pr-size:*)
 ---
 
 # /orc:ship
@@ -39,11 +39,7 @@ You're done implementing. Time to integrate. This command runs the structured br
 
 !`orc-workspace-detect --banner`
 
-Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection). For the Phase 4.5 size gate, source the budget helpers:
-
-```bash
-. "${CLAUDE_PLUGIN_ROOT}/lib/pr-size-budget.sh"
-```
+Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection).
 
 In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. Default in workspace mode is to ship every repo in the active workspace session's `repos` array (resolve via `${ORC_STATE_DIR}/orc.json`). Iron rule: no silent broadcast — confirm before opening multiple PRs.
 
@@ -94,13 +90,12 @@ For each target repo (workspace mode iterates; single-repo runs once):
 
 ```bash
 base="${ARG_BASE:-$(git symbolic-ref refs/remotes/origin/HEAD --short | sed 's@^origin/@@')}"
-loc=$(orc_pr_loc "origin/$base")
-budget=$(orc_pr_budget "$ARG_MAX_LOC")
+orc-pr-size gate --base "origin/$base" ${ARG_MAX_LOC:+--max-loc "$ARG_MAX_LOC"}
 ```
 
-If `loc <= budget`, fall through to Phase 5.
+One call returns `loc:`, `budget:`, `verdict:`, the top-contributors table, and the excluded-files line. If `verdict: under`, fall through to Phase 5.
 
-If `loc > budget`, render the gate exactly as `orc:pr-size-budget` specifies (the `[!WARNING]` **⛔ Gate — PR size** callout, then the fenced breakdown via `orc_pr_loc_breakdown` + `orc_pr_excluded_summary`) and surface `AskUserQuestion`:
+If `verdict: over`, render the gate exactly as `orc:pr-size-budget` specifies (the `[!WARNING]` **⛔ Gate — PR size** callout, then the breakdown + exclusions from the gate output above) and surface `AskUserQuestion`:
 
 1. **Stack it (Recommended)** — invoke `/orc:stack-pr` **inline as a skill** (load `stack-pr` skill in this session, run its phases). When stack-pr completes, this Phase 4.5 records the resulting `linkedPRs[]` entries and **short-circuits Phase 5** for this repo (PRs are already open). Continue the per-repo loop.
 2. **Open as one big PR** — prompt for a one-line reason (free text). Append to the PR body as the trailer:

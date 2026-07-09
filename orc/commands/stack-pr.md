@@ -9,7 +9,7 @@ allowed-tools:
   - AskUserQuestion
   - Agent
   - Bash(orc-workspace-detect:*)
-  - Bash(. */lib/pr-size-budget.sh*)
+  - Bash(orc-pr-size:*)
   - Bash(git *)
   - Bash(gh extension install:*)
   - Bash(gh stack:*)
@@ -45,11 +45,7 @@ Convert a single big branch into a stack of smaller, chained PRs. Use this when 
 
 !`orc-workspace-detect --banner`
 
-Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection). For the per-slice size budget, source the helpers:
-
-```bash
-. "${CLAUDE_PLUGIN_ROOT}/lib/pr-size-budget.sh"
-```
+Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection). Per-slice budget resolution: `orc-pr-size budget ${ARG_MAX_LOC:+--max-loc "$ARG_MAX_LOC"}`; per-slice LOC: `orc-pr-size loc --base <slice-base>`.
 
 In workspace mode, resolve `targetRepos` from flags or `AskUserQuestion`. The stack lives **per repo**; cross-repo stacking is intentionally out of scope.
 
