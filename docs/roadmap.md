@@ -35,8 +35,10 @@ plugin.json says 0.6.0 but git tags stop at v0.5.0, and installs pin `ref`. Beca
 
 ## Tier C — bigger bets
 
-### C1. Native worktree integration — L, high impact
-`WorktreeCreate`/`WorktreeRemove` hook events replace default worktree behavior (return `worktreePath`); agent frontmatter supports `isolation: "worktree"`. Add a `WorktreeCreate` hook that creates worktrees under `<repo>/.orc/.worktrees/<branch>` — the "never $HOME" pin becomes harness-enforced for every Claude-managed worktree, not prose-enforced. Then evaluate `isolation: worktree` on `orc-implementer` and shrink `/orc:start`'s manual worktree phase to state registration.
+### C1. Native worktree integration — SHIPPED (hooks) / REJECTED (agent isolation)
+**C1a shipped (0.9.0 train):** `worktree-create.sh`/`worktree-remove.sh` pin every harness-managed worktree (`--worktree`, `isolation: worktree`) under `<repo>/.orc/.worktrees/<sanitized-branch>` — the "never $HOME" rule is harness-enforced.
+
+**C1b evaluated and rejected:** `isolation: worktree` on `orc-implementer` is architecturally incompatible with flow's choreography. Flow Phase 4 creates the *feature-branch* worktree and passes its path; an isolation-worktree agent gets its *own* harness worktree branched from the default branch, and on Claude Code ≥ 2.1.203 confinement makes `cd` into flow's worktree fail — slice commits would land on an auto-branch instead of the feature branch. On < 2.1.203 the flag adds nothing (confinement bug). Revisit only if the harness ever supports `isolation: worktree` with an explicit branch/base override per dispatch.
 
 ### C2. Redundancy audit vs bundled capabilities — L, high impact
 Claude Code now bundles `/code-review` (with `--comment`/`--fix`/ultra), `/debug`, `/verify`, `/run`, `/security-review`, and an official skill-creator plugin. Overlaps to adjudicate: `orc:code-review`+`orc-pr-reviewer`+`inline-review` vs bundled `/code-review --comment`; `orc:debug`+`systematic-debugging` vs `/debug`; `orc:qa` vs `/verify`+`/run` (orc's browser-evidence contract is genuinely differentiated — keep, but sharpen the description); `orc:skill-creator` vs the official plugin (candidate deletion); `orc-security-reviewer` vs `/security-review`. Each kept skill's `description:` should say when to prefer it over the bundled one — the model sees both catalogs. Payoff: catalog token cut across 57 skills + less trigger ambiguity.

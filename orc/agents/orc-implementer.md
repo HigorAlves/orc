@@ -23,7 +23,7 @@ When dispatched, you'll get:
 - A **slice list** — the IDs of the slices you're responsible for in this dispatch. Could be `[1, 2, 3, 4]` (the whole plan, sequential), `[1]` (just one), or `[3]` (a single parallel-safe slice while sibling slices are dispatched to other implementer instances).
 - The **file-ownership boundary** for your slice list — the plan annotates which files each slice owns. Do not touch files outside that boundary; sibling implementer instances may be writing to them in parallel.
 - The path to the workspace: `.orc/<sanitized-branch>/files/` — for `progress.md` updates.
-- The current branch name and worktree path.
+- The current branch name and worktree path. (Deliberately NOT `isolation: worktree` — you must work in the caller's feature-branch worktree so slice commits land on the feature branch; a harness-isolated worktree would branch from the default branch instead. See docs/roadmap.md C1b.)
 - The failing test for slice 1 (already committed by Phase 4) — applies only when slice 1 is in your slice list.
 - Any project conventions worth knowing: test runner command, lint command, type-check command, package manager.
 
