@@ -13,6 +13,9 @@ Git worktrees create isolated workspaces sharing the same repository, allowing w
 
 **Announce at start:** "I'm using the using-git-worktrees skill to set up an isolated workspace."
 
+> [!NOTE]
+> **📋 Harness-managed worktrees land in the pinned location automatically.** orc ships `WorktreeCreate`/`WorktreeRemove` hooks (`hooks/scripts/worktree-*.sh`): any worktree Claude Code itself creates (`--worktree`, or an agent with `isolation: worktree`) is placed under `<repo>/.orc/.worktrees/<sanitized-branch>` and cleaned up only when the tree is clean. This skill's manual process below applies when YOU create the worktree.
+
 ## Directory Selection Process
 
 **Iron rule: orc worktrees always live under `.orc/.worktrees/` — at the repo root or, in workspace mode, the workspace root. Never under `$HOME`, never elsewhere.** `.orc/` is always git-ignored in an orc project, so worktree contents can never pollute the tree. There is no "ask the user where", no global location, and no CLAUDE.md location override — the location is fixed by design.
