@@ -116,6 +116,28 @@ ORC_CONTEXT_CACHED_PWD=${cwd}
 EOF
 }
 
+orc_context_banner() (
+  # Canonical one-look context banner — shared by the SessionStart hook and
+  # (from 0.7.0) the dynamic `!`orc-workspace-detect --banner`` injection in
+  # command bodies. Subshell body: detection vars never leak to the caller.
+  eval "$(orc_detect_context)"
+  case "${ORC_CONTEXT:-loose}" in
+    workspace)
+      printf 'orc context: workspace[%s] — repos: %s — state: %s\n' \
+        "${ORC_WORKSPACE_NAME}" "${ORC_WORKSPACE_REPOS}" "${ORC_STATE_DIR}"
+      printf 'In workspace mode, repo-scoped commands prompt for --repos/--repo before broadcasting; pass --this-repo to scope to cwd, --all-repos to fan out.\n'
+      ;;
+    repo)
+      branch="$(git -C "${ORC_REPO_ROOT:-.}" branch --show-current 2>/dev/null || true)"
+      printf 'orc context: repo — root: %s — branch: %s — state: %s\n' \
+        "${ORC_REPO_ROOT}" "${branch:-detached}" "${ORC_STATE_DIR}"
+      ;;
+    loose)
+      printf 'orc context: loose — cwd is neither a git repo nor a workspace parent (no .orc state will be written here).\n'
+      ;;
+  esac
+)
+
 orc_detect_context_json() {
   # Re-evaluates fresh into a subshell so we never pollute the caller.
   local block

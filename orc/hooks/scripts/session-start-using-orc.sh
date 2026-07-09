@@ -22,30 +22,48 @@ if [ -n "$session_payload" ] && command -v jq >/dev/null 2>&1; then
 fi
 [ -z "$session_cwd" ] && session_cwd="$PWD"
 
-# Detect workspace vs repo vs loose. The helper emits KEY=VALUE lines; we
-# evaluate them in a subshell so the hook stays free of side effects.
+# Detect workspace vs repo vs loose. The hook is its own short-lived process,
+# so detection runs in the main shell — the vars feed the banner, the env-file
+# persistence, and the session title below.
 context_banner=""
+session_title=""
 if [ -f "${PLUGIN_ROOT}/lib/workspace-detect.sh" ]; then
-  context_banner=$(
-    cd "$session_cwd" 2>/dev/null || cd "$PWD"
-    # shellcheck disable=SC1091
-    . "${PLUGIN_ROOT}/lib/workspace-detect.sh"
-    eval "$(orc_detect_context)"
-    case "${ORC_CONTEXT:-loose}" in
-      workspace)
-        printf 'orc context: workspace[%s] — repos: %s — state: %s\n' \
-          "${ORC_WORKSPACE_NAME}" "${ORC_WORKSPACE_REPOS}" "${ORC_STATE_DIR}"
-        printf 'In workspace mode, repo-scoped commands prompt for --repos/--repo before broadcasting; pass --this-repo to scope to cwd, --all-repos to fan out.\n'
-        ;;
-      repo)
-        printf 'orc context: repo — root: %s — state: %s\n' \
-          "${ORC_REPO_ROOT}" "${ORC_STATE_DIR}"
-        ;;
-      loose)
-        printf 'orc context: loose — cwd is neither a git repo nor a workspace parent (no .orc state will be written here).\n'
-        ;;
-    esac
-  )
+  # shellcheck disable=SC1091
+  . "${PLUGIN_ROOT}/lib/workspace-detect.sh"
+  cd "$session_cwd" 2>/dev/null || true
+  eval "$(orc_detect_context)"
+  context_banner="$(orc_context_banner)"
+
+  # Persist detection into every subsequent Bash call — the memoization in
+  # workspace-detect.sh finally works session-wide instead of dying with
+  # each fresh subshell. Re-appends on resume/clear/compact are idempotent
+  # (last export wins).
+  if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+    {
+      printf 'export ORC_CONTEXT=%q\n'         "${ORC_CONTEXT:-loose}"
+      printf 'export ORC_REPO_ROOT=%q\n'       "${ORC_REPO_ROOT:-}"
+      printf 'export ORC_WORKSPACE_ROOT=%q\n'  "${ORC_WORKSPACE_ROOT:-}"
+      printf 'export ORC_WORKSPACE_NAME=%q\n'  "${ORC_WORKSPACE_NAME:-}"
+      printf 'export ORC_WORKSPACE_REPOS=%q\n' "${ORC_WORKSPACE_REPOS:-}"
+      printf 'export ORC_STATE_DIR=%q\n'       "${ORC_STATE_DIR:-}"
+      printf 'export ORC_CONTEXT_CACHED=1\n'
+      printf 'export ORC_CONTEXT_CACHED_PWD=%q\n' "$(pwd -P 2>/dev/null || pwd)"
+    } >> "$CLAUDE_ENV_FILE"
+  fi
+
+  # Session title from the active orc session, when one exists for this
+  # context (prefer the current branch's session, else the freshest live
+  # one). Only honored by Claude Code on startup|resume sources; harmless
+  # elsewhere.
+  if [ -n "${ORC_STATE_DIR:-}" ] && [ -f "${ORC_STATE_DIR}/orc.json" ] && command -v jq >/dev/null 2>&1; then
+    current_branch="$(git -C "$session_cwd" branch --show-current 2>/dev/null || true)"
+    session_title="$(jq -r --arg b "$current_branch" '
+      ([.sessions[]? | select(.status == "in_progress")]) as $live
+      | (($live | map(select(.gitBranch == $b or .branch == $b)) | sort_by(.updated_at // .startedAt // "") | last)
+         // ($live | sort_by(.updated_at // .startedAt // "") | last))
+      | if . then "orc: \(.command // "session") \(.gitBranch // .branch) [\(.phase // "?")]" else empty end
+    ' "${ORC_STATE_DIR}/orc.json" 2>/dev/null || true)"
+  fi
 fi
 
 banner_section=""
@@ -67,11 +85,11 @@ ${using_orc_content}
 # jq owns the JSON encoding — it's a hard required dependency; if it's
 # absent, degrade silently (the tool-check hook reports the missing dep).
 command -v jq >/dev/null 2>&1 || exit 0
-jq -n --arg ctx "$session_context" '{
-  hookSpecificOutput: {
+jq -n --arg ctx "$session_context" --arg title "${session_title:-}" '{
+  hookSpecificOutput: ({
     hookEventName: "SessionStart",
     additionalContext: $ctx
-  }
+  } + (if $title != "" then {sessionTitle: $title} else {} end))
 }'
 
 exit 0
