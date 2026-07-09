@@ -1,5 +1,5 @@
 ---
-description: Pre-PR quality gate — browser-driven QA for web changes (screenshots, a11y snapshot, console, HAR, narrative) via agent-browser. No QA-passed claim without artifacts. Workspace-aware.
+description: Pre-PR quality gate — browser-driven QA for web changes (screenshots, a11y snapshot, console, HAR, narrative) via agent-browser, against a Docker-provisioned environment. No QA-passed claim without artifacts. Workspace-aware. For a quick behavioral check without the evidence packet, prefer the bundled /verify or /run.
 argument-hint: "[--web <url>] [--no-web] [--no-env] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 allowed-tools:
   - Read

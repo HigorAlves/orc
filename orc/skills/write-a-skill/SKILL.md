@@ -1,6 +1,6 @@
 ---
 name: write-a-skill
-description: Create new agent skills with proper structure, progressive disclosure, and bundled resources. Use when user wants to create, write, or build a new skill.
+description: Create new agent skills following orc's house conventions — kebab-case naming, description-as-trigger doctrine, progressive-disclosure layout with references/. Use when creating, writing, or building a skill for THIS plugin. For skill evals, trigger-rate measurement, and description tuning, use the official skill-creator plugin.
 ---
 
 # Writing Skills
