@@ -360,6 +360,7 @@ A. Stack from plan slices (Recommended, flow-only)
    (Only enabled when commits map 1:1 to plan slices.)
 B. Stack via /orc:stack-pr [--smart]
    Standalone analyzer; same outcome as A but doesn't rely on commit/slice alignment.
+   (Load the `orc:stack-pr` SKILL inline — the slash command is user-only.)
 C. Open as one big PR — requires a one-line reason (Size-budget-override: trailer).
 D. Abort to implement — go back, resize, re-run /orc:flow.
 ```

@@ -1,6 +1,9 @@
 ---
 description: Show all active and recently-completed orc workspaces from .orc/orc.json. Read-only — never modifies state. Workspace-aware.
 argument-hint: "[--all] [--branch <name>] [--repo <name>]"
+model: haiku
+context: fork
+agent: Explore
 allowed-tools:
   - Read
   - Glob

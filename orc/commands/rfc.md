@@ -1,6 +1,7 @@
 ---
 description: Author a system-design RFC — proposes a non-trivial change BEFORE implementation, surfaces alternatives, and invites critique. Differs from /orc:plan (design settled) and /orc:adr (decision recorded).
 argument-hint: "[--grill] [--review <path>] [<title>]"
+effort: high
 allowed-tools:
   - Read
   - Write

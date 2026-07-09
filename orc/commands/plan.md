@@ -1,6 +1,7 @@
 ---
 description: Plan a feature or refactor — produces a TDD-shaped plan, optionally design-grilled, and decomposes it into independently shippable issues. --jira <KEY> links a ticket. Workspace-aware.
 argument-hint: "[--grill] [--issues] [--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
+effort: high
 allowed-tools:
   - Read
   - Write
