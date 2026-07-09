@@ -26,6 +26,7 @@ allowed-tools:
   - Bash(jq:*)
   - Bash(orc-workspace-detect:*)
   - Bash(orc-pr-size:*)
+  - Bash(orc-docker-env:*)
 ---
 
 # /orc:flow
@@ -330,7 +331,9 @@ Detect web vs code mode (heuristic on changed files vs main). Invoke `orc:verifi
 
 When the diff touches security-sensitive paths (auth, sessions, raw SQL, deserialization, file upload, network egress, dependency surface) — dispatch `orc-security-reviewer` in parallel with the self-review. Merge findings before surfacing.
 
-For web changes, dispatch `orc-qa-validator` (drives `agent-browser`, captures evidence to `.orc/<branch>/files/qa/`). In workspace mode, the validator picks the repo declared as the web surface in the plan's "Repo touchpoints" section (`repoPath = <workspaceRoot>/<that repo>`); cross-repo integration evidence (e.g. ui+api walks) lands at the workspace-level `<workspaceRoot>/.orc/<branch>/files/qa/`, repo-local QA stays per-repo.
+For web changes, **provision or attach the environment first** (same step as `/orc:qa` Phase 4.0): `orc-docker-env is-ready <state-file>` → attach when `ready`, else dispatch `orc-env-provisioner` (worktree path; workspace mode adds `repos[]` + `webSurfaceRepo` from the plan's "Repo touchpoints" + the plan path for dependency order). `fallback` → re-print the ⚠️ callout and continue; `failed` → 🛑 callout + gate. The environment **stays up across the QA-partial → fix → re-run loop** — re-runs attach in seconds; teardown happens in Phase 9.
+
+Then dispatch `orc-qa-validator` (drives `agent-browser`, captures evidence to `.orc/<branch>/files/qa/`) with `appUrl` + `serviceEndpoints` + `envStatePath` from `docker-env-state.json` — the validator attaches, never boots. In workspace mode, the validator picks the repo declared as the web surface in the plan's "Repo touchpoints" section (`repoPath = <workspaceRoot>/<that repo>`); cross-repo integration evidence (e.g. ui+api walks) lands at the workspace-level `<workspaceRoot>/.orc/<branch>/files/qa/`, repo-local QA stays per-repo.
 
 If verification flags untested branches, dispatch `orc-test-author` to fill them in before continuing.
 

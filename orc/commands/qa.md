@@ -1,6 +1,6 @@
 ---
 description: Pre-PR quality gate — browser-driven QA for web changes (screenshots, a11y snapshot, console, HAR, narrative) via agent-browser. No QA-passed claim without artifacts. Workspace-aware.
-argument-hint: "[--web <url>] [--no-web] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
+argument-hint: "[--web <url>] [--no-web] [--no-env] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 allowed-tools:
   - Read
   - Write
@@ -21,6 +21,7 @@ allowed-tools:
   - Bash(agent-browser:*)
   - Bash(npx agent-browser:*)
   - Bash(orc-workspace-detect:*)
+  - Bash(orc-docker-env:*)
 ---
 
 # /orc:qa
@@ -32,8 +33,9 @@ Run a quality gate before opening a PR. Two modes:
 
 ## Arguments
 
-- `--web <url>` — explicit URL of running app (skips the auto-boot heuristic).
+- `--web <url>` — explicit URL of a running app (skips env provisioning AND the validator's boot path — you're saying it's already up).
 - `--no-web` — force code-only mode even if web files were touched.
+- `--no-env` — skip Docker env provisioning; the validator falls back to its legacy dev-script boot.
 - The remaining argument is the feature description (used to scope golden-path testing).
 
 ## Workflow
@@ -66,12 +68,17 @@ If verification (Phase 2) flagged untested branches — dispatch **`orc-test-aut
 
 ### Phase 4 (web mode only) — Browser QA
 
+0. **Provision or attach the environment** (skip when `--web <url>` or `--no-env`). Check `orc-docker-env is-ready $(orc-docker-env state-path "$ORC_STATE_DIR" <sanitized-branch>)`:
+   - `ready` → attach; echo the reuse line (project, appUrl, "reused").
+   - otherwise → dispatch **`orc-env-provisioner`** via `Task` (repoPath = the worktree; workspace mode adds `repos[]`, `webSurfaceRepo`, plan path). On `fallback`: re-print the agent's ⚠️ callout and continue. On `failed`: re-print the 🛑 callout and `AskUserQuestion` — retry / retry `--fresh` / continue with `--no-env` legacy boot / abort QA.
+
+   The environment **stays up after QA** — the "QA partial → fix → re-run" loop attaches in seconds. Teardown belongs to `/orc:cleanup`.
 1. Init `${ORC_STATE_DIR}/<sanitized-branch>/files/qa/` directory. In workspace mode, the cross-repo QA evidence (e.g. ui+api integration walks) goes here; per-repo QA stays at `<repoPath>/.orc/<branch>/files/qa/`.
 2. Dispatch the `orc-qa-validator` subagent via `Task`. Pass:
    - The feature description.
-   - The URL (or boot instructions).
+   - **`appUrl` + `serviceEndpoints` + `envStatePath`** from `docker-env-state.json` (the validator NEVER boots infra when env state exists — it attaches). Only when step 0 was skipped: the `--web` URL, or legacy boot instructions under `--no-env`.
    - The artifact directory.
-   - **Workspace mode only**: `repo` (the web-surface repo from Phase 0), `repoPath` (boot the dev server from here), `siblingRepos` (any backend repos that may need to run as dependencies but the agent does NOT touch), and `crossRepoContract` (when present in the plan — the agent walks an integration golden path that exercises the contract end-to-end).
+   - **Workspace mode only**: `repo` (the web-surface repo from Phase 0), `repoPath`, `siblingRepos` (already running via the provisioned environment — verify their traffic through `serviceEndpoints` in the HAR; the agent does NOT touch them), and `crossRepoContract` (when present in the plan — the agent walks an integration golden path that exercises the contract end-to-end).
 3. The agent walks the golden path + edge cases, captures screenshots/video/console.log, writes `steps.md`, returns a verdict.
 4. Read its `steps.md` and verdict. If `pass`, proceed. If `fail` or `partial`, surface the failure with the screenshot link to the user.
 
@@ -84,6 +91,7 @@ Append to `.orc/<branch>/files/progress.md`:
 - Lint: pass/fail
 - Type-check: pass/fail
 - Self-review findings: <count>
+- Env: <ready (reused) | ready (booted <N>s) | fallback (host) | skipped>
 - Browser QA: <pass|fail|partial|skipped (code-only)>
 - Artifact dir: .orc/<branch>/files/qa/  (if web mode)
 ```
