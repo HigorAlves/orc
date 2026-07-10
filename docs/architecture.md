@@ -13,7 +13,7 @@ orc/
 ├── skills/                        # 58 skills, namespaced /orc:<name>
 ├── commands/                      # 21 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
 ├── agents/                        # 12 specialist subagents (orc-<role>)
-├── hooks/                         # SessionStart + PreToolUse(Bash) hooks
+├── hooks/                         # SessionStart + PreToolUse(Bash) + WorktreeCreate/Remove hooks
 ├── lib/                           # shared prompt fragments + templates (cross-skill)
 └── docs/                          # this directory
 ```
