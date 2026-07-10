@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# orc-pr-size — PR size-budget CLI (plugin bin/, on PATH while orc is
+# enabled). Wraps lib/pr-size-budget.sh; the `gate` subcommand collapses the
+# ship/flow/stack-pr size-gate from 3-4 Bash round-trips into one call.
+set -euo pipefail
+
+dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+# shellcheck disable=SC1091
+. "${dir}/../lib/pr-size-budget.sh"
+
+usage() {
+  cat <<'EOF'
+usage: orc-pr-size <subcommand> [--base <ref>] [--max-loc <N>]
+
+  loc        net additions+deletions for base...HEAD, post-exclusion
+  breakdown  markdown table of top per-file contributors
+  excluded   one-line summary of excluded files/LOC
+  budget     resolved budget (--max-loc > $ORC_PR_LOC_BUDGET > .orc/pr-budget.json > 300)
+  gate       one-shot: loc + budget + verdict + breakdown + exclusions
+EOF
+}
+
+sub="${1:-}"
+if [ -z "$sub" ]; then usage >&2; exit 2; fi
+shift
+
+base="" max_loc=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --base)    base="${2:-}"; shift 2 ;;
+    --max-loc) max_loc="${2:-}"; shift 2 ;;
+    --help|-h) usage; exit 0 ;;
+    *) printf 'orc-pr-size: unknown argument %s\n' "$1" >&2; exit 2 ;;
+  esac
+done
+if [ -z "$base" ]; then base="$(orc__default_base)"; fi
+
+case "$sub" in
+  loc)       orc_pr_loc "$base" ;;
+  breakdown) orc_pr_loc_breakdown "$base" ;;
+  excluded)  orc_pr_excluded_summary "$base" ;;
+  budget)    orc_pr_budget "$max_loc" ;;
+  gate)
+    loc="$(orc_pr_loc "$base")"
+    budget="$(orc_pr_budget "$max_loc")"
+    verdict="under"
+    if [ "$loc" -gt "$budget" ]; then verdict="over"; fi
+    printf 'base: %s\nloc: %s\nbudget: %s\nverdict: %s\n\n' "$base" "$loc" "$budget" "$verdict"
+    orc_pr_loc_breakdown "$base"
+    printf '\n'
+    orc_pr_excluded_summary "$base"
+    ;;
+  help) usage ;;
+  *) printf 'orc-pr-size: unknown subcommand %s\n' "$sub" >&2; usage >&2; exit 2 ;;
+esac

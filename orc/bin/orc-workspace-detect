@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# orc-workspace-detect — context-detection CLI (plugin bin/, on PATH while
+# orc is enabled). Thin wrapper: all logic lives in lib/workspace-detect.sh,
+# whose CLI dispatch activates when the lib is executed rather than sourced.
+set -euo pipefail
+dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+exec bash "${dir}/../lib/workspace-detect.sh" "$@"

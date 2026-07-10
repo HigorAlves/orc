@@ -162,3 +162,41 @@ orc_detect_context_json() {
 }
 EOF
 }
+
+orc_registry_dump() (
+  # Dumps the active context's .orc/orc.json registry — and, in workspace
+  # mode, each member repo's registry under a "### repo:" header — for
+  # dynamic injection into /orc:status. Subshell body: no caller pollution.
+  eval "$(orc_detect_context)"
+  if [ -z "${ORC_STATE_DIR:-}" ]; then
+    printf 'no-registry (loose context)\n'
+    exit 0
+  fi
+  if [ -f "${ORC_STATE_DIR}/orc.json" ]; then
+    cat "${ORC_STATE_DIR}/orc.json"
+  else
+    printf 'no-registry (%s has no orc.json)\n' "${ORC_STATE_DIR}"
+  fi
+  if [ "${ORC_CONTEXT:-}" = "workspace" ] && [ -n "${ORC_WORKSPACE_REPOS:-}" ]; then
+    for repo in $(printf '%s' "$ORC_WORKSPACE_REPOS" | tr ',' ' '); do
+      if [ -f "${ORC_WORKSPACE_ROOT}/${repo}/.orc/orc.json" ]; then
+        printf '\n### repo: %s\n' "$repo"
+        cat "${ORC_WORKSPACE_ROOT}/${repo}/.orc/orc.json"
+      fi
+    done
+  fi
+)
+
+# CLI mode — active only when this file is EXECUTED (via bin/orc-workspace-detect,
+# which is on PATH while the plugin is enabled), never when sourced. Hook
+# scripts and any remaining dot-source callers are unaffected.
+if [ "${BASH_SOURCE[0]:-}" = "${0:-}" ]; then
+  case "${1:---banner}" in
+    --banner)   orc_context_banner ;;
+    --json)     orc_detect_context_json ;;
+    --env)      orc_detect_context ;;
+    --registry) orc_registry_dump ;;
+    --help|-h)  printf 'usage: orc-workspace-detect [--banner|--json|--env|--registry]\n' ;;
+    *)          printf 'orc-workspace-detect: unknown flag %s\n' "$1" >&2; exit 2 ;;
+  esac
+fi
