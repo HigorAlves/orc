@@ -25,7 +25,7 @@ allowed-tools:
   - Bash(acli *)
   - Bash(jq *)
   - Bash(orc-workspace-detect:*)
-  - Bash(. */lib/pr-size-budget.sh*)
+  - Bash(orc-pr-size:*)
 ---
 
 # /orc:flow
@@ -348,11 +348,11 @@ AskUserQuestion (after QA verdict):
 Pre-flight the **size gate** before invoking `/orc:ship`. Defer to `orc:pr-size-budget` for canonical mechanics. Skip when `--no-size-gate` is set.
 
 ```bash
-. "${CLAUDE_PLUGIN_ROOT}/lib/pr-size-budget.sh"
 # In workspace mode, iterate per target repo; in single-repo, run once.
+orc-pr-size gate --base "origin/$base" ${ARG_MAX_LOC:+--max-loc "$ARG_MAX_LOC"}
 ```
 
-For each target repo, compute `loc = orc_pr_loc <base>` and `budget = orc_pr_budget "$ARG_MAX_LOC"`. If `loc > budget`, render the gate exactly as `orc:pr-size-budget` specifies (the `[!WARNING]` **⛔ Gate — PR size** callout — in workspace mode add `(repo: <r>)` to the header — then the fenced breakdown), and surface a **flow-enriched 4-option** `AskUserQuestion` (the standalone `/orc:ship` gate has only the first three — Phase 7 adds option A because the flow knows the plan):
+One call returns `loc:`, `budget:`, `verdict:`, the breakdown table, and the excluded-files line per repo. If `verdict: over`, render the gate exactly as `orc:pr-size-budget` specifies (the `[!WARNING]` **⛔ Gate — PR size** callout — in workspace mode add `(repo: <r>)` to the header — then the fenced breakdown), and surface a **flow-enriched 4-option** `AskUserQuestion` (the standalone `/orc:ship` gate has only the first three — Phase 7 adds option A because the flow knows the plan):
 
 ```
 A. Stack from plan slices (Recommended, flow-only)
