@@ -1,6 +1,7 @@
 ---
 description: Break a too-big branch into a stack of smaller chained PRs — commit-based by default (one PR per Conventional Commit), or --smart for messy branches. Detects gh-stack, falls back to plain gh. Workspace-aware.
 argument-hint: "[--smart] [--base <branch>] [--draft] [--max-loc <N>] [--repos a,b | --repo a | --all-repos | --this-repo]"
+disable-model-invocation: true
 allowed-tools:
   - Read
   - Glob

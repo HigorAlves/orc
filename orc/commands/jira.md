@@ -1,6 +1,8 @@
 ---
 description: Manage Jira tickets via acli, and bind/unbind a ticket key to the current orc session — persists jiraTicket in .orc/orc.json + checkpoint.md so /orc:status, /orc:resume, and /orc:ship all see the link.
 argument-hint: "<verb> [args] [--project KEY] [--type Story|Task|Bug|Epic|Sub-task] [--parent KEY] [--summary ...] [--description ...] [--assignee @me]"
+arguments: [verb]
+disable-model-invocation: true
 allowed-tools:
   - Read
   - Write
