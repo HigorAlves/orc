@@ -3,7 +3,7 @@
   "name": "orc",
   "displayName": "orc",
   "description": "Personal Claude Code plugin orchestrating the plan → debug → verify → ship loop with curated skills and slash commands.",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "author": {
     "name": "Higor Alves",
     "email": "me@higoralves.dev"
@@ -11,5 +11,25 @@
   "homepage": "https://github.com/HigorAlves/orc",
   "repository": "https://github.com/HigorAlves/orc",
   "keywords": ["workflow", "tdd", "code-review", "git", "pr", "orchestration"],
-  "license": "MIT"
+  "license": "MIT",
+  "userConfig": {
+    "pr_size_budget": {
+      "type": "number",
+      "title": "PR size budget (LOC)",
+      "description": "Soft LOC budget per PR (additions+deletions, post-exclusion) enforced by the ship/flow/stack-pr gate",
+      "default": 300
+    },
+    "protected_branches": {
+      "type": "string",
+      "title": "Protected branches",
+      "description": "Comma-separated branch names guarded by the confirm-to-commit hook",
+      "default": "main,master,develop"
+    },
+    "skip_tool_check": {
+      "type": "boolean",
+      "title": "Skip tool check",
+      "description": "Skip the SessionStart CLI dependency pre-flight",
+      "default": false
+    }
+  }
 }

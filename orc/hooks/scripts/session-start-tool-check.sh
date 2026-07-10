@@ -7,14 +7,18 @@
 # the model's context so it can offer install help if the user asks.
 # Silent (exit 0 with no output fields) when everything's present.
 #
-# Suppress the check entirely with: ORC_SKIP_TOOL_CHECK=1
+# Suppress the check entirely with: ORC_SKIP_TOOL_CHECK=1, or the plugin
+# userConfig `skip_tool_check` (exported as CLAUDE_PLUGIN_OPTION_SKIP_TOOL_CHECK).
 
 set -euo pipefail
 
-# Honor the suppression env var.
+# Honor the suppression env var and the userConfig option.
 if [ "${ORC_SKIP_TOOL_CHECK:-}" = "1" ]; then
   exit 0
 fi
+case "${CLAUDE_PLUGIN_OPTION_SKIP_TOOL_CHECK:-}" in
+  1|true|True) exit 0 ;;
+esac
 
 # Required (orc's core hooks/commands break without these).
 REQUIRED=("git" "jq")

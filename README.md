@@ -96,7 +96,7 @@ To pin a specific commit/tag, use the longhand source form in `~/.claude/setting
       "source": {
         "source": "url",
         "url": "https://github.com/HigorAlves/orc.git",
-        "ref": "v0.8.0"
+        "ref": "v0.9.0"
       }
     }
   },
@@ -144,6 +144,16 @@ export ORC_SKIP_TOOL_CHECK=1
 | `ORC_SKIP_TOOL_CHECK=1` | Suppress the SessionStart tool-check callout when a recommended dependency is intentionally missing. |
 | `ORC_ALLOW_AI_ATTRIBUTION=1` | Allow `Co-Authored-By: Claude`, `🤖 Generated with Claude Code`, or other AI-attribution trailers in commit messages and PR bodies. The PreToolUse hook refuses them by default (iron rule #5). Set only with explicit user consent. |
 | `ORC_JIRA_PR_KEYWORD` | PR-body trailer keyword used by `/orc:ship` when the active session has a bound `jiraTicket`. Defaults to `Resolves`. Set to `Closes` or `Fixes` for orgs whose Jira/GitHub integration uses a different keyword. |
+
+## Plugin settings (userConfig)
+
+Prompted at plugin enable time (re-run via `/plugin`); exported to hooks and libs as `CLAUDE_PLUGIN_OPTION_<KEY>`:
+
+| Setting | Default | Effect |
+|---------|---------|--------|
+| `pr_size_budget` | `300` | Soft LOC budget for the ship/flow/stack-pr size gate (per-repo `.orc/pr-budget.json` still wins). |
+| `protected_branches` | `main,master,develop` | Branches guarded by the confirm-to-commit hook. |
+| `skip_tool_check` | `false` | Skip the SessionStart CLI dependency pre-flight. |
 
 ## Day-one command catalog
 
@@ -246,7 +256,7 @@ Without the required artifacts, "QA passed" is not an accepted claim. The `orc-q
 
 ```
 orc/
-├── .claude-plugin/plugin.json   # manifest (v0.8.0)
+├── .claude-plugin/plugin.json   # manifest (v0.9.0)
 ├── .orc/                        # gitignored — workspace state per session
 ├── skills/<name>/SKILL.md       # 57 skills — a thin index per skill
 │   └── <name>/references/*.md   #   lazy-loaded detail for large skills (139 files, 15 skills)

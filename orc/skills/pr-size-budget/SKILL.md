@@ -20,7 +20,8 @@ Highest precedence wins:
 1. **CLI flag** — `--max-loc <N>` on `/orc:ship`, `/orc:flow`, `/orc:stack-pr`.
 2. **Environment** — `$ORC_PR_LOC_BUDGET` (per-shop default, e.g. set in shell init).
 3. **Per-repo config** — `<repo_root>/.orc/pr-budget.json#budget`.
-4. **Built-in default** — `300`.
+4. **Plugin setting** — userConfig `pr_size_budget` (prompted at plugin enable; exported as `CLAUDE_PLUGIN_OPTION_PR_SIZE_BUDGET`). Per-repo intent deliberately beats this per-user default.
+5. **Built-in default** — `300`.
 
 `--no-size-gate` bypasses the gate entirely (records nothing in the PR body). Use sparingly — typically only for emergency fixes where review-cycle time is the dominant cost.
 

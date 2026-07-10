@@ -71,7 +71,9 @@ orc__repo_budget_file() {
 }
 
 orc_pr_budget() {
-  # Resolution order: $1 (override) > $ORC_PR_LOC_BUDGET > .orc/pr-budget.json#budget > default.
+  # Resolution order: $1 (override) > $ORC_PR_LOC_BUDGET > .orc/pr-budget.json#budget
+  # > userConfig pr_size_budget (CLAUDE_PLUGIN_OPTION_PR_SIZE_BUDGET) > default.
+  # Per-repo intent (config file) deliberately beats the per-user default.
   local override="${1:-}"
   if [ -n "$override" ]; then printf '%s' "$override"; return 0; fi
   if [ -n "${ORC_PR_LOC_BUDGET:-}" ]; then printf '%s' "$ORC_PR_LOC_BUDGET"; return 0; fi
@@ -81,6 +83,9 @@ orc_pr_budget() {
     local v
     v=$(jq -r '.budget // empty' "$cfg" 2>/dev/null)
     if [ -n "$v" ] && [ "$v" != "null" ]; then printf '%s' "$v"; return 0; fi
+  fi
+  if [ -n "${CLAUDE_PLUGIN_OPTION_PR_SIZE_BUDGET:-}" ]; then
+    printf '%s' "$CLAUDE_PLUGIN_OPTION_PR_SIZE_BUDGET"; return 0
   fi
   printf '%s' "$ORC_PR_LOC_DEFAULT_BUDGET"
 }

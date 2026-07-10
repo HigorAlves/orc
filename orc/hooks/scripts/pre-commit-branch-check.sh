@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # PreToolUse(Bash) guard: intercepts `git commit` and `git push` on protected
-# branches (main, master, develop) and downgrades them to a confirm prompt via
-# permissionDecision "ask" — one keystroke to proceed deliberately, no env-var
-# escape hatch. Reads the tool input as JSON on stdin (PreToolUse contract).
+# branches and downgrades them to a confirm prompt via permissionDecision
+# "ask" — one keystroke to proceed deliberately, no env-var escape hatch.
+# Reads the tool input as JSON on stdin (PreToolUse contract).
+# Protected set: plugin userConfig `protected_branches` (comma-separated,
+# exported as CLAUDE_PLUGIN_OPTION_PROTECTED_BRANCHES), default
+# main,master,develop.
 
 set -euo pipefail
 
@@ -18,8 +21,16 @@ fi
 
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
 
-case "$branch" in
-  main|master|develop)
+protected="${CLAUDE_PLUGIN_OPTION_PROTECTED_BRANCHES:-main,master,develop}"
+is_protected=0
+IFS=',' read -ra protected_list <<< "$protected"
+for p in "${protected_list[@]}"; do
+  p="$(printf '%s' "$p" | xargs)"   # trim whitespace
+  if [ -n "$p" ] && [ "$branch" = "$p" ]; then is_protected=1; break; fi
+done
+
+case "$is_protected" in
+  1)
     op="commit"
     if printf '%s' "$command" | grep -qE '(^|[;&|][[:space:]]*)git([[:space:]]+-[Cc][[:space:]]*[^[:space:]]+)*[[:space:]]+push([[:space:]]|$)'; then
       op="push"
