@@ -113,4 +113,20 @@ If you change a skill's name, description, or invocation surface, update:
 2. `docs/architecture.md` if the change affects the high-level shape.
 3. The README skill catalog and the counts in `.claude-plugin/marketplace.json`.
 
-Drift between these surfaces is the most common bug in personal plugins. Run `claude plugin validate ./orc --strict` before pushing.
+Drift between these surfaces is the most common bug in personal plugins. Run `claude plugin validate ./orc --strict` before pushing. CI (`.github/workflows/validate.yml`) enforces all of it on every PR: manifest validation (strict), `bash -n` on every shell script, `jq empty` on every JSON file, the callout-palette lint, and count-drift checks against README + marketplace.json.
+
+## Releasing
+
+Claude Code keys its plugin-update cache on the explicit `version` in `orc/.claude-plugin/plugin.json` — **commits without a manifest bump are invisible to installs** (and installs pinning `ref` never move at all). The release rule:
+
+1. Bump `version` (semver) in `orc/.claude-plugin/plugin.json` in the **last PR of a release train** — not per-PR.
+2. After that PR merges to `main`, tag and push from the plugin directory:
+
+   ```bash
+   cd orc && claude plugin tag --push
+   ```
+
+   (`--dry-run` previews; the tag name comes from the manifest version.)
+3. Update the pinned `ref` example in the README install section to the new tag.
+
+No version bump → no release. A merged PR that skips the bump ships silently only to `--plugin-dir` local development.
