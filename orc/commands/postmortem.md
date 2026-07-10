@@ -14,7 +14,7 @@ allowed-tools:
   - Bash(gh issue list:*)
   - Bash(gh issue view:*)
   - Bash(git log:*)
-  - Bash(git *)
+  - Bash(git:*)
   - Bash(date:*)
 ---
 

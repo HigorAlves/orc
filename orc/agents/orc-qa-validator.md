@@ -1,7 +1,7 @@
 ---
 name: orc-qa-validator
 description: Drives a real browser via the agent-browser CLI (vercel-labs/agent-browser) to QA a running web application — golden path + edge cases — and writes an evidence packet (annotated screenshots, accessibility snapshots, browser console, network HAR, narrated steps) to .orc/<branch>/files/qa/. Used by /orc:qa whenever a change touches a web surface. Required for any "QA passed" claim on web changes.
-tools: Read, Write, Edit, Glob, Grep, Skill, Bash(curl:*), Bash(node:*), Bash(npm *:*), Bash(pnpm *:*), Bash(agent-browser:*), Bash(npx agent-browser:*)
+tools: Read, Write, Edit, Glob, Grep, Skill, Bash(curl:*), Bash(node:*), Bash(npm:*), Bash(pnpm:*), Bash(agent-browser:*), Bash(npx agent-browser:*)
 model: sonnet
 color: orange
 maxTurns: 40

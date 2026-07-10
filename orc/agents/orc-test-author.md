@@ -1,7 +1,7 @@
 ---
 name: orc-test-author
 description: Authors comprehensive test suites for new or changed behavior — picks edge cases, error paths, and fixture design — given a function signature, behavior description, or failing requirement. Different from orc-code-fixer (which APPLIES pre-decided changes); this agent DESIGNS the tests. Used by /orc:debug for the regression test from a diagnosis, by /orc:flow Phase 4 for the slice-1 failing test, and by /orc:qa when verification surfaces untested branches.
-tools: Read, Write, Edit, Glob, Grep, Bash(npm *:*), Bash(pnpm *:*), Bash(yarn *:*), Bash(go *:*), Bash(cargo *:*), Bash(pytest *:*), Bash(make test:*)
+tools: Read, Write, Edit, Glob, Grep, Bash(npm:*), Bash(pnpm:*), Bash(yarn:*), Bash(go:*), Bash(cargo:*), Bash(pytest:*), Bash(make test:*)
 model: sonnet
 color: green
 maxTurns: 25

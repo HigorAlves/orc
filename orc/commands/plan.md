@@ -12,7 +12,7 @@ allowed-tools:
   - Bash(date:*)
   - Bash(git rev-parse:*)
   - Bash(git branch --show-current:*)
-  - Bash(jq *)
+  - Bash(jq:*)
   - Bash(orc-workspace-detect:*)
 ---
 

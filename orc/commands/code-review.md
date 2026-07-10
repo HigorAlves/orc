@@ -13,7 +13,7 @@ allowed-tools:
   - Bash(gh pr list:*)
   - Bash(gh api:*)
   - Bash(gh api repos:*/pulls:*/reviews:*)
-  - Bash(jq *)
+  - Bash(jq:*)
   - Bash(orc-workspace-detect:*)
 ---
 

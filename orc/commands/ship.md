@@ -7,16 +7,16 @@ allowed-tools:
   - Grep
   - Skill
   - AskUserQuestion
-  - Bash(git *)
+  - Bash(git:*)
   - Bash(gh pr create:*)
   - Bash(gh pr view:*)
   - Bash(gh pr list:*)
   - Bash(gh pr edit:*)
   - Bash(gh api:*)
-  - Bash(jq *)
-  - Bash(npm *:*)
-  - Bash(pnpm *:*)
-  - Bash(yarn *:*)
+  - Bash(jq:*)
+  - Bash(npm:*)
+  - Bash(pnpm:*)
+  - Bash(yarn:*)
   - Bash(orc-workspace-detect:*)
   - Bash(orc-pr-size:*)
 ---

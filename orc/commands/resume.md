@@ -10,7 +10,7 @@ allowed-tools:
   - Skill
   - Task
   - AskUserQuestion
-  - Bash(git *)
+  - Bash(git:*)
   - Bash(date:*)
   - Bash(orc-workspace-detect:*)
 ---

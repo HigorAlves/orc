@@ -15,7 +15,7 @@ allowed-tools:
   - Bash(git log:*)
   - Bash(gh pr view:*)
   - Bash(rm -rf .orc:*)
-  - Bash(jq *)
+  - Bash(jq:*)
   - Bash(orc-workspace-detect:*)
 ---
 
