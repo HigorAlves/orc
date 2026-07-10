@@ -6,8 +6,7 @@ allowed-tools:
   - Glob
   - Grep
   - Bash(date:*)
-  - Bash(git branch --show-current:*)
-  - Bash(. */lib/workspace-detect.sh*)
+  - Bash(orc-workspace-detect:*)
 ---
 
 # /orc:status
@@ -24,32 +23,25 @@ Quick view of orc's workspace state. Useful when you've juggled multiple feature
 
 ### Phase 1 — Detect context
 
-Source the workspace-detect helper and capture the active context:
+The context banner is injected below — do not re-run detection:
 
-```bash
-. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
-eval "$(orc_detect_context)"
-```
+!`orc-workspace-detect --banner`
 
-Branch on `$ORC_CONTEXT`:
-
-- `repo` — single-repo mode. Read `$ORC_STATE_DIR/orc.json` as the only registry.
-- `workspace` — workspace mode. Read the workspace registry **plus** the per-repo registries (see Phase 2).
-- `loose` — output `Cwd is neither a git repo nor a workspace parent — orc has no state to read here.` and stop.
-
-If the chosen registry is absent, output `No orc workspaces yet — nothing to resume.` and stop.
+- `orc context: repo` — single-repo mode.
+- `orc context: workspace[…]` — workspace mode.
+- `orc context: loose` — output `Cwd is neither a git repo nor a workspace parent — orc has no state to read here.` and stop.
 
 ### Phase 2 — Load registries
 
-**Single-repo mode:** load `$ORC_STATE_DIR/orc.json` and proceed to Phase 3 with its `sessions` array.
+The registries are injected below — parse the `sessions` arrays straight from context instead of re-reading files (`no-registry` → output `No orc workspaces yet — nothing to resume.` and stop):
 
-**Workspace mode:**
+!`orc-workspace-detect --registry`
 
-1. Load `$ORC_STATE_DIR/orc.json` (the workspace registry, `<workspaceRoot>/.orc/orc.json`). Sessions here have `scope: "workspace"`, `repos`, `perRepoState`, `linkedPRs`.
-2. For each child repo in `$ORC_WORKSPACE_REPOS` (comma-separated), read `<workspaceRoot>/<repo>/.orc/orc.json` if present:
-   - Sessions with `scope: "repo"` (or no `scope`, treated as legacy) — standalone single-repo sessions inside a workspace child. Show in their own group.
-   - Sessions with `scope: "workspace-member"` — back-pointers to a workspace session already loaded above. Skip; do NOT double-render.
-3. `--repo <name>` filters workspace sessions' `perRepoState` rows to that repo and filters the standalone-session group to that repo. `--branch` / `--all` filters apply normally.
+**Workspace mode:** the workspace registry comes first (sessions with `scope: "workspace"`, `repos`, `perRepoState`, `linkedPRs`); each member repo's registry follows under a `### repo: <name>` header:
+
+- Sessions with `scope: "repo"` (or no `scope`, treated as legacy) — standalone single-repo sessions inside a workspace child. Show in their own group.
+- Sessions with `scope: "workspace-member"` — back-pointers to a workspace session already loaded above. Skip; do NOT double-render.
+- `--repo <name>` filters workspace sessions' `perRepoState` rows to that repo and filters the standalone-session group to that repo. `--branch` / `--all` filters apply normally.
 
 ### Phase 3 — Render
 

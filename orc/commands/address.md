@@ -17,7 +17,7 @@ allowed-tools:
   - Bash(pnpm *:*)
   - Bash(yarn *:*)
   - Bash(jq *)
-  - Bash(. */lib/workspace-detect.sh*)
+  - Bash(orc-workspace-detect:*)
 ---
 
 # /orc:address
@@ -32,10 +32,9 @@ Address the reviewer feedback on your own PR. Closes the loop: code fixes + thre
 
 ### Phase 0 — Detect context
 
-```bash
-. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
-eval "$(orc_detect_context)"
-```
+!`orc-workspace-detect --banner`
+
+Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection).
 
 In workspace mode, identify the active workspace session and resolve the PR set:
 

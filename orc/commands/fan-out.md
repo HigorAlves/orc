@@ -11,7 +11,7 @@ allowed-tools:
   - Task
   - AskUserQuestion
   - Bash(git *)
-  - Bash(. */lib/workspace-detect.sh*)
+  - Bash(orc-workspace-detect:*)
 ---
 
 # /orc:fan-out
@@ -36,10 +36,9 @@ The two are different abstraction levels: `/orc:flow` is a lifecycle, `/orc:fan-
 
 ### Phase 0 — Detect context
 
-```bash
-. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
-eval "$(orc_detect_context)"
-```
+!`orc-workspace-detect --banner`
+
+Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection).
 
 In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. The fan-out task axis becomes `(slice × repo)`: when a plan has slices tagged `repo: api` and `repo: ui`, each slice fans out to one implementer in its own repo. When tasks are not slice-shaped (research, multi-PR review, doc updates), the axis is just per-repo.
 

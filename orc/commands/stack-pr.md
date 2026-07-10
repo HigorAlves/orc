@@ -8,7 +8,7 @@ allowed-tools:
   - Skill
   - AskUserQuestion
   - Agent
-  - Bash(. */lib/workspace-detect.sh*)
+  - Bash(orc-workspace-detect:*)
   - Bash(. */lib/pr-size-budget.sh*)
   - Bash(git *)
   - Bash(gh extension install:*)
@@ -43,9 +43,11 @@ Convert a single big branch into a stack of smaller, chained PRs. Use this when 
 
 ### Phase 0 — Detect context
 
+!`orc-workspace-detect --banner`
+
+Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection). For the per-slice size budget, source the helpers:
+
 ```bash
-. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
-eval "$(orc_detect_context)"
 . "${CLAUDE_PLUGIN_ROOT}/lib/pr-size-budget.sh"
 ```
 

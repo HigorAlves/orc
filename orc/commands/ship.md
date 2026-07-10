@@ -17,7 +17,7 @@ allowed-tools:
   - Bash(npm *:*)
   - Bash(pnpm *:*)
   - Bash(yarn *:*)
-  - Bash(. */lib/workspace-detect.sh*)
+  - Bash(orc-workspace-detect:*)
   - Bash(. */lib/pr-size-budget.sh*)
 ---
 
@@ -37,9 +37,11 @@ You're done implementing. Time to integrate. This command runs the structured br
 
 ### Phase 0 — Detect context
 
+!`orc-workspace-detect --banner`
+
+Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection). For the Phase 4.5 size gate, source the budget helpers:
+
 ```bash
-. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
-eval "$(orc_detect_context)"
 . "${CLAUDE_PLUGIN_ROOT}/lib/pr-size-budget.sh"
 ```
 

@@ -14,7 +14,7 @@ allowed-tools:
   - Bash(gh api:*)
   - Bash(gh api repos:*/pulls:*/reviews:*)
   - Bash(jq *)
-  - Bash(. */lib/workspace-detect.sh*)
+  - Bash(orc-workspace-detect:*)
 ---
 
 # /orc:code-review
@@ -37,10 +37,9 @@ The agents (`orc-pr-reviewer`, `orc-security-reviewer`) return structured JSON f
 
 ### Phase 0 — Detect context
 
-```bash
-. "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
-eval "$(orc_detect_context)"
-```
+!`orc-workspace-detect --banner`
+
+Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection).
 
 If `--prs` is given OR the workspace registry has an in-progress session whose `linkedPRs` matches the positional ref, the review is **multi-PR**. In multi-PR mode:
 
