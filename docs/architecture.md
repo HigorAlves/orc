@@ -10,9 +10,9 @@
 orc/
 ├── .claude-plugin/plugin.json     # manifest — what Claude Code reads to discover the plugin
 ├── .orc/                          # gitignored, ephemeral workspace state (per-session)
-├── skills/                        # 57 skills, namespaced /orc:<name>
-├── commands/                      # 20 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
-├── agents/                        # 11 specialist subagents (orc-<role>)
+├── skills/                        # 58 skills, namespaced /orc:<name>
+├── commands/                      # 21 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
+├── agents/                        # 12 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) hooks
 ├── lib/                           # shared prompt fragments + templates (cross-skill)
 └── docs/                          # this directory
@@ -111,7 +111,7 @@ Plus five skills authored fresh for senior/architect practice: `adr-writing` (Ar
 
 orc borrows compozy's session-state idea, hook layout, and YAML-frontmatter conventions. It diverges in two places:
 1. Workspace state is **hidden + gitignored** (`.orc/`) instead of committed (`compozy/`). orc is a personal plugin; nothing needs sharing.
-2. Command surface is focused on the personal loop (20 commands, all composing the same plan → debug → verify → ship spine), with explicit web-QA evidence as a first-class concern.
+2. Command surface is focused on the personal loop (21 commands, all composing the same plan → debug → verify → ship spine), with explicit web-QA evidence as a first-class concern — including the environment it runs against: `/orc:qa` and `/orc:flow` provision a Docker dev environment via `orc-env-provisioner` before browser QA (`orc:env-provisioning` skill; `/orc:env` standalone).
 
 ## See also
 

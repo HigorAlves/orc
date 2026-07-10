@@ -40,6 +40,7 @@ flowchart LR
 | Situation | Command |
 |-----------|---------|
 | Debugging a known bug | `/orc:debug` |
+| Needing the app running (QA or manual poking) | `/orc:env` |
 | Reviewing someone else's PR | `/orc:code-review` |
 | Responding to your PR's review comments | `/orc:address` |
 | Authoring a Product Requirements Document | `/orc:prd` |
@@ -95,7 +96,7 @@ To pin a specific commit/tag, use the longhand source form in `~/.claude/setting
       "source": {
         "source": "url",
         "url": "https://github.com/HigorAlves/orc.git",
-        "ref": "v0.7.0"
+        "ref": "v0.8.0"
       }
     }
   },
@@ -128,6 +129,7 @@ orc's SessionStart pre-flight (`hooks/scripts/session-start-tool-check.sh`) veri
 | `gh` | recommended | `/orc:code-review`, `/orc:address`, `/orc:ship`, `/orc:postmortem` |
 | `agent-browser` | recommended | `/orc:qa` (web mode — browser-driven QA evidence) |
 | `acli` | recommended | `/orc:jira`, `/orc:plan\|start\|debug\|flow` (Jira ticket linking), `/orc:prd\|trd` (`--from-jira <KEY>` seeding) |
+| `docker` | recommended | `/orc:env`, `/orc:qa`/`/orc:flow` env provisioning (host-mode fallback applies without it) |
 
 Suppress the check on machines where missing tools are intentional:
 
@@ -152,6 +154,7 @@ export ORC_SKIP_TOOL_CHECK=1
 | `/orc:start` | Worktree + plan + first failing test (TDD red light) |
 | `/orc:debug` | Root-cause investigation, then fix with TDD; never papers over |
 | `/orc:qa` | Pre-PR quality gate; for web changes, full browser QA with screenshots/snapshot/HAR/steps |
+| `/orc:env` | Provision a containerized dev environment (compose > devcontainer > Dockerfile > generated); `up`/`status`/`down`; reused across QA runs |
 | `/orc:code-review` | Review someone else's open PR; terse, signal-only output |
 | `/orc:address` | Answer reviewer comments on YOUR PR; parallel code-fixer + reply-drafter |
 | `/orc:ship` | Finalize and open the PR |
@@ -171,7 +174,7 @@ export ORC_SKIP_TOOL_CHECK=1
 
 **Core (18, always available):** `tdd`, `systematic-debugging`, `verification-before-completion`, `writing-plans`, `executing-plans`, `caveman-review`, `caveman-pr`, `receiving-code-review`, `requesting-code-review`, `git-commit`, `gh-cli`, `using-git-worktrees`, `finishing-a-development-branch`, `dispatching-parallel-agents`, `error-handling-patterns`, `git-advanced-workflows`, `architecture-patterns`, `improve-codebase-architecture`.
 
-**Orc mechanics (3, authored for orc):** `workspace-mode` (cross-repo flag precedence), `pr-size-budget` (the soft 300-LOC gate), `stack-pr` (split a big branch into a chained PR stack).
+**Orc mechanics (4, authored for orc):** `workspace-mode` (cross-repo flag precedence), `pr-size-budget` (the soft 300-LOC gate), `stack-pr` (split a big branch into a chained PR stack), `env-provisioning` (Docker dev environments for QA — detection ladder, healthcheck-gated boot, host-mode fallback).
 
 **Senior/architect practice (5, authored for orc):** `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem` (blameless incident postmortems), `prd-writing` (Product Requirements Documents), `trd-writing` (Technical Requirements Documents).
 
@@ -243,7 +246,7 @@ Without the required artifacts, "QA passed" is not an accepted claim. The `orc-q
 
 ```
 orc/
-├── .claude-plugin/plugin.json   # manifest (v0.7.0)
+├── .claude-plugin/plugin.json   # manifest (v0.8.0)
 ├── .orc/                        # gitignored — workspace state per session
 ├── skills/<name>/SKILL.md       # 58 skills — a thin index per skill
 │   └── <name>/references/*.md   #   lazy-loaded detail for large skills (139 files, 15 skills)

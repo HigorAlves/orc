@@ -407,6 +407,7 @@ If user picks "Wait" and comes back: dispatch `/orc:address` logic in parallel â
 
 After merge in GitHub, the user re-invokes `/orc:flow` and orc detects `gh pr view <ref> --json state` returns `merged`. Then run `/orc:cleanup` logic for this session:
 
+- Tear down the Docker environment if `docker-env-state.json` exists (execute its `teardownCommand` BEFORE removing state â€” the state file holds the command; volumes kept unless `--down-volumes`)
 - Remove `.orc/<branch>/`
 - Remove worktree (if clean)
 - Remove local branch (if merged)

@@ -20,7 +20,7 @@ fi
 REQUIRED=("git" "jq")
 # Strongly recommended (specific commands fail without them, but the rest of
 # the plugin still works).
-RECOMMENDED=("gh" "agent-browser" "acli")
+RECOMMENDED=("gh" "agent-browser" "acli" "docker")
 
 missing_required=()
 missing_recommended=()
@@ -90,6 +90,15 @@ hint_for() {
         *) echo "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/" ;;
       esac
       ;;
+    docker)
+      case "$platform" in
+        macos) echo "brew install --cask docker  (or OrbStack: brew install --cask orbstack)" ;;
+        debian) echo "see https://docs.docker.com/engine/install/debian/" ;;
+        fedora) echo "see https://docs.docker.com/engine/install/fedora/" ;;
+        arch) echo "sudo pacman -S docker docker-compose" ;;
+        *) echo "see https://docs.docker.com/get-docker/" ;;
+      esac
+      ;;
     *)
       echo "see your distro's package manager"
       ;;
@@ -126,6 +135,7 @@ build_block() {
         gh) printf ">     - Used by: \`/orc:code-review\`, \`/orc:address\`, \`/orc:ship\`, \`/orc:postmortem\`\n" ;;
         agent-browser) printf ">     - Used by: \`/orc:qa\` (web mode — required for browser-driven QA evidence)\n" ;;
         acli) printf ">     - Used by: \`/orc:jira\`, \`/orc:plan|start|debug|flow\` (Jira ticket linking), \`/orc:prd|trd\` (\`--from-jira\` seeding)\n" ;;
+        docker) printf ">     - Used by: \`/orc:env\`, \`/orc:qa\`/\`/orc:flow\` env provisioning (host-mode fallback applies without it)\n" ;;
       esac
     done
     printf ">\n"
