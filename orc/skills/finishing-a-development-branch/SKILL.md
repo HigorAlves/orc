@@ -27,7 +27,6 @@ npm test / cargo test / pytest / go test ./...
 **If tests fail** — surface the blocked callout, then the failures in a fence:
 
 ```markdown
-> [!CAUTION]
 > **🛑 Blocked — <N> test failures**
 >
 > Cannot proceed with merge/PR until tests pass.
@@ -52,7 +51,7 @@ Or ask: "This branch split from main - is that correct?"
 
 ### Step 3: Present Options
 
-Print the Gate headline (`> [!NOTE]` + `**⛔ Gate — branch completion**`, one line: tests green, N commits on `<branch>`, per `orc:insights`), then present exactly these 4 options (via `AskUserQuestion` when available):
+Print the Gate headline (`**⛔ Gate — branch completion**`, one line: tests green, N commits on `<branch>`, per `orc:insights`), then present exactly these 4 options (via `AskUserQuestion` when available):
 
 ```
 Implementation complete. What would you like to do?
@@ -120,7 +119,6 @@ Report: "Keeping branch <name>. Worktree preserved at <path>."
 **Confirm first:**
 
 ```markdown
-> [!CAUTION]
 > **🛑 Destructive — type 'discard' to confirm**
 >
 > This permanently deletes branch `<name>`, all its commits (<commit-list>), and the worktree at `<path>`.

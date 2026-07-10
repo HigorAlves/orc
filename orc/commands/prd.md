@@ -36,7 +36,7 @@ Invoke `orc:prd-writing`. Apply its "all of these are true" test:
 - non-obvious intent (real product question)
 - non-trivial work (multi-day or coordinated)
 
-If borderline, print the Gate headline (`> [!NOTE]` + `**⛔ Gate — is this PRD-worthy?**`, per `orc:insights`), then `AskUserQuestion`:
+If borderline, print the Gate headline (`**⛔ Gate — is this PRD-worthy?**`, per `orc:insights`), then `AskUserQuestion`:
 
 - "Yes, write the PRD"
 - "Smaller — issue or design note instead"

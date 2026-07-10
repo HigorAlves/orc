@@ -36,7 +36,7 @@ Invoke `orc:trd-writing`. Apply its "all of these are true" test:
 - Non-trivial technical surface area (new APIs / data / failure modes / dependencies / contracts).
 - Multiple engineers / services / repos need to agree on the contract.
 
-If borderline, print the Gate headline (`> [!NOTE]` + `**⛔ Gate — is this TRD-worthy?**`, per `orc:insights`), then `AskUserQuestion`:
+If borderline, print the Gate headline (`**⛔ Gate — is this TRD-worthy?**`, per `orc:insights`), then `AskUserQuestion`:
 
 - "Yes, write the TRD"
 - "Smaller — single design note in code instead"

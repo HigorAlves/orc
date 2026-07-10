@@ -78,7 +78,7 @@ After agents return, read each `result.md`. Update `.orc/<branch>/files/fan-out/
 
 ### Phase 6 — Decide next
 
-Print the Gate headline (`> [!NOTE]` + `**⛔ Gate — fan-out results**`, one line: N done / N failed, per `orc:insights`), then `AskUserQuestion`:
+Print the Gate headline (`**⛔ Gate — fan-out results**`, one line: N done / N failed, per `orc:insights`), then `AskUserQuestion`:
 - "All done — proceed"
 - "Re-run failed tasks: <list>"
 - "Continue with /orc:ship now"

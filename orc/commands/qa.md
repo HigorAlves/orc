@@ -81,7 +81,6 @@ If verification (Phase 2) flagged untested branches — dispatch **`orc-test-aut
 If `--driver` was passed, use it silently. Otherwise print the Gate headline, then `AskUserQuestion`:
 
 ```markdown
-> [!NOTE]
 > **⛔ Gate — browser driver**
 >
 > Web QA is ready to run against <appUrl>. Pick how to drive the browser.
@@ -152,7 +151,6 @@ The chrome driver trades HAR-grade network capture and request mocking for live 
 If any required artifact is missing, surface it and stop — the user must address the gap before any "ready to PR" claim:
 
 ```markdown
-> [!CAUTION]
 > **🛑 Blocked — QA evidence incomplete**
 >
 > Missing: <artifact list>. No "QA passed" claim without the full evidence packet.

@@ -137,7 +137,6 @@ Practically: enforce **bottom-up branch deletion** within each stack. Any stack 
 Open with the danger callout, then list exactly what will be done in a fence (the ✓/⚠/⊘ plan lines stay in the fence — alignment matters):
 
 ```markdown
-> [!CAUTION]
 > **🛑 Destructive preview**
 >
 > The plan below removes workspace state, worktrees, and branches. Skipped items (⚠/⊘) stay untouched.

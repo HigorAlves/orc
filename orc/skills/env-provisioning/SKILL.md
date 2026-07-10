@@ -86,7 +86,6 @@ The environment **stays up between QA runs on a branch** — that is the speed w
 **No "environment ready" claim without healthcheck evidence.** `status: ready` requires `env/ps.json` showing every service running/healthy AND a successful appUrl probe in `env/readiness.txt`. Anything less is `partial`/`failed`:
 
 ```markdown
-> [!CAUTION]
 > **🛑 Blocked — environment not ready**
 >
 > <service>: <state> after <N>s. Last log lines in env/boot.log. No QA against an unproven environment.
@@ -97,7 +96,6 @@ The environment **stays up between QA runs on a branch** — that is the speed w
 Probe ladder: docker installed → daemon up → compose v2 → containerizable (no Xcode-only / Electron-dev-loop / "requires macOS" signals). Any failure → **host-mode fallback**: the provisioner still owns the boot (dev script + curl poll), still writes the state file (`status: fallback`, `mode: host`, `hostProcesses[]`) and readiness evidence, and emits:
 
 ```markdown
-> [!WARNING]
 > **⚠️ Caution — Docker unavailable, host-mode fallback**
 >
 > <reason: not installed | daemon down (`open -a Docker`) | not containerizable: <why>>. Booting via `<dev command>` instead; backing services (if any) must already be reachable.

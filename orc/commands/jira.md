@@ -117,7 +117,6 @@ The orc-specific glue. Persists the linked Jira ticket key into `.orc/` state.
 3. **Iron rule:** If no in-progress session exists for this branch, REFUSE. Surface:
 
    ```markdown
-   > [!CAUTION]
    > **🛑 Blocked — no active session**
    >
    > No active orc session for branch `<sanitized>`. Run `/orc:plan`, `/orc:start`, `/orc:debug`, or `/orc:flow` first to create one.

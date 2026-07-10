@@ -89,7 +89,6 @@ For workspace sessions, the "Last artifact" line points at the workspace plan pa
 End with:
 
 ```markdown
-> [!TIP]
 > **➡️ Next**
 >
 > Run `/orc:resume` to continue any session.

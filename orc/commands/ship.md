@@ -174,7 +174,6 @@ If the user opted for "merge after CI" rather than "wait for review," surface a 
 After the PR merges in GitHub, the user should run **`/orc:cleanup`** to remove the `.orc/<branch>/` workspace state, the associated git worktree (if `using-git-worktrees` was used), and the local feature branch (if it merged cleanly). Surface this as the last block of `/orc:ship`'s output so the lifecycle closes properly:
 
 ```markdown
-> [!TIP]
 > **➡️ Next**
 >
 > After the PR merges, run `/orc:cleanup` to remove the `.orc/<branch>/` state, the worktree, and the merged branch.

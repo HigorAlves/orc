@@ -127,7 +127,7 @@ Invoke `orc:inline-review`. Build:
   - `path`, `line`, `start_line?`, `side: "RIGHT"`
   - `body`: the finding's `body` (caveman-review tone), with the suggestion block appended if `suggestion_code` is set and meets the suggestion-block rules from `orc:inline-review`.
 
-**Cap at 15 comments.** If the merged + filtered list exceeds 15, print a Gate headline (`> [!WARNING]` `**⛔ Gate — comment cap**` with the count), then:
+**Cap at 15 comments.** If the merged + filtered list exceeds 15, print a Gate headline (`**⛔ Gate — comment cap**` with the count), then:
 
 ```
 AskUserQuestion: "20 findings exceed the 15-comment cap. Pick which to drop:"
@@ -141,7 +141,6 @@ AskUserQuestion: "20 findings exceed the 15-comment cap. Pick which to drop:"
 Show the user the constructed payload before posting. No `--no-confirm` flag bypasses this. Open with the preview callout, then the payload in a fence (aligned comment list never goes inside the callout), then any verdict-override warnings as a separate `[!WARNING]` callout after the fence:
 
 ```markdown
-> [!NOTE]
 > **📋 Preview — review for #<PR>: <title>**
 >
 > Computed event: **<APPROVE | COMMENT | REQUEST_CHANGES>** · <count> inline comments.
@@ -159,7 +158,6 @@ Comments (<count>):
 ```
 
 ```markdown
-> [!WARNING]
 > **⚠️ Caution**
 >
 > - orc-pr-reviewer summary said "approve" but flagged 2 bug findings. Severity rule overrides verdict — posting as REQUEST_CHANGES.

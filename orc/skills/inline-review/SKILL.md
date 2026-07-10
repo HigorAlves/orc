@@ -54,7 +54,6 @@ def compute_event(findings, soft_tests=False):
 If the agent's `summary` text contains any of `["approve", "lgtm", "looks good", "no concerns", "non-blocking"]` AND any finding has severity in `{bug, security, api-surface}`, surface a warning to the user before posting:
 
 ```markdown
-> [!WARNING]
 > **⚠️ Caution**
 >
 > Reviewer wrote "Approve" but flagged 2 bug-severity findings. Severity rule overrides verdict — posting as REQUEST_CHANGES.
