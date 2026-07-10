@@ -62,7 +62,6 @@ Context is injected above (`ORC_*` vars are exported for any Bash you run — do
 3. Render one table: project, mode, status (state) vs live, appUrl, services n/n running, boot age. Orphans listed below with:
 
 ```markdown
-> [!WARNING]
 > **⚠️ Caution — orphaned orc environments**
 >
 > <N> compose project(s) named orc-* have no registered session: <list>. Tear down via `docker compose -p <name> down` or `/orc:cleanup`.
@@ -75,7 +74,6 @@ Never auto-remove anything here.
 1. `orc-docker-env teardown-preview <state-file>` and render the danger callout:
 
 ```markdown
-> [!CAUTION]
 > **🛑 Destructive preview**
 >
 > Tears down the environment below. Named volumes are KEPT unless --down-volumes was passed.

@@ -64,7 +64,7 @@ The agent returns a written diagnosis: root cause, evidence, recommended fix sur
 
 ### Phase 3 — Confirm with user
 
-Print the Gate headline (`> [!NOTE]` + `**⛔ Gate — diagnosis**`, one line on the root cause, per `orc:insights`), then `AskUserQuestion`:
+Print the Gate headline (`**⛔ Gate — diagnosis**`, one line on the root cause, per `orc:insights`), then `AskUserQuestion`:
 - "Diagnosis looks right — proceed with fix"
 - "Need more investigation — re-dispatch investigator with this hint: …"
 - "Diagnosis is wrong — abort"

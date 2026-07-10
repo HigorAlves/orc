@@ -43,7 +43,6 @@ Execute the skill's provisioning protocol exactly — attach-first (`orc-docker-
 Escalate with the standard block:
 
 ```markdown
-> [!CAUTION]
 > **🛑 Escalation — environment provisioning**
 >
 > Reason: <condition>

@@ -86,7 +86,6 @@ Any failure → surface the specific check + repo in a `[!WARNING]` **⚠️ Cau
 If `n_commits == 1`, surface and exit 0:
 
 ```markdown
-> [!TIP]
 > **➡️ Next**
 >
 > Single commit on the branch — nothing to stack. Use `/orc:ship`.
@@ -121,7 +120,6 @@ Read the returned JSON. If `unsplittable: true`, surface the agent's rationale a
 Render the preview headline, then the stack table in a fence (tables never go inside callouts):
 
 ```markdown
-> [!NOTE]
 > **📋 Preview — stack plan**
 >
 > 3 PRs from feat/export, base = origin/main — 315 LOC total (avg 105 LOC/PR, all under 300 budget).
@@ -138,7 +136,6 @@ Render the preview headline, then the stack table in a fence (tables never go in
 `--smart` only — analyzer warnings go in a `[!WARNING]` callout after the fence:
 
 ```markdown
-> [!WARNING]
 > **⚠️ Caution**
 >
 > - Commit e4f5g6h modifies one line in ExportJob.ts (slice 2). Proposed as-is.
@@ -171,7 +168,6 @@ done
 On cherry-pick failure, surface the danger callout with the quick abort commands fenced below (for full teardown of a partial stack, the `orc:stack-pr` skill's Recovery section applies):
 
 ```markdown
-> [!CAUTION]
 > **🛑 Cherry-pick of <sha> failed**
 >
 > Your original branch is safe in `${current_branch}-pre-stack-backup`.

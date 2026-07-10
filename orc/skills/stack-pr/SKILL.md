@@ -202,7 +202,6 @@ Expected JSON output (analyzer never runs anything destructive):
 Render the preview headline, then the slice table + rebase plan in a fence (never inside the callout), then any analyzer warnings as a separate `[!WARNING]` callout after the fence:
 
 ```markdown
-> [!NOTE]
 > **📋 Preview — stack plan**
 >
 > <N> slices from <M> commits; est. <total> LOC across the stack.
@@ -229,7 +228,6 @@ done
 On cherry-pick failure, surface the danger callout with the abort commands fenced below (same shape as `/orc:stack-pr`'s Strategy-A failure path):
 
 ```markdown
-> [!CAUTION]
 > **🛑 Cherry-pick of <sha> failed**
 >
 > Your original branch is safe in `${original_branch}-pre-stack-backup`.
@@ -270,7 +268,6 @@ If absent, `AskUserQuestion`:
 If any step fails after the backup branch exists, print the danger callout, then the recovery commands in a fence:
 
 ```markdown
-> [!CAUTION]
 > **🛑 Stack construction failed at <step>**
 >
 > Your original branch is safe in `${original_branch}-pre-stack-backup`. Recover with the commands below.

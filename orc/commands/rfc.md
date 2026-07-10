@@ -35,7 +35,7 @@ Invoke `orc:rfc-writing`. Apply its "any of these are true" test:
 - locks in technology, protocol, or interface
 - you're genuinely unsure between alternatives
 
-If none are true, print the Gate headline (`> [!NOTE]` + `**⛔ Gate — is this RFC-worthy?**`, per `orc:insights`), then `AskUserQuestion`:
+If none are true, print the Gate headline (`**⛔ Gate — is this RFC-worthy?**`, per `orc:insights`), then `AskUserQuestion`:
 - "Smaller scope — use `/orc:plan` instead (assumes design is settled)"
 - "Even smaller — use `/orc:adr` (recording a decision already made)"
 - "Override — proceed with the RFC anyway"

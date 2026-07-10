@@ -35,7 +35,7 @@ Turn a feature or refactor request into a written, TDD-shaped implementation pla
 
 If the feature description is long-form, references a Jira ticket / linked doc, or reads more like a brief than a settled spec — dispatch the `orc-prd-analyzer` subagent via `Task` first. Pass it the input + the URL if there is one. The agent returns a structured analysis (extracted goals, ambiguities, P0/P1/P2 clarifying questions, recommendation).
 
-After the analyzer returns, print the Gate headline (`> [!NOTE]` + `**⛔ Gate — PRD analysis**`, one line on P0/P1/P2 counts, per `orc:insights`), then `AskUserQuestion`:
+After the analyzer returns, print the Gate headline (`**⛔ Gate — PRD analysis**`, one line on P0/P1/P2 counts, per `orc:insights`), then `AskUserQuestion`:
 - "Proceed to plan — questions are P1/P2 only"
 - "Hold — answer P0 questions with PM first" (exit; don't waste planning effort)
 - "Run `/orc:rfc` first — design space needs RFC treatment"

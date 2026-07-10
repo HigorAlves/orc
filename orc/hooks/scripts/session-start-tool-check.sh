@@ -109,18 +109,15 @@ hint_for() {
   esac
 }
 
-# Build the human-readable warning body. Wrapped in a GitHub-flavored
-# WARNING callout so Claude Code renders it with a colored left bar
-# (typically yellow/amber) instead of plain white text. Emitted via
+# Build the human-readable warning body. Terminal form of the orc:insights
+# palette: emoji-header blockquote, no [!TYPE] tag — the TUI doesn't parse
+# GitHub alert types and would print the tag as junk text. Emitted via
 # `systemMessage` (see below) so the harness renders it directly rather
-# than relying on the model to reproduce the callout. Degrades gracefully
-# to a labeled blockquote if the renderer doesn't theme callouts.
+# than relying on the model to reproduce the callout.
 build_block() {
   if [ ${#missing_required[@]} -gt 0 ]; then
-    printf "> [!CAUTION]\n"
     printf "> **🛑 orc tool check**\n"
   else
-    printf "> [!WARNING]\n"
     printf "> **⚠️ Caution — orc tool check**\n"
   fi
   printf ">\n"

@@ -32,7 +32,7 @@ Invoke `orc:adr-writing`. Apply its "all of these are true" test:
 - non-obvious (real alternatives exist)
 - durable (≥ 3 months expected lifetime)
 
-If borderline, print the Gate headline (`> [!NOTE]` + `**⛔ Gate — is this ADR-worthy?**`, one line on which criterion is borderline, per `orc:insights`), then `AskUserQuestion`:
+If borderline, print the Gate headline (`**⛔ Gate — is this ADR-worthy?**`, one line on which criterion is borderline, per `orc:insights`), then `AskUserQuestion`:
 - "Yes, write the ADR"
 - "Smaller — propose a single-paragraph design note in the relevant code instead"
 - "Skip — this isn't really an architectural decision"

@@ -129,7 +129,6 @@ You **MUST** stop and use `AskUserQuestion` (via the dispatching command's gate)
 When you escalate, output a single block — the `[!CAUTION]` callout (palette shape; `/orc:flow` re-prints it verbatim), then the context fence:
 
 ```markdown
-> [!CAUTION]
 > **🛑 Escalation — slice <N>**
 >
 > Reason: <one of the conditions above>

@@ -85,7 +85,6 @@ When `loc > budget`, the calling command MUST surface this `AskUserQuestion` sha
 Before the prompt, **always** print the Gate callout (per the `orc:insights` palette — `[!WARNING]` because the gate fired on a problem), then the breakdown in a fence (never inside the callout — blockquotes reflow and break alignment):
 
 ```markdown
-> [!WARNING]
 > **⛔ Gate — PR size**
 >
 > Diff vs <base>: **<loc> LOC** across <N> files vs the **<budget> LOC** budget — OVER by <loc - budget> LOC.

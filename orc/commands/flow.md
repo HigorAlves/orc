@@ -35,10 +35,9 @@ Drive a piece of work from "I want to do X" to "PR merged, workspace cleaned up.
 
 This command is interactive by design. Every phase ends with an `AskUserQuestion` select-from-list — you choose advance, iterate, skip, or abort. **Never silently advances past a gate.**
 
-Immediately before each phase's `AskUserQuestion`, print a one-line Gate callout (per the `orc:insights` palette; `[!WARNING]` instead of `[!NOTE]` when the gate fired because something is wrong):
+Immediately before each phase's `AskUserQuestion`, print a one-line Gate callout (terminal form per the `orc:insights` palette — emoji header, no `[!TYPE]` tag):
 
 ```markdown
-> [!NOTE]
 > **⛔ Gate — <phase name>**
 >
 > [1–2 lines: what was produced, what's being decided]
@@ -97,7 +96,6 @@ The context banner is injected below (`ORC_*` vars are also exported for any Bas
 - `ORC_CONTEXT=loose` → surface and stop:
 
   ```markdown
-  > [!WARNING]
   > **⚠️ Caution**
   >
   > Cwd is neither a git repo nor a workspace parent — cannot run /orc:flow here.
@@ -310,7 +308,6 @@ progress.md → "Implementation phase started. Run /orc:flow again (or /orc:resu
 Echo to the user — the handoff callout (a `[!TIP]`, not a Gate: flow exits here, no question follows), then the details in a fence:
 
 ```markdown
-> [!TIP]
 > **➡️ Next**
 >
 > orc paused (`--pause-at-implement`). Re-run `/orc:flow` (or `/orc:resume`) when you're done implementing and flow picks up at QA.
@@ -481,7 +478,6 @@ Active orc sessions remaining: 0
 Close with one `[!TIP]` handoff when anything remains for the user (skip it when the summary already says "0 sessions remaining" and nothing is pending):
 
 ```markdown
-> [!TIP]
 > **➡️ Next**
 >
 > [the single most useful next command, e.g. `/orc:status` or `/orc:resume`]

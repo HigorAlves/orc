@@ -37,7 +37,7 @@ Invoke `orc:postmortem`. Confirm a postmortem is warranted:
 - near-miss with a real defect, OR
 - recurrence of the same incident type.
 
-If borderline (e.g. caught in CI, no production impact), print the Gate headline (`> [!NOTE]` + `**⛔ Gate — postmortem-worthy?**`, per `orc:insights`), then `AskUserQuestion`:
+If borderline (e.g. caught in CI, no production impact), print the Gate headline (`**⛔ Gate — postmortem-worthy?**`, per `orc:insights`), then `AskUserQuestion`:
 - "Write a full postmortem anyway"
 - "Write a one-paragraph near-miss note instead (no full template)"
 - "Skip — caught early, no learning to capture"
