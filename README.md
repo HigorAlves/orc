@@ -95,7 +95,7 @@ To pin a specific commit/tag, use the longhand source form in `~/.claude/setting
       "source": {
         "source": "url",
         "url": "https://github.com/HigorAlves/orc.git",
-        "ref": "v0.6.0"
+        "ref": "v0.7.0"
       }
     }
   },
@@ -243,7 +243,7 @@ Without the required artifacts, "QA passed" is not an accepted claim. The `orc-q
 
 ```
 orc/
-├── .claude-plugin/plugin.json   # manifest (v0.6.0)
+├── .claude-plugin/plugin.json   # manifest (v0.7.0)
 ├── .orc/                        # gitignored — workspace state per session
 ├── skills/<name>/SKILL.md       # 57 skills — a thin index per skill
 │   └── <name>/references/*.md   #   lazy-loaded detail for large skills (139 files, 15 skills)
