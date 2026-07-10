@@ -1,5 +1,5 @@
 ---
-description: Review someone else's open GitHub PR — posts a real PR review with line-anchored inline comments and suggestions. Verdict computed mechanically from severities; mandatory preview gate before posting. Workspace-aware.
+description: Review someone else's open GitHub PR — posts a real PR review with line-anchored inline comments and suggestions. Verdict computed mechanically from severities; mandatory preview gate before posting. Workspace-aware across linked PRs. For your OWN working diff, prefer the bundled /code-review instead.
 argument-hint: "<pr-number-or-url> [--prs a#1,b#2,...] [--context <description>] [--summary-only] [--soft-tests] [--dry-run] [--include-nits]"
 allowed-tools:
   - Read

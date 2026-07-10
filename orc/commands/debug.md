@@ -1,5 +1,5 @@
 ---
-description: Systematic root-cause investigation, then fix with TDD — never proposes a fix before finding the cause. Writes a diagnosis + regression test. --jira <KEY> links a ticket. Workspace-aware across sibling repos.
+description: Systematic root-cause investigation, then fix with TDD — never proposes a fix before finding the cause. Writes a resumable diagnosis to .orc/ state plus a regression test; --jira <KEY> links a ticket. Workspace-aware across sibling repos. For a quick one-off look without session state, prefer the bundled /debug.
 argument-hint: "[--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <bug description or failing test name>"
 allowed-tools:
   - Read

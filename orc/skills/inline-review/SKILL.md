@@ -1,6 +1,6 @@
 ---
 name: inline-review
-description: Post a real GitHub PR review with inline comments anchored to lines, plus optional one-click suggestions. Use when posting line-level PR feedback; invoked by /orc:code-review after findings.
+description: Post a real GitHub PR review with inline comments anchored to lines, plus optional one-click suggestions. Use when posting line-level PR feedback; invoked by /orc:code-review after findings. For commenting on your OWN diff, prefer the bundled /code-review --comment.
 ---
 
 # Inline GitHub PR Review
