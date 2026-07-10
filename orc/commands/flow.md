@@ -1,6 +1,6 @@
 ---
 description: End-to-end feature/bug/refactor pipeline (plan → start → implement → QA → ship → address → cleanup) with an interactive gate at every phase. Resumable via /orc:resume. --jira <KEY> links a ticket. Workspace-aware.
-argument-hint: "[--type=feature|bug|refactor|docs] [--rfc] [--verbose] [--pause-at-implement] [--jira <KEY>] [--max-loc <N>] [--no-size-gate] [--repos a,b | --repo a | --all-repos | --this-repo] <one-line task description>"
+argument-hint: "[--type=feature|bug|refactor|docs] [--rfc] [--verbose] [--pause-at-implement] [--jira <KEY>] [--max-loc <N>] [--no-size-gate] [--driver agent-browser|chrome] [--repos a,b | --repo a | --all-repos | --this-repo] <one-line task description>"
 allowed-tools:
   - Read
   - Write
@@ -56,6 +56,7 @@ Use `/orc:flow` when you want orc to drive the whole loop. Skip it (use the per-
 - `--type=feature|bug|refactor|docs` — optional. If omitted, the first phase asks via `AskUserQuestion`. The type changes which phases run and which skills get invoked.
 - `--rfc` — for `--type=feature` or `--type=refactor`: insert an RFC phase before planning. Required when the work is multi-week, multi-team, or has genuine alternatives.
 - `--verbose` — pass through to `/orc:ship` so the PR body uses the long-form template. Default everywhere is terse (`orc:caveman-pr` bodies, `orc:caveman-review` tone). (`--caveman` is accepted as a deprecated no-op alias of the default.)
+- `--driver agent-browser|chrome` — pass through to Phase 6's browser-driver gate: `agent-browser` = headless CLI via `orc-qa-validator`; `chrome` = Claude-in-Chrome extension run inline (watch the test live). Omitted → Phase 6 asks.
 - `--pause-at-implement` — pause Phase 5 for the human to write the implementation manually. Default behavior is autonomous: dispatches `orc-implementer` to drive the implementation slice-by-slice. Use `--pause-at-implement` when you want to write the code yourself.
 - `--jira <KEY>` — link a Jira ticket key (e.g. `JRA-123`) to this flow's session silently. Suppresses the Phase 1 link prompt. The key follows the work through every phase, surfaces in `/orc:status`, and lands as `Resolves <KEY>` in the Phase 7 PR body. Validate against `^[A-Z][A-Z0-9_]*-\d+$`.
 - `--max-loc <N>` — pass-through to `/orc:ship`'s Phase 4.5 size gate (default: 300, configurable via `$ORC_PR_LOC_BUDGET` or `<repo>/.orc/pr-budget.json`). Phase 7 also pre-flights the gate with one extra option ("Stack from plan slices") that single-repo `/orc:ship` doesn't have.
@@ -333,7 +334,7 @@ When the diff touches security-sensitive paths (auth, sessions, raw SQL, deseria
 
 For web changes, **provision or attach the environment first** (same step as `/orc:qa` Phase 4.0): `orc-docker-env is-ready <state-file>` → attach when `ready`, else dispatch `orc-env-provisioner` (worktree path; workspace mode adds `repos[]` + `webSurfaceRepo` from the plan's "Repo touchpoints" + the plan path for dependency order). `fallback` → re-print the ⚠️ callout and continue; `failed` → 🛑 callout + gate. The environment **stays up across the QA-partial → fix → re-run loop** — re-runs attach in seconds; teardown happens in Phase 9.
 
-Then dispatch `orc-qa-validator` (drives `agent-browser`, captures evidence to `.orc/<branch>/files/qa/`) with `appUrl` + `serviceEndpoints` + `envStatePath` from `docker-env-state.json` — the validator attaches, never boots. In workspace mode, the validator picks the repo declared as the web surface in the plan's "Repo touchpoints" section (`repoPath = <workspaceRoot>/<that repo>`); cross-repo integration evidence (e.g. ui+api walks) lands at the workspace-level `<workspaceRoot>/.orc/<branch>/files/qa/`, repo-local QA stays per-repo.
+Then run the **browser-driver gate** from `/orc:qa` Phase 4.1 (`AskUserQuestion`: agent-browser headless vs Claude-in-Chrome watch-live; a `--driver` pass-through skips it). **Driver A** dispatches `orc-qa-validator` (drives `agent-browser`, captures evidence to `.orc/<branch>/files/qa/`) with `appUrl` + `serviceEndpoints` + `envStatePath` from `docker-env-state.json` — the validator attaches, never boots. **Driver B** runs inline in this session per `/orc:qa` Phase 4 Driver B (the user watches live in their Chrome; chrome-mode evidence packet). In workspace mode, the web-surface repo comes from the plan's "Repo touchpoints" section (`repoPath = <workspaceRoot>/<that repo>`); cross-repo integration evidence (e.g. ui+api walks) lands at the workspace-level `<workspaceRoot>/.orc/<branch>/files/qa/`, repo-local QA stays per-repo.
 
 If verification flags untested branches, dispatch `orc-test-author` to fill them in before continuing.
 
