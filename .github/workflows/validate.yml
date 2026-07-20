@@ -23,6 +23,22 @@ jobs:
       - name: Validate all JSON
         run: git ls-files '*.json' | xargs -n1 jq empty
 
+      - name: tools.json canonical mirror in sync
+        run: |
+          if ! diff -u orc/lib/tools.json cli/internal/deps/tools.json; then
+            echo "cli/internal/deps/tools.json has drifted from the canonical orc/lib/tools.json"
+            echo "Re-copy: cp orc/lib/tools.json cli/internal/deps/tools.json"
+            exit 1
+          fi
+
+      - name: Tool-check hook smoke test
+        run: |
+          # Hook must emit valid JSON on the missing-tools path (seam forces
+          # only git present -> jq + all recommended reported missing).
+          out=$(ORC_TOOLCHECK_PRESENT="git" bash orc/hooks/scripts/session-start-tool-check.sh)
+          printf '%s' "$out" | jq empty
+          printf '%s' "$out" | jq -e '.systemMessage | contains("jq")' >/dev/null
+
       - name: Callout lint (palette-only callouts)
         run: |
           bad=$(grep -rn '\[!' orc --include='*.md' | grep -vE '\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION|TYPE)\]' || true)
