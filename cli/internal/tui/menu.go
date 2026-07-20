@@ -3,6 +3,7 @@ package tui
 import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // Action identifiers returned by the menu.
@@ -47,8 +48,7 @@ type MenuModel struct {
 // NewMenu builds the home menu model.
 func NewMenu() MenuModel {
 	l := list.New(menuItems(), list.NewDefaultDelegate(), 0, 0)
-	l.Title = "orc — plugin installer & toolbox"
-	l.Styles.Title = titleStyle
+	l.SetShowTitle(false) // the mascot banner is our header
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.SetShowHelp(true)
@@ -60,7 +60,12 @@ func (m MenuModel) Init() tea.Cmd { return nil }
 func (m MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.list.SetSize(msg.Width, msg.Height)
+		// Reserve room for the mascot banner (+1 spacer line) above the list.
+		listH := msg.Height - BannerHeight() - 1
+		if listH < 1 {
+			listH = 1
+		}
+		m.list.SetSize(msg.Width, listH)
 		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -84,7 +89,7 @@ func (m MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m MenuModel) View() string {
-	return m.list.View()
+	return lipgloss.JoinVertical(lipgloss.Left, Banner(), "", m.list.View())
 }
 
 // RunMenu runs the interactive home menu and returns the chosen action id
