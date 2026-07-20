@@ -3,6 +3,7 @@
 package claudecli
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"os/exec"
@@ -25,4 +26,15 @@ func Run(stdout, stderr io.Writer, args ...string) error {
 	cmd.Stderr = stderr
 	cmd.Stdin = os.Stdin
 	return cmd.Run()
+}
+
+// Output runs `claude <args...>` and returns its combined stdout+stderr. Used
+// for read-only queries like `mcp list`.
+func Output(args ...string) (string, error) {
+	cmd := exec.Command("claude", args...)
+	var buf bytes.Buffer
+	cmd.Stdout = &buf
+	cmd.Stderr = &buf
+	err := cmd.Run()
+	return buf.String(), err
 }

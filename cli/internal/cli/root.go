@@ -39,6 +39,7 @@ func NewRootCmd() *cobra.Command {
 	root.AddCommand(newUpdateCmd())
 	root.AddCommand(newMCPCmd())
 	root.AddCommand(newConfigCmd())
+	root.AddCommand(newToolsCmd())
 
 	return root
 }
@@ -63,11 +64,11 @@ func dispatch(choice string) error {
 	case tui.ActionDoctor:
 		return runWithArgs(newDoctorCmd())
 	case tui.ActionFix:
-		return runWithArgs(newDoctorCmd(), "--fix")
+		return toolsManage(os.Stdout, os.Stderr)
 	case tui.ActionConfig:
 		return runWithArgs(newConfigCmd())
 	case tui.ActionMCP:
-		return runWithArgs(newMCPCmd(), "list")
+		return mcpManage(os.Stdout, os.Stderr)
 	default:
 		return nil
 	}

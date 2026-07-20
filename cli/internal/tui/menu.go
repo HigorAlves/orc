@@ -30,9 +30,9 @@ func menuItems() []list.Item {
 	return []list.Item{
 		menuItem{ActionInstall, "Install / update plugin", "Register the orc marketplace and enable the plugin"},
 		menuItem{ActionDoctor, "Check tools", "Verify orc's required + recommended CLIs"},
-		menuItem{ActionFix, "Install missing tools", "Install missing dependencies via your package manager"},
+		menuItem{ActionFix, "Manage tools", "Toggle which runtime tools to install"},
 		menuItem{ActionConfig, "Configure", "View orc tunables (PR size, protected branches, …)"},
-		menuItem{ActionMCP, "MCP servers", "List configured MCP servers"},
+		menuItem{ActionMCP, "MCP servers", "Toggle MCP servers (GitHub, Jira, Sentry, Vercel)"},
 		menuItem{"quit", "Quit", ""},
 	}
 }

@@ -17,8 +17,19 @@ func newMCPCmd() *cobra.Command {
 			"expands known servers (see `orc mcp known`) to a full invocation; unknown\n" +
 			"names and extra args pass through to `claude mcp add`.",
 	}
-	cmd.AddCommand(newMCPListCmd(), newMCPAddCmd(), newMCPRemoveCmd(), newMCPKnownCmd())
+	cmd.AddCommand(newMCPListCmd(), newMCPAddCmd(), newMCPRemoveCmd(), newMCPKnownCmd(), newMCPManageCmd())
 	return cmd
+}
+
+func newMCPManageCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "manage",
+		Short: "Toggle MCP servers on/off interactively",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return mcpManage(cmd.OutOrStdout(), cmd.ErrOrStderr())
+		},
+	}
 }
 
 func requireClaude() error {

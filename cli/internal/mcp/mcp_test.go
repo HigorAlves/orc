@@ -51,8 +51,43 @@ func TestBuildArgsRequiresToken(t *testing.T) {
 
 func TestKnownListsRegistry(t *testing.T) {
 	names := Known()
-	if !slices.Contains(names, "github") {
-		t.Errorf("Known() should include github: %v", names)
+	for _, want := range []string{"github", "jira", "sentry", "vercel"} {
+		if !slices.Contains(names, want) {
+			t.Errorf("Known() should include %q: %v", want, names)
+		}
+	}
+}
+
+func TestOAuthServersNeedNoToken(t *testing.T) {
+	for _, name := range []string{"jira", "sentry", "vercel"} {
+		s, ok := Lookup(name)
+		if !ok {
+			t.Fatalf("%s missing from registry", name)
+		}
+		if s.NeedsToken {
+			t.Errorf("%s should be OAuth (no static token)", name)
+		}
+		if _, err := s.BuildArgs(""); err != nil {
+			t.Errorf("%s BuildArgs with no token errored: %v", name, err)
+		}
+	}
+}
+
+func TestParseConfigured(t *testing.T) {
+	out := `Checking MCP server health…
+
+github: https://api.githubcopilot.com/mcp/ - ✓ connected
+claude.ai Gmail: https://gmailmcp.googleapis.com/mcp/v1 - ! Needs authentication
+`
+	got := ParseConfigured(out)
+	if !slices.Contains(got, "github") {
+		t.Errorf("expected github in %v", got)
+	}
+	if !slices.Contains(got, "claude.ai Gmail") {
+		t.Errorf("expected multi-word name in %v", got)
+	}
+	if slices.Contains(got, "") {
+		t.Errorf("blank lines should be skipped: %v", got)
 	}
 }
 
