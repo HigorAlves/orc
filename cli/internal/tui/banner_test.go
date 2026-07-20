@@ -8,10 +8,10 @@ import (
 func TestBannerRenders(t *testing.T) {
 	b := Banner()
 	if !strings.Contains(b, "█") {
-		t.Error("banner should contain block-drawing characters")
+		t.Error("banner should contain the block-letter wordmark")
 	}
-	if !strings.Contains(b, "orc") {
-		t.Error("banner should contain the wordmark")
+	if !strings.Contains(b, "plugin installer") {
+		t.Error("banner should contain the tagline")
 	}
 	// Print it so `go test -v` shows the mascot.
 	t.Logf("\n%s", b)
