@@ -71,7 +71,7 @@ func (m MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q", "esc":
 			m.Choice = ActionQuit
-			return m, tea.Quit
+			return m, cmdMsg(SelectMsg{Action: ActionQuit})
 		case "enter":
 			if it, ok := m.list.SelectedItem().(menuItem); ok {
 				if it.id == "quit" {
@@ -80,7 +80,7 @@ func (m MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.Choice = it.id
 				}
 			}
-			return m, tea.Quit
+			return m, cmdMsg(SelectMsg{Action: m.Choice})
 		}
 	}
 	var cmd tea.Cmd
@@ -90,19 +90,4 @@ func (m MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m MenuModel) View() string {
 	return lipgloss.JoinVertical(lipgloss.Left, Banner(), "", m.list.View())
-}
-
-// RunMenu runs the interactive home menu and returns the chosen action id
-// (ActionQuit when the user quits).
-func RunMenu() (string, error) {
-	m := NewMenu()
-	p := tea.NewProgram(m, tea.WithAltScreen())
-	final, err := p.Run()
-	if err != nil {
-		return ActionQuit, err
-	}
-	if fm, ok := final.(MenuModel); ok {
-		return fm.Choice, nil
-	}
-	return ActionQuit, nil
 }

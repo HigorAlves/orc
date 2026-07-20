@@ -6,6 +6,7 @@ import (
 
 	"github.com/HigorAlves/orc/cli/internal/claudecli"
 	"github.com/HigorAlves/orc/cli/internal/mcp"
+	"github.com/HigorAlves/orc/cli/internal/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +28,7 @@ func newMCPManageCmd() *cobra.Command {
 		Short: "Toggle MCP servers on/off interactively",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return mcpManage(cmd.OutOrStdout(), cmd.ErrOrStderr())
+			return requireTTY(tui.ActionMCP)
 		},
 	}
 }

@@ -2,6 +2,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/HigorAlves/orc/cli/internal/tui"
@@ -24,11 +25,7 @@ func NewRootCmd() *cobra.Command {
 			if !interactive() {
 				return cmd.Help()
 			}
-			choice, err := tui.RunMenu()
-			if err != nil {
-				return err
-			}
-			return dispatch(choice)
+			return tui.Run(buildActions(), "")
 		},
 	}
 
@@ -55,26 +52,11 @@ func interactive() bool {
 	return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
 }
 
-// dispatch runs the command matching a menu choice. Each subcommand is executed
-// with explicit args so it does not re-parse the (empty) top-level os.Args.
-func dispatch(choice string) error {
-	switch choice {
-	case tui.ActionInstall:
-		return runWithArgs(newInstallCmd())
-	case tui.ActionDoctor:
-		return runWithArgs(newDoctorCmd())
-	case tui.ActionFix:
-		return toolsManage(os.Stdout, os.Stderr)
-	case tui.ActionConfig:
-		return runWithArgs(newConfigCmd())
-	case tui.ActionMCP:
-		return mcpManage(os.Stdout, os.Stderr)
-	default:
-		return nil
+// requireTTY runs the interactive app jumped to the given screen, or errors when
+// there is no terminal (so scripts get a clear message rather than a hang).
+func requireTTY(startAction string) error {
+	if !interactive() {
+		return fmt.Errorf("this command is interactive and needs a terminal (try the non-interactive subcommands instead)")
 	}
-}
-
-func runWithArgs(cmd *cobra.Command, args ...string) error {
-	cmd.SetArgs(args)
-	return cmd.Execute()
+	return tui.Run(buildActions(), startAction)
 }

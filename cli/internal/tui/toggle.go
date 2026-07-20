@@ -38,7 +38,7 @@ func (m ToggleModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch key.String() {
 		case "ctrl+c", "q", "esc":
 			m.Confirmed = false
-			return m, tea.Quit
+			return m, cmdMsg(ToggleDoneMsg{Confirmed: false, Items: m.Items})
 		case "up", "k":
 			if m.cursor > 0 {
 				m.cursor--
@@ -53,7 +53,7 @@ func (m ToggleModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "enter":
 			m.Confirmed = true
-			return m, tea.Quit
+			return m, cmdMsg(ToggleDoneMsg{Confirmed: true, Items: m.Items})
 		}
 	}
 	return m, nil
@@ -107,17 +107,4 @@ func (m ToggleModel) Selected() []string {
 		}
 	}
 	return out
-}
-
-// RunToggle runs the toggle screen and returns the final model (with the user's
-// choices in Items and whether they confirmed).
-func RunToggle(title string, items []ToggleItem) (ToggleModel, error) {
-	final, err := tea.NewProgram(NewToggle(title, items)).Run()
-	if err != nil {
-		return ToggleModel{}, err
-	}
-	if fm, ok := final.(ToggleModel); ok {
-		return fm, nil
-	}
-	return ToggleModel{}, nil
 }

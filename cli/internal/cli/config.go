@@ -3,6 +3,7 @@ package cli
 import (
 	"github.com/HigorAlves/orc/cli/internal/config"
 	"github.com/HigorAlves/orc/cli/internal/settings"
+	"github.com/HigorAlves/orc/cli/internal/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -36,8 +37,19 @@ func newConfigCmd() *cobra.Command {
 	}
 	cmd.PersistentFlags().StringVar(&settingsPath, "settings", "", "path to settings.json (default ~/.claude/settings.json)")
 
-	cmd.AddCommand(newConfigGetCmd(&settingsPath), newConfigSetCmd(&settingsPath), newConfigUnsetCmd(&settingsPath))
+	cmd.AddCommand(newConfigGetCmd(&settingsPath), newConfigSetCmd(&settingsPath), newConfigUnsetCmd(&settingsPath), newConfigEditCmd())
 	return cmd
+}
+
+func newConfigEditCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "edit",
+		Short: "Edit tunables in an interactive form",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return requireTTY(tui.ActionConfig)
+		},
+	}
 }
 
 func loadSettings(override string) (*settings.Doc, error) {
