@@ -3,9 +3,10 @@
 # branches and downgrades them to a confirm prompt via permissionDecision
 # "ask" — one keystroke to proceed deliberately, no env-var escape hatch.
 # Reads the tool input as JSON on stdin (PreToolUse contract).
-# Protected set: plugin userConfig `protected_branches` (comma-separated,
-# exported as CLAUDE_PLUGIN_OPTION_PROTECTED_BRANCHES), default
-# main,master,develop.
+# Protected set (highest precedence first): ORC_PROTECTED_BRANCHES env var
+# (set by `orc config`), then plugin userConfig `protected_branches`
+# (comma-separated, exported as CLAUDE_PLUGIN_OPTION_PROTECTED_BRANCHES),
+# then the default main,master,develop.
 
 set -euo pipefail
 
@@ -21,7 +22,7 @@ fi
 
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
 
-protected="${CLAUDE_PLUGIN_OPTION_PROTECTED_BRANCHES:-main,master,develop}"
+protected="${ORC_PROTECTED_BRANCHES:-${CLAUDE_PLUGIN_OPTION_PROTECTED_BRANCHES:-main,master,develop}}"
 is_protected=0
 IFS=',' read -ra protected_list <<< "$protected"
 for p in "${protected_list[@]}"; do
