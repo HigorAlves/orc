@@ -26,6 +26,7 @@ func NewRootCmd() *cobra.Command {
 	root.AddCommand(newInstallCmd())
 	root.AddCommand(newUninstallCmd())
 	root.AddCommand(newUpdateCmd())
+	root.AddCommand(newMCPCmd())
 
 	return root
 }
