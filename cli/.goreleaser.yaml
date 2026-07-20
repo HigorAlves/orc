@@ -1,0 +1,68 @@
+# goreleaser config for the orc CLI.
+# Run from the cli/ directory. CLI releases use plain `vX.Y.Z` git tags
+# (the plugin uses `orc--vX.Y.Z` tags, so there is no collision).
+version: 2
+
+project_name: orc
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: orc
+    main: ./cmd/orc
+    binary: orc
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/HigorAlves/orc/cli/internal/buildinfo.version={{ .Version }}
+
+archives:
+  - id: orc
+    ids:
+      - orc
+    name_template: "orc_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - tar.gz
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-snapshot"
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+# Auto-publish a Homebrew cask to the tap on each release. (goreleaser
+# deprecated `brews` formulae in favor of casks for prebuilt binaries.)
+homebrew_casks:
+  - name: orc
+    repository:
+      owner: HigorAlves
+      name: homebrew-tap
+      # GITHUB_TOKEN can't push to another repo; a PAT with repo scope is set
+      # as HOMEBREW_TAP_GITHUB_TOKEN in the release workflow.
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/HigorAlves/orc"
+    description: "Installer, doctor, and config toolbox for the orc Claude Code plugin"
+    # Strip the quarantine xattr so the unsigned binary runs without a Gatekeeper prompt.
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/orc"]
+          end
