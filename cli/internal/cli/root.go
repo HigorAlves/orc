@@ -2,7 +2,11 @@
 package cli
 
 import (
+	"os"
+
+	"github.com/HigorAlves/orc/cli/internal/tui"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // NewRootCmd builds the root command with all subcommands attached.
@@ -14,10 +18,17 @@ func NewRootCmd() *cobra.Command {
 		Long:          "orc streamlines installing the orc plugin, checking and installing its\nruntime tools, managing MCP servers, and editing its configuration.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		// With no subcommand and a TTY, this will launch the interactive TUI
-		// (wired in a later step). Until then, show help.
+		// With no subcommand: launch the interactive TUI on a TTY, otherwise
+		// print help (so piped/non-interactive use is predictable).
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmd.Help()
+			if !interactive() {
+				return cmd.Help()
+			}
+			choice, err := tui.RunMenu()
+			if err != nil {
+				return err
+			}
+			return dispatch(choice)
 		},
 	}
 
@@ -35,4 +46,34 @@ func NewRootCmd() *cobra.Command {
 // Execute runs the root command and returns its exit error.
 func Execute() error {
 	return NewRootCmd().Execute()
+}
+
+// interactive reports whether both stdin and stdout are terminals, so the TUI
+// only launches when it can actually be driven and rendered.
+func interactive() bool {
+	return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
+}
+
+// dispatch runs the command matching a menu choice. Each subcommand is executed
+// with explicit args so it does not re-parse the (empty) top-level os.Args.
+func dispatch(choice string) error {
+	switch choice {
+	case tui.ActionInstall:
+		return runWithArgs(newInstallCmd())
+	case tui.ActionDoctor:
+		return runWithArgs(newDoctorCmd())
+	case tui.ActionFix:
+		return runWithArgs(newDoctorCmd(), "--fix")
+	case tui.ActionConfig:
+		return runWithArgs(newConfigCmd())
+	case tui.ActionMCP:
+		return runWithArgs(newMCPCmd(), "list")
+	default:
+		return nil
+	}
+}
+
+func runWithArgs(cmd *cobra.Command, args ...string) error {
+	cmd.SetArgs(args)
+	return cmd.Execute()
 }
