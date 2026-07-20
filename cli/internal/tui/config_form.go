@@ -29,6 +29,7 @@ type ConfigField struct {
 // fields are edited in place, space toggles a bool field, enter saves, esc
 // cancels.
 type ConfigModel struct {
+	title     string
 	fields    []ConfigField
 	inputs    []textinput.Model
 	bools     []bool
@@ -38,8 +39,8 @@ type ConfigModel struct {
 }
 
 // NewConfigForm builds the form from the given fields.
-func NewConfigForm(fields []ConfigField) ConfigModel {
-	m := ConfigModel{fields: fields}
+func NewConfigForm(title string, fields []ConfigField) ConfigModel {
+	m := ConfigModel{title: title, fields: fields}
 	m.inputs = make([]textinput.Model, len(fields))
 	m.bools = make([]bool, len(fields))
 	for i, f := range fields {
@@ -138,8 +139,12 @@ func (m ConfigModel) values() map[string]string {
 }
 
 func (m ConfigModel) View() string {
+	title := m.title
+	if title == "" {
+		title = "Configure orc"
+	}
 	var b strings.Builder
-	b.WriteString(toggleTitleStyle.Render("Configure orc"))
+	b.WriteString(toggleTitleStyle.Render(title))
 	b.WriteString("\n")
 
 	for i, f := range m.fields {

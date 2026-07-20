@@ -26,6 +26,8 @@ func TestEnterSelectsFirstAction(t *testing.T) {
 func TestArrowThenEnterSelectsDoctor(t *testing.T) {
 	var m tea.Model = NewMenu()
 	m, _ = m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	// Install → Init → Doctor is two rows down.
+	m, _ = m.Update(tea.KeyMsg{Type: tea.KeyDown})
 	m, _ = m.Update(tea.KeyMsg{Type: tea.KeyDown})
 	m, _ = m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 	if got := asMenu(t, m).Choice; got != ActionDoctor {
@@ -44,8 +46,8 @@ func TestQuitKey(t *testing.T) {
 func TestSelectingQuitItem(t *testing.T) {
 	var m tea.Model = NewMenu()
 	m, _ = m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
-	// Move to the last item (Quit): 5 downs from Install.
-	for i := 0; i < 5; i++ {
+	// Move to the last item (Quit). Count the menu rows dynamically.
+	for i := 0; i < len(menuItems())-1; i++ {
 		m, _ = m.Update(tea.KeyMsg{Type: tea.KeyDown})
 	}
 	m, _ = m.Update(tea.KeyMsg{Type: tea.KeyEnter})

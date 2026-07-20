@@ -14,7 +14,7 @@ func formFields() []ConfigField {
 }
 
 func TestFormEnterEmitsValues(t *testing.T) {
-	m := NewConfigForm(formFields())
+	m := NewConfigForm("t", formFields())
 	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 	if cmd == nil {
 		t.Fatal("enter should emit a FormDoneMsg cmd")
@@ -32,7 +32,7 @@ func TestFormEnterEmitsValues(t *testing.T) {
 }
 
 func TestFormSpaceTogglesBool(t *testing.T) {
-	var m tea.Model = NewConfigForm(formFields())
+	var m tea.Model = NewConfigForm("t", formFields())
 	// Move to the bool field (index 1) and toggle it on.
 	m, _ = m.Update(tea.KeyMsg{Type: tea.KeyDown})
 	m, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(" ")})
@@ -44,7 +44,7 @@ func TestFormSpaceTogglesBool(t *testing.T) {
 }
 
 func TestFormEscCancels(t *testing.T) {
-	m := NewConfigForm(formFields())
+	m := NewConfigForm("t", formFields())
 	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEsc})
 	msg, ok := cmd().(FormDoneMsg)
 	if !ok || msg.Confirmed {
@@ -53,7 +53,7 @@ func TestFormEscCancels(t *testing.T) {
 }
 
 func TestFormTypingEditsTextField(t *testing.T) {
-	var m tea.Model = NewConfigForm(formFields())
+	var m tea.Model = NewConfigForm("t", formFields())
 	// Focus starts on the int field; type "5".
 	m, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("5")})
 	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})

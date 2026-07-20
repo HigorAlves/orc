@@ -9,6 +9,7 @@ import (
 // Action identifiers returned by the menu.
 const (
 	ActionInstall = "install"
+	ActionInit    = "init"
 	ActionDoctor  = "doctor"
 	ActionFix     = "fix"
 	ActionConfig  = "config"
@@ -29,6 +30,7 @@ func (i menuItem) FilterValue() string { return i.title }
 func menuItems() []list.Item {
 	return []list.Item{
 		menuItem{ActionInstall, "Install / update plugin", "Register the orc marketplace and enable the plugin"},
+		menuItem{ActionInit, "Init .orc here", "Create .orc state for this repo/workspace with your config"},
 		menuItem{ActionDoctor, "Check tools", "Verify orc's required + recommended CLIs"},
 		menuItem{ActionFix, "Manage tools", "Toggle which runtime tools to install"},
 		menuItem{ActionConfig, "Configure", "View orc tunables (PR size, protected branches, …)"},

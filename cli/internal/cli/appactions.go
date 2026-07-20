@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/HigorAlves/orc/cli/internal/claudecli"
@@ -11,11 +12,13 @@ import (
 	"github.com/HigorAlves/orc/cli/internal/deps"
 	"github.com/HigorAlves/orc/cli/internal/doctor"
 	"github.com/HigorAlves/orc/cli/internal/mcp"
+	"github.com/HigorAlves/orc/cli/internal/orcstate"
 	"github.com/HigorAlves/orc/cli/internal/pkgmgr"
 	"github.com/HigorAlves/orc/cli/internal/platform"
 	"github.com/HigorAlves/orc/cli/internal/plugin"
 	"github.com/HigorAlves/orc/cli/internal/settings"
 	"github.com/HigorAlves/orc/cli/internal/tui"
+	"github.com/HigorAlves/orc/cli/internal/workspace"
 )
 
 // buildActions wires the TUI's injected callbacks. Every Apply* captures its
@@ -31,7 +34,54 @@ func buildActions() tui.Actions {
 		ApplyMCP:      applyMCPAction,
 		ConfigFields:  configFields,
 		ApplyConfig:   applyConfigAction,
+		InitFields:    initFields,
+		ApplyInit:     applyInitAction,
 	}
+}
+
+func initFields() []tui.ConfigField {
+	budget := orcstate.DefaultBudget
+	excludeMig := true
+	var excludes []string
+	if cwd, err := os.Getwd(); err == nil {
+		if ctx := workspace.Detect(cwd); ctx.StateDir != "" {
+			if b, em, ex, ok := readPRBudget(ctx.StateDir); ok {
+				budget, excludeMig, excludes = b, em, ex
+			}
+		}
+	}
+	boolVal := ""
+	if excludeMig {
+		boolVal = "1"
+	}
+	return []tui.ConfigField{
+		{Key: "budget", Label: "PR size budget (LOC)", Desc: "Soft budget before the size gate fires", Kind: tui.FieldInt, Value: strconv.Itoa(budget)},
+		{Key: "exclude_migrations", Label: "exclude migrations", Desc: "Exclude migration files from the budget", Kind: tui.FieldBool, Value: boolVal},
+		{Key: "additional_excludes", Label: "extra excludes", Desc: "Comma-separated pathspecs to exclude", Kind: tui.FieldString, Value: strings.Join(excludes, ",")},
+	}
+}
+
+func applyInitAction(values map[string]string) (string, error) {
+	budget := 0
+	if v := strings.TrimSpace(values["budget"]); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n <= 0 {
+			return "", fmt.Errorf("budget must be a positive integer: %q", v)
+		}
+		budget = n
+	}
+	var excludes []string
+	for _, part := range strings.Split(values["additional_excludes"], ",") {
+		if p := strings.TrimSpace(part); p != "" {
+			excludes = append(excludes, p)
+		}
+	}
+	return runInit(orcstate.Options{
+		Budget:             budget,
+		ExcludeMigrations:  values["exclude_migrations"] == "true",
+		AdditionalExcludes: excludes,
+		Force:              true, // the form is an explicit intent to (re)write config
+	})
 }
 
 func doctorReportAction() string {

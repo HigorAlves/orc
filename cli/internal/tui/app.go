@@ -21,6 +21,8 @@ type Actions struct {
 	ApplyMCP      func(desiredOn map[string]bool) (string, error)
 	ConfigFields  func() []ConfigField
 	ApplyConfig   func(values map[string]string) (string, error)
+	InitFields    func() []ConfigField
+	ApplyInit     func(values map[string]string) (string, error)
 }
 
 type screen int
@@ -50,6 +52,7 @@ type App struct {
 	width      int
 	height     int
 	toggleKind string
+	formKind   string // "config" | "init"
 }
 
 // NewApp builds the application. startAction jumps straight to a screen
@@ -124,7 +127,13 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		vals := msg.Values
 		a.screen = scrRunning
-		return a, tea.Batch(a.spinner.Tick, runAction("Configure", func() (string, error) { return a.actions.ApplyConfig(vals) }))
+		apply := a.actions.ApplyConfig
+		title := "Configure"
+		if a.formKind == "init" {
+			apply = a.actions.ApplyInit
+			title = "Init .orc"
+		}
+		return a, tea.Batch(a.spinner.Tick, runAction(title, func() (string, error) { return apply(vals) }))
 
 	case resultMsg:
 		a.result = msg
@@ -166,7 +175,13 @@ func (a App) handleSelect(action string) (tea.Model, tea.Cmd) {
 		a.screen = scrMCP
 		return a, nil
 	case ActionConfig:
-		a.form = NewConfigForm(a.actions.ConfigFields())
+		a.form = NewConfigForm("Configure orc", a.actions.ConfigFields())
+		a.formKind = "config"
+		a.screen = scrConfig
+		return a, a.form.Init()
+	case ActionInit:
+		a.form = NewConfigForm("Init .orc (personalize config)", a.actions.InitFields())
+		a.formKind = "init"
 		a.screen = scrConfig
 		return a, a.form.Init()
 	}
