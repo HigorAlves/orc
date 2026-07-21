@@ -1,0 +1,99 @@
+{
+  "_comment": "Canonical registry of the CLI tools orc relies on. Consumed by both the SessionStart tool-check hook (orc/hooks/scripts/session-start-tool-check.sh, via jq) and the orc installer CLI (cli/internal/deps, which embeds a CI-verified mirror at cli/internal/deps/tools.json). Keep the two byte-identical — the validate.yml `static` job enforces it. Hint keys are platform ids (macos/debian/fedora/arch/linux) with a `default` fallback, matching platform detection in both consumers. `install` maps a package manager (brew/apt/dnf/pacman/npm) to the args passed after its install verb; omit a manager when there is no safe unattended recipe (the CLI then falls back to printing the hint).",
+  "tools": [
+    {
+      "name": "git",
+      "tier": "required",
+      "hints": {
+        "macos": "xcode-select --install  (or: brew install git)",
+        "debian": "sudo apt-get install -y git",
+        "fedora": "sudo dnf install -y git",
+        "arch": "sudo pacman -S git",
+        "default": "see https://git-scm.com/downloads"
+      },
+      "install": {
+        "brew": ["git"],
+        "apt": ["git"],
+        "dnf": ["git"],
+        "pacman": ["git"]
+      }
+    },
+    {
+      "name": "jq",
+      "tier": "required",
+      "hints": {
+        "macos": "brew install jq",
+        "debian": "sudo apt-get install -y jq",
+        "fedora": "sudo dnf install -y jq",
+        "arch": "sudo pacman -S jq",
+        "default": "see https://jqlang.github.io/jq/download/"
+      },
+      "install": {
+        "brew": ["jq"],
+        "apt": ["jq"],
+        "dnf": ["jq"],
+        "pacman": ["jq"]
+      }
+    },
+    {
+      "name": "gh",
+      "tier": "recommended",
+      "usedBy": "`/orc:code-review`, `/orc:address`, `/orc:ship`, `/orc:postmortem`",
+      "hints": {
+        "macos": "brew install gh && gh auth login",
+        "debian": "see https://github.com/cli/cli/blob/trunk/docs/install_linux.md (apt) — then: gh auth login",
+        "fedora": "sudo dnf install -y gh && gh auth login",
+        "arch": "sudo pacman -S github-cli && gh auth login",
+        "default": "see https://cli.github.com/  — then: gh auth login"
+      },
+      "install": {
+        "brew": ["gh"],
+        "dnf": ["gh"],
+        "pacman": ["github-cli"]
+      }
+    },
+    {
+      "name": "agent-browser",
+      "tier": "recommended",
+      "usedBy": "`/orc:qa` (web mode — required for browser-driven QA evidence)",
+      "hints": {
+        "default": "npm install -g agent-browser && agent-browser install"
+      },
+      "install": {
+        "npm": ["agent-browser"]
+      }
+    },
+    {
+      "name": "acli",
+      "tier": "recommended",
+      "usedBy": "`/orc:jira`, `/orc:plan|start|debug|flow` (Jira ticket linking), `/orc:prd|trd` (`--from-jira` seeding)",
+      "hints": {
+        "macos": "brew install --cask atlassian-acli  — then: acli jira auth login --web",
+        "debian": "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/  — then: acli jira auth login --web",
+        "fedora": "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/  — then: acli jira auth login --web",
+        "arch": "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/  — then: acli jira auth login --web",
+        "linux": "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/  — then: acli jira auth login --web",
+        "default": "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/"
+      },
+      "install": {
+        "brew": ["--cask", "atlassian-acli"]
+      }
+    },
+    {
+      "name": "docker",
+      "tier": "recommended",
+      "usedBy": "`/orc:env`, `/orc:qa`/`/orc:flow` env provisioning (host-mode fallback applies without it)",
+      "hints": {
+        "macos": "brew install --cask docker  (or OrbStack: brew install --cask orbstack)",
+        "debian": "see https://docs.docker.com/engine/install/debian/",
+        "fedora": "see https://docs.docker.com/engine/install/fedora/",
+        "arch": "sudo pacman -S docker docker-compose",
+        "default": "see https://docs.docker.com/get-docker/"
+      },
+      "install": {
+        "brew": ["--cask", "docker"],
+        "pacman": ["docker", "docker-compose"]
+      }
+    }
+  ]
+}

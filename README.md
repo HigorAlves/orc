@@ -76,6 +76,34 @@ Each example follows the same shape — *Scenario → Flow → Walk-through → 
 
 ## Install
 
+### Via the orc CLI (streamlined — installs the plugin *and* its tools)
+
+The [`orc` CLI](cli/) is a small Go/[Bubble Tea](https://github.com/charmbracelet/bubbles) TUI that wraps the whole setup: it registers the marketplace, enables the plugin, checks (and installs) the runtime tools, manages MCP servers, and edits config.
+
+```bash
+# Homebrew (macOS/Linux)
+brew install HigorAlves/tap/orc
+
+# or one-line bootstrap
+curl -fsSL https://raw.githubusercontent.com/HigorAlves/orc/main/cli/install.sh | sh
+
+# or, with Go installed
+go install github.com/HigorAlves/orc/cli/cmd/orc@latest
+```
+
+Then run it:
+
+```bash
+orc                       # interactive menu (install, doctor, config, MCP)
+orc install               # register marketplace + enable the plugin
+orc install --ref v0.9.0  # pin a version (writes settings.json directly)
+orc doctor --fix          # check and install missing runtime tools
+orc config set pr_size_budget 500
+orc mcp add github --token "$GITHUB_TOKEN"
+```
+
+Every command runs non-interactively too (`--yes`/`--json`), so it fits CI and scripts. See [`cli/README.md`](cli/README.md) for the full command reference.
+
 ### Via the marketplace (recommended for friends / clean machines)
 
 orc is published as a single-plugin marketplace at this repo. Inside Claude Code:

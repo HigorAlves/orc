@@ -7,8 +7,18 @@
 # the model's context so it can offer install help if the user asks.
 # Silent (exit 0 with no output fields) when everything's present.
 #
+# The tool set (names, tiers), install hints, and "used by" notes are read
+# from the canonical registry lib/tools.json — the SAME file the orc installer
+# CLI embeds (cli/internal/deps/tools.json, kept identical by CI). This keeps
+# the two consumers from drifting. jq is required to read it; in the one case
+# where jq itself is missing we fall back to a minimal hardcoded notice, since
+# we cannot parse JSON without it.
+#
 # Suppress the check entirely with: ORC_SKIP_TOOL_CHECK=1, or the plugin
 # userConfig `skip_tool_check` (exported as CLAUDE_PLUGIN_OPTION_SKIP_TOOL_CHECK).
+#
+# Testing seam: ORC_TOOLCHECK_PRESENT="git jq" forces exactly those tools to be
+# considered present (bypassing command -v). Used by the hook's tests.
 
 set -euo pipefail
 
@@ -20,28 +30,60 @@ case "${CLAUDE_PLUGIN_OPTION_SKIP_TOOL_CHECK:-}" in
   1|true|True) exit 0 ;;
 esac
 
-# Required (orc's core hooks/commands break without these).
-REQUIRED=("git" "jq")
-# Strongly recommended (specific commands fail without them, but the rest of
-# the plugin still works).
-RECOMMENDED=("gh" "agent-browser" "acli" "docker")
+# Locate the canonical tool registry.
+if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+  TOOLS_JSON="${CLAUDE_PLUGIN_ROOT}/lib/tools.json"
+else
+  TOOLS_JSON="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/lib/tools.json"
+fi
 
-missing_required=()
-missing_recommended=()
+# is_present respects the ORC_TOOLCHECK_PRESENT testing seam when set.
+is_present() {
+  if [ -n "${ORC_TOOLCHECK_PRESENT+x}" ]; then
+    case " $ORC_TOOLCHECK_PRESENT " in
+      *" $1 "*) return 0 ;;
+      *) return 1 ;;
+    esac
+  fi
+  command -v "$1" >/dev/null 2>&1
+}
 
-for cmd in "${REQUIRED[@]}"; do
-  command -v "$cmd" >/dev/null 2>&1 || missing_required+=("$cmd")
-done
-for cmd in "${RECOMMENDED[@]}"; do
-  command -v "$cmd" >/dev/null 2>&1 || missing_recommended+=("$cmd")
-done
-
-# Everything present — silent exit, no context to inject.
-if [ ${#missing_required[@]} -eq 0 ] && [ ${#missing_recommended[@]} -eq 0 ]; then
+# ---------------------------------------------------------------------------
+# jq-missing fallback: we cannot read tools.json without jq. Emit a minimal,
+# correct notice built only from `command -v`, keyed on the known tool set.
+# ---------------------------------------------------------------------------
+if ! command -v jq >/dev/null 2>&1; then
+  # jq is a REQUIRED tool, so its absence is itself the headline.
+  esc() {
+    local s="$1"
+    s="${s//\\/\\\\}"; s="${s//\"/\\\"}"; s="${s//$'\n'/\\n}"
+    s="${s//$'\r'/\\r}"; s="${s//$'\t'/\\t}"
+    printf '%s' "$s"
+  }
+  warn=$'> **🛑 orc tool check**\n>\n> **Missing required**:\n> - `jq` — install jq, then restart the session for the full tool check.\n>\n> _Set `ORC_SKIP_TOOL_CHECK=1` to suppress this notice._'
+  note="orc tool check (SessionStart): jq is missing, which orc needs to run its full dependency check. The user has been shown a notice. Offer install help only if asked."
+  cat <<EOF
+{
+  "systemMessage": "$(esc "$warn")",
+  "hookSpecificOutput": {
+    "hookEventName": "SessionStart",
+    "additionalContext": "$(esc "$note")"
+  }
+}
+EOF
   exit 0
 fi
 
-# Detect platform for install-hint accuracy.
+# ---------------------------------------------------------------------------
+# Normal path: jq is available. Read the tool set + hints from tools.json.
+# ---------------------------------------------------------------------------
+if [ ! -f "$TOOLS_JSON" ]; then
+  # Registry missing (shouldn't happen in a valid install) — stay silent
+  # rather than emit a broken warning.
+  exit 0
+fi
+
+# Detect platform for install-hint accuracy (mirrors cli/internal/platform).
 platform="unknown"
 case "$(uname -s)" in
   Darwin) platform="macos" ;;
@@ -54,66 +96,40 @@ case "$(uname -s)" in
     ;;
 esac
 
-# Build per-tool install hints.
+# Pull the tool names per tier from the registry. A while-read loop (rather
+# than mapfile) keeps this compatible with the bash 3.2 that ships on macOS.
+required=()
+while IFS= read -r line; do [ -n "$line" ] && required+=("$line"); done \
+  < <(jq -r '.tools[] | select(.tier=="required") | .name' "$TOOLS_JSON")
+recommended=()
+while IFS= read -r line; do [ -n "$line" ] && recommended+=("$line"); done \
+  < <(jq -r '.tools[] | select(.tier=="recommended") | .name' "$TOOLS_JSON")
+
 hint_for() {
-  case "$1" in
-    git)
-      case "$platform" in
-        macos) echo "xcode-select --install  (or: brew install git)" ;;
-        debian) echo "sudo apt-get install -y git" ;;
-        fedora) echo "sudo dnf install -y git" ;;
-        arch) echo "sudo pacman -S git" ;;
-        *) echo "see https://git-scm.com/downloads" ;;
-      esac
-      ;;
-    jq)
-      case "$platform" in
-        macos) echo "brew install jq" ;;
-        debian) echo "sudo apt-get install -y jq" ;;
-        fedora) echo "sudo dnf install -y jq" ;;
-        arch) echo "sudo pacman -S jq" ;;
-        *) echo "see https://jqlang.github.io/jq/download/" ;;
-      esac
-      ;;
-    gh)
-      case "$platform" in
-        macos) echo "brew install gh && gh auth login" ;;
-        debian) echo "see https://github.com/cli/cli/blob/trunk/docs/install_linux.md (apt) — then: gh auth login" ;;
-        fedora) echo "sudo dnf install -y gh && gh auth login" ;;
-        arch) echo "sudo pacman -S github-cli && gh auth login" ;;
-        *) echo "see https://cli.github.com/  — then: gh auth login" ;;
-      esac
-      ;;
-    agent-browser)
-      echo "npm install -g agent-browser && agent-browser install"
-      ;;
-    acli)
-      case "$platform" in
-        macos) echo "brew install --cask atlassian-acli  — then: acli jira auth login --web" ;;
-        debian|fedora|arch|linux) echo "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/  — then: acli jira auth login --web" ;;
-        *) echo "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/" ;;
-      esac
-      ;;
-    docker)
-      case "$platform" in
-        macos) echo "brew install --cask docker  (or OrbStack: brew install --cask orbstack)" ;;
-        debian) echo "see https://docs.docker.com/engine/install/debian/" ;;
-        fedora) echo "see https://docs.docker.com/engine/install/fedora/" ;;
-        arch) echo "sudo pacman -S docker docker-compose" ;;
-        *) echo "see https://docs.docker.com/get-docker/" ;;
-      esac
-      ;;
-    *)
-      echo "see your distro's package manager"
-      ;;
-  esac
+  jq -r --arg n "$1" --arg p "$platform" \
+    '(.tools[] | select(.name==$n) | .hints) as $h | ($h[$p] // $h.default)' "$TOOLS_JSON"
 }
+usedby_for() {
+  jq -r --arg n "$1" '(.tools[] | select(.name==$n) | .usedBy) // ""' "$TOOLS_JSON"
+}
+
+missing_required=()
+missing_recommended=()
+for cmd in "${required[@]}"; do
+  is_present "$cmd" || missing_required+=("$cmd")
+done
+for cmd in "${recommended[@]}"; do
+  is_present "$cmd" || missing_recommended+=("$cmd")
+done
+
+# Everything present — silent exit, no context to inject.
+if [ ${#missing_required[@]} -eq 0 ] && [ ${#missing_recommended[@]} -eq 0 ]; then
+  exit 0
+fi
 
 # Build the human-readable warning body. Terminal form of the orc:insights
 # palette: emoji-header blockquote, no [!TYPE] tag — the TUI doesn't parse
-# GitHub alert types and would print the tag as junk text. Emitted via
-# `systemMessage` (see below) so the harness renders it directly rather
-# than relying on the model to reproduce the callout.
+# GitHub alert types and would print the tag as junk text.
 build_block() {
   if [ ${#missing_required[@]} -gt 0 ]; then
     printf "> **🛑 orc tool check**\n"
@@ -132,12 +148,8 @@ build_block() {
     printf "> **Missing recommended** (some commands won't work):\n"
     for cmd in "${missing_recommended[@]}"; do
       printf "> - \`%s\` — %s\n" "$cmd" "$(hint_for "$cmd")"
-      case "$cmd" in
-        gh) printf ">     - Used by: \`/orc:code-review\`, \`/orc:address\`, \`/orc:ship\`, \`/orc:postmortem\`\n" ;;
-        agent-browser) printf ">     - Used by: \`/orc:qa\` (web mode — required for browser-driven QA evidence)\n" ;;
-        acli) printf ">     - Used by: \`/orc:jira\`, \`/orc:plan|start|debug|flow\` (Jira ticket linking), \`/orc:prd|trd\` (\`--from-jira\` seeding)\n" ;;
-        docker) printf ">     - Used by: \`/orc:env\`, \`/orc:qa\`/\`/orc:flow\` env provisioning (host-mode fallback applies without it)\n" ;;
-      esac
+      usedby=$(usedby_for "$cmd")
+      [ -n "$usedby" ] && printf ">     - Used by: %s\n" "$usedby"
     done
     printf ">\n"
   fi
@@ -148,49 +160,20 @@ warning_block=$(build_block)
 
 # The user-facing warning goes in the top-level `systemMessage` field —
 # Claude Code displays it directly to the user (once, at session start),
-# independent of the model. This is what restores deterministic callout
-# coloring: the harness renders the markdown itself instead of the model
-# re-emitting it.
-#
-# A short, neutral note still goes to the model's context so it can offer
-# install help if the user asks — but it is NOT a "surface this verbatim"
-# directive, so the model won't also re-print the warning.
+# independent of the model. A short, neutral note goes to the model's
+# context so it can offer install help if the user asks.
 req_list="none"
 [ ${#missing_required[@]} -gt 0 ] && req_list="${missing_required[*]}"
 rec_list="none"
 [ ${#missing_recommended[@]} -gt 0 ] && rec_list="${missing_recommended[*]}"
 model_note="orc tool check (SessionStart): some CLI dependencies are missing — required: ${req_list}; recommended: ${rec_list}. The user has already been shown install hints directly. Do not re-print the warning; offer install help only if asked."
 
-# jq owns the JSON encoding — with one exception: when jq ITSELF is the
-# missing dependency this script exists to report, fall back to minimal
-# hand escaping so the warning still reaches the user.
-if command -v jq >/dev/null 2>&1; then
-  jq -n --arg warn "$warning_block" --arg note "$model_note" '{
-    systemMessage: $warn,
-    hookSpecificOutput: {
-      hookEventName: "SessionStart",
-      additionalContext: $note
-    }
-  }'
-else
-  esc() {
-    local s="$1"
-    s="${s//\\/\\\\}"
-    s="${s//\"/\\\"}"
-    s="${s//$'\n'/\\n}"
-    s="${s//$'\r'/\\r}"
-    s="${s//$'\t'/\\t}"
-    printf '%s' "$s"
+jq -n --arg warn "$warning_block" --arg note "$model_note" '{
+  systemMessage: $warn,
+  hookSpecificOutput: {
+    hookEventName: "SessionStart",
+    additionalContext: $note
   }
-  cat <<EOF
-{
-  "systemMessage": "$(esc "$warning_block")",
-  "hookSpecificOutput": {
-    "hookEventName": "SessionStart",
-    "additionalContext": "$(esc "$model_note")"
-  }
-}
-EOF
-fi
+}'
 
 exit 0
