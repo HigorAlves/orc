@@ -20,7 +20,7 @@
 
 ## What it does
 
-`orc` is a personal-workflow plugin: **57 curated skills, 21 composite slash commands, 12 specialist subagents, and 6 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers in commits/PRs, dependency pre-flight check, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged" with `orc-implementer` writing the code slice-by-slice in between.
+`orc` is a personal-workflow plugin: **58 curated skills, 22 composite slash commands, 12 specialist subagents, and 6 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers in commits/PRs, dependency pre-flight check, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged" with `orc-implementer` writing the code slice-by-slice in between.
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
@@ -51,6 +51,7 @@ flowchart LR
 | Bootstrapping a new package/service | `/orc:scaffold` |
 | Parallel-dispatching N independent tasks | `/orc:fan-out` |
 | Filing/linking a Jira ticket from the terminal | `/orc:jira` |
+| Collecting browser evidence for a ticket + attaching it | `/orc:evidence` |
 
 Or skip the per-phase invocations and use **`/orc:flow`** to drive the whole loop — gates at every phase, autonomous implementation in between via `orc-implementer`.
 
@@ -96,7 +97,7 @@ To pin a specific commit/tag, use the longhand source form in `~/.claude/setting
       "source": {
         "source": "url",
         "url": "https://github.com/HigorAlves/orc.git",
-        "ref": "v0.9.0"
+        "ref": "v0.10.0"
       }
     }
   },
@@ -177,6 +178,7 @@ Prompted at plugin enable time (re-run via `/plugin`); exported to hooks and lib
 | `/orc:prd` | Author a Product Requirements Document (`docs/prds/NNNN-*.md`); supports `--interview` and `--from-jira <KEY>` |
 | `/orc:trd` | Author a Technical Requirements Document (`docs/trds/NNNN-*.md`); supports `--from-prd NNNN` |
 | `/orc:jira` | Manage Jira tickets via `acli` (create/subtask/link/view/search/transition); `bind`/`unbind` a ticket key to the current `.orc/` session |
+| `/orc:evidence` | Collect browser evidence scoped to a ticket (Chrome or agent-browser), then upload it to the ticket or keep it local — always asks |
 | `/orc:postmortem` | Author a blameless incident postmortem; files P0 action items as tracker issues |
 | `/orc:cleanup` | Remove `.orc/` state, worktree, and (if merged) branch for completed sessions |
 
@@ -184,7 +186,7 @@ Prompted at plugin enable time (re-run via `/plugin`); exported to hooks and lib
 
 **Core (18, always available):** `tdd`, `systematic-debugging`, `verification-before-completion`, `writing-plans`, `executing-plans`, `caveman-review`, `caveman-pr`, `receiving-code-review`, `requesting-code-review`, `git-commit`, `gh-cli`, `using-git-worktrees`, `finishing-a-development-branch`, `dispatching-parallel-agents`, `error-handling-patterns`, `git-advanced-workflows`, `architecture-patterns`, `improve-codebase-architecture`.
 
-**Orc mechanics (4, authored for orc):** `workspace-mode` (cross-repo flag precedence), `pr-size-budget` (the soft 300-LOC gate), `stack-pr` (split a big branch into a chained PR stack), `env-provisioning` (Docker dev environments for QA — detection ladder, healthcheck-gated boot, host-mode fallback).
+**Orc mechanics (5, authored for orc):** `workspace-mode` (cross-repo flag precedence), `pr-size-budget` (the soft 300-LOC gate), `stack-pr` (split a big branch into a chained PR stack), `env-provisioning` (Docker dev environments for QA — detection ladder, healthcheck-gated boot, host-mode fallback), `evidence-publish` (deliver a QA evidence packet to a tracker or keep it local — enablement detection, curated payload, always-ask gate, Jira adapter).
 
 **Senior/architect practice (5, authored for orc):** `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem` (blameless incident postmortems), `prd-writing` (Product Requirements Documents), `trd-writing` (Technical Requirements Documents).
 
@@ -196,7 +198,7 @@ Prompted at plugin enable time (re-run via `/plugin`); exported to hooks and lib
 
 **Pack: workflow-extras (13):** `docker-expert`, `turborepo`, `sentry-cli`, `jira-cli`, `inline-review`, `write-a-skill`, `documentation-writer`, `doc-writing`, `create-readme`, `to-prd`, `to-issues`, `grill-me`, `agent-browser` (drives a real browser for `/orc:qa` web mode).
 
-Plus the meta skills `using-orc` (auto-injected at SessionStart, encodes the iron rules + routing) and `insights` (the inline insight-callout convention). **Total: 57 skills.**
+Plus the meta skills `using-orc` (auto-injected at SessionStart, encodes the iron rules + routing) and `insights` (the inline insight-callout convention). **Total: 58 skills.**
 
 ## Designed to stay lean
 
@@ -258,11 +260,11 @@ Without the required artifacts, "QA passed" is not an accepted claim. The `orc-q
 
 ```
 orc/
-├── .claude-plugin/plugin.json   # manifest (v0.9.0)
+├── .claude-plugin/plugin.json   # manifest (v0.10.0)
 ├── .orc/                        # gitignored — workspace state per session
-├── skills/<name>/SKILL.md       # 57 skills — a thin index per skill
-│   └── <name>/references/*.md   #   lazy-loaded detail for large skills (139 files, 15 skills)
-├── commands/<name>.md           # 21 slash commands (incl. /orc:flow umbrella)
+├── skills/<name>/SKILL.md       # 58 skills — a thin index per skill
+│   └── <name>/references/*.md   #   lazy-loaded detail for large skills (142 files, 16 skills)
+├── commands/<name>.md           # 22 slash commands (incl. /orc:flow umbrella)
 ├── agents/orc-<role>.md         # 12 subagents (incl. orc-implementer for /orc:flow Phase 5)
 ├── hooks/
 │   ├── hooks.json

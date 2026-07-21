@@ -3,7 +3,7 @@
   "name": "orc",
   "displayName": "orc",
   "description": "Personal Claude Code plugin orchestrating the plan → debug → verify → ship loop with curated skills and slash commands.",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "author": {
     "name": "Higor Alves",
     "email": "me@higoralves.dev"
