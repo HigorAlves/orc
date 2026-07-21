@@ -22,6 +22,9 @@ allowed-tools:
   - Bash(npx agent-browser:*)
   - Bash(orc-workspace-detect:*)
   - Bash(orc-docker-env:*)
+  - Bash(acli:*)
+  - Bash(jq:*)
+  - Bash(git branch --show-current:*)
 ---
 
 # /orc:qa
@@ -132,6 +135,10 @@ Append to `.orc/<branch>/files/progress.md`:
 
 Bump `checkpoint.md` to mark QA complete.
 
+### Phase 6 — Publish evidence (web mode, optional)
+
+When Phase 4 produced a packet, invoke `orc:evidence-publish` — pass `qaDir = ${ORC_STATE_DIR}/<sanitized-branch>/files/qa/`, the browser-QA `verdict`, and (if the session has one) its bound `jiraTicket`. The skill detects tracker enablement, curates the visual proof, and **asks** whether to upload the evidence to the ticket or keep it local, recording the outcome in `steps.md`. No tracker bound / not authed ⇒ it degrades to a one-line "kept local" note — so this is safe to always run in web mode. Skip entirely for code-only QA (no packet to deliver).
+
 ## Iron rule
 
 For any web-mode QA, the `qa/` directory MUST contain the driver's full packet:
@@ -160,4 +167,5 @@ If any required artifact is missing, surface it and stop — the user must addre
 
 - `.orc/<branch>/files/qa/...` (web mode)
 - `.orc/<branch>/files/progress.md` (appended)
+- Ticket delivery outcome recorded in `steps.md` (web mode, via `orc:evidence-publish`)
 - Verdict echoed to the user
