@@ -7,3 +7,7 @@
 # (per the plan). Never commit; the plugin loader doesn't read them.
 skills-database/
 skills-old/
+
+# Graphify code-graph output — regenerated locally from source (orc:code-discovery).
+# Never commit; it's a derived artifact, not source.
+graphify-out/

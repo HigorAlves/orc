@@ -81,6 +81,10 @@ Conflict recovery options (one prompt covering all conflicting repos at once):
 
 Record any per-repo branch overrides in `checkpoint.md` and `perRepoState[<repo>].branch`.
 
+### Phase 1b — Prime code discovery (optional, non-blocking)
+
+Follow `orc:code-discovery`: if `graphify` is installed and the new worktree has no `graphify-out/graph.json`, build a code-only graph once so Phases 2–3 (and the later implementer) query it instead of grepping — `graphify extract . --code-only` (headless, local AST, no API key, seconds). Add `graphify-out/` to `.git/info/exclude`. In workspace mode, build one per target repo's worktree. If `graphify` is absent or the build fails, skip silently — discovery falls back to Glob/Grep and the flow is unaffected.
+
 ### Phase 2 — Plan
 
 Invoke `/orc:plan` (skip `--issues`, skip `--grill` unless user opts in). Forward `--jira <KEY>` if it was passed to `/orc:start` — `/orc:plan`'s Phase 1 prompt will be suppressed and the link recorded silently in `${ORC_STATE_DIR}/orc.json` + `checkpoint.md`. The plan is written to `${ORC_STATE_DIR}/<branch>/files/plan.md`. Forward `--repos`/`--repo`/`--all-repos`/`--this-repo` so `/orc:plan` doesn't re-prompt and the plan template gets workspace-mode sections (Repo touchpoints, Cross-repo contract, Merge order, per-slice `repo:` tags).

@@ -153,6 +153,8 @@ func applyToolsAction(desiredOn map[string]bool) (string, error) {
 	d := platform.Detect()
 	sysMgr := d.PackageManager()
 	hasNpm := d.Has("npm")
+	hasUv := d.Has("uv")
+	hasPipx := d.Has("pipx")
 
 	var b strings.Builder
 	n := 0
@@ -160,7 +162,7 @@ func applyToolsAction(desiredOn map[string]bool) (string, error) {
 		if !desiredOn[t.Name] || d.Has(t.Name) {
 			continue // only newly-checked, missing tools
 		}
-		cmd, ok := pkgmgr.Resolve(t, sysMgr, hasNpm)
+		cmd, ok := pkgmgr.Resolve(t, sysMgr, hasNpm, hasUv, hasPipx)
 		if !ok {
 			fmt.Fprintf(&b, "• %s — no unattended install; run: %s\n", t.Name, t.Hint(d.Platform()))
 			continue
@@ -170,8 +172,17 @@ func applyToolsAction(desiredOn map[string]bool) (string, error) {
 		var buf bytes.Buffer
 		if e := cmd.Run(&buf, &buf); e != nil {
 			fmt.Fprintf(&b, "  failed: %v\n%s\n", e, strings.TrimSpace(buf.String()))
-		} else {
-			fmt.Fprintf(&b, "  installed.\n")
+			continue
+		}
+		fmt.Fprintf(&b, "  installed.\n")
+		// Run the tool's finish-setup step (e.g. `graphify install`) only after a
+		// successful install.
+		if post, ok := pkgmgr.PostInstall(t); ok {
+			fmt.Fprintf(&b, "  finishing setup: %s\n", post.String())
+			var pbuf bytes.Buffer
+			if e := post.Run(&pbuf, &pbuf); e != nil {
+				fmt.Fprintf(&b, "  post-install failed: %v\n%s\n", e, strings.TrimSpace(pbuf.String()))
+			}
 		}
 	}
 	if n == 0 {

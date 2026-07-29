@@ -54,10 +54,14 @@ plugin.json `userConfig` prompts at enable time; values substitute as `${user_co
 ### C5. Antigravity mirror: fix or archive — RESOLVED: antigravity deleted (a2e7e73)
 The mirror is broken beyond cosmetics: `antigravity/hooks.json` invokes nonexistent `gemini-skills/` paths, `hooks/session-start.sh` resolves `orc-core` at the wrong path (`antigravity/orc-core/` instead of `antigravity/skills/orc-core/`, so it injects a literal error string), versions drift (README says 0.4.0, plugin.json says 0.4.3, vs orc's 0.6.0), roughly 90 shared files differ from `orc/` (measured 89 on the 0.6.0 train — the gap widens with every unmirrored change), and `dist/` has no generator. Either (a) write `scripts/sync-antigravity.sh` + CI byte-compare and fix the two broken hook paths, or (b) move `antigravity/` to its own repo/branch and delete it here. Given zero shared tooling exists, (b) is cheaper and honest. Decide early — it de-risks every future change.
 
+## 0.11.0 — Graphify code-discovery integration — SHIPPED (0.11.0)
+
+Wired [Graphify](https://github.com/Graphify-Labs/graphify) into discovery to cut the largest easily-wasted token cost. New `orc:code-discovery` skill (detect → build a code-only graph → query-first with `graphify query`/`explain`/`path` → Glob/Grep fallback), preloaded into `orc-implementer` / `orc-debug-investigator` / `orc-refactor-architect` / `orc-prd-analyzer` (each also gains `Bash(graphify:*)`), and referenced from `writing-plans`, `/orc:start` (Phase 1b priming), and `improve-codebase-architecture`. `graphify` registered as a `recommended` tool in both `tools.json` copies with a **new uv/pipx install path** and a general `postInstall` step (`graphify install`) wired into `orc doctor --fix` and the TUI. A project-scoped **stdio** `graphify` entry added to the MCP registry (`orc mcp add graphify`). Optional and version-tolerant throughout — absent/unhealthy graphify degrades to Glob/Grep, and no API key is ever used (code extraction is local AST). Origin: user request, not on the original roadmap.
+
 ## Evaluated and deliberately skipped
 
 - `type: prompt` / `type: agent` hooks for the commit guards — latency + cost per Bash call outweighs closing the `&&`-chaining bypass. If hardening is wanted, parse the first non-env token and handle `git -C` in the existing scripts instead.
 - `once: true` hooks — only honored in skill frontmatter, not plugin hooks.json; can't replace the startup-only matcher.
-- Monitors, channels, LSP servers, themes, MCP servers — no orc use case; orc is CLI-tool-driven by design.
+- Monitors, channels, LSP servers, themes — no orc use case; orc is CLI-tool-driven by design. (MCP servers were originally in this list; the 0.11.0 Graphify integration added the first orc-native use case — a project-scoped stdio code-graph server — so MCP is no longer a blanket skip.)
 - Agent teams — still experimental behind an env flag; `/orc:fan-out` covers the stable subset via parallel subagents.
 - `defaultEnabled: false` — wrong for a personal always-on plugin.

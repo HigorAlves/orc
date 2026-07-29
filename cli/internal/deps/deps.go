@@ -31,10 +31,14 @@ type Tool struct {
 	// Hints maps a platform id (macos/debian/fedora/arch/linux) to a human
 	// install hint, with a required "default" fallback.
 	Hints map[string]string `json:"hints"`
-	// Install maps a package-manager id (brew/apt/dnf/pacman/npm) to the args
-	// passed after that manager's install verb. Absent when there is no safe
+	// Install maps a package-manager id (brew/apt/dnf/pacman/npm/uv/pipx) to the
+	// args passed after that manager's install verb. Absent when there is no safe
 	// unattended recipe.
 	Install map[string][]string `json:"install,omitempty"`
+	// PostInstall is an optional command (argv form) run once, after a successful
+	// install, to finish setup — e.g. graphify's `graphify install`, which
+	// registers its Claude Code skill. Absent for single-step tools.
+	PostInstall []string `json:"postInstall,omitempty"`
 }
 
 // Hint returns the install hint for platform, falling back to the default.

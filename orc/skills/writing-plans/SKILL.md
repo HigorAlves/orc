@@ -24,7 +24,7 @@ If the spec covers multiple independent subsystems, it should have been broken i
 
 ## File Structure
 
-Before defining tasks, map out which files will be created or modified and what each one is responsible for. This is where decomposition decisions get locked in.
+Before defining tasks, map out which files will be created or modified and what each one is responsible for. This is where decomposition decisions get locked in. In an existing codebase, follow `orc:code-discovery` to locate the relevant files cheaply — when a Graphify code graph is available, `graphify query`/`path` surfaces which modules a change touches and how they connect, so you map the file list without reading the whole tree; fall back to Glob/Grep otherwise.
 
 - Design units with clear boundaries and well-defined interfaces. Each file should have one clear responsibility.
 - You reason best about code you can hold in context at once, and your edits are more reliable when files are focused. Prefer smaller, focused files over large ones that do too much.

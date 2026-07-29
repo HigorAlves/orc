@@ -56,6 +56,28 @@ var registry = []Server{
 		Description: "Vercel — projects, deployments, logs (OAuth in browser)",
 		Args:        []string{"--transport", "http", "vercel", "https://mcp.vercel.com"},
 	},
+	{
+		Name:        "graphify",
+		Description: "Graphify — query a local code-graph (stdio; project-scoped; needs a built graphify-out/graph.json)",
+		// Unlike the remote OAuth/HTTP servers above, this is a LOCAL STDIO server:
+		// it registers a project-scoped command Claude launches from the repo root
+		// to serve the graph built by `graphify extract . --code-only`. It exposes
+		// query_graph / get_node / get_neighbors / shortest_path — the tool-driven
+		// equivalent of the `orc:code-discovery` query flow.
+		//
+		// Requires the `mcp` extra: install graphify as `graphifyy[mcp]` (the tool
+		// registry's install recipe does this). Plain `graphifyy` serves discovery
+		// (extract/query) fine but `graphify-mcp` exits with
+		// `ModuleNotFoundError: mcp` without the extra.
+		//
+		// NOTE — graphify is pre-1.0 and its CLI churns: this invocation is
+		// version-sensitive. `graphify-mcp` is the console entry point
+		// (graphify.serve:_main); the module-form equivalent is
+		// `python -m graphify.serve graphify-out/graph.json`. Verified against
+		// graphify 0.9.30: `graphify-mcp [graph_path]` defaults graph_path to
+		// graphify-out/graph.json on stdio transport.
+		Args: []string{"--scope", "project", "graphify", "--", "graphify-mcp", "graphify-out/graph.json"},
+	},
 }
 
 // Lookup returns a known server by name.
