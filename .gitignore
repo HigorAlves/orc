@@ -11,3 +11,7 @@ skills-old/
 # Graphify code-graph output — regenerated locally from source (orc:code-discovery).
 # Never commit; it's a derived artifact, not source.
 graphify-out/
+
+# Machine-local Claude Code settings (per-user permissions/paths). Portable
+# guard so contributors without a global rule don't commit their own.
+.claude/settings.local.json

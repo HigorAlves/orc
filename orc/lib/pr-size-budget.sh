@@ -172,6 +172,7 @@ orc_pr_loc_breakdown() {
     count=$((count+1))
     [ "$count" -gt 10 ] && break
     local del=$((total - add))
+    # shellcheck disable=SC2016  # single-quoted string is a printf FORMAT, not meant to expand
     printf '| `%s` | %d | %d | %d |\n' "$file" "$add" "$del" "$total"
   done <<< "$raw"
   if [ "$total_files" -gt 10 ]; then

@@ -115,7 +115,7 @@ Plus five skills authored fresh for senior/architect practice: `adr-writing` (Ar
 
 orc borrows compozy's session-state idea, hook layout, and YAML-frontmatter conventions. It diverges in two places:
 1. Workspace state is **hidden + gitignored** (`.orc/`) instead of committed (`compozy/`). orc is a personal plugin; nothing needs sharing.
-2. Command surface is focused on the personal loop (21 commands, all composing the same plan → debug → verify → ship spine), with explicit web-QA evidence as a first-class concern — including the environment it runs against: `/orc:qa` and `/orc:flow` provision a Docker dev environment via `orc-env-provisioner` before browser QA (`orc:env-provisioning` skill; `/orc:env` standalone).
+2. Command surface is focused on the personal loop (22 commands, all composing the same plan → debug → verify → ship spine), with explicit web-QA evidence as a first-class concern — including the environment it runs against: `/orc:qa` and `/orc:flow` provision a Docker dev environment via `orc-env-provisioner` before browser QA (`orc:env-provisioning` skill; `/orc:env` standalone).
 
 ## See also
 

@@ -5,11 +5,23 @@ on:
   push:
     branches: [main]
 
+# Least privilege: these jobs only read the repo. Bump per-job if one ever needs more.
+permissions:
+  contents: read
+
+# Cancel superseded runs on rapid pushes / PR updates.
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   static:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # verify-version.sh checks the README ref against real tags
 
       - name: Syntax-check hook scripts, libs, bin
         run: |
@@ -19,6 +31,9 @@ jobs:
             bash -n "$f" || status=1
           done
           exit "$status"
+
+      - name: Shellcheck first-party scripts
+        run: bash scripts/ci/shellcheck.sh
 
       - name: Validate all JSON
         run: git ls-files '*.json' | xargs -n1 jq empty
@@ -48,35 +63,50 @@ jobs:
             exit 1
           fi
 
-      - name: Count drift (README + marketplace.json)
-        run: |
-          skills=$(ls -d orc/skills/*/ | wc -l | xargs)
-          commands=$(ls orc/commands/*.md | wc -l | xargs)
-          agents=$(ls orc/agents/*.md | wc -l | xargs)
-          hooks=$(ls orc/hooks/scripts/*.sh | wc -l | xargs)
-          fail() { echo "Count drift: expected '$1' (actual: ${skills} skills / ${commands} commands / ${agents} agents / ${hooks} hooks)"; exit 1; }
-          grep -q "${skills} curated skills" README.md                    || fail "${skills} curated skills in README.md"
-          grep -q "Total: ${skills} skills" README.md                     || fail "Total: ${skills} skills in README.md"
-          grep -q "${commands} composite slash commands" README.md        || fail "${commands} composite slash commands in README.md"
-          grep -q "# ${commands} slash commands" README.md                || fail "# ${commands} slash commands in README.md layout"
-          grep -q "${agents} specialist subagents" README.md              || fail "${agents} specialist subagents in README.md"
-          grep -q "${hooks} hook scripts" README.md                       || fail "${hooks} hook scripts in README.md"
-          grep -q "${skills} curated skills" .claude-plugin/marketplace.json || fail "${skills} curated skills in marketplace.json"
+      - name: Reference integrity (skills / commands / agents cross-refs)
+        run: bash scripts/ci/verify-refs.sh
+
+      - name: Hook wiring + userConfig consumers
+        run: bash scripts/ci/verify-hooks.sh
+
+      - name: Frontmatter conventions
+        run: bash scripts/ci/verify-frontmatter.sh
+
+      - name: Count + marketplace/architecture consistency
+        run: bash scripts/ci/verify-counts.sh
+
+      - name: Version / release-ref consistency
+        run: bash scripts/ci/verify-version.sh
 
   plugin-validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: Install Claude Code CLI
-        run: npm install -g @anthropic-ai/claude-code
+        # Pinned for reproducibility; bumped via dependabot/PR, not floating latest.
+        run: npm install -g @anthropic-ai/claude-code@2.1.220
       - name: Validate plugin manifest (strict)
         run: claude plugin validate ./orc --strict
 
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # gitleaks scans full history
+      - name: Scan for secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   cli:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: cli
@@ -86,11 +116,25 @@ jobs:
         with:
           go-version-file: cli/go.mod
           cache-dependency-path: cli/go.sum
-      - name: Verify formatting
-        run: test -z "$(gofmt -l .)" || { echo 'gofmt needed:'; gofmt -l .; exit 1; }
-      - name: go vet
-        run: go vet ./...
+
+      - name: go.mod / go.sum are tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.12.2
+          working-directory: cli
+
       - name: go build
         run: go build ./...
-      - name: go test
-        run: go test ./...
+
+      - name: go test (race + coverage)
+        run: |
+          go test -race -coverprofile=coverage.out ./...
+          go tool cover -func=coverage.out | tail -1
+
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
