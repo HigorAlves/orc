@@ -97,7 +97,7 @@ orc is a personal plugin, but the conventions here keep future-you sane. Read th
 claude --plugin-dir /Users/higoralves/Developer/system/orc
 # inside Claude Code:
 /reload-plugins
-/orc:                  # autocomplete should list all 20 commands
+/orc:                  # autocomplete should list all 22 commands
 ```
 
 ## Commit hygiene

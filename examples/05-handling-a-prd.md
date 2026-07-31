@@ -1,6 +1,6 @@
 # 05 — Handling a PRD
 
-> **Receiving vs. authoring** — this example is for *receiving* a PRD (PM hands you one). If you need to *author* a PRD from scratch, reach for **`/orc:prd`** instead (see `skills/prd-writing/SKILL.md`); for the *technical contract* downstream of a PRD, reach for **`/orc:trd`**.
+> **Receiving vs. authoring** — this example is for *receiving* a PRD (PM hands you one). If you need to *author* a PRD from scratch, reach for **`/orc:prd`** instead (see `orc/skills/prd-writing/SKILL.md`); for the *technical contract* downstream of a PRD, reach for **`/orc:trd`**.
 
 ## Scenario
 
