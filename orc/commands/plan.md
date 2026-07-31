@@ -14,6 +14,7 @@ allowed-tools:
   - Bash(git rev-parse:*)
   - Bash(git branch --show-current:*)
   - Bash(jq:*)
+  - Bash(graphify:*)
   - Bash(orc-workspace-detect:*)
 ---
 
@@ -62,13 +63,17 @@ If the input is short and clear, skip Phase 0 and go straight to Phase 1.
 5. Append/update an entry in `${ORC_STATE_DIR}/orc.json` (registry) with `command: "plan"`, `status: in_progress`, `current_phase: 1`, `total_phases: 4` (or 5 with `--issues`, 6 with `--grill --issues`), and `jiraTicket: <KEY>` (omit field if null). In workspace mode, also set `scope: "workspace"`, `repos: targetRepos`, and `perRepoState` rows.
 6. Write `checkpoint.md` with frontmatter including `jiraTicket: <KEY>` if set, and (workspace mode) `repos: [<list>]`.
 
+### Phase 1b — Prime code discovery (optional, non-blocking)
+
+Follow `orc:code-discovery`: if `graphify` is installed, ensure a fresh code graph exists before drafting — build it if missing (`graphify extract . --code-only`, local AST, no key, seconds) or refresh it if `graph.json`'s `built_at_commit` differs from the current branch (`graphify update .`). This lets Phase 2 (`orc:writing-plans`) and any dispatched `orc-prd-analyzer` map file touchpoints and blast-radius by query instead of grepping the tree. Add `graphify-out/` to `.git/info/exclude`. In workspace mode, prime one per target repo. If `graphify` is absent or the build fails, skip silently — planning falls back to Glob/Grep and is unaffected.
+
 ### Phase 2 — Draft the plan
 
 Invoke `orc:writing-plans`. Follow that skill exactly. Write the output to `${ORC_STATE_DIR}/<branch>/files/plan.md`. Update `checkpoint.md` (phase=2, last_artifact=plan.md).
 
 **Per-slice LOC budget contract (all modes)** — every slice MUST carry an `est_loc: <int>` field as part of its header. The estimate is the implementer's **contract**, not a precise prediction:
 
-- Heuristic for the planner: `est_loc ≈ (new_files * 80) + (modified_files * 30) + boilerplate_test_lines`. Adjust for known-large files.
+- Heuristic for the planner: `est_loc ≈ (new_files * 80) + (modified_files * 30) + boilerplate_test_lines`. Adjust for known-large files. When a Graphify graph exists (primed in Phase 1b), sharpen `modified_files` with `graphify affected "<symbol>"` blast-radius per `orc:writing-plans`, and flag high-fan-in changes as `ships_as_stack: true` before implementation.
 - If a slice's estimate exceeds `${ORC_PR_LOC_BUDGET:-300}`, **split the slice further** OR mark it `ships_as_stack: true` to signal the implementer should expect to invoke `/orc:stack-pr` at ship time.
 - During Phase 5 (implement), if a slice's actual diff exceeds `est_loc * 1.5`, the implementer **escalates** rather than balloons the slice silently. This is enforced by `orc-implementer`'s escalation conditions.
 

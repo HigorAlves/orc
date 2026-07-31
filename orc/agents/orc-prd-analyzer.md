@@ -72,7 +72,7 @@ Each question should be **answerable** ("yes/no" or "pick one of these options")
 ## Workflow
 
 1. **Read the PRD** in full. If it's a GitHub issue or a linked URL, fetch via `gh issue view` or `WebFetch`.
-2. **Read the codebase context** — look for `CONTEXT.md`, `docs/architecture.md`, recent ADRs that might constrain the design space. When a Graphify code graph is available (see `orc:code-discovery`, preloaded above), query it to see which existing subsystems the PRD touches instead of grepping the tree.
+2. **Read the codebase context** — look for `CONTEXT.md`, `docs/architecture.md`, recent ADRs that might constrain the design space. When a Graphify code graph is available (see `orc:code-discovery`, preloaded above), query it to see which existing subsystems the PRD touches instead of grepping the tree — `graphify god-nodes --json` surfaces the load-bearing hubs a feature will likely lean on, and `graphify affected "<subsystem-entrypoint>"` enumerates the real downstream blast-radius. Feed those into **Dependencies** (what this feature couples to) and **Edge cases the PRD doesn't address** (call sites the PRD silently affects). Verify by reading the cited spans — the graph is a lead, not proof.
 3. **Map** each PRD section to the extraction categories. Identify what's missing.
 4. **Draft the questions** prioritized by implementation impact.
 5. **Output the report.**

@@ -65,7 +65,12 @@ Return a single Markdown report:
 
 ## Recommended regression test
 <one paragraph — what to assert and at what level (unit / integration / e2e)>
+
+## Graph nodes relied on
+<space-separated Graphify node ids/labels you queried in step 4 — e.g. `cache_get RateLimiter`. OMIT this line entirely if you fell back to grep and did not use the code graph.>
 ```
+
+The **Graph nodes relied on** line is machine-read by the caller (`/orc:debug`): once the fix is verified it records whether those nodes led to the truth (`graphify save-result` → work-memory), so future discovery prefers the ones that paid off and skips the dead ends. Populate it only with nodes you actually queried; the graph is a lead you verified by reading, never the source of the diagnosis.
 
 ## Tone
 

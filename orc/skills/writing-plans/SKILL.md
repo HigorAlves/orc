@@ -54,6 +54,8 @@ est_loc ≈ (new_files * 80) + (modified_files * 30) + boilerplate_test_lines
 
 Adjust upward for known-large files (config, fixtures), downward for one-line tweaks.
 
+When a Graphify code graph is available (per `orc:code-discovery`), sharpen the `modified_files` term with real blast-radius: `graphify affected "<symbol-you'll-change>" --depth 2` lists the call sites that ripple from a change. Count each caller you'll actually have to touch as ~+30 LOC, and treat a symbol with many affected callers as a **`ships_as_stack: true`** signal *before* implementation, not a surprise at ship time. `affected` is a lead, not proof — it doesn't expose per-edge confidence — so read each cited caller to confirm it needs to change before counting it. Fall back to `Grep` for callers when no graph is available.
+
 When a task's natural decomposition would exceed **1.5× the budget** (~450 LOC), that's a planning signal:
 
 - **Split the task further.** Usually there's a refactor-then-feature seam that hasn't been surfaced yet.

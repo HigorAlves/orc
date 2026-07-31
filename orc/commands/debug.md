@@ -21,6 +21,11 @@ allowed-tools:
   - Bash(go:*)
   - Bash(cargo:*)
   - Bash(pytest:*)
+  - Bash(graphify extract:*)
+  - Bash(graphify update:*)
+  - Bash(graphify check-update:*)
+  - Bash(graphify save-result:*)
+  - Bash(graphify reflect:*)
   - Bash(orc-workspace-detect:*)
 ---
 
@@ -54,6 +59,8 @@ In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. Th
 
 ### Phase 2 — Investigate (no fixes)
 
+**Prime code discovery first (optional, non-blocking).** Follow `orc:code-discovery`: if `graphify` is installed, ensure a fresh graph on the buggy branch before dispatching — build if missing (`graphify extract . --code-only`) or refresh if stale (`graphify update .`), so the investigator queries the graph from turn one instead of discovering staleness mid-investigation. Skip silently if graphify is absent or the build fails.
+
 Dispatch the `orc-debug-investigator` subagent via `Task`. Pass it:
 - The bug description / failing test name from arguments.
 - The current branch + recent commits (`git log -10 --oneline`).
@@ -69,6 +76,13 @@ Print the Gate headline (`**⛔ Gate — diagnosis**`, one line on the root caus
 - "Need more investigation — re-dispatch investigator with this hint: …"
 - "Diagnosis is wrong — abort"
 
+If the investigator's report carried a `## Graph nodes relied on` line, record the miss so the code graph stops recommending that path (best-effort; silent no-op when graphify is absent, no `graphify-out/graph.json` exists, or the `learn_from_outcomes` user config is `false`):
+
+```bash
+graphify save-result --type query --outcome corrected --nodes <cited-nodes> \
+  --question "<symptom>" --correction "<the right area, if known>" && graphify reflect
+```
+
 ### Phase 4 — Write the regression test (TDD red)
 
 Invoke `orc:tdd`. Write the test described in the diagnosis. Run the suite — it MUST fail with the expected message (proving it captures the bug). Commit the failing test on a fix branch.
@@ -82,7 +96,11 @@ Print the Gate headline (`**⛔ Gate — regression-test author**`), then `AskUs
 
 ### Phase 5 — Fix and verify
 
-Hand the diagnosis + regression test to `orc-code-fixer` via `Task`. The agent applies the fix, re-runs tests. Read the report. If green, proceed. If red, return to Phase 2 (Investigate) with the new evidence.
+Hand the diagnosis + regression test to `orc-code-fixer` via `Task`. The agent applies the fix, re-runs tests. Read the report. If green, proceed. If red, return to Phase 2 (Investigate) with the new evidence — and if the superseded diagnosis carried a `## Graph nodes relied on` line, first record those nodes as a dead end so re-investigation (and future sessions) don't retread them (best-effort, same guards as Phase 3):
+
+```bash
+graphify save-result --type query --outcome dead_end --nodes <cited-nodes> --question "<symptom>" && graphify reflect
+```
 
 In workspace mode, group the diagnosis's remediation slices by their `repo:` tag and dispatch **one fixer per repo** (parallel, single response, multiple `Task` calls), each scoped to its own `repoPath`. Aggregate per-repo test reports into a single verdict before deciding green/red.
 
@@ -92,6 +110,15 @@ Invoke `orc:verification-before-completion`. Confirm:
 - The new regression test passes.
 - The full suite passes (no other tests broke).
 - Any related code paths still behave correctly (`orc:error-handling-patterns` if error handling was touched).
+
+**Record the graph outcome (work-memory loop).** The suite is now green — a *verified* outcome, the only honest moment to reward the graph. If graphify is installed, `graphify-out/graph.json` exists, the `learn_from_outcomes` user config is not `false`, and the investigator's report carried a `## Graph nodes relied on` line, record that those nodes led to a confirmed fix so future discovery prefers them:
+
+```bash
+graphify save-result --type query --outcome useful --nodes <cited-nodes> \
+  --question "<symptom, one line>" --answer "root cause at <fix file:line>" && graphify reflect
+```
+
+`reflect` folds the memory into `graphify-out/reflections/LESSONS.md`, which `orc:code-discovery` reads on the next session. Best-effort throughout: a non-zero exit never blocks completion, and the whole step is a silent no-op when graphify is absent, no graph exists, the toggle is off, or the diagnosis came from grep (no nodes line).
 
 ### Phase 7 — Checkpoint
 
