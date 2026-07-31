@@ -3,8 +3,10 @@
 #   1. every `command` in orc/hooks/hooks.json resolves to an existing,
 #      executable script under the plugin root;
 #   2. the SessionStart skill that session-start-using-orc.sh hard-reads exists;
-#   3. every userConfig key in plugin.json has a CLAUDE_PLUGIN_OPTION_<UPPER>
-#      consumer somewhere under orc/hooks or orc/lib (no dead config).
+#   3. every userConfig key in plugin.json is consumed — either a
+#      CLAUDE_PLUGIN_OPTION_<UPPER> env var read by a hook/lib script, or a
+#      by-name gate in a command prompt under orc/commands (commands read
+#      config from prose, not the environment) — so nothing is dead config.
 # Run from the repo root. Exits non-zero on the first class of failure found.
 set -euo pipefail
 
@@ -36,15 +38,21 @@ if [ ! -f "orc/skills/using-orc/SKILL.md" ]; then
   status=1
 fi
 
-# 3. Every userConfig key has a CLAUDE_PLUGIN_OPTION_<UPPER> consumer.
+# 3. Every userConfig key is consumed — by a CLAUDE_PLUGIN_OPTION_<UPPER> env
+#    var in a hook/lib script, or by name in a command prompt (orc/commands),
+#    since commands gate on config from prose rather than the environment.
 while IFS= read -r key; do
   [ -n "$key" ] || continue
   upper="$(printf '%s' "$key" | tr '[:lower:]' '[:upper:]')"
   env_var="CLAUDE_PLUGIN_OPTION_${upper}"
-  if ! grep -rqF "$env_var" orc/hooks orc/lib; then
-    echo "verify-hooks: userConfig key '$key' has no consumer of \$$env_var in orc/hooks or orc/lib (dead config)"
-    status=1
+  if grep -rqF "$env_var" orc/hooks orc/lib; then
+    continue
   fi
+  if grep -rqw "$key" orc/commands; then
+    continue
+  fi
+  echo "verify-hooks: userConfig key '$key' is dead — no \$$env_var consumer in orc/hooks or orc/lib, and no '$key' gate in orc/commands"
+  status=1
 done < <(jq -r '(.userConfig // {}) | keys[]' "$plugin_json")
 
 if [ "$status" -eq 0 ]; then
