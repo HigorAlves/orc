@@ -21,6 +21,9 @@ allowed-tools:
   - Bash(go:*)
   - Bash(cargo:*)
   - Bash(pytest:*)
+  - Bash(graphify extract:*)
+  - Bash(graphify update:*)
+  - Bash(graphify check-update:*)
   - Bash(graphify save-result:*)
   - Bash(graphify reflect:*)
   - Bash(orc-workspace-detect:*)
@@ -55,6 +58,8 @@ In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. Th
 4. Append/update an entry in `.orc/orc.json` with `command: "debug"`, `status: in_progress`, `current_phase: 1`, `total_phases: 7`, and `jiraTicket: <KEY>` (omit field if null). Write `checkpoint.md` with `jiraTicket` in the frontmatter when set.
 
 ### Phase 2 — Investigate (no fixes)
+
+**Prime code discovery first (optional, non-blocking).** Follow `orc:code-discovery`: if `graphify` is installed, ensure a fresh graph on the buggy branch before dispatching — build if missing (`graphify extract . --code-only`) or refresh if stale (`graphify update .`), so the investigator queries the graph from turn one instead of discovering staleness mid-investigation. Skip silently if graphify is absent or the build fails.
 
 Dispatch the `orc-debug-investigator` subagent via `Task`. Pass it:
 - The bug description / failing test name from arguments.

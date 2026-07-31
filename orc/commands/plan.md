@@ -14,6 +14,7 @@ allowed-tools:
   - Bash(git rev-parse:*)
   - Bash(git branch --show-current:*)
   - Bash(jq:*)
+  - Bash(graphify:*)
   - Bash(orc-workspace-detect:*)
 ---
 
@@ -61,6 +62,10 @@ If the input is short and clear, skip Phase 0 and go straight to Phase 1.
    - When a key is resolved, set `JIRA_TICKET=<KEY>`. Otherwise leave `JIRA_TICKET=null`.
 5. Append/update an entry in `${ORC_STATE_DIR}/orc.json` (registry) with `command: "plan"`, `status: in_progress`, `current_phase: 1`, `total_phases: 4` (or 5 with `--issues`, 6 with `--grill --issues`), and `jiraTicket: <KEY>` (omit field if null). In workspace mode, also set `scope: "workspace"`, `repos: targetRepos`, and `perRepoState` rows.
 6. Write `checkpoint.md` with frontmatter including `jiraTicket: <KEY>` if set, and (workspace mode) `repos: [<list>]`.
+
+### Phase 1b — Prime code discovery (optional, non-blocking)
+
+Follow `orc:code-discovery`: if `graphify` is installed, ensure a fresh code graph exists before drafting — build it if missing (`graphify extract . --code-only`, local AST, no key, seconds) or refresh it if `graph.json`'s `built_at_commit` differs from the current branch (`graphify update .`). This lets Phase 2 (`orc:writing-plans`) and any dispatched `orc-prd-analyzer` map file touchpoints and blast-radius by query instead of grepping the tree. Add `graphify-out/` to `.git/info/exclude`. In workspace mode, prime one per target repo. If `graphify` is absent or the build fails, skip silently — planning falls back to Glob/Grep and is unaffected.
 
 ### Phase 2 — Draft the plan
 
