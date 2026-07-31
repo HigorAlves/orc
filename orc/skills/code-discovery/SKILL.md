@@ -48,7 +48,7 @@ If `graphify-out/reflections/LESSONS.md` exists, `Read` it **once, before your f
 
 - **Bound the cost.** LESSONS is kept small (≈1500 tokens — no larger than a single `--budget 1500` query), so a full read never costs more than one extra query. If it is ever larger, read only its "Preferred / Dead ends / Corrections" sections.
 - Lessons are **hints, not ground truth** — they point; the code still decides (see Honesty rules).
-- Absent file → skip silently. Producing lessons is wired separately (the debug flow records query outcomes); this step only *consumes* them.
+- Absent file → skip silently. **A discovering agent only *consumes* lessons — never records them mid-query.** Outcomes are recorded by the orchestrating command at a *verified* gate (e.g. `/orc:debug` after the suite passes), not from a guess. If you queried the graph, surface which nodes you relied on so the caller can record the outcome.
 
 ### 4. Query-first
 
