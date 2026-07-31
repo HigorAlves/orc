@@ -120,13 +120,14 @@ Drift between these surfaces is the most common bug in personal plugins. Run `cl
 Claude Code keys its plugin-update cache on the explicit `version` in `orc/.claude-plugin/plugin.json` — **commits without a manifest bump are invisible to installs** (and installs pinning `ref` never move at all). The release rule:
 
 1. Bump `version` (semver) in `orc/.claude-plugin/plugin.json` in the **last PR of a release train** — not per-PR.
-2. After that PR merges to `main`, tag and push from the plugin directory:
+2. After that PR merges to `main`, tag and push a **plugin** release tag. Plugin tags use the **`orc--` prefix** so they never trigger the CLI release workflow, which watches plain `v*` tags (`.github/workflows/release-cli.yml`):
 
    ```bash
-   cd orc && claude plugin tag --push
+   v="orc--v$(jq -r .version orc/.claude-plugin/plugin.json)"
+   git tag -a "$v" -m "orc ${v#orc--v}" && git push origin "$v"
    ```
 
-   (`--dry-run` previews; the tag name comes from the manifest version.)
-3. Update the pinned `ref` example in the README install section to the new tag.
+   Do **not** use a plain `vX.Y.Z` tag for the plugin — that namespace is reserved for CLI releases, and the release workflow's `guard` job rejects a plain `v*` tag whose version matches `plugin.json`.
+3. Update the pinned `ref` example in the README install section to the new `orc--vX.Y.Z` tag.
 
 No version bump → no release. A merged PR that skips the bump ships silently only to `--plugin-dir` local development.

@@ -22,8 +22,9 @@ func newDoctorCmd() *cobra.Command {
 		Long: "Checks the CLI tools orc relies on (git, jq required; gh, agent-browser,\n" +
 			"acli, docker recommended) and reports what's missing with install hints.\n\n" +
 			"With --fix, resolves an install command per missing tool from the host's\n" +
-			"package manager (brew/apt/dnf/pacman, or npm) and runs it after you confirm\n" +
-			"(--yes to skip prompts). Tools with no unattended recipe print their hint.\n\n" +
+			"package manager (brew/apt/dnf/pacman, or npm/uv/pipx) and runs it after you\n" +
+			"confirm (--yes to skip prompts), then any finish-setup step. Tools with no\n" +
+			"unattended recipe print their hint.\n\n" +
 			"Exit code is non-zero when a required tool is missing (add --strict to also\n" +
 			"fail on missing recommended tools).",
 		Args: cobra.NoArgs,
@@ -69,10 +70,12 @@ func newDoctorCmd() *cobra.Command {
 func fixMissing(cmd *cobra.Command, missing []deps.Status, d platform.Detector, yes bool) {
 	sysMgr := d.PackageManager()
 	hasNpm := d.Has("npm")
+	hasUv := d.Has("uv")
+	hasPipx := d.Has("pipx")
 	platformID := d.Platform()
 
 	for _, s := range missing {
-		install, ok := pkgmgr.Resolve(s.Tool, sysMgr, hasNpm)
+		install, ok := pkgmgr.Resolve(s.Tool, sysMgr, hasNpm, hasUv, hasPipx)
 		if !ok {
 			cmd.Printf("• %s — no unattended install; run: %s\n", s.Tool.Name, s.Tool.Hint(platformID))
 			continue
@@ -84,8 +87,16 @@ func fixMissing(cmd *cobra.Command, missing []deps.Status, d platform.Detector, 
 		}
 		if err := install.Run(cmd.OutOrStdout(), cmd.ErrOrStderr()); err != nil {
 			cmd.Printf("  failed: %v\n", err)
-		} else {
-			cmd.Printf("  installed %s.\n", s.Tool.Name)
+			continue
+		}
+		cmd.Printf("  installed %s.\n", s.Tool.Name)
+		// Some tools need a second step to finish setup (e.g. `graphify install`
+		// registers its skill). Run it only after the install succeeded.
+		if post, ok := pkgmgr.PostInstall(s.Tool); ok {
+			cmd.Printf("  finishing setup: %s\n", post.String())
+			if err := post.Run(cmd.OutOrStdout(), cmd.ErrOrStderr()); err != nil {
+				cmd.Printf("  post-install failed: %v\n", err)
+			}
 		}
 	}
 }

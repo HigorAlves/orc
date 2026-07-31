@@ -1,0 +1,20 @@
+# golangci-lint v2 config for the orc CLI. Conservative on purpose — start with
+# the high-signal default linters and tighten over time rather than enabling
+# everything at once.
+#
+# Default (standard) set: errcheck, govet, ineffassign, staticcheck, unused.
+#   - errcheck is disabled for now: ~13 pre-existing hits, mostly test code and
+#     safe deferred Close/Remove. Re-enable in a dedicated error-handling pass.
+#   - misspell added; gofmt runs as the formatter (subsumes the old gofmt step).
+version: "2"
+
+linters:
+  default: standard
+  disable:
+    - errcheck
+  enable:
+    - misspell
+
+formatters:
+  enable:
+    - gofmt

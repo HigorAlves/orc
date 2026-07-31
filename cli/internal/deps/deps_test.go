@@ -17,10 +17,29 @@ func TestLoadEmbeddedRegistry(t *testing.T) {
 			t.Errorf("%q should be tier=required, got %q", req, names[req])
 		}
 	}
-	for _, rec := range []string{"gh", "agent-browser", "acli", "docker"} {
+	for _, rec := range []string{"gh", "agent-browser", "acli", "docker", "graphify"} {
 		if names[rec] != TierRecommended {
 			t.Errorf("%q should be tier=recommended, got %q", rec, names[rec])
 		}
+	}
+}
+
+func TestGraphifyHasUvOrPipxRecipe(t *testing.T) {
+	reg, _ := Load()
+	var g Tool
+	for _, tool := range reg.Tools {
+		if tool.Name == "graphify" {
+			g = tool
+		}
+	}
+	if g.Name == "" {
+		t.Fatal("graphify should be registered")
+	}
+	if _, ok := g.InstallArgs("uv"); !ok {
+		t.Error("graphify should have a uv install recipe")
+	}
+	if len(g.PostInstall) == 0 {
+		t.Error("graphify should carry a postInstall step (graphify install)")
 	}
 }
 

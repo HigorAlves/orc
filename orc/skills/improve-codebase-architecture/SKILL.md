@@ -34,7 +34,7 @@ This skill is _informed_ by the project's domain model. The domain language give
 
 Read the project's domain glossary and any ADRs in the area you're touching first.
 
-Then use the Agent tool with `subagent_type=Explore` to walk the codebase. Don't follow rigid heuristics — explore organically and note where you experience friction:
+Then walk the codebase. If a Graphify code graph is available (see `orc:code-discovery`), start from its god-nodes and community structure — they surface high-fan-in modules and coupling directly, which is exactly the friction this skill hunts for — then read the cited spans. Otherwise use the Agent tool with `subagent_type=Explore`. Either way, don't follow rigid heuristics — explore organically and note where you experience friction:
 
 - Where does understanding one concept require bouncing between many small modules?
 - Where are modules **shallow** — interface nearly as complex as the implementation?

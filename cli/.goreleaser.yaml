@@ -1,6 +1,7 @@
 # goreleaser config for the orc CLI.
-# Run from the cli/ directory. CLI releases use plain `vX.Y.Z` git tags
-# (the plugin uses `orc--vX.Y.Z` tags, so there is no collision).
+# CLI releases use plain `vX.Y.Z` git tags (goreleaser publishes against them
+# natively). PLUGIN releases use `orc--vX.Y.Z` tags, so the two never collide —
+# a plain v* tag is always a CLI release. See .github/workflows/release-cli.yml.
 version: 2
 
 project_name: orc

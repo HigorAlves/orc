@@ -73,6 +73,23 @@ func TestOAuthServersNeedNoToken(t *testing.T) {
 	}
 }
 
+func TestGraphifyStdioServer(t *testing.T) {
+	s, ok := Lookup("graphify")
+	if !ok {
+		t.Fatal("graphify should be a known MCP server")
+	}
+	if s.NeedsToken {
+		t.Error("graphify is a local stdio server; it should not need a token")
+	}
+	args, err := s.BuildArgs("")
+	if err != nil {
+		t.Fatalf("BuildArgs errored: %v", err)
+	}
+	if !slices.Contains(args, "--") || !slices.Contains(args, "graphify-mcp") {
+		t.Errorf("expected a stdio invocation with `-- graphify-mcp`, got %v", args)
+	}
+}
+
 func TestParseConfigured(t *testing.T) {
 	out := `Checking MCP server health…
 

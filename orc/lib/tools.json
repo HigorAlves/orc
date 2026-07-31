@@ -94,6 +94,21 @@
         "brew": ["--cask", "docker"],
         "pacman": ["docker", "docker-compose"]
       }
+    },
+    {
+      "name": "graphify",
+      "tier": "recommended",
+      "usedBy": "`/orc:plan`, `/orc:start`, `/orc:flow`, `/orc:debug` (code discovery — query a code graph instead of grepping)",
+      "hints": {
+        "macos": "uv tool install 'graphifyy[mcp]' && graphify install  (or: pipx install 'graphifyy[mcp]' && graphify install)",
+        "linux": "uv tool install 'graphifyy[mcp]' && graphify install  (or: pipx install 'graphifyy[mcp]' && graphify install)",
+        "default": "uv tool install 'graphifyy[mcp]' && graphify install  — see https://github.com/Graphify-Labs/graphify"
+      },
+      "install": {
+        "uv": ["graphifyy[mcp]"],
+        "pipx": ["graphifyy[mcp]"]
+      },
+      "postInstall": ["graphify", "install"]
     }
   ]
 }

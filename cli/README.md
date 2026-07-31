@@ -46,6 +46,21 @@ gofmt -l .        # must print nothing
 goreleaser release --snapshot --clean
 ```
 
+## Releasing
+
+CLI releases use plain `vX.Y.Z` git tags. Pushing a `v*` tag triggers
+`.github/workflows/release-cli.yml`, which runs goreleaser (cross-builds
+darwin/linux × amd64/arm64 and publishes a Homebrew cask stamped `X.Y.Z`).
+
+```bash
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+> **Plugin vs CLI tags:** plain `v*` tags are the CLI. **Plugin** releases use
+> `orc--vX.Y.Z` tags so they don't trigger a CLI release — see the repo
+> `docs/contributing.md`. The release workflow's `guard` job rejects a plain
+> `v*` tag whose version matches `plugin.json` (a mis-tagged plugin release).
+
 The tool registry (`internal/deps/tools.json`) is a CI-verified mirror of the
 canonical `orc/lib/tools.json` that the plugin's SessionStart hook also reads —
 edit the canonical file and re-copy the mirror.

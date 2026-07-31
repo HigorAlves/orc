@@ -24,7 +24,7 @@ If the spec covers multiple independent subsystems, it should have been broken i
 
 ## File Structure
 
-Before defining tasks, map out which files will be created or modified and what each one is responsible for. This is where decomposition decisions get locked in.
+Before defining tasks, map out which files will be created or modified and what each one is responsible for. This is where decomposition decisions get locked in. In an existing codebase, follow `orc:code-discovery` to locate the relevant files cheaply — when a Graphify code graph is available, `graphify query`/`path` surfaces which modules a change touches and how they connect, so you map the file list without reading the whole tree; fall back to Glob/Grep otherwise.
 
 - Design units with clear boundaries and well-defined interfaces. Each file should have one clear responsibility.
 - You reason best about code you can hold in context at once, and your edits are more reliable when files are focused. Prefer smaller, focused files over large ones that do too much.
@@ -53,6 +53,8 @@ est_loc ≈ (new_files * 80) + (modified_files * 30) + boilerplate_test_lines
 ```
 
 Adjust upward for known-large files (config, fixtures), downward for one-line tweaks.
+
+When a Graphify code graph is available (per `orc:code-discovery`), sharpen the `modified_files` term with real blast-radius: `graphify affected "<symbol-you'll-change>" --depth 2` lists the call sites that ripple from a change. Count each caller you'll actually have to touch as ~+30 LOC, and treat a symbol with many affected callers as a **`ships_as_stack: true`** signal *before* implementation, not a surprise at ship time. `affected` is a lead, not proof — it doesn't expose per-edge confidence — so read each cited caller to confirm it needs to change before counting it. Fall back to `Grep` for callers when no graph is available.
 
 When a task's natural decomposition would exceed **1.5× the budget** (~450 LOC), that's a planning signal:
 

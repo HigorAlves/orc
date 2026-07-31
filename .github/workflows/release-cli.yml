@@ -1,6 +1,9 @@
 name: release-cli
 
-# CLI releases use plain vX.Y.Z tags (plugin tags are orc--vX.Y.Z).
+# CLI releases use plain `vX.Y.Z` tags (goreleaser publishes natively against
+# them). PLUGIN releases MUST use `orc--vX.Y.Z` tags so they do NOT match this
+# trigger — see docs/contributing.md "Releasing". A plain `v*` tag here means a
+# CLI release; the `guard` job below rejects a tag that is really a plugin bump.
 on:
   push:
     tags:
@@ -9,9 +12,34 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-cli-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  goreleaser:
+  # Safety net: a plain v* tag whose version equals plugin.json's version is
+  # almost certainly a PLUGIN release mis-tagged as v* (it should be orc--v*).
+  # Reject it before goreleaser publishes a Homebrew cask for it.
+  guard:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject plugin-version tags
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          plugin_ver="$(jq -r '.version' orc/.claude-plugin/plugin.json)"
+          if [ "$ver" = "$plugin_ver" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} matches plugin.json version ${plugin_ver} — this looks like a PLUGIN release."
+            echo "Plugin releases must be tagged 'orc--v${plugin_ver}' (plain v* is reserved for CLI releases). See docs/contributing.md."
+            exit 1
+          fi
+          echo "OK: ${GITHUB_REF_NAME} is a CLI release (plugin.json is ${plugin_ver})."
+
+  goreleaser:
+    needs: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: cli
