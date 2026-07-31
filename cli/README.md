@@ -8,10 +8,11 @@ tools it relies on.
 ## Install
 
 ```bash
-brew install HigorAlves/tap/orc                                              # Homebrew
-curl -fsSL https://raw.githubusercontent.com/HigorAlves/orc/main/cli/install.sh | sh  # bootstrap
-go install github.com/HigorAlves/orc/cli/cmd/orc@latest                      # Go
+curl -fsSL https://raw.githubusercontent.com/HigorAlves/orc/main/cli/install.sh | sh  # bootstrap (recommended)
+go install github.com/HigorAlves/orc/cli/cmd/orc@latest                      # Go (requires Go >= 1.25.8)
 ```
+
+Homebrew is planned: goreleaser publishes a cask to `HigorAlves/homebrew-tap` on each release, so once that tap repo exists, `brew install --cask HigorAlves/tap/orc` becomes available.
 
 ## Commands
 

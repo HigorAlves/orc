@@ -1,30 +1,83 @@
 <p align="center">
-  <img src=".github/images/second-icon.png" alt="orc" width="400" />
+  <img src=".github/images/second-icon.png" alt="orc" width="360" />
 </p>
 
 <h1 align="center">orc</h1>
 
 <p align="center">
-  <strong>"Zug zug."</strong>
+  <strong>"Zug zug."</strong> &nbsp;·&nbsp; <em>Let the orcs do the work.</em>
 </p>
 
 <p align="center">
-  <em>Let the orcs do the work.</em>
+  The senior-developer workflow, encoded as a Claude Code plugin —
+  <em>plan → debug → verify → ship</em> — with hard guardrails that keep it
+  off <code>main</code>, out of your git attribution, and entirely on your own machine.
 </p>
 
 <p align="center">
-  A personal Claude Code plugin for the senior-developer day —
-  <em>plan → debug → verify → ship</em> — with curated skills, composite commands,
-  and a senior-dev agent that writes the code while you mind the gates.
+  <em>Built for the senior-developer day. Safe enough for the security review.</em>
 </p>
 
-## What it does
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea043.svg" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/plugin-v0.15.0-2ea043.svg" alt="plugin v0.15.0">
+  <img src="https://img.shields.io/badge/runs-100%25%20local-2ea043.svg" alt="runs 100% local">
+  <img src="https://img.shields.io/badge/telemetry-none-2ea043.svg" alt="no telemetry">
+  <img src="https://img.shields.io/badge/platform-macOS%20%C2%B7%20Linux-555.svg" alt="platform macOS · Linux">
+  <img src="https://img.shields.io/badge/Claude%20Code-plugin-D97757.svg" alt="Claude Code plugin">
+</p>
 
-`orc` is a personal-workflow plugin: **59 curated skills, 22 composite slash commands, 12 specialist subagents, and 6 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers in commits/PRs, dependency pre-flight check, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged" with `orc-implementer` writing the code slice-by-slice in between.
+<p align="center">
+  <a href="#is-it-safe-to-use"><strong>Is it safe?</strong></a> &nbsp;·&nbsp;
+  <a href="#install"><strong>Install</strong></a> &nbsp;·&nbsp;
+  <a href="#what-orc-can-do"><strong>Commands</strong></a> &nbsp;·&nbsp;
+  <a href="#faq"><strong>FAQ</strong></a> &nbsp;·&nbsp;
+  <a href="./examples"><strong>Examples</strong></a>
+</p>
+
+<p align="center">
+  <code>59 skills</code> &nbsp;·&nbsp; <code>22 commands</code> &nbsp;·&nbsp;
+  <code>12 agents</code> &nbsp;·&nbsp; <code>6 guardrail hooks</code> &nbsp;·&nbsp;
+  <code>0 telemetry</code> &nbsp;·&nbsp; <code>MIT</code>
+</p>
+
+---
+
+`orc` is a personal-workflow plugin for Claude Code: **59 curated skills, 22 composite slash commands, 12 specialist subagents, and 6 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers, a dependency pre-flight, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged", with the `orc-implementer` agent writing the code slice-by-slice in between.
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
-## Mental model
+## Is it safe to use?
+
+Short answer: **yes — and you can verify every claim below in this repo in about five minutes.** orc is a *workflow layer*, not a service. It has no backend and it does not phone home.
+
+> [!NOTE]
+> **What orc is — and isn't.** orc is an MIT-licensed, open-source plugin you run on top of Claude Code and audit yourself. It is **not** a SaaS, not a code host, and makes no SOC2/vendor-SLA claims. "Safe to use" here means *local, guardrailed, and auditable* — not *vendor-backed*.
+
+### It runs on your machine
+
+- **No orc servers. No telemetry. No analytics.** There is no tracking SDK anywhere in the tree — grep for it.
+- **Network activity is limited and legible:** GitHub (to fetch the plugin / CLI releases) and any MCP servers *you* explicitly add. Nothing else.
+- **Your work-memory is local and git-ignored** (`graphify-out/`) — it never leaves your repo.
+
+### Guardrails enforced by hooks, not vibes
+
+Every rule below is a short, readable shell script under [`orc/hooks/scripts/`](orc/hooks/scripts) that Claude Code runs as a real hook — not a suggestion the model can talk itself out of.
+
+| Guardrail | What it does | Enforced by |
+|-----------|--------------|-------------|
+| **No commits to protected branches** | Intercepts `git commit` / `git push` on `main`/`master`/`develop` and downgrades them to a one-keystroke confirm prompt — no env-var escape hatch | [`pre-commit-branch-check.sh`](orc/hooks/scripts/pre-commit-branch-check.sh) |
+| **No AI attribution in your history** | Refuses `git commit` and `gh pr/issue create/edit` whose text contains `Co-Authored-By: Claude`, `Generated with Claude Code`, the 🤖 marker, or `noreply@anthropic.com` | [`pre-commit-no-ai-attribution.sh`](orc/hooks/scripts/pre-commit-no-ai-attribution.sh) |
+| **Dependency pre-flight** | Checks the CLI tools orc relies on at session start and warns (via `systemMessage`) if any are missing | [`session-start-tool-check.sh`](orc/hooks/scripts/session-start-tool-check.sh) |
+| **Rules in every session** | Injects the iron rules + skill routing at `SessionStart`, so discipline is loaded before the first action | [`session-start-using-orc.sh`](orc/hooks/scripts/session-start-using-orc.sh) |
+
+### Open and auditable
+
+- **MIT-licensed**, every guardrail and command is plain text you can read and diff.
+- **orc's own supply chain is hardened:** its CI runs least-privilege (`permissions: contents: read`), scans every push for secrets ([gitleaks](https://github.com/gitleaks/gitleaks-action)), scans the Go CLI for known vulnerabilities ([govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck)), lints, and pins its toolchain — so what ships is what you reviewed.
+- **Evidence, not adjectives:** web changes going through `/orc:qa` must produce a real artifact packet (screenshots, accessibility snapshot, console log, network HAR, narrated steps) before "QA passed" is an accepted claim.
+
+## What it does
 
 orc maps the senior IC / tech-lead / architect day to a small set of composite commands. Most work fits this loop:
 
@@ -35,6 +88,8 @@ flowchart LR
     cleanup -.->|"need status? /orc:status"| plan
 ```
 
+Or skip the per-phase invocations and use **`/orc:flow`** to drive the whole loop — an `AskUserQuestion` gate at every phase, autonomous implementation in between via `orc-implementer`.
+
 **Outside the loop** — reach for these directly when the situation isn't a fresh feature pipeline:
 
 | Situation | Command |
@@ -43,17 +98,12 @@ flowchart LR
 | Needing the app running (QA or manual poking) | `/orc:env` |
 | Reviewing someone else's PR | `/orc:code-review` |
 | Responding to your PR's review comments | `/orc:address` |
-| Authoring a Product Requirements Document | `/orc:prd` |
-| Authoring a Technical Requirements Document | `/orc:trd` |
-| Locking in an architectural decision | `/orc:adr` |
-| Proposing a system design before code | `/orc:rfc` |
+| Authoring a PRD / TRD / ADR / RFC | `/orc:prd` · `/orc:trd` · `/orc:adr` · `/orc:rfc` |
 | Writing an incident postmortem | `/orc:postmortem` |
 | Bootstrapping a new package/service | `/orc:scaffold` |
 | Parallel-dispatching N independent tasks | `/orc:fan-out` |
 | Filing/linking a Jira ticket from the terminal | `/orc:jira` |
-| Collecting browser evidence for a ticket + attaching it | `/orc:evidence` |
-
-Or skip the per-phase invocations and use **`/orc:flow`** to drive the whole loop — gates at every phase, autonomous implementation in between via `orc-implementer`.
+| Collecting browser evidence for a ticket | `/orc:evidence` |
 
 ## Common scenarios — pick one
 
@@ -71,52 +121,107 @@ Or skip the per-phase invocations and use **`/orc:flow`** to drive the whole loo
 | A multi-week design needing critique | [examples/09 — Writing an RFC](./examples/09-writing-an-rfc.md) |
 | A web change ready to ship | [examples/10 — Web QA before shipping](./examples/10-web-qa-before-shipping.md) |
 | Multiple teammates' PRs to review (or any N independent tasks) | [examples/11 — Multi-PR review with /orc:fan-out](./examples/11-multi-pr-review.md) |
-| A Jira ticket to link to a session and close on PR merge | [examples/12 — Linking a Jira ticket and shipping with `Resolves <KEY>`](./examples/12-link-jira-and-ship.md) |
+| A Jira ticket to link and close on PR merge | [examples/12 — Linking a Jira ticket and shipping](./examples/12-link-jira-and-ship.md) |
 
 Each example follows the same shape — *Scenario → Flow → Walk-through → Artifacts → Done when → Variants → Iron rules in play* — so you can scan to the relevant section.
 
 ## Install
 
-### Via the orc CLI (streamlined — installs the plugin *and* its tools)
+orc ships in **two layers**, and it helps to keep them straight:
 
-The [`orc` CLI](cli/) is a small Go/[Bubble Tea](https://github.com/charmbracelet/bubbles) TUI that wraps the whole setup: it registers the marketplace, enables the plugin, checks (and installs) the runtime tools, manages MCP servers, and edits config.
+- **The `orc` CLI** — a small local Go tool you install on *your machine*.
+- **The `orc` plugin** — what actually adds the `/orc:*` commands *inside Claude Code*.
+
+You install the CLI once; the CLI then installs and configures the plugin for you. **This tutorial walks you from zero to a working setup, one step at a time.** Prefer to skip the CLI? Jump to [the marketplace path](#prefer-the-plugin-marketplace-directly-no-cli).
+
+> [!NOTE]
+> **Prerequisites.** macOS or Linux (Intel/AMD or Apple Silicon/ARM), plus [Claude Code](https://claude.com/claude-code) with its `claude` CLI on your `PATH`. You do **not** need `git` or `jq` beforehand — step 2 installs them. (If the `claude` CLI isn't on `PATH`, step 3 still works: it writes `~/.claude/settings.json` directly.)
+
+### 1. Install the orc CLI
 
 ```bash
-# Homebrew (macOS/Linux)
-brew install HigorAlves/tap/orc
-
-# or one-line bootstrap
 curl -fsSL https://raw.githubusercontent.com/HigorAlves/orc/main/cli/install.sh | sh
+```
 
-# or, with Go installed
+This detects your OS and architecture, resolves the latest release, downloads it from GitHub Releases, and verifies it against `checksums.txt`. Confirm it landed:
+
+```bash
+orc version
+```
+
+**You should see** a semantic version (e.g. `0.10.0`) — **not** the word `dev`. That confirms you got a real release build.
+
+> [!TIP]
+> **Prefer Go?** `go install github.com/HigorAlves/orc/cli/cmd/orc@latest` (requires Go ≥ 1.25.8). A source build injects no version metadata, so `orc version` prints `dev` — that's expected. **Homebrew** is on the way: once the `HigorAlves/homebrew-tap` cask is published, `brew install --cask HigorAlves/tap/orc` will be the one-liner. See [Other ways to install](#other-ways-to-install-the-cli).
+
+### 2. Install the runtime tools orc needs
+
+```bash
+orc doctor --fix
+```
+
+Checks the tools orc relies on and installs any that are missing via your system package manager. **You should see** `git` and `jq` reported present — these two are **required** (`orc doctor` exits non-zero if either is missing). It also offers the **recommended** set (`gh`, `agent-browser`, `acli`, `docker`, `graphify`); those aren't required, but individual commands use them.
+
+> [!TIP]
+> Running unattended (CI, dotfiles)? Add `-y` to skip prompts: `orc doctor --fix -y`. Just want to check without installing? Run `orc doctor` on its own.
+
+### 3. Register the marketplace and enable the plugin
+
+```bash
+orc install
+```
+
+Registers the `orc` marketplace and enables the `orc@orc` plugin. When the `claude` CLI is on your `PATH`, orc drives it; otherwise it writes the same entries into `~/.claude/settings.json` directly.
+
+> [!TIP]
+> Pin a specific version: `orc install --ref v0.10.0` (any existing release tag, or a commit SHA). Using `--ref` writes `settings.json` directly.
+
+### 4. Load the plugin in Claude Code
+
+Plugin commands load at startup. **Restart Claude Code** — or, in an open session, run `/reload-plugins`.
+
+### 5. Verify it worked
+
+Inside Claude Code, run `/plugin`. **You should see** `orc@orc` listed and enabled. Now type `/orc:` at the prompt — **you should see** the command palette populate (`/orc:flow`, `/orc:plan`, `/orc:ship`, …). That's the whole setup live.
+
+Optionally, initialize per-repo state (run **inside a git repo**, or a workspace directory holding 2+ repos):
+
+```bash
+orc init
+```
+
+**You should see** an `.orc/` directory created (with `orc.json` + `pr-budget.json`, and `.orc/` added to your gitignore). This is optional — commands that need it will offer to create it.
+
+**Done.** From zero to a verified, working orc. Head to [What orc can do](#what-orc-can-do) to pick your first command.
+
+---
+
+### Other ways to install the CLI
+
+Reference alternatives to step 1. After either, **continue the tutorial from step 2** (`orc doctor --fix`).
+
+**From source (`go install`)** — requires Go ≥ 1.25.8:
+
+```bash
 go install github.com/HigorAlves/orc/cli/cmd/orc@latest
 ```
 
-Then run it:
+**One-line bootstrap options.** The `curl | sh` installer honors two env overrides: `ORC_VERSION` (a release tag; default is latest) and `ORC_BIN_DIR` (install dir; defaults to `/usr/local/bin`, falling back to `~/.local/bin` when that's absent or unwritable). It needs `curl`, `tar`, and `shasum`/`sha256sum`.
 
-```bash
-orc                       # interactive menu (install, doctor, config, MCP)
-orc install               # register marketplace + enable the plugin
-orc install --ref v0.9.0  # pin a version (writes settings.json directly)
-orc doctor --fix          # check and install missing runtime tools
-orc config set pr_size_budget 500
-orc mcp add github --token "$GITHUB_TOKEN"
-```
+**Homebrew (planned).** goreleaser is configured to publish a cask to `HigorAlves/homebrew-tap` on each release; once that tap repo exists, `brew install --cask HigorAlves/tap/orc` becomes available (the cask's macOS post-install hook strips the `com.apple.quarantine` attribute so the unsigned binary runs without a Gatekeeper prompt).
 
-Every command runs non-interactively too (`--yes`/`--json`), so it fits CI and scripts. See [`cli/README.md`](cli/README.md) for the full command reference.
+### Prefer the plugin marketplace directly (no CLI)
 
-### Via the marketplace (recommended for friends / clean machines)
-
-orc is published as a single-plugin marketplace at this repo. Inside Claude Code:
+You don't have to install the CLI at all. orc is published as a single-plugin marketplace at this repo, so you can enable it entirely from **inside Claude Code**:
 
 ```
 /plugin marketplace add HigorAlves/orc
 /plugin install orc@orc
 ```
 
-The first command registers `https://github.com/HigorAlves/orc` as a marketplace named `orc`; the second installs the `orc` plugin from it. Updates pull with `/plugin update orc@orc`.
+The first command registers `https://github.com/HigorAlves/orc` as a marketplace named `orc`; the second installs the plugin. Pull updates with `/plugin update orc@orc`.
 
-To pin a specific commit/tag, use the longhand source form in `~/.claude/settings.json`:
+To pin a specific tag or commit, use the longhand source form in `~/.claude/settings.json`:
 
 ```jsonc
 {
@@ -133,23 +238,64 @@ To pin a specific commit/tag, use the longhand source form in `~/.claude/setting
 }
 ```
 
-> The plugin uses an HTTPS clone URL explicitly so installation works on machines without GitHub SSH keys configured. If you have `git config --global url.git@github.com:.insteadOf https://github.com/` set, that rewrite will hit this URL too — temporarily disable the rewrite, or use the local plugin-dir flow below.
+> [!NOTE]
+> **Trade-off vs. the CLI.** The marketplace path installs the *plugin only* — it does **not** check or install the runtime tools (`git`, `jq`, and the recommended set) that many commands depend on. Run `orc doctor` afterward, or install those tools yourself.
+>
+> The plugin uses an HTTPS clone URL so it works on machines without GitHub SSH keys. If you have `git config --global url."git@github.com:".insteadOf "https://github.com/"` set, that rewrite will also hit this URL — temporarily disable it if the install fails.
 
-### Via local plugin-dir (recommended for development on this repo)
+## What orc can do
+
+### Commands (22)
+
+| Command | Purpose |
+|---------|---------|
+| **`/orc:flow`** | **Recommended entry point.** Drives the full lifecycle (plan → start → implement → QA → ship → address → cleanup) with a gate at every phase. Resumable from any phase. |
+| `/orc:plan` | Plan a feature/refactor; writes a TDD-shaped plan to `.orc/<branch>/files/` |
+| `/orc:start` | Worktree + plan + first failing test (TDD red light) |
+| `/orc:debug` | Root-cause investigation, then fix with TDD; never papers over |
+| `/orc:qa` | Pre-PR quality gate; for web changes, full browser QA with screenshots/snapshot/HAR/steps |
+| `/orc:env` | Provision a containerized dev environment; `up`/`status`/`down`; reused across QA runs |
+| `/orc:code-review` | Review someone else's open PR; terse, signal-only output |
+| `/orc:address` | Answer reviewer comments on YOUR PR; parallel code-fixer + reply-drafter |
+| `/orc:ship` | Finalize and open the PR (soft size-budget gate) |
+| `/orc:stack-pr` | Split a too-big branch into a stack of smaller chained PRs |
+| `/orc:fan-out` | Dispatch independent tasks in parallel sub-sessions |
+| `/orc:scaffold` | Bootstrap a new package/service with README + Diátaxis docs |
+| `/orc:resume` | Pick up an interrupted multi-phase command from its checkpoint |
+| `/orc:status` | Show all active `.orc/` workspaces |
+| `/orc:adr` · `/orc:rfc` | Author an ADR / a system-design RFC |
+| `/orc:prd` · `/orc:trd` | Author a PRD / a TRD (supports `--from-jira` / `--from-prd`) |
+| `/orc:jira` | Manage Jira tickets via `acli`; bind/unbind a ticket to the current session |
+| `/orc:evidence` | Collect browser evidence scoped to a ticket, then upload or keep local |
+| `/orc:postmortem` | Author a blameless incident postmortem; files P0 items as tracker issues |
+| `/orc:cleanup` | Remove `.orc/` state, worktree, and (if merged) branch for completed sessions |
+
+### Specialist agents (12)
+
+`orc-implementer` (writes code slice-by-slice), `orc-debug-investigator`, `orc-test-author`, `orc-code-fixer`, `orc-pr-reviewer`, `orc-security-reviewer`, `orc-qa-validator`, `orc-env-provisioner`, `orc-prd-analyzer`, `orc-refactor-architect`, `orc-reply-drafter`, `orc-stack-analyzer` — each a read-only investigator or a scoped executor, dispatched by the commands above.
+
+### Skills (59)
+
+Under the commands and agents sit 59 skills — reusable, progressively-disclosed playbooks the model pulls in on demand: process doctrine (`tdd`, `systematic-debugging`, `verification-before-completion`), stack packs (Next.js, NestJS, PostgreSQL, SwiftUI, Tailwind, Turborepo, …), and authoring guides (PRD/TRD/ADR/RFC/postmortem). Each is a thin index that loads its detail only when invoked, so they cost almost nothing until used. **Total: 59 skills.**
+
+### The orc CLI
+
+A small Go / [Bubble Tea](https://github.com/charmbracelet/bubbletea) TUI that installs and configures everything. Every command runs non-interactively too (`--yes`/`--json`), so it fits CI:
 
 ```bash
-claude --plugin-dir /Users/higoralves/Developer/system/orc
+orc                       # interactive menu (install, doctor, config, MCP, tools)
+orc install               # register marketplace + enable the plugin
+orc doctor --fix          # check and install missing runtime tools
+orc config set pr_size_budget 500
+orc mcp add github --token "$GITHUB_TOKEN"   # known: github, jira, sentry, vercel, graphify
+orc update                # update to latest (or --to <ref> to repin)
 ```
 
-Reload after edits without restarting:
-
-```
-/reload-plugins
-```
+See [`cli/README.md`](cli/README.md) for the full command reference.
 
 ## Requirements
 
-orc's SessionStart pre-flight (`hooks/scripts/session-start-tool-check.sh`) verifies these CLI tools are installed and, if anything's missing, delivers a `[!WARNING]`/`[!CAUTION]` "orc tool check" callout directly to you via `systemMessage`.
+orc's SessionStart pre-flight (`session-start-tool-check.sh`) verifies these CLI tools and, if anything's missing, delivers an "orc tool check" callout to you via `systemMessage`.
 
 | Tool | Tier | Used by |
 |------|------|---------|
@@ -157,24 +303,15 @@ orc's SessionStart pre-flight (`hooks/scripts/session-start-tool-check.sh`) veri
 | `jq` | required | hook scripts (parse Bash tool input) |
 | `gh` | recommended | `/orc:code-review`, `/orc:address`, `/orc:ship`, `/orc:postmortem` |
 | `agent-browser` | recommended | `/orc:qa` (web mode — browser-driven QA evidence) |
-| `acli` | recommended | `/orc:jira`, `/orc:plan\|start\|debug\|flow` (Jira ticket linking), `/orc:prd\|trd` (`--from-jira <KEY>` seeding) |
-| `docker` | recommended | `/orc:env`, `/orc:qa`/`/orc:flow` env provisioning (host-mode fallback applies without it) |
+| `acli` | recommended | `/orc:jira`, Jira ticket linking, PRD/TRD `--from-jira` seeding |
+| `docker` | recommended | `/orc:env`, `/orc:qa` / `/orc:flow` env provisioning (host-mode fallback applies without it) |
+| `graphify` | recommended | `/orc:plan`, `/orc:start`, `/orc:flow`, `/orc:debug` — code discovery via a code graph instead of grep |
 
-Suppress the check on machines where missing tools are intentional:
+Suppress the check where missing tools are intentional: `export ORC_SKIP_TOOL_CHECK=1`.
 
-```bash
-export ORC_SKIP_TOOL_CHECK=1
-```
+## Configuration
 
-## Environment variables
-
-| Variable | Effect |
-|----------|--------|
-| `ORC_SKIP_TOOL_CHECK=1` | Suppress the SessionStart tool-check callout when a recommended dependency is intentionally missing. |
-| `ORC_ALLOW_AI_ATTRIBUTION=1` | Allow `Co-Authored-By: Claude`, `🤖 Generated with Claude Code`, or other AI-attribution trailers in commit messages and PR bodies. The PreToolUse hook refuses them by default (iron rule #5). Set only with explicit user consent. |
-| `ORC_JIRA_PR_KEYWORD` | PR-body trailer keyword used by `/orc:ship` when the active session has a bound `jiraTicket`. Defaults to `Resolves`. Set to `Closes` or `Fixes` for orgs whose Jira/GitHub integration uses a different keyword. |
-
-## Plugin settings (userConfig)
+### Plugin settings (`userConfig`)
 
 Prompted at plugin enable time (re-run via `/plugin`); exported to hooks and libs as `CLAUDE_PLUGIN_OPTION_<KEY>`:
 
@@ -183,134 +320,115 @@ Prompted at plugin enable time (re-run via `/plugin`); exported to hooks and lib
 | `pr_size_budget` | `300` | Soft LOC budget for the ship/flow/stack-pr size gate (per-repo `.orc/pr-budget.json` still wins). |
 | `protected_branches` | `main,master,develop` | Branches guarded by the confirm-to-commit hook. |
 | `skip_tool_check` | `false` | Skip the SessionStart CLI dependency pre-flight. |
+| `learn_from_outcomes` | `true` | Record verified debug outcomes into the local Graphify work-memory (`graphify-out/`, git-ignored) so code discovery improves across sessions. No effect when Graphify is absent. |
 
-## Day-one command catalog
+### Environment variables
 
-| Command | Purpose |
-|---------|---------|
-| **`/orc:flow`** | **Recommended entry point.** Drives the full lifecycle (plan → start → implement → QA → ship → address → cleanup) with an `AskUserQuestion` gate at every phase. Resumable from any phase. |
-| `/orc:plan` | Plan a feature/refactor; writes a TDD-shaped plan to `.orc/<branch>/files/` |
-| `/orc:start` | Worktree + plan + first failing test (TDD red light) |
-| `/orc:debug` | Root-cause investigation, then fix with TDD; never papers over |
-| `/orc:qa` | Pre-PR quality gate; for web changes, full browser QA with screenshots/snapshot/HAR/steps |
-| `/orc:env` | Provision a containerized dev environment (compose > devcontainer > Dockerfile > generated); `up`/`status`/`down`; reused across QA runs |
-| `/orc:code-review` | Review someone else's open PR; terse, signal-only output |
-| `/orc:address` | Answer reviewer comments on YOUR PR; parallel code-fixer + reply-drafter |
-| `/orc:ship` | Finalize and open the PR |
-| `/orc:fan-out` | Dispatch independent tasks in parallel sub-sessions |
-| `/orc:scaffold` | Bootstrap a new package/service with proper README + Diátaxis docs |
-| `/orc:resume` | Pick up an interrupted multi-phase command from its checkpoint |
-| `/orc:status` | Show all active `.orc/` workspaces |
-| `/orc:adr` | Author an Architecture Decision Record (`docs/adr/NNNN-*.md`) |
-| `/orc:rfc` | Author a system-design RFC pre-implementation (`docs/rfcs/NNNN-*.md`) |
-| `/orc:prd` | Author a Product Requirements Document (`docs/prds/NNNN-*.md`); supports `--interview` and `--from-jira <KEY>` |
-| `/orc:trd` | Author a Technical Requirements Document (`docs/trds/NNNN-*.md`); supports `--from-prd NNNN` |
-| `/orc:jira` | Manage Jira tickets via `acli` (create/subtask/link/view/search/transition); `bind`/`unbind` a ticket key to the current `.orc/` session |
-| `/orc:evidence` | Collect browser evidence scoped to a ticket (Chrome or agent-browser), then upload it to the ticket or keep it local — always asks |
-| `/orc:postmortem` | Author a blameless incident postmortem; files P0 action items as tracker issues |
-| `/orc:cleanup` | Remove `.orc/` state, worktree, and (if merged) branch for completed sessions |
+| Variable | Effect |
+|----------|--------|
+| `ORC_SKIP_TOOL_CHECK=1` | Suppress the SessionStart tool-check callout when a recommended dependency is intentionally missing. |
+| `ORC_ALLOW_AI_ATTRIBUTION=1` | Allow AI-attribution trailers in commits/PR bodies. The PreToolUse hook refuses them by default (iron rule #5). Set only with explicit user consent. |
+| `ORC_JIRA_PR_KEYWORD` | PR-body trailer keyword used by `/orc:ship` when the session has a bound Jira ticket. Defaults to `Resolves`. |
 
-## Skill catalog
+The `orc config` CLI edits these tunables (`pr_size_budget`, `protected_branches`, `skip_tool_check`, `allow_ai_attribution`, `jira_pr_keyword`) as `ORC_*` variables in `settings.json`.
 
-**Core (19, always available):** `tdd`, `systematic-debugging`, `verification-before-completion`, `writing-plans`, `executing-plans`, `caveman-review`, `caveman-pr`, `receiving-code-review`, `requesting-code-review`, `git-commit`, `gh-cli`, `using-git-worktrees`, `finishing-a-development-branch`, `dispatching-parallel-agents`, `error-handling-patterns`, `git-advanced-workflows`, `architecture-patterns`, `improve-codebase-architecture`, `code-discovery` (prefer a Graphify code-graph query over grep to cut discovery tokens).
+## Iron rules (enforced by hooks + the `using-orc` skill)
 
-**Orc mechanics (5, authored for orc):** `workspace-mode` (cross-repo flag precedence), `pr-size-budget` (the soft 300-LOC gate), `stack-pr` (split a big branch into a chained PR stack), `env-provisioning` (Docker dev environments for QA — detection ladder, healthcheck-gated boot, host-mode fallback), `evidence-publish` (deliver a QA evidence packet to a tracker or keep it local — enablement detection, curated payload, always-ask gate, Jira adapter).
-
-**Senior/architect practice (5, authored for orc):** `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem` (blameless incident postmortems), `prd-writing` (Product Requirements Documents), `trd-writing` (Technical Requirements Documents).
-
-**Pack: web-react (6):** `next-best-practices`, `vercel-react-best-practices`, `vercel-composition-patterns`, `shadcn`, `tailwind-design-system`, `vitest`.
-
-**Pack: backend (7):** `nodejs-best-practices`, `nestjs-best-practices`, `typescript-advanced-types`, `postgresql-table-design`, `postgresql-optimization`, `stripe-best-practices`, `upgrade-stripe`.
-
-**Pack: ios (2):** `swiftui-pro`, `mobile-ios-design`.
-
-**Pack: workflow-extras (13):** `docker-expert`, `turborepo`, `sentry-cli`, `jira-cli`, `inline-review`, `write-a-skill`, `documentation-writer`, `doc-writing`, `create-readme`, `to-prd`, `to-issues`, `grill-me`, `agent-browser` (drives a real browser for `/orc:qa` web mode).
-
-Plus the meta skills `using-orc` (auto-injected at SessionStart, encodes the iron rules + routing) and `insights` (the inline insight-callout convention). **Total: 59 skills.**
-
-## Designed to stay lean
-
-Claude Code loads every skill/command/agent **description** into context at session start (that's how it routes you to the right one), but loads a skill's **body** only when the skill is actually invoked. orc is built around that split, so it costs almost nothing until you reach for it:
-
-- **Thin always-on core.** The `using-orc` rules injected at every SessionStart are ~3.5 KB — iron rules + routing only. The full skill/command catalog is *not* re-listed there, because Claude Code already loads it natively. (Re-listing it was the single biggest source of per-session bloat; removing it cut that injection ~80%.)
-- **Progressive disclosure.** Large reference skills (`gh-cli`, `turborepo`, `typescript-advanced-types`, `postgresql-optimization`, …) are a short index plus `references/*.md` loaded on demand — invoking one pulls only the topic you need, not the whole manual. (`gh-cli` is a 97-line index over 10 reference files instead of one 2,278-line wall.)
-- **One-line descriptions.** Every skill/command description is a ≤200-char trigger; the detail lives in the body.
-
-Net: a fresh orc session pays only a few thousand baseline tokens before you type anything, and a 2,000-line reference skill costs ~100 lines until you actually use it.
-
-## Insight blocks
-
-When orc is writing or modifying code, it surfaces 2–3 short, codebase-specific notes inline as emoji-header blockquotes. The palette is **destination-aware**: terminal output carries no `[!TYPE]` tag (the Claude Code TUI doesn't parse GitHub alert types — a tag line prints as junk text); GitHub-bound output (PR bodies, review comments, committed docs) adds the tag so GitHub renders a colored admonition.
-
-Terminal form (conversation):
-
-```
-> **💡 Insight**
->
-> - [point 1, codebase-specific]
-> - [point 2]
-
-> **⚠️ Caution**
->
-> - [gotcha / risky thing]
-```
-
-GitHub form (PR bodies / committed docs): same block with `> [!IMPORTANT]` / `> [!WARNING]` as the first line.
-
-The convention lives in the `orc:insights` skill and is pointed to from `using-orc` — keeping the always-injected rules lean while the formatting detail loads only when orc actually writes an insight.
-
-## Iron rules (enforced by hooks + the using-orc skill)
-
-1. No commits to `main`/`master`/`develop` — the PreToolUse hook downgrades them to a confirm prompt; approve only with explicit user consent.
+1. No commits to `main`/`master`/`develop` — the PreToolUse hook downgrades them to a confirm prompt; approve only with explicit consent.
 2. No code without a failing test first.
 3. No claims without verification (run the command, read the output).
 4. No fixes without a found root cause.
 5. No AI attribution in code, commits, or PRs.
 6. No multi-phase work without `.orc/` checkpoints.
-7. No silent broadcast in workspace mode — repo-touching commands need an explicit `--repos`/`--repo`/`--all-repos`/`--this-repo` or a confirming prompt.
+7. No silent broadcast in workspace mode — repo-touching commands need an explicit target flag or a confirming prompt.
 8. No PR over the size budget (default 300 LOC) without a recorded choice — stack it, record a `Size-budget-override:` trailer, or abort.
 
-## Web QA evidence is a hard rule
+## Designed to stay lean
 
-Any web-surface change going through `/orc:qa` MUST produce, in `.orc/<branch>/files/qa/`:
+Claude Code loads every skill/command/agent **description** at session start (that's how it routes you), but loads a skill's **body** only when invoked. orc is built around that split, so it costs almost nothing until you reach for it:
 
-- `screenshot-NN-<step>.png` per visible step (annotated via `agent-browser screenshot --annotate`)
-- `snapshot-final.txt` — accessibility tree from `agent-browser snapshot`
-- `console.log` — captured browser console (errors flagged)
-- `network.har` — network traffic from `agent-browser network har start/stop`
-- `steps.md` — narrated golden path + edge cases
+- **Thin always-on core.** The `using-orc` rules injected at every SessionStart are ~3.5 KB — iron rules + routing only; the full catalog is not re-listed (Claude Code already loads it natively).
+- **Progressive disclosure.** Large reference skills are a short index plus `references/*.md` loaded on demand — invoking one pulls only the topic you need.
+- **One-line descriptions.** Every skill/command description is a ≤200-char trigger; the detail lives in the body.
 
-Bonus (optional): `trace.json`, `react-renders.json`, `vitals.json`, or an OS-recorded `video.mov` for animated changes. agent-browser does not record video natively.
+Net: a fresh orc session pays only a few thousand baseline tokens before you type anything.
 
-Without the required artifacts, "QA passed" is not an accepted claim. The `orc-qa-validator` agent — driven by the [vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser) CLI via the `orc:agent-browser` skill — produces them.
+## FAQ
+
+<details>
+<summary><strong>Does orc send my code or prompts to any "orc" server?</strong></summary>
+
+No. There is no orc backend and no telemetry — nothing in the tree tracks usage. Your prompts and code go only where Claude Code itself sends them. orc's own network activity is limited to GitHub (fetching the plugin / CLI releases) and any MCP servers you explicitly add.
+</details>
+
+<details>
+<summary><strong>Can orc commit to <code>main</code> or force-push without me?</strong></summary>
+
+No. A PreToolUse hook (`pre-commit-branch-check.sh`) intercepts `git commit`/`git push` on `main`/`master`/`develop` and downgrades them to a confirm prompt that needs your keystroke — with no env-var escape hatch. The protected branch list is configurable (`protected_branches`).
+</details>
+
+<details>
+<summary><strong>Will orc put "Generated by AI" or <code>Co-Authored-By</code> in our git history?</strong></summary>
+
+No. A hook (`pre-commit-no-ai-attribution.sh`) refuses any `git commit` or `gh pr/issue create/edit` whose text contains AI-attribution markers. Your history reads as your team's work. (An `ORC_ALLOW_AI_ATTRIBUTION=1` opt-in exists for teams that *want* the trailers.)
+</details>
+
+<details>
+<summary><strong>What does orc install on a developer's machine?</strong></summary>
+
+The plugin itself is markdown + shell scripts loaded by Claude Code. Optionally, the `orc` CLI is a single static Go binary. Runtime tools (`git`, `jq`, and the recommended set) are installed only when you run `orc doctor --fix`, via your own package manager — orc never bundles or side-loads binaries.
+</details>
+
+<details>
+<summary><strong>How do we pin and audit a specific version?</strong></summary>
+
+Pin the marketplace `ref` (in `settings.json`, or via `orc install --ref`) to any existing release tag or a commit SHA. CLI releases are tagged `vX.Y.Z` and published by goreleaser with a `checksums.txt`. Everything that runs is plain text in this repo — clone a tag and diff it.
+</details>
+
+<details>
+<summary><strong>Who maintains it, and is it "production-grade"?</strong></summary>
+
+orc is an open-source personal project (MIT), maintained in the open and used daily by its author. Its CI gates every change with tests, lint, secret scanning (gitleaks), and Go vulnerability scanning (govulncheck). It is not a vendor product with an SLA — "safe to use" means *auditable, local, and guardrailed*, so you can adopt it on your own terms.
+</details>
 
 ## Layout
 
 ```
 orc/
-├── .claude-plugin/plugin.json   # manifest (v0.11.0)
+├── .claude-plugin/plugin.json   # manifest (v0.15.0)
 ├── .orc/                        # gitignored — workspace state per session
 ├── skills/<name>/SKILL.md       # 59 skills — a thin index per skill
-│   └── <name>/references/*.md   #   lazy-loaded detail for large skills (142 files, 16 skills)
+│   └── <name>/references/*.md   #   lazy-loaded detail for large skills
 ├── commands/<name>.md           # 22 slash commands (incl. /orc:flow umbrella)
-├── agents/orc-<role>.md         # 12 subagents (incl. orc-implementer for /orc:flow Phase 5)
+├── agents/orc-<role>.md         # 12 subagents (incl. orc-implementer)
 ├── hooks/
 │   ├── hooks.json
 │   └── scripts/                 # session-start-using-orc.sh
 │                                # session-start-tool-check.sh
 │                                # pre-commit-branch-check.sh
 │                                # pre-commit-no-ai-attribution.sh
+│                                # worktree-create.sh
+│                                # worktree-remove.sh
 ├── lib/                         # shared bash helpers (workspace-detect, pr-size-budget)
-├── docs/                        # architecture.md, contributing.md, STACKED-PRS.md, roadmap.md
-└── examples/                    # scenario walk-throughs (start here for usage)
+cli/                             # the orc CLI (Go / Bubble Tea)
+docs/                            # architecture.md, contributing.md, STACKED-PRS.md, roadmap.md
+examples/                        # scenario walk-throughs (start here for usage)
 ```
 
 ## Development
 
-See `docs/contributing.md` for conventions on adding skills, commands, agents, and hooks.
+See [`docs/contributing.md`](docs/contributing.md) for conventions on adding skills, commands, agents, and hooks, and [`docs/architecture.md`](docs/architecture.md) for the why behind the layout and the `.orc/` lifecycle.
 
-See `docs/architecture.md` for the why behind the layout and the `.orc/` lifecycle.
+Developing on this repo? Load the plugin straight from your checkout instead of the marketplace:
+
+```bash
+claude --plugin-dir /path/to/your/clone/of/orc
+```
+
+Reload after edits without restarting: `/reload-plugins`.
 
 ## License
 
-MIT — see `LICENSE`.
+MIT — see [`LICENSE`](LICENSE).
+
+<p align="center"><sub><strong>Zug zug.</strong> Let the orcs do the work.</sub></p>
