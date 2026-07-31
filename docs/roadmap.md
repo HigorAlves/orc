@@ -70,6 +70,10 @@ Closed the cross-session learning loop through the debug flow — the one flow w
 
 Extended the proactive build/freshness pattern (previously only `/orc:start` Phase 1b) to the two standalone entry commands that assume a graph but never built one. `/orc:plan` gains a Phase 1b that builds-if-missing / refreshes-if-stale a code-only graph before drafting, so `orc:writing-plans` and `orc-prd-analyzer` map touchpoints by query; `/orc:debug` primes + refreshes on the buggy branch before dispatching the investigator, so it queries from turn one instead of discovering staleness mid-run. Both are optional and non-blocking — absent/failed graphify degrades to Glob/Grep. Sets the table for 0.15.0's blast-radius `est_loc`, which needs a fresh graph at plan time.
 
+## 0.15.0 — Graph-informed est_loc + PRD blast-radius — SHIPPED (0.15.0)
+
+Turned the freshly-primed graph (0.14.0) into planning accuracy. `orc:writing-plans` now sharpens the per-slice `est_loc` with real blast-radius — `graphify affected "<symbol>" --depth 2` counts the call sites a change ripples into (~+30 LOC each) and flags high-fan-in changes as `ships_as_stack: true` *before* implementation instead of at ship time. `orc-prd-analyzer` uses `god-nodes --json` + `affected` to populate a PRD's **Dependencies** and **Edge cases the PRD doesn't address** with the subsystems and call sites a feature silently touches. Advisory only: `affected` is a lead (no per-edge confidence), so callers are counted after reading the cited spans, and the number feeds the *soft* 300-LOC gate, never a hard input. Fallback = the existing `(new*80)+(mod*30)+test` heuristic + grep-for-callers.
+
 ## Evaluated and deliberately skipped
 
 - `type: prompt` / `type: agent` hooks for the commit guards — latency + cost per Bash call outweighs closing the `&&`-chaining bypass. If hardening is wanted, parse the first non-env token and handle `git -C` in the existing scripts instead.
