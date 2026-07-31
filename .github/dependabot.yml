@@ -1,0 +1,23 @@
+version: 2
+updates:
+  # Go module for the installer CLI.
+  - package-ecosystem: "gomod"
+    directory: "/cli"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      go-deps:
+        patterns: ["*"]
+
+  # GitHub Actions used by the workflows (keeps the pinned action tags current).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      actions:
+        patterns: ["*"]
