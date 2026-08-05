@@ -69,7 +69,7 @@ to be "$0 of $0", not "$NaN of $undefined".
 
 ### Phase 3 — Write the regression test (TDD red)
 
-`/orc:debug` invokes `orc:tdd`. You write the test from the diagnosis, run the suite, watch it fail with the expected message. Commit the failing test on a fix branch (you're already on one — the worktrees skill handled that).
+`/orc:debug` invokes `orc:tdd`. You write the test from the diagnosis, run the suite, watch it fail with the expected message. Commit the failing test on a fix branch (you're already on one — the worktrees skill handled that). For complex regression tests (multi-branch state machines, async coordination, integration boundaries), a gate offers to dispatch `orc-test-author` instead of writing inline — this one is a single assertion, so inline it is.
 
 ### Phase 4 — Fix
 

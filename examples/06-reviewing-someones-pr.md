@@ -10,9 +10,9 @@ You could read every line yourself. orc lets you do it with discipline and far l
 
 ```mermaid
 flowchart TD
-    cmd["/orc:code-review 142<br/>[--jira | --prd | --context | --summary-only | --dry-run]"]
-    elig[Phase 1: Eligibility check<br/><i>closed? draft? already reviewed?</i>]
-    guide[Phase 2: Diff + project guidelines<br/><i>CLAUDE.md scoped to changed files</i>]
+    cmd["/orc:code-review 142<br/>[--context | --summary-only | --soft-tests | --dry-run | --audit]"]
+    elig[Phase 1: Eligibility check<br/><i>bad ref? closed? draft? already reviewed?</i>]
+    guide[Phase 2: Diff + guidelines + spec<br/><i>fail fast on empty diff;<br/>CLAUDE.md + originating issue fetched</i>]
     rev[Phase 3: agents dispatched<br/><i>orc-pr-reviewer + orc-security-reviewer (parallel)</i><br/><b>return structured JSON findings</b>]
     merge[Phase 4: merge + sanity check<br/><i>compute event from severities;<br/>flag agent self-contradictions</i>]
     compose[Phase 5: compose review payload<br/><i>overall body + comments array;<br/>cap at 15</i>]
@@ -32,7 +32,7 @@ flowchart TD
 gh pr view 142 --json state,isDraft,reviewDecision,author,title,additions,deletions,changedFiles
 ```
 
-If state is closed/merged: stop. If draft: ask `AskUserQuestion` whether to review anyway (sometimes drafts request early eyes). If you've already reviewed: stop and say so.
+If the ref doesn't resolve at all (bad number, wrong repo, typo'd URL): fail fast right here with the exact `gh` error — a bad ref never reaches the parallel sub-agents. If state is closed/merged: stop. If draft: ask `AskUserQuestion` whether to review anyway (sometimes drafts request early eyes). If you've already reviewed: stop and say so.
 
 ### Phase 2 — Gather project guidelines
 
@@ -43,11 +43,13 @@ gh pr diff 142 --name-only | xargs -I {} dirname {} | sort -u | xargs -I {} find
 
 These get passed to the reviewer agent as project-specific style/architecture rules.
 
+Two more things happen in this phase: an **empty diff fails fast** (0 hunks → stop; agents are never dispatched against nothing), and the PR body + commit messages are scanned for an originating issue/spec reference (`#123`, `Closes #45`, a full issue URL, a Jira key in the branch/title). If found, the issue is fetched via `gh issue view` (or `gh api` cross-repo).
+
 ### Phase 3 — Requirements context (optional)
 
-If you passed `--jira PROJ-1234`: fetch the ticket via Jira MCP if available; otherwise tell you to provide context another way. If `--prd ./spec.md`: read it. If `--context "..."`: include verbatim.
+If Phase 2 found an originating issue/spec, it rides along to `orc-pr-reviewer` automatically — that's what makes **spec-conformance** findings (missing acceptance criteria, scope creep) possible. No reference found? Pass `--context "..."` to describe what the PR is supposed to accomplish.
 
-This unlocks the **requirements-alignment** check inside the reviewer agent — does the PR actually do what was asked?
+Either way, this unlocks the **requirements-alignment** check inside the reviewer agent — does the PR actually do what was asked?
 
 ### Phase 4 — Dispatch the reviewer(s)
 
@@ -60,7 +62,7 @@ Each agent gets:
 - `gh pr view 142 --json ...` output
 - `gh pr diff 142` output
 - CLAUDE.md content found in step 2
-- Requirements text from step 3
+- Requirements text from step 3 (the fetched issue/spec goes to `orc-pr-reviewer`)
 
 `orc-pr-reviewer` walks every changed file, looks for **real bugs** (logic errors, null derefs, off-by-one, race conditions, wrong operators), missing tests for non-trivial new behavior, inconsistencies (one call site updated, another forgotten), guideline violations.
 
@@ -77,7 +79,7 @@ It explicitly does NOT flag:
 
 ### Phase 5 — Structured JSON findings + merge
 
-Each agent returns **strict JSON** (per `orc:inline-review` schema), not markdown. Excerpt of `orc-pr-reviewer`'s output:
+Each agent returns **strict JSON** (per the `orc:review-contract` schema — both reviewer agents preload that skill, which also owns the severity vocabulary and the severity→event rule), not markdown. Excerpt of `orc-pr-reviewer`'s output:
 
 ```json
 {
@@ -211,6 +213,7 @@ The teammate opens PR #142 and sees:
 - **PR is too big to review in one shot** — comment that the PR should be split, then APPROVE the trivial portion or REQUEST_CHANGES on the structural pieces. Don't pretend to review 60 files in one read.
 - **You disagree with a finding** — pick `Edit / drop specific comments` at the preview gate; per-comment loop lets you keep / drop / rewrite each before posting.
 - **You want to do a "vibes" review without the agent** — fine, but you lose the systematic guideline + bug + security + tests + requirements pass. Use the agent for the systematic pass and add your "vibes" reading on top.
+- **`/orc:code-review --audit`** — repo-wide security pass instead of a PR review: `orc-security-reviewer` in audit scope over the whole working tree, plus a secret scan (gitleaks when installed, high-signal Grep fallback). No PR ref needed; nothing is posted to GitHub — output is a markdown summary grouped by severity.
 
 ## Iron rules in play
 

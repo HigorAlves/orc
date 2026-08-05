@@ -26,7 +26,7 @@ flowchart TD
     detect[Detect web vs code mode<br/><i>heuristic on changed files</i>]
     verify[Tests + lint + type-check<br/>orc:verification-before-completion]
     selfrev["Self-review of diff<br/>orc:caveman-review<br/>(+ orc-security-reviewer if sensitive)"]
-    boot[Boot + browser QA<br/>orc-qa-validator + agent-browser]
+    boot[Browser QA<br/><i>driver gate, then</i><br/>orc-qa-validator + agent-browser]
     golden[Walk golden path]
     edge[Walk edge cases<br/><i>validation, empty, failure,<br/>slow network, auth states</i>]
     capture[Capture artifacts to<br/>.orc/&lt;branch&gt;/files/qa/]
@@ -84,7 +84,9 @@ You add the test, re-run Phase 2. Now clean.
 .orc/feat-checkout-error-states/files/qa/
 ```
 
-Created. `orc-qa-validator` is dispatched via `Task`. The agent's first move is to invoke the `orc:agent-browser` skill (the discovery stub points at the live CLI workflow).
+Created. Two beats precede the dispatch: without `--web <url>`, a Docker environment is provisioned or attached first (`orc-env-provisioner`; the validator attaches to the running app, it never boots infra itself), and the **browser-driver gate** asks agent-browser (headless, richest evidence) vs Claude-in-Chrome (watch live in your own browser) — `--driver` skips the prompt. This run: `--web` said the app is already up, and we pick agent-browser.
+
+`orc-qa-validator` is dispatched via `Task`. The agent's first move is to invoke the `orc:agent-browser` skill (the discovery stub points at the live CLI workflow).
 
 Then it walks the **golden path**:
 
@@ -176,7 +178,7 @@ Appended to `.orc/feat-checkout-error-states/files/progress.md`:
 
 ## Required artifacts (the hard rule)
 
-The `qa/` directory MUST contain all of:
+The `qa/` directory MUST contain the full packet for the driver you ran (this run used agent-browser; the chrome driver swaps visual proof to a `qa-<branch>.gif` recording and `network.har` to `network-summary.md` — same rule, same completeness). For agent-browser, all of:
 
 - ≥ 1 `screenshot-NN-<step>.png` for the golden path (annotated)
 - ≥ 1 `screenshot-NN-<step>.png` for edge cases (or explicit "no edge cases applicable, here's why" in `steps.md`)
@@ -220,6 +222,7 @@ Then: `/orc:ship` — and the PR body links to `qa/steps.md` so reviewers can ve
 - **Pure backend change (no UI files in diff)** — code mode. No browser. No `qa/` artifacts. Verification + self-review only.
 - **Animation-heavy change** — add an OS screen recording manually (`screencapture -v qa/video.mov` on macOS). It's optional, but for visual regressions it's the most useful single artifact.
 - **Multiple devices/breakpoints** — repeat the golden path with `agent-browser set viewport <w> <h>` for each. Save screenshots per breakpoint (`screenshot-01a-mobile-loaded.png`, `screenshot-01b-desktop-loaded.png`).
+- **Watch the QA live** — pick the Claude-in-Chrome driver at the gate (or `--driver chrome`). The walk runs inline in your real browser (real sessions, cookies, extensions), narrated step by step; the evidence packet swaps per-step screenshots for a GIF recording and the HAR for a distilled `network-summary.md`.
 - **Behind a feature flag** — boot the app with the flag enabled, document the flag state at the top of `steps.md`.
 - **App not yet boot-able locally** — ask the user for a deployed preview URL (Vercel preview, staging, etc.). Don't fake QA against the prod app.
 

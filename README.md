@@ -130,6 +130,11 @@ Or skip the per-phase invocations and use **`/orc:flow`** to drive the whole loo
 | A web change ready to ship | [examples/10 — Web QA before shipping](./examples/10-web-qa-before-shipping.md) |
 | Multiple teammates' PRs to review (or any N independent tasks) | [examples/11 — Multi-PR review with /orc:fan-out](./examples/11-multi-pr-review.md) |
 | A Jira ticket to link and close on PR merge | [examples/12 — Linking a Jira ticket and shipping](./examples/12-link-jira-and-ship.md) |
+| CI red on the PR you just opened | [examples/13 — Fixing red CI](./examples/13-fixing-red-ci.md) |
+| Production incident happening right now | [examples/14 — Live incident response](./examples/14-live-incident.md) |
+| Dependency hygiene day (vulns, outdated packages) | [examples/15 — Dependency audit and upgrade](./examples/15-dependency-audit.md) |
+| A release to cut | [examples/16 — Cutting a release](./examples/16-cutting-a-release.md) |
+| A repo joining orc, then daily issue triage | [examples/17 — Tracker setup and triage](./examples/17-tracker-setup-and-triage.md) |
 
 Each example follows the same shape — *Scenario → Flow → Walk-through → Artifacts → Done when → Variants → Iron rules in play* — so you can scan to the relevant section.
 

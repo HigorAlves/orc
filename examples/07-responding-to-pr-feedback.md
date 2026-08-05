@@ -11,7 +11,7 @@ orc handles all four categories in parallel.
 ```mermaid
 flowchart TD
     cmd["/orc:address [&lt;pr-number&gt;]"]
-    fetch[Fetch PR + unresolved review comments<br/>via gh CLI]
+    fetch[Fetch PR + unresolved review comments<br/>+ check state via gh CLI]
     cat[Categorize:<br/>ACTION / QUESTION / NITPICK / DISAGREE]
     confirm[User confirms categorization]
     parallel{{Dispatch in parallel}}
@@ -39,6 +39,8 @@ If you didn't pass a PR number, `gh pr list --head $(git branch --show-current)`
 
 The command filters to **unresolved threads only** (using `isResolved: false` from the reviewThreads JSON).
 
+It also fetches check state (`gh pr checks 88`). Any failing check flags the PR as **red-CI** — Phase 3 folds the CI fixes into the same batch as the review fixes.
+
 ### Phase 2 — Categorize
 
 Each comment gets read alongside the relevant code (the model `Read`s the file ±20 lines around the comment line). Then categorizes:
@@ -59,7 +61,9 @@ Each comment gets read alongside the relevant code (the model `Read`s the file �
 
 ### Phase 3 — Two agents in parallel
 
-Single response with two `Task` calls (parallel execution):
+**Red-CI pre-step** (only when Phase 1 flagged failing checks): `orc-ci-investigator` is dispatched first with the PR ref + head SHA. Every `fixable` item from its diagnosis joins the ACTION list, tagged `origin: ci` — they ride the same fix commit and get no thread replies (there's no thread). `flake`/`infra`/`needs-debug` verdicts are NOT folded in; they surface in Phase 4 with the evidence so you decide (re-run, escalate, or `/orc:debug`).
+
+Then a single response with two `Task` calls (parallel execution):
 
 **`orc-code-fixer`** receives the list of `ACTION` items with file/line/intended change. It:
 - Reads each target file

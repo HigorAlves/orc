@@ -133,6 +133,7 @@ postmortem,p0 issues filed: 3
 - **Near-miss** (caught before customer impact, but real defect) — same flow, mark severity SEV-3 and adjust the customer-impact line to "near-miss; no customer impact." The postmortem still produces action items.
 - **Recurring incident** (third time this month a Postgres connection pool exhausts) — write the postmortem framed around *why we keep recurring*, not the specific mechanism. The action items target the recurrence (capacity model, alerting, runbook), not just the proximate cause.
 - **Multi-team incident** — file action items to the right teams' trackers. Cross-link from the postmortem.
+- **Production is still on fire** — start with `/orc:incident` instead (live triage: severity + blast radius, mitigate-first gate, append-only UTC `timeline.md`); when stable, it hands that timeline to `/orc:postmortem` Phase 4 pre-seeded, so you convert rows instead of reconstructing from memory.
 
 ## Iron rules in play
 
