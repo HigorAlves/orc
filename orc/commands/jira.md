@@ -21,6 +21,8 @@ allowed-tools:
 
 Single entry point for Jira operations from inside an orc session. Wraps `acli` (the supported Atlassian CLI) and integrates with `.orc/` state so a ticket key, once bound, follows the work through `/orc:status`, `/orc:resume`, and `/orc:ship`.
 
+For building a whole Epic→Story→Task hierarchy from a feature brief or PRD (micro-PRD epic, templated children, concurrency-sliced tasks), use `/orc:jira-breakdown` — it composes this command's primitives per the `orc:jira-hierarchy` contract.
+
 Always invoke `orc:jira-cli` before running any `acli` command — it's the reference for flags, auth, and pitfalls.
 
 ## Verbs

@@ -113,3 +113,7 @@ The end-to-end behaviour this issue makes work, from the user's perspective — 
 </issue-template>
 
 In either form, avoid specific file paths or code snippets — they go stale fast. Exception: if a prototype produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it and note briefly that it came from a prototype. Trim to the decision-rich parts — not a working demo, just the important bits.
+
+## Jira hierarchy variant
+
+When the tracker is Jira and the output should be the structured Epic→Story→Task hierarchy (micro-PRD epic, templated children, concurrency-sliced tasks) rather than flat issues, hand off to `/orc:jira-breakdown` — it enforces the `orc:jira-hierarchy` contract end-to-end.

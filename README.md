@@ -36,14 +36,14 @@
 </p>
 
 <p align="center">
-  <code>74 skills</code> &nbsp;·&nbsp; <code>29 commands</code> &nbsp;·&nbsp;
-  <code>13 agents</code> &nbsp;·&nbsp; <code>7 guardrail hooks</code> &nbsp;·&nbsp;
+  <code>75 skills</code> &nbsp;·&nbsp; <code>30 commands</code> &nbsp;·&nbsp;
+  <code>14 agents</code> &nbsp;·&nbsp; <code>7 guardrail hooks</code> &nbsp;·&nbsp;
   <code>0 telemetry</code> &nbsp;·&nbsp; <code>MIT</code>
 </p>
 
 ---
 
-`orc` is a full-SDLC workflow plugin for Claude Code: **74 curated skills, 29 composite slash commands, 13 specialist subagents, and 7 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers, destructive git commands gated, a dependency pre-flight, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged", with the `orc-implementer` agent writing the code slice-by-slice in between — and the lifecycle no longer stops at PR-open: `/orc:ci`, `/orc:release`, `/orc:deps`, and `/orc:incident` cover what happens after.
+`orc` is a full-SDLC workflow plugin for Claude Code: **75 curated skills, 30 composite slash commands, 14 specialist subagents, and 7 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers, destructive git commands gated, a dependency pre-flight, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged", with the `orc-implementer` agent writing the code slice-by-slice in between — and the lifecycle no longer stops at PR-open: `/orc:ci`, `/orc:release`, `/orc:deps`, and `/orc:incident` cover what happens after.
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
@@ -104,6 +104,7 @@ Or skip the per-phase invocations and use **`/orc:flow`** to drive the whole loo
 | Bootstrapping a new package/service | `/orc:scaffold` |
 | Parallel-dispatching N independent tasks | `/orc:fan-out` |
 | Filing/linking a Jira ticket from the terminal | `/orc:jira` |
+| A feature to break into a Jira Epic→Story→Task hierarchy | `/orc:jira-breakdown` |
 | Collecting browser evidence for a ticket | `/orc:evidence` |
 | Production incident happening right now | `/orc:incident` |
 | Dependencies stale or vulnerable | `/orc:deps` |
@@ -258,7 +259,7 @@ To pin a specific tag or commit, use the longhand source form in `~/.claude/sett
 
 ## What orc can do
 
-### Commands (29)
+### Commands (30)
 
 | Command | Purpose |
 |---------|---------|
@@ -279,6 +280,7 @@ To pin a specific tag or commit, use the longhand source form in `~/.claude/sett
 | `/orc:adr` · `/orc:rfc` | Author an ADR / a system-design RFC |
 | `/orc:prd` · `/orc:trd` | Author a PRD / a TRD (supports `--from-jira` / `--from-prd`) |
 | `/orc:jira` | Manage Jira tickets via `acli`; bind/unbind a ticket to the current session |
+| `/orc:jira-breakdown` | Build a Jira Epic (micro-PRD) → Stories → concurrency-sliced Tasks from a brief or PRD |
 | `/orc:evidence` | Collect browser evidence scoped to a ticket, then upload or keep local |
 | `/orc:postmortem` | Author a blameless incident postmortem; files P0 items as tracker issues |
 | `/orc:ci` | Watch + diagnose CI after PR-open; classified failures routed to `orc-code-fixer` |
@@ -290,13 +292,13 @@ To pin a specific tag or commit, use the longhand source form in `~/.claude/sett
 | `/orc:wayfinder` | Plan multi-session work as decision tickets on the tracker |
 | `/orc:cleanup` | Remove `.orc/` state, worktree, and (if merged) branch for completed sessions |
 
-### Specialist agents (13)
+### Specialist agents (14)
 
-`orc-implementer` (writes code slice-by-slice), `orc-debug-investigator`, `orc-test-author`, `orc-code-fixer`, `orc-pr-reviewer`, `orc-security-reviewer`, `orc-ci-investigator`, `orc-qa-validator`, `orc-env-provisioner`, `orc-prd-analyzer`, `orc-refactor-architect`, `orc-reply-drafter`, `orc-stack-analyzer` — each a read-only investigator or a scoped executor, dispatched by the commands above. Every agent pins both a `model` (haiku for mechanical work, sonnet for senior-dev execution, opus for deep investigation) and a reasoning `effort` matched to its task shape.
+`orc-implementer` (writes code slice-by-slice), `orc-debug-investigator`, `orc-test-author`, `orc-code-fixer`, `orc-pr-reviewer`, `orc-security-reviewer`, `orc-ci-investigator`, `orc-qa-validator`, `orc-env-provisioner`, `orc-prd-analyzer`, `orc-refactor-architect`, `orc-jira-architect`, `orc-reply-drafter`, `orc-stack-analyzer` — each a read-only investigator or a scoped executor, dispatched by the commands above. Every agent pins both a `model` (haiku for mechanical work, sonnet for senior-dev execution, opus for deep investigation) and a reasoning `effort` matched to its task shape.
 
-### Skills (74)
+### Skills (75)
 
-Under the commands and agents sit 74 curated skills — reusable, progressively-disclosed playbooks the model pulls in on demand: process doctrine (`tdd`, `systematic-debugging`, `verification-before-completion`, `grilling`, `codebase-design`, `domain-modeling`), stack packs (Next.js, NestJS, PostgreSQL, SwiftUI, Tailwind, Turborepo, …), authoring guides (PRD/TRD/ADR/RFC/postmortem), and the `orc:map` router when you're not sure which to reach for. Fifteen are vendored or merged from [mattpocock/skills](https://github.com/mattpocock/skills) and other MIT sources with full provenance ([THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md)); their descriptions are deliberately differentiated so co-installing the originals doesn't double-trigger. Each skill is a thin index that loads its detail only when invoked, so they cost almost nothing until used. **Total: 74 skills.**
+Under the commands and agents sit 75 curated skills — reusable, progressively-disclosed playbooks the model pulls in on demand: process doctrine (`tdd`, `systematic-debugging`, `verification-before-completion`, `grilling`, `codebase-design`, `domain-modeling`), stack packs (Next.js, NestJS, PostgreSQL, SwiftUI, Tailwind, Turborepo, …), authoring guides (PRD/TRD/ADR/RFC/postmortem), and the `orc:map` router when you're not sure which to reach for. Fifteen are vendored or merged from [mattpocock/skills](https://github.com/mattpocock/skills) and other MIT sources with full provenance ([THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md)); their descriptions are deliberately differentiated so co-installing the originals doesn't double-trigger. Each skill is a thin index that loads its detail only when invoked, so they cost almost nothing until used. **Total: 75 skills.**
 
 ### The orc CLI
 
@@ -420,10 +422,10 @@ orc is an open-source personal project (MIT), maintained in the open and used da
 orc/
 ├── .claude-plugin/plugin.json   # manifest (v0.16.0)
 ├── .orc/                        # gitignored — workspace state per session
-├── skills/<name>/SKILL.md       # 74 skills — a thin index per skill
+├── skills/<name>/SKILL.md       # 75 skills — a thin index per skill
 │   └── <name>/references/*.md   #   lazy-loaded detail for large skills
-├── commands/<name>.md           # 29 slash commands (incl. /orc:flow umbrella)
-├── agents/orc-<role>.md         # 13 subagents (incl. orc-implementer)
+├── commands/<name>.md           # 30 slash commands (incl. /orc:flow umbrella)
+├── agents/orc-<role>.md         # 14 subagents (incl. orc-implementer)
 ├── hooks/
 │   ├── hooks.json
 │   └── scripts/                 # session-start-using-orc.sh
