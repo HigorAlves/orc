@@ -17,6 +17,7 @@ Latest Stripe API version: **2026-04-22.dahlia**. Always use the latest API vers
 | Subscriptions or recurring billing                                       | Billing APIs + Checkout Sessions    | <references/billing.md>  |
 | Embedded financial accounts / banking                                    | v2 Financial Accounts               | <references/treasury.md> |
 | Security (key management, RAKs, webhooks, OAuth, 2FA, Connect liability) | See security reference              | <references/security.md> |
+| Upgrading API versions, SDKs, Stripe.js, or mobile SDKs                  | See upgrading reference             | <references/upgrading.md> |
 
 Read the relevant reference file before answering any integration question or writing code.
 

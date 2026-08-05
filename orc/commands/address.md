@@ -11,6 +11,8 @@ allowed-tools:
   - AskUserQuestion
   - Bash(gh pr view:*)
   - Bash(gh pr list:*)
+  - Bash(gh pr checks:*)
+  - Bash(gh run:*)
   - Bash(gh api:*)
   - Bash(git:*)
   - Bash(npm:*)
@@ -53,6 +55,8 @@ gh api repos/{owner}/{repo}/pulls/{n}/comments --paginate
 
 In workspace mode, run both calls **per target PR** in parallel and bucket comments by repo (each comment carries the PR's repo name as its origin tag).
 
+Also fetch check state per target PR: `gh pr checks <ref>`. Any failing check → flag the PR as **red-CI** for Phase 3 (the fix batch will fold in CI fixes alongside the review fixes).
+
 Filter to comments where the thread is unresolved. (If the reviewThreads JSON includes a `isResolved: false` flag, use it; otherwise treat all comments as unresolved unless the user says otherwise.)
 
 ### Phase 2 — Categorize
@@ -69,10 +73,12 @@ Show the user the categorized list with `AskUserQuestion`:
 
 ### Phase 3 — Dispatch in parallel
 
-Two `Task` calls in the same response:
+**Red-CI pre-step (only when Phase 1 flagged failing checks):** dispatch `orc-ci-investigator` via `Task` first — pass the PR ref and head SHA. It returns a classified diagnosis with a fix list. Fold every `fixable` item into the ACTION list below (tagged `origin: ci` so the commit message and replies can distinguish them); `flake`/`infra`/`needs-debug` verdicts are NOT folded in — surface them in Phase 4 with the evidence so the user decides (re-run, escalate, or `/orc:debug`) alongside the review pass.
 
-1. **`orc-code-fixer`** — pass the list of `ACTION` items with file/line/intended change. Agent applies edits, runs tests, returns a diff + test summary.
-2. **`orc-reply-drafter`** — pass ALL comments (with categories + the diff from the code-fixer if available). Agent returns a JSON list of `{comment_id, reply}`.
+Then two `Task` calls in the same response:
+
+1. **`orc-code-fixer`** — pass the list of `ACTION` items (review comments + any folded-in CI fix items) with file/line/intended change. Agent applies edits, runs tests, returns a diff + test summary.
+2. **`orc-reply-drafter`** — pass ALL comments (with categories + the diff from the code-fixer if available). Agent returns a JSON list of `{comment_id, reply}`. CI fix items get no replies — they have no thread; they ride the same fix commit.
 
 **Workspace mode**: dispatch one `orc-code-fixer` per repo (parallel, single response, multiple `Task` calls), each with `repo`, `repoPath`, `siblingRepos`, and the ACTION items filtered to that repo's PR. Reply-drafter stays singular — pass ALL comments across ALL linked PRs at once so it can write coherent replies that reference cross-repo context where appropriate. The dispatcher merges per-repo fixer outputs before Phase 4.
 

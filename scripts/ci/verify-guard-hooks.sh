@@ -17,6 +17,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 branch_check="$repo_root/orc/hooks/scripts/pre-commit-branch-check.sh"
 attribution_check="$repo_root/orc/hooks/scripts/pre-commit-no-ai-attribution.sh"
+destructive_check="$repo_root/orc/hooks/scripts/pre-destructive-git-check.sh"
 
 status=0
 fail() { echo "verify-guard-hooks: FAIL — $1"; status=1; }
@@ -106,6 +107,48 @@ done
 # OVERRIDE: explicit opt-in disables the guard
 out="$(payload 'git commit -m "x" -m "Co-Authored-By: Claude <noreply@anthropic.com>"' | ORC_ALLOW_AI_ATTRIBUTION=1 bash "$attribution_check")"
 [ -z "$out" ] && ok || fail "attribution: ORC_ALLOW_AI_ATTRIBUTION=1 must be silent"
+
+# --- pre-destructive-git-check.sh -----------------------------------------
+run_destructive() { # $1 = command
+  payload "$1" | env -u ORC_ALLOW_DESTRUCTIVE_GIT bash "$destructive_check"
+}
+
+# MATCH: destructive shapes -> permissionDecision "ask" (gate, not hard deny)
+ask_cases=(
+  'git reset --hard HEAD~1'
+  'git clean -fd'
+  'git clean -f'
+  'git branch -D feature-x'
+  'git push --force origin main'
+  'git push -f'
+  'npm test && git reset --hard'
+  'git -C sub clean -fdx'
+)
+for cmd in "${ask_cases[@]}"; do
+  out="$(run_destructive "$cmd")"
+  printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "ask"' >/dev/null 2>&1 \
+    && ok || fail "destructive: should ask: $cmd"
+done
+
+# NON-MATCH: safe variants and prose mentions -> silent
+destructive_silent=(
+  'git reset --soft HEAD~1'
+  'git reset HEAD -- file.txt'
+  'git clean -n'
+  'git branch -d merged-branch'
+  'git push --force-with-lease origin feat/stack-1'
+  'git push origin feat/x'
+  'echo "git reset --hard is dangerous"'
+  'git log --oneline'
+)
+for cmd in "${destructive_silent[@]}"; do
+  out="$(run_destructive "$cmd")"
+  [ -z "$out" ] && ok || fail "destructive: must be silent for: $cmd — got: $out"
+done
+
+# OVERRIDE: explicit opt-in disables the gate
+out="$(payload 'git reset --hard HEAD~1' | ORC_ALLOW_DESTRUCTIVE_GIT=1 bash "$destructive_check")"
+[ -z "$out" ] && ok || fail "destructive: ORC_ALLOW_DESTRUCTIVE_GIT=1 must be silent"
 
 if [ "$status" -eq 0 ]; then
   echo "verify-guard-hooks: OK ($pass_count cases)"

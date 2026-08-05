@@ -109,6 +109,43 @@
         "pipx": ["graphifyy[mcp]"]
       },
       "postInstall": ["graphify", "install"]
+    },
+    {
+      "name": "osv-scanner",
+      "tier": "recommended",
+      "usedBy": "`/orc:deps` (ecosystem-agnostic vulnerability audit; per-ecosystem scanners are the fallback)",
+      "hints": {
+        "macos": "brew install osv-scanner",
+        "default": "go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest — see https://google.github.io/osv-scanner/"
+      },
+      "install": {
+        "brew": ["osv-scanner"]
+      }
+    },
+    {
+      "name": "gitleaks",
+      "tier": "recommended",
+      "usedBy": "`/orc:code-review --audit` (secret scanning; regex fallback applies without it)",
+      "hints": {
+        "macos": "brew install gitleaks",
+        "default": "see https://github.com/gitleaks/gitleaks#installing"
+      },
+      "install": {
+        "brew": ["gitleaks"]
+      }
+    },
+    {
+      "name": "sentry-cli",
+      "tier": "recommended",
+      "usedBy": "`/orc:incident` (pull Sentry issues/events into live-incident triage)",
+      "hints": {
+        "macos": "brew install getsentry/tools/sentry-cli && sentry-cli login",
+        "default": "npm install -g @sentry/cli — then: sentry-cli login"
+      },
+      "install": {
+        "brew": ["getsentry/tools/sentry-cli"],
+        "npm": ["@sentry/cli"]
+      }
     }
   ]
 }

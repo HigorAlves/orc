@@ -389,6 +389,11 @@ AskUserQuestion (after PR composed):
 - Cancel
 ```
 
+**Post-open CI gate.** Once the PR(s) are open, watch CI before advancing: `gh pr checks <pr> --watch` (fallback: `gh run watch` on the head branch's newest run). In workspace mode, watch every PR in `linkedPRs`.
+
+- **Green** → record `ci: green` in `checkpoint.md` and advance to Phase 8.
+- **Red** → run the `/orc:ci` routing inline: dispatch `orc-ci-investigator` via `Task` with the PR ref + head SHA, save its report to `${ORC_STATE_DIR}/<branch>/files/ci-diagnosis.md`, then route on the verdict exactly as `/orc:ci` Phase 3 does — `fixable`: 📋 preview the fix list, ⛔ gate via `AskUserQuestion`, dispatch `orc-code-fixer`, commit per `orc:git-commit`, push, re-watch; `flake`: offer `gh run rerun <id> --failed` with the evidence shown; `infra`: surface the recommendation; `needs-debug`: offer a `/orc:debug` hand-off seeded with the diagnosis. Loop until green or the user explicitly advances with red CI (logged to checkpoint).
+
 ### Phase 8 — Address (loop, optional)
 
 After the PR is open, orc would normally exit. But `/orc:flow` offers a stay-resident option:
