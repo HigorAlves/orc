@@ -69,6 +69,9 @@ jobs:
       - name: Hook wiring + userConfig consumers
         run: bash scripts/ci/verify-hooks.sh
 
+      - name: Guard-hook smoke tests (branch-check + no-ai-attribution)
+        run: bash scripts/ci/verify-guard-hooks.sh
+
       - name: Frontmatter conventions
         run: bash scripts/ci/verify-frontmatter.sh
 
