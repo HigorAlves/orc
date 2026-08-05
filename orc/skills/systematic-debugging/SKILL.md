@@ -78,7 +78,7 @@ Run the loop. Watch it go red. Confirm:
 
 Then **minimise**: shrink the repro to the smallest scenario that still goes red. Cut inputs, callers, config, and steps **one at a time**, re-running the loop after each cut. Done when every remaining element is load-bearing — removing any one makes the loop go green. A minimal repro shrinks the Phase 3 hypothesis space and becomes the clean regression test in Phase 5.
 
-For errors deep in a call stack, trace the bad value backward to its origin — see `root-cause-tracing.md` in this directory. Fix at the source, not at the symptom.
+For errors deep in a call stack, trace the bad value backward to its origin — see `references/root-cause-tracing.md`. Fix at the source, not at the symptom.
 
 ## Phase 3 — Hypothesise
 
@@ -142,7 +142,7 @@ Required before declaring done (see `orc:verification-before-completion`):
 
 ## Supporting techniques (this directory)
 
-- **`root-cause-tracing.md`** — trace bugs backward through the call stack to the original trigger (includes `find-polluter.sh` bisection)
-- **`defense-in-depth.md`** — add validation at multiple layers after finding the root cause
-- **`condition-based-waiting.md`** — replace arbitrary timeouts with condition polling
+- **`references/root-cause-tracing.md`** — trace bugs backward through the call stack to the original trigger (includes `scripts/find-polluter.sh` bisection)
+- **`references/defense-in-depth.md`** — add validation at multiple layers after finding the root cause
+- **`references/condition-based-waiting.md`** — replace arbitrary timeouts with condition polling
 - **`scripts/hitl-loop.template.sh`** — structured human-in-the-loop repro when no automated loop is possible
