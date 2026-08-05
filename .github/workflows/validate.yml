@@ -69,6 +69,21 @@ jobs:
       - name: Hook wiring + userConfig consumers
         run: bash scripts/ci/verify-hooks.sh
 
+      - name: Guard-hook smoke tests (branch-check + no-ai-attribution)
+        run: bash scripts/ci/verify-guard-hooks.sh
+
+      - name: Router map covers every command
+        run: |
+          missing=""
+          for f in orc/commands/*.md; do
+            name=$(basename "$f" .md)
+            grep -q "orc:${name}" orc/skills/map/SKILL.md || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "orc/skills/map/SKILL.md is missing command(s):$missing"
+            exit 1
+          fi
+
       - name: Frontmatter conventions
         run: bash scripts/ci/verify-frontmatter.sh
 

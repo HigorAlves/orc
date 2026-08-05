@@ -4,7 +4,10 @@
 #   a) every agent `skills:` frontmatter entry resolves to a real skill dir;
 #   b) every `orc:<name>` mention in agents/commands/SKILL.md resolves to a
 #      real command OR skill (the namespace is shared);
-#   c) every concrete `references/<file>.md` a SKILL.md points at exists.
+#   c) every concrete `references/<file>.md` a SKILL.md points at exists;
+#   d) every bare hyphenated `/slash-command` prose mention resolves to an
+#      orc command/skill or a known bundled Claude Code command;
+#   e) every relative `../<skill>/<file>.md` link in a SKILL.md exists.
 # Run from the repo root.
 set -euo pipefail
 
@@ -70,7 +73,50 @@ for skill_md in orc/skills/*/SKILL.md; do
   done < <(grep -oE '([a-z0-9][a-z0-9-]*/)?references/[A-Za-z0-9._/-]+\.md' "$skill_md" 2>/dev/null | sort -u || true)
 done
 
+# d) Bare hyphenated /slash-command mentions (e.g. `/grill-me`, `/setup-foo`)
+#    must resolve to an orc command/skill or a bundled Claude Code command.
+#    Scope: prose only — fenced code blocks are stripped (route/code examples
+#    like redirect('/new-path') live there). Leading boundary is start-of-line,
+#    whitespace, or backtick (inline-code skill mentions); paren/quote-led
+#    matches (markdown link targets, string literals) are ignored. The hyphen
+#    requirement keeps URLs and single-word paths out.
+bundled_known() {
+  case "$1" in
+    code-review|security-review|install-slack-app|find-skills) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+strip_fences() {
+  awk '/^[[:space:]]*```/ { infence = !infence; next } !infence' "$1"
+}
+while IFS= read -r md; do
+  while IFS= read -r name; do
+    [ -n "$name" ] || continue
+    if ! is_known "$name" && ! bundled_known "$name"; then
+      echo "verify-refs: ${md} mentions '/${name}' but it is not an orc command/skill or known bundled command"
+      status=1
+    fi
+  done < <(
+    strip_fences "$md" \
+      | grep -oE "(^|[[:space:]\`])/[a-z][a-z0-9]*(-[a-z0-9]+)+" \
+      | grep -oE '[a-z][a-z0-9]*(-[a-z0-9]+)+$' | sort -u
+  )
+done < <(find orc/agents orc/commands orc/skills -name '*.md' -type f | sort)
+
+# e) Relative ../<skill>/<file>.md links inside a SKILL.md must exist
+#    (resolved against the linking skill's directory).
+for skill_md in orc/skills/*/SKILL.md; do
+  dir="$(dirname "$skill_md")"
+  while IFS= read -r rel; do
+    [ -n "$rel" ] || continue
+    if [ ! -f "${dir}/${rel}" ]; then
+      echo "verify-refs: ${skill_md} links ${rel} but ${dir}/${rel} is missing"
+      status=1
+    fi
+  done < <(grep -oE '\.\./[a-z0-9][a-z0-9-]*/[A-Za-z0-9._/-]+\.md' "$skill_md" 2>/dev/null | sort -u || true)
+done
+
 if [ "$status" -eq 0 ]; then
-  echo "verify-refs: OK (agent skills, orc:<name> mentions, references/*.md all resolve)"
+  echo "verify-refs: OK (agent skills, orc:<name> mentions, references/*.md, /slash mentions, ../ links all resolve)"
 fi
 exit "$status"

@@ -31,7 +31,7 @@ Stand up a new package/service shell with the structure that future-you will not
 
 ### Phase 1 — Confirm intent
 
-Print the Gate headline (`**⛔ Gate — scaffold shape**`, per `orc:insights`), then `AskUserQuestion`:
+Print the Gate headline (`**⛔ Gate — scaffold shape**`, per `orc:callouts`), then `AskUserQuestion`:
 - Where does this live? (project root / `packages/<name>/` / `services/<name>/` / `apps/<name>/`)
 - Language? (TypeScript / Go / Rust / Python)
 - License? (MIT / Apache-2.0 / inherit from repo)
@@ -42,11 +42,11 @@ Create the directory. Run the appropriate init for the language (`npm init -y`, 
 
 ### Phase 3 — Author README
 
-Invoke `orc:create-readme`. The skill writes a README with the standard sections (What / Why / Install / Usage / Test / License). Adjust to type-specific bits (services include "Run", apps include "Dev server").
+Invoke `orc:readme-writing`. The skill writes a README with the standard sections (What / Why / Install / Usage / Test / License). Adjust to type-specific bits (services include "Run", apps include "Dev server").
 
 ### Phase 4 — Author docs
 
-Invoke `orc:documentation-writer`. Set up the Diátaxis structure under `docs/`:
+Invoke `orc:documentation-writing`. Set up the Diátaxis structure under `docs/`:
 - `docs/tutorial/` — getting-started flows
 - `docs/how-to/` — task recipes
 - `docs/reference/` — API/CLI/config reference

@@ -27,6 +27,7 @@ allowed-tools:
   - Bash(orc-workspace-detect:*)
   - Bash(orc-pr-size:*)
   - Bash(orc-docker-env:*)
+effort: high
 ---
 
 # /orc:flow
@@ -35,7 +36,7 @@ Drive a piece of work from "I want to do X" to "PR merged, workspace cleaned up.
 
 This command is interactive by design. Every phase ends with an `AskUserQuestion` select-from-list — you choose advance, iterate, skip, or abort. **Never silently advances past a gate.**
 
-Immediately before each phase's `AskUserQuestion`, print a one-line Gate callout (terminal form per the `orc:insights` palette — emoji header, no `[!TYPE]` tag):
+Immediately before each phase's `AskUserQuestion`, print a one-line Gate callout (terminal form per the `orc:callouts` palette — emoji header, no `[!TYPE]` tag):
 
 ```markdown
 > **⛔ Gate — <phase name>**
@@ -183,7 +184,7 @@ In workspace mode, the plan template MUST include:
 3. A **Merge order** line (e.g. `api → ui`) when there's a deploy ordering dependency. Omit if either order works.
 4. Each slice tagged with `repo: <name>` so the Phase 5 dispatcher knows which implementer instance owns it.
 
-For `--type=docs`: invoke `/orc:scaffold` if greenfield, or `orc:documentation-writer` if augmenting existing.
+For `--type=docs`: invoke `/orc:scaffold` if greenfield, or `orc:documentation-writing` if augmenting existing.
 
 For `--type=bug`: this phase becomes `/orc:debug` instead — dispatches `orc-debug-investigator` to produce `diagnosis.md`. Treat the diagnosis as the plan.
 
@@ -387,6 +388,11 @@ AskUserQuestion (after PR composed):
 - Open as draft
 - Cancel
 ```
+
+**Post-open CI gate.** Once the PR(s) are open, watch CI before advancing: `gh pr checks <pr> --watch` (fallback: `gh run watch` on the head branch's newest run). In workspace mode, watch every PR in `linkedPRs`.
+
+- **Green** → record `ci: green` in `checkpoint.md` and advance to Phase 8.
+- **Red** → run the `/orc:ci` routing inline: dispatch `orc-ci-investigator` via `Task` with the PR ref + head SHA, save its report to `${ORC_STATE_DIR}/<branch>/files/ci-diagnosis.md`, then route on the verdict exactly as `/orc:ci` Phase 3 does — `fixable`: 📋 preview the fix list, ⛔ gate via `AskUserQuestion`, dispatch `orc-code-fixer`, commit per `orc:git-commit`, push, re-watch; `flake`: offer `gh run rerun <id> --failed` with the evidence shown; `infra`: surface the recommendation; `needs-debug`: offer a `/orc:debug` hand-off seeded with the diagnosis. Loop until green or the user explicitly advances with red CI (logged to checkpoint).
 
 ### Phase 8 — Address (loop, optional)
 

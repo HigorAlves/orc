@@ -249,9 +249,9 @@ Echo all PR URLs in stack order, then:
 
 ```
 Stack created. Reviewers should:
-  1. Read docs/STACKED-PRS.md (one screen) — explains merge order.
-  2. Review and approve PR #1 first.
-  3. Each subsequent PR includes only its incremental diff.
+  1. Review and approve PR #1 first — stacks merge bottom-up, and each
+     merge retargets the next PR's base.
+  2. Each subsequent PR includes only its incremental diff.
 
 If you need to update a middle PR, push to its branch — orc will republish children automatically on the next /orc:address.
 
@@ -272,4 +272,4 @@ Don't invoke for branches with one commit, or for production hot-fixes where rev
 - N created PRs, chained, with cross-link tables in their bodies.
 - A backup branch (`<branch>-pre-stack-backup`) preserving the original state.
 - Updated `${ORC_STATE_DIR}/orc.json` with `linkedPRs[]` populated with stack metadata.
-- A reviewer hint pointing at `docs/STACKED-PRS.md`.
+- A reviewer hint explaining bottom-up merge order (full convention: the stack-pr skill's `references/STACKED-PRS.md`).

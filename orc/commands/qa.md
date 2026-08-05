@@ -25,6 +25,7 @@ allowed-tools:
   - Bash(acli:*)
   - Bash(jq:*)
   - Bash(git branch --show-current:*)
+effort: high
 ---
 
 # /orc:qa

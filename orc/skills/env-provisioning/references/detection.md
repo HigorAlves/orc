@@ -23,7 +23,7 @@ Never edit the project's compose. Extra needs (host-port remap, additional env) 
 
 ## Rung 4 — backing-service inference
 
-Scan `.env.example`, `.env.sample`, config files (`config/*.{yml,json,ts}`), and docker-expert conventions. Match env-var patterns → generated service + healthcheck:
+Scan `.env.example`, `.env.sample`, config files (`config/*.{yml,json,ts}`), and docker-best-practices conventions. Match env-var patterns → generated service + healthcheck:
 
 | Env pattern | Image | Healthcheck |
 |---|---|---|

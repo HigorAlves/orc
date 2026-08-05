@@ -1,6 +1,10 @@
 ---
 name: finishing-a-development-branch
-description: Use when implementation is complete, all tests pass, and you need to decide how to integrate the work - guides completion of development work by presenting structured options for merge, PR, or cleanup
+description: Guide the completion of a development branch by presenting structured options for merge, PR, or cleanup. Use when implementation is complete, all tests pass, and you need to decide how to integrate the work.
+license: MIT
+metadata:
+  author: Jesse Vincent
+  source: Derived from https://github.com/obra/superpowers
 ---
 
 # Finishing a Development Branch
@@ -51,7 +55,7 @@ Or ask: "This branch split from main - is that correct?"
 
 ### Step 3: Present Options
 
-Print the Gate headline (`**⛔ Gate — branch completion**`, one line: tests green, N commits on `<branch>`, per `orc:insights`), then present exactly these 4 options (via `AskUserQuestion` when available):
+Print the Gate headline (`**⛔ Gate — branch completion**`, one line: tests green, N commits on `<branch>`, per `orc:callouts`), then present exactly these 4 options (via `AskUserQuestion` when available):
 
 ```
 Implementation complete. What would you like to do?

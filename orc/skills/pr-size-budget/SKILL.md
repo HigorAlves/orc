@@ -82,7 +82,7 @@ When `loc > budget`, the calling command MUST surface this `AskUserQuestion` sha
 >
 > 3. **Abort** — Go back to the implementation, resize, then re-run.
 
-Before the prompt, **always** print the Gate callout (per the `orc:insights` palette — `[!WARNING]` because the gate fired on a problem), then the breakdown in a fence (never inside the callout — blockquotes reflow and break alignment):
+Before the prompt, **always** print the Gate callout (per the `orc:callouts` palette — `[!WARNING]` because the gate fired on a problem), then the breakdown in a fence (never inside the callout — blockquotes reflow and break alignment):
 
 ```markdown
 > **⛔ Gate — PR size**

@@ -1,6 +1,6 @@
 ---
 description: Review someone else's open GitHub PR — posts a real PR review with line-anchored inline comments and suggestions. Verdict computed mechanically from severities; mandatory preview gate before posting. Workspace-aware across linked PRs. For your OWN working diff, prefer the bundled /code-review instead.
-argument-hint: "<pr-number-or-url> [--prs a#1,b#2,...] [--context <description>] [--summary-only] [--soft-tests] [--dry-run] [--include-nits]"
+argument-hint: "<pr-number-or-url> [--prs a#1,b#2,...] [--context <description>] [--summary-only] [--soft-tests] [--dry-run] [--include-nits] [--audit]"
 allowed-tools:
   - Read
   - Glob
@@ -11,10 +11,14 @@ allowed-tools:
   - Bash(gh pr view:*)
   - Bash(gh pr diff:*)
   - Bash(gh pr list:*)
+  - Bash(gh issue view:*)
   - Bash(gh api:*)
+  - Bash(command -v gitleaks:*)
+  - Bash(gitleaks:*)
   - Bash(gh api repos:*/pulls:*/reviews:*)
   - Bash(jq:*)
   - Bash(orc-workspace-detect:*)
+effort: high
 ---
 
 # /orc:code-review
@@ -32,6 +36,7 @@ The agents (`orc-pr-reviewer`, `orc-security-reviewer`) return structured JSON f
 - `--soft-tests` — `test`-severity findings drop to COMMENT instead of forcing REQUEST_CHANGES. Use for repos with weak test culture or PRs you explicitly want to land despite test gaps.
 - `--dry-run` — runs through Phase 6 (preview) but never posts. The constructed payload is echoed as JSON for inspection. Useful for testing or for reviews you want to inspect locally before deciding.
 - `--include-nits` — keep `nit`-severity findings (default: drop them). Bumps comment count but doesn't change the event.
+- `--audit` — repo-wide security audit instead of a PR review. No PR ref required (and the diff-scoping phases are skipped). Dispatches `orc-security-reviewer` in audit scope — whole working tree via Glob/Grep, the "introduced by this change" rule suspended — plus a secret-scanning step. Nothing is posted to GitHub; output is a markdown summary. See "Audit mode" below.
 
 ## Workflow
 
@@ -57,17 +62,28 @@ If `--prs` is not given and no matching workspace session is found, this command
 gh pr view <ref> --json state,isDraft,reviewDecision,author,title,additions,deletions,changedFiles
 ```
 
+- **Fail fast on an unresolved ref.** If `gh pr view` errors — bad number, wrong repo, typo'd URL — stop and report the exact error. A bad ref must fail here, not inside parallel sub-agents.
 - If `state` is `CLOSED` or `MERGED`, stop and report.
 - If `isDraft` is true, ask via `AskUserQuestion` whether to review anyway (sometimes drafts are explicitly opened for early feedback).
 - If `reviewDecision` shows you've already reviewed, stop and report unless user opts to re-review.
 
-### Phase 2 — Diff fetch + project guidelines
+### Phase 2 — Diff fetch + project guidelines + spec
 
 ```bash
 gh pr diff <ref> > /tmp/pr-<ref>.diff
 ```
 
+- **Fail fast on an empty diff.** If the diff file is empty (0 bytes / no hunks), stop and report — nothing to review. Never dispatch agents against an empty diff.
+
 `Glob` the repo for `CLAUDE.md` files (root + scoped to changed directories). Read them. Reviewer agents will use them as project-specific style/architecture rules.
+
+**Spec detection.** Scan the PR body and commit messages for an originating issue/spec reference — `#123`, `Closes #45`, `Resolves org/repo#67`, a full issue URL, or a Jira key in the branch/title. If found, fetch it:
+
+```bash
+gh issue view <n> --json title,body   # same repo; use `gh api repos/<org>/<repo>/issues/<n>` cross-repo
+```
+
+The fetched issue/spec content is passed to `orc-pr-reviewer` in Phase 3 — it enables **spec-conformance** findings (missing acceptance criteria, scope creep). If no reference is found, skip silently; spec conformance simply isn't assessed.
 
 ### Phase 3 — Parallel agent dispatch
 
@@ -89,6 +105,10 @@ Each agent gets:
 - The full diff path.
 - Any CLAUDE.md guideline content found.
 - Any `--context` text.
+
+`orc-pr-reviewer` additionally gets the fetched issue/spec content from Phase 2 (when found) — this is what makes spec-conformance findings possible (the agent already accepts it as an optional input).
+
+**Brief discipline:** each dispatch brief is capped at **~400 words** (per `orc:dispatching-parallel-agents`). Pass content by path (diff path, guideline file paths, a spec path when long) rather than inlining it — the brief carries scope, inputs, and the output contract, nothing more.
 
 **Output contract:** Both agents return strict JSON per the schema in `orc:inline-review`:
 
@@ -221,10 +241,22 @@ Reached only when `--summary-only` was passed or the user picked "Switch to summ
 
 Echo to the user. No GitHub posting happens in this branch.
 
+### Audit mode (`--audit`)
+
+Repo-wide security pass over the current checkout. Replaces Phases 1–7 (no PR ref, no diff, no posting):
+
+1. **Dispatch `orc-security-reviewer` in audit scope.** One `Task` call; the brief (≤ ~400 words, per `orc:dispatching-parallel-agents`) states: audit mode, scope = the whole working tree via Glob/Grep, the "introduced by this change" rule suspended, output = the same strict-JSON findings contract as Phase 3. Pass the repo root and any CLAUDE.md guideline paths.
+2. **Secret scan** (runs in parallel with the agent, from this command):
+   - If gitleaks is installed (`command -v gitleaks`): `gitleaks detect --no-banner --redact -v` over the tree; parse its findings.
+   - Else, a tight `Grep` fallback over the tree (excluding lockfiles, `node_modules/`, `.git/`, test fixtures) for high-signal patterns: `AKIA[0-9A-Z]{16}`, `ghp_[A-Za-z0-9]{36}`, `github_pat_[A-Za-z0-9_]{22,}`, `xox[baprs]-[A-Za-z0-9-]+`, `sk_live_[A-Za-z0-9]{20,}`, `-----BEGIN( RSA| EC| OPENSSH)? PRIVATE KEY-----`, and `(api[_-]?key|secret|password|token)\s*[:=]\s*['"][A-Za-z0-9_\-]{16,}['"]`. Flag hits as `security`-severity findings (redact the matched value in output).
+3. **Report.** Merge agent findings + secret-scan hits, sort by severity, and emit the Phase 8 markdown summary grouped by severity (add a `## Secrets` group). Nothing is posted to GitHub and no review event is computed.
+
+`--audit` is mutually exclusive with the positional ref, `--prs`, `--soft-tests`, and `--dry-run` (no event is computed and nothing is posted). `--include-nits` still applies to the summary.
+
 ## Output
 
 - A real GitHub PR review with inline comments + computed event (default), OR
-- A markdown summary echoed to the user (`--summary-only` or fallback)
+- A markdown summary echoed to the user (`--summary-only`, fallback, or `--audit`)
 - Review URL echoed (when posted)
 - (No `.orc/` writes — code review is stateless from orc's perspective.)
 

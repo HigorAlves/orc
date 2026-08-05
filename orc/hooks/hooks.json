@@ -75,6 +75,30 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-commit-no-ai-attribution.sh\"",
             "async": false,
             "if": "Bash(gh issue *)"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-destructive-git-check.sh\"",
+            "async": false,
+            "if": "Bash(git reset*)"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-destructive-git-check.sh\"",
+            "async": false,
+            "if": "Bash(git clean*)"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-destructive-git-check.sh\"",
+            "async": false,
+            "if": "Bash(git branch*)"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-destructive-git-check.sh\"",
+            "async": false,
+            "if": "Bash(git push*)"
           }
         ]
       }
