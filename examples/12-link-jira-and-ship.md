@@ -97,6 +97,8 @@ Resolves JRA-123
 
 (GitHub's "smart commit" link semantics will close the linked Jira issue on PR merge if the org has the GitHub-Jira app installed. orc just emits the line; the integration is server-side.)
 
+Once the PR is open, watch the checks with `/orc:ci <pr> --watch` — a red run gets an `orc-ci-investigator` diagnosis and a routed fix list instead of hand-read logs (`/orc:flow` runs this watch automatically at its post-open CI gate).
+
 ### Phase 6 — Cleanup
 
 ```

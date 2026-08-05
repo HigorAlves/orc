@@ -22,7 +22,7 @@ flowchart TD
     start[Phase 4: Start<br/><i>worktree + first failing test</i>]
     impl[Phase 5: Implement<br/><b>orc-implementer autonomous</b>]
     qa[Phase 6: QA]
-    ship[Phase 7: Ship]
+    ship[Phase 7: Ship<br/><i>PR open + post-open CI watch</i>]
     address[Phase 8: Address<br/><i>review comments loop</i>]
     cleanup[Phase 9: Cleanup<br/><i>post-merge</i>]
 
@@ -83,7 +83,8 @@ You: Yes — proceed
 
 orc: ⚙ Phase 4 — Start
      [invokes orc:using-git-worktrees → .orc/.worktrees/orc/feat-csv-export]
-     [invokes orc:tdd → writes failing test for slice 1]
+     [slice-1 test is a single assertion → orc:tdd inline; a complex
+      first test would dispatch orc-test-author instead]
      [runs the test → fails with "Cannot find module '../export/csv'"]
      [commits the failing test on branch feat/csv-export]
 
@@ -219,6 +220,12 @@ orc: ⚙ git push -u origin feat/csv-export
      ⚙ gh pr create --title "feat(reports): add CSV export" --body ...
      ✓ PR opened: https://github.com/you/repo/pull/523
 
+     ⚙ Post-open CI gate: gh pr checks 523 --watch
+     ✓ CI green (lint, test, build). Recorded ci: green in checkpoint.md.
+       (Red would dispatch orc-ci-investigator and route its verdict —
+       fixable fix-list / flake re-run / infra / needs-debug — looping
+       until green.)
+
      ⚙ Phase 8 — Address
      PR is open. Waiting for reviewer comments?
      ┌───────────────────────────────────────────────────┐
@@ -316,6 +323,7 @@ orc: ✓ Worktree removed.
 
 - **Every phase asks before advancing.** No silent transitions. The select-from-list comes from `AskUserQuestion`.
 - **The implementation phase is autonomous by default.** `orc-implementer` (sonnet) drives the slice-by-slice loop — read spec, confirm/write failing test, implement, run suite, commit, next slice. The agent obeys the same iron rules you would (no commits to main, test-first, verify, root-cause). Pass `--pause-at-implement` if you want orc to stop at Phase 4's failing test and let you write the code yourself instead.
+- **Ship doesn't end at PR-open.** Phase 7 watches CI (`gh pr checks --watch`) before advancing. A red run dispatches `orc-ci-investigator` and routes its verdict — fixable (gated `orc-code-fixer` dispatch), flake (re-run), infra, or needs-debug — until the checks are green.
 - **Resume is automatic.** You don't pass any args on the second/third invocation — orc reads `.orc/orc.json`, finds the in-progress flow, jumps to the next pending phase.
 - **The PR description was synthesized from accumulated evidence**: plan.md (Why), the diff (What changed), qa/steps.md (How tested), and ticket links.
 - **Jira followed the work end-to-end.** `JRA-123` was bound at Phase 1 (via `--jira` flag), persisted in `.orc/orc.json` + `checkpoint.md`, surfaced in every resume header, and emitted as a `Resolves JRA-123` trailer at PR composition. Override the keyword with `ORC_JIRA_PR_KEYWORD=Closes` (or `Fixes`) per shop convention.
