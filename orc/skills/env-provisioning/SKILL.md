@@ -9,7 +9,7 @@ Stand up the app (and its backing services) so QA — or the user — can run ag
 
 **Announce at start:** "I'm using the env-provisioning skill because this task needs the app running."
 
-Deep Docker knowledge (multi-stage builds, hardening, compose patterns) lives in `orc:docker-expert` — reference it, never duplicate it. This skill owns the *protocol*: detect → provision → prove → record.
+Deep Docker knowledge (multi-stage builds, hardening, compose patterns) lives in `orc:docker-best-practices` — reference it, never duplicate it. This skill owns the *protocol*: detect → provision → prove → record.
 
 ## Detection ladder
 
@@ -103,11 +103,11 @@ Probe ladder: docker installed → daemon up → compose v2 → containerizable 
 
 QA proceeds against the fallback appUrl. Because even fallback boots through the provisioner, the validator's rule stays uniform: attach when state exists, never boot.
 
-## Pointers into `orc:docker-expert`
+## Pointers into `orc:docker-best-practices`
 
 | Need | Reference |
 |------|-----------|
-| Compose orchestration patterns, service deps, dev overrides | `docker-expert/references/compose.md` |
-| Healthchecks, non-root, secrets handling | `docker-expert/references/security-hardening.md` |
-| Build caching for `--containerize-app` | `docker-expert/references/multistage-builds.md` |
-| Runtime/Compose validation + diagnostics | `docker-expert/references/production-deploy.md` |
+| Compose orchestration patterns, service deps, dev overrides | `docker-best-practices/references/compose.md` |
+| Healthchecks, non-root, secrets handling | `docker-best-practices/references/security-hardening.md` |
+| Build caching for `--containerize-app` | `docker-best-practices/references/multistage-builds.md` |
+| Runtime/Compose validation + diagnostics | `docker-best-practices/references/production-deploy.md` |

@@ -112,7 +112,7 @@ The destination fixes the scope; work beyond it isn't fog and never graduates. W
 Invoked with a loose idea.
 
 1. **Name the destination.** Run `orc:grilling` + `orc:domain-modeling` to pin down what this map is finding its way to. The destination fixes the scope, so it's settled first.
-2. **Map the frontier.** Grill again, **breadth-first** — fan out across the whole space, surfacing the open decisions and the first takeable steps. **If this surfaces no fog** — the way is already clear, the journey fits one session — print the Gate headline (`**⛔ Gate — no map needed**`, per `orc:insights`) and `AskUserQuestion`: hand off to `/orc:plan` / slice via `orc:to-issues` / chart anyway.
+2. **Map the frontier.** Grill again, **breadth-first** — fan out across the whole space, surfacing the open decisions and the first takeable steps. **If this surfaces no fog** — the way is already clear, the journey fits one session — print the Gate headline (`**⛔ Gate — no map needed**`, per `orc:callouts`) and `AskUserQuestion`: hand off to `/orc:plan` / slice via `orc:to-issues` / chart anyway.
 3. **Preview.** Print `**📋 Preview — map + tickets**`: the map body, every ticket title + type + question, and the blocking edges. `AskUserQuestion` to confirm before creating anything on the tracker.
 4. **Create.** Create the map, then the specifiable tickets as children, then wire blocking edges in a **second pass** (items need ids before they can reference each other) — all per the tracker doc's wayfinding operations. Everything not yet specifiable stays in the fog section.
 5. **Fire the research subagents.** For each research ticket, dispatch `orc:research` in the background to resolve it in parallel, linking findings from the ticket.

@@ -55,7 +55,7 @@ Look before asking. Every fact settled here removes a question from Phase 2:
 
 Summarise what exploration found, then take the sections in order — one section, one answer. Lead every question with the recommended answer so the user can accept it in a word. **Skip any section exploration already settled** and say so in one line.
 
-**Section A — Issue tracker.** Skip if `--tracker` was passed. Otherwise print the Gate headline (`**⛔ Gate — issue tracker**`, one line on what exploration found, per `orc:insights`), then `AskUserQuestion` with the recommendation first:
+**Section A — Issue tracker.** Skip if `--tracker` was passed. Otherwise print the Gate headline (`**⛔ Gate — issue tracker**`, one line on what exploration found, per `orc:callouts`), then `AskUserQuestion` with the recommendation first:
 
 - **GitHub Issues** (recommended when a GitHub remote + `gh` auth were found) — issues live in the repo's GitHub Issues, driven by `gh` (`orc:gh-cli`).
 - **Jira** (recommended when `acli` is installed and authenticated) — work items live in a Jira project, driven by `acli` (`orc:jira-cli`). Follow up with one question: the project key (validate `^[A-Z][A-Z0-9_]*$`).
@@ -70,7 +70,7 @@ The GitHub template carries a "PRs as a request surface" flag defaulted **off** 
 
 ### Phase 3 — Preview and confirm
 
-Print `**📋 Preview — tracker layer**` (per `orc:insights`) followed by drafts of:
+Print `**📋 Preview — tracker layer**` (per `orc:callouts`) followed by drafts of:
 
 1. `docs/agents/issue-tracker.md` (from the matching seed template below)
 2. `docs/agents/triage-labels.md`

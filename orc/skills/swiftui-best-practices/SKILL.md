@@ -1,5 +1,5 @@
 ---
-name: swiftui-pro
+name: swiftui-best-practices
 description: Comprehensively reviews SwiftUI code for best practices on modern APIs, maintainability, and performance. Use when reading, writing, or reviewing SwiftUI projects.
 license: MIT
 metadata:

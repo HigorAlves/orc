@@ -53,7 +53,7 @@ Adds an app service. Without a project Dockerfile (rung 4 forced): generic node 
       start_period: 30s
 ```
 
-With a project Dockerfile (rung 3): `build: { context: <worktree>, dockerfile: Dockerfile, target: <dev stage if multi-stage> }` instead of `image:`. BuildKit is the compose-v2 default — never disable it; see `docker-expert/references/multistage-builds.md` for cache-mount patterns.
+With a project Dockerfile (rung 3): `build: { context: <worktree>, dockerfile: Dockerfile, target: <dev stage if multi-stage> }` instead of `image:`. BuildKit is the compose-v2 default — never disable it; see `docker-best-practices/references/multistage-builds.md` for cache-mount patterns.
 
 ## Workspace wrapper
 

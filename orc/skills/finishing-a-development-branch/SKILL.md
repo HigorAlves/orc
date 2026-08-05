@@ -55,7 +55,7 @@ Or ask: "This branch split from main - is that correct?"
 
 ### Step 3: Present Options
 
-Print the Gate headline (`**⛔ Gate — branch completion**`, one line: tests green, N commits on `<branch>`, per `orc:insights`), then present exactly these 4 options (via `AskUserQuestion` when available):
+Print the Gate headline (`**⛔ Gate — branch completion**`, one line: tests green, N commits on `<branch>`, per `orc:callouts`), then present exactly these 4 options (via `AskUserQuestion` when available):
 
 ```
 Implementation complete. What would you like to do?

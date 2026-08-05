@@ -1,5 +1,5 @@
 ---
-name: insights
+name: callouts
 description: The orc callout palette — emoji-header blockquotes for insights, cautions, gates, previews, and danger blocks in conversation, plus the GitHub-flavored [!TYPE] form for GitHub-bound output. Use when about to add an insight, caution, gate, preview, or danger block to the conversation or to a PR/doc.
 ---
 

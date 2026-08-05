@@ -81,7 +81,7 @@ Every subsequent action or finding in ANY phase appends a row (`date -u +%Y-%m-%
    - SEV-2: significant degradation / partial outage
    - SEV-3: edge-case impact / near-miss
 3. Append the assessment to the timeline and `evidence.md`. Bump checkpoint to phase=2, record severity in `.orc/orc.json`.
-4. **The strategy gate.** Print the Gate headline with a recommendation, per `orc:insights`:
+4. **The strategy gate.** Print the Gate headline with a recommendation, per `orc:callouts`:
 
 ```markdown
 > **⛔ Gate — mitigate first, or root-cause first?**

@@ -15,7 +15,7 @@ You provision the environment the app under test runs in. You are not QA — you
 ## Pre-flight
 
 1. **The `orc:env-provisioning` skill is preloaded above — it is your protocol; follow it step by step.** Load its `references/detection.md` and `references/generation.md` when you reach those steps.
-2. For deep Docker specifics (compose patterns, build caching, hardening), invoke `orc:docker-expert` via the Skill tool — don't guess.
+2. For deep Docker specifics (compose patterns, build caching, hardening), invoke `orc:docker-best-practices` via the Skill tool — don't guess.
 
 ## Inputs
 

@@ -36,7 +36,7 @@ Turn a feature or refactor request into a written, TDD-shaped implementation pla
 
 If the feature description is long-form, references a Jira ticket / linked doc, or reads more like a brief than a settled spec — dispatch the `orc-prd-analyzer` subagent via `Task` first. Pass it the input + the URL if there is one. The agent returns a structured analysis (extracted goals, ambiguities, P0/P1/P2 clarifying questions, recommendation).
 
-After the analyzer returns, print the Gate headline (`**⛔ Gate — PRD analysis**`, one line on P0/P1/P2 counts, per `orc:insights`), then `AskUserQuestion`:
+After the analyzer returns, print the Gate headline (`**⛔ Gate — PRD analysis**`, one line on P0/P1/P2 counts, per `orc:callouts`), then `AskUserQuestion`:
 - "Proceed to plan — questions are P1/P2 only"
 - "Hold — answer P0 questions with PM first" (exit; don't waste planning effort)
 - "Run `/orc:rfc` first — design space needs RFC treatment"
@@ -47,7 +47,7 @@ If the input is short and clear, skip Phase 0 and go straight to Phase 1.
 
 If the request is refactor-shaped — the user asks to refactor, restructure, pay down tech debt, or improve architecture, or `--type=refactor` was forwarded (e.g. from `/orc:flow`) — dispatch the `orc-refactor-architect` subagent via `Task` first. Pass it the request plus any named modules/paths. The agent compares documented intent (ADRs, `CONTEXT.md`) against the implementation and returns leverage-ranked refactor candidates with cost-vs-friction estimates.
 
-After the architect returns, print the Gate headline (`**⛔ Gate — refactor candidates**`, one line on candidate count + top leverage pick, per `orc:insights`), then `AskUserQuestion` listing the ranked candidates (plus "Different scope — describe it"). The chosen candidate becomes the scope Phase 2 drafts the plan around.
+After the architect returns, print the Gate headline (`**⛔ Gate — refactor candidates**`, one line on candidate count + top leverage pick, per `orc:callouts`), then `AskUserQuestion` listing the ranked candidates (plus "Different scope — describe it"). The chosen candidate becomes the scope Phase 2 drafts the plan around.
 
 Phase 0 and 0b are exclusive — input is brief-shaped or refactor-shaped, not both. If neither fits, go straight to Phase 1.
 

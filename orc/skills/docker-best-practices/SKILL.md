@@ -1,5 +1,5 @@
 ---
-name: docker-expert
+name: docker-best-practices
 description: "Docker expert — image optimization, security hardening, multi-stage builds, orchestration, production deployment. Use when writing or reviewing Dockerfiles, Compose, or container deploys."
 category: devops
 risk: unknown

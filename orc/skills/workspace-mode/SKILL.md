@@ -209,7 +209,7 @@ done
 | Branch present, points at base HEAD | OK — adopt. |
 | Branch present, has divergent commits | **Conflict — escalate via `AskUserQuestion`.** |
 
-On conflict, print the Gate headline first (`**⛔ Gate — branch collision**`, one line naming the conflicting repos, per `orc:insights`).
+On conflict, print the Gate headline first (`**⛔ Gate — branch collision**`, one line naming the conflicting repos, per `orc:callouts`).
 
 Recovery options on conflict (one prompt covering all conflicting repos at once):
 

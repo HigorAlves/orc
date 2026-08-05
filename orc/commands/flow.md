@@ -36,7 +36,7 @@ Drive a piece of work from "I want to do X" to "PR merged, workspace cleaned up.
 
 This command is interactive by design. Every phase ends with an `AskUserQuestion` select-from-list — you choose advance, iterate, skip, or abort. **Never silently advances past a gate.**
 
-Immediately before each phase's `AskUserQuestion`, print a one-line Gate callout (terminal form per the `orc:insights` palette — emoji header, no `[!TYPE]` tag):
+Immediately before each phase's `AskUserQuestion`, print a one-line Gate callout (terminal form per the `orc:callouts` palette — emoji header, no `[!TYPE]` tag):
 
 ```markdown
 > **⛔ Gate — <phase name>**
@@ -184,7 +184,7 @@ In workspace mode, the plan template MUST include:
 3. A **Merge order** line (e.g. `api → ui`) when there's a deploy ordering dependency. Omit if either order works.
 4. Each slice tagged with `repo: <name>` so the Phase 5 dispatcher knows which implementer instance owns it.
 
-For `--type=docs`: invoke `/orc:scaffold` if greenfield, or `orc:documentation-writer` if augmenting existing.
+For `--type=docs`: invoke `/orc:scaffold` if greenfield, or `orc:documentation-writing` if augmenting existing.
 
 For `--type=bug`: this phase becomes `/orc:debug` instead — dispatches `orc-debug-investigator` to produce `diagnosis.md`. Treat the diagnosis as the plan.
 

@@ -1,5 +1,5 @@
 ---
-name: create-readme
+name: readme-writing
 description: Create a comprehensive, well-structured README.md for the current project by reviewing the entire codebase first. Use when the user asks to create, write, improve, or regenerate a project README.
 ---
 

@@ -44,5 +44,5 @@ Use the `Skill` tool — never `Read` a skill file. Every skill's description is
 
 ## Insights & callouts
 
-When writing substantive code, surface 2–3 brief, codebase-specific notes as emoji-header blockquotes — `> **💡 Insight**` / `> **⚠️ Caution**`. → `orc:insights`
+When writing substantive code, surface 2–3 brief, codebase-specific notes as emoji-header blockquotes — `> **💡 Insight**` / `> **⚠️ Caution**`. → `orc:callouts`
 Same palette for must-not-miss command output: 🛑 danger, ⛔ gate, 📋 preview, ➡️ next. **Terminal output carries no `[!TYPE]` tag** (it prints as junk in the TUI); add the GitHub tag (`[!IMPORTANT]`/`[!WARNING]`/`[!CAUTION]`/`[!NOTE]`/`[!TIP]`) only in GitHub-bound output — PR bodies, review comments, committed docs.

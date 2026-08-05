@@ -100,7 +100,7 @@ Other (no bump):
 
 If `--dry-run`: stop here, mark the session `status: done` with `dry_run: true` in the checkpoint.
 
-Print the gate headline (`**⛔ Gate — release**`, per `orc:insights`), then `AskUserQuestion`:
+Print the gate headline (`**⛔ Gate — release**`, per `orc:callouts`), then `AskUserQuestion`:
 
 - "Release `<next-version>` — proceed"
 - "Override the bump — pick major / minor / patch myself" (re-render the preview with the chosen version, then re-gate)

@@ -13,8 +13,8 @@ orc treats docs as a first-class workflow, not an afterthought.
 ```mermaid
 flowchart TD
     scaffold["/orc:scaffold mailer --type=service"]
-    readme[orc:create-readme<br/>README.md]
-    docs[orc:documentation-writer<br/>Diátaxis-shaped docs/]
+    readme[orc:readme-writing<br/>README.md]
+    docs[orc:documentation-writing<br/>Diátaxis-shaped docs/]
     tdd[orc:tdd<br/>first failing test]
     commit[orc:git-commit<br/>initial commit]
 
@@ -26,8 +26,8 @@ flowchart TD
 You don't need `/orc:scaffold` (the service already exists). Instead, invoke the docs skills directly via the Skill tool:
 
 ```
-1. orc:documentation-writer   ← lay out Diátaxis quadrants in docs/
-2. orc:create-readme          ← refresh the package README
+1. orc:documentation-writing   ← lay out Diátaxis quadrants in docs/
+2. orc:readme-writing          ← refresh the package README
 3. /orc:adr  for any architectural facts that should be locked in (e.g. "we use Kafka for cross-service messaging")
 ```
 
@@ -51,7 +51,7 @@ Runs `npm init -y` in `services/mailer/`. Creates the directory shell.
 
 ### Phase 2 — Author README
 
-`orc:create-readme` fills in:
+`orc:readme-writing` fills in:
 
 ```
 # mailer
@@ -87,7 +87,7 @@ Empty sections become real text, not "TBD."
 
 ### Phase 3 — Diátaxis docs
 
-`orc:documentation-writer` lays out four quadrants under `services/mailer/docs/`:
+`orc:documentation-writing` lays out four quadrants under `services/mailer/docs/`:
 
 ```
 services/mailer/docs/
@@ -131,7 +131,7 @@ You're documenting an existing messaging-queue convention used by several servic
 
 ### Step 1 — Diátaxis check
 
-Invoke `orc:documentation-writer`. Audit the existing docs vs the four quadrants:
+Invoke `orc:documentation-writing`. Audit the existing docs vs the four quadrants:
 
 - Tutorial: do we have one? If not, write a "first message" walk-through.
 - How-to: do we have task recipes ("how do I retry?", "how do I dead-letter?")?

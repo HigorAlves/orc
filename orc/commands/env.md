@@ -22,7 +22,7 @@ Give the current project (or workspace) a running dev environment — the same o
 
 ## When NOT to use
 
-Production deploys, remote/cloud environments, Kubernetes — out of scope by design (see `orc:docker-expert`'s hand-off list). This command provisions **local dev** environments only.
+Production deploys, remote/cloud environments, Kubernetes — out of scope by design (see `orc:docker-best-practices`'s hand-off list). This command provisions **local dev** environments only.
 
 ## Arguments
 

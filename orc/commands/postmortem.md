@@ -31,13 +31,13 @@ Capture what happened, why it happened, and what changes to prevent recurrence.
 
 ### Phase 1 — Gate
 
-Invoke `orc:postmortem`. Confirm a postmortem is warranted:
+Invoke `orc:postmortem-writing`. Confirm a postmortem is warranted:
 - customer-visible incident, OR
 - an on-call page fired, OR
 - near-miss with a real defect, OR
 - recurrence of the same incident type.
 
-If borderline (e.g. caught in CI, no production impact), print the Gate headline (`**⛔ Gate — postmortem-worthy?**`, per `orc:insights`), then `AskUserQuestion`:
+If borderline (e.g. caught in CI, no production impact), print the Gate headline (`**⛔ Gate — postmortem-worthy?**`, per `orc:callouts`), then `AskUserQuestion`:
 - "Write a full postmortem anyway"
 - "Write a one-paragraph near-miss note instead (no full template)"
 - "Skip — caught early, no learning to capture"
@@ -70,7 +70,7 @@ The timeline is the spine; everything else depends on it. Walk the user through:
 
 Sources to ask the user to surface (don't paraphrase from memory): chat transcript, pager log, deploy log, dashboard screenshots, status page edits, customer support tickets.
 
-Write the timeline as a Markdown table per the `orc:postmortem` template. Save partial draft to `.orc/<branch>/files/postmortem-<slug>.md`. Bump checkpoint to phase=4.
+Write the timeline as a Markdown table per the `orc:postmortem-writing` template. Save partial draft to `.orc/<branch>/files/postmortem-<slug>.md`. Bump checkpoint to phase=4.
 
 ### Phase 5 — Root causes + contributing factors
 
@@ -78,7 +78,7 @@ Using `Task` you may dispatch `orc-debug-investigator` if the root cause is tech
 
 For each root cause: use the "why?" chain (3–5 deep). **Stop when "fix this" becomes a credible action item, not when "an engineer made a mistake."**
 
-Use roles, not names, in causal language. The `orc:postmortem` skill is non-negotiable on this — refuse to draft a section that names an individual as cause.
+Use roles, not names, in causal language. The `orc:postmortem-writing` skill is non-negotiable on this — refuse to draft a section that names an individual as cause.
 
 Bump checkpoint to phase=5.
 

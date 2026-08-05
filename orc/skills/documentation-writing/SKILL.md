@@ -1,5 +1,5 @@
 ---
-name: documentation-writer
+name: documentation-writing
 description: Diátaxis documentation expert. Use when writing high-quality software documentation guided by the Diátaxis framework — tutorials, how-tos, reference, and explanation.
 ---
 

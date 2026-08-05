@@ -133,7 +133,7 @@ If `suggestion_code` is set on a finding but doesn't meet the rules above, drop 
 
 ## The preview gate (mandatory)
 
-Before posting, ALWAYS show the user the constructed payload. No `--no-confirm` flag. Open with a `[!NOTE]` `**📋 Preview — review for #<PR>**` headline (per the `orc:insights` palette); the aligned comment list goes in a fence after it. The preview lists:
+Before posting, ALWAYS show the user the constructed payload. No `--no-confirm` flag. Open with a `[!NOTE]` `**📋 Preview — review for #<PR>**` headline (per the `orc:callouts` palette); the aligned comment list goes in a fence after it. The preview lists:
 
 - The computed event (`APPROVE` / `COMMENT` / `REQUEST_CHANGES`)
 - The overall body (≤ 2 sentences — see the cap below)

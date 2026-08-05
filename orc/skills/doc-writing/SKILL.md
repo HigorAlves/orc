@@ -5,7 +5,7 @@ description: "Shared scaffolding for numbered design/spec docs — outline, NNNN
 
 # Doc Writing — shared scaffolding
 
-This skill holds the material common to every numbered design/spec document orc authors. The five type-specific skills — `orc:prd-writing`, `orc:trd-writing`, `orc:rfc-writing`, `orc:adr-writing`, `orc:postmortem` — defer here for the shared parts and add only their own template, fields, and tone.
+This skill holds the material common to every numbered design/spec document orc authors. The five type-specific skills — `orc:prd-writing`, `orc:trd-writing`, `orc:rfc-writing`, `orc:adr-writing`, `orc:postmortem-writing` — defer here for the shared parts and add only their own template, fields, and tone.
 
 Read this first when authoring any of those docs. It answers: **which doc type is this?**, **how is it laid out?**, **where does it get published?**, and **what are the review gates?**
 
