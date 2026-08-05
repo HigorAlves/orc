@@ -1,6 +1,6 @@
 ---
 name: requesting-code-review
-description: Use when completing tasks, implementing major features, or before merging to verify work meets requirements
+description: Dispatch a code-reviewer subagent with precisely crafted context to catch issues in finished work before they cascade. Use when completing tasks, implementing major features, or before merging to verify work meets requirements.
 license: MIT
 metadata:
   author: Jesse Vincent

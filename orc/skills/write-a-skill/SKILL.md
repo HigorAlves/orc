@@ -1,117 +1,61 @@
 ---
 name: write-a-skill
-description: Create new agent skills following orc's house conventions — kebab-case naming, description-as-trigger doctrine, progressive-disclosure layout with references/. Use when creating, writing, or building a skill for THIS plugin. For skill evals, trigger-rate measurement, and description tuning, use the official skill-creator plugin.
+description: Create new agent skills following orc's house conventions — kebab-case naming, description-as-trigger doctrine, progressive-disclosure layout with references/, provenance frontmatter, and the CI gates a skill must pass. Use when creating, writing, or building a skill for THIS plugin. For skill evals, trigger-rate measurement, and description tuning, use the official skill-creator plugin.
 ---
 
-# Writing Skills
+# Write a Skill
 
-## Process
+House conventions for skills in THIS plugin. The general doctrine of writing for agents — context pointers, the two loads, information hierarchy, completion criteria, leading words, pruning, invocation choice — lives in `orc:writing-for-agents` (and its [SKILL-MECHANICS.md](../writing-for-agents/references/SKILL-MECHANICS.md) for skill frontmatter mechanics and invocation choice). Read that first; this file adds only what is orc-specific.
 
-1. **Gather requirements** - ask user about:
-   - What task/domain does the skill cover?
-   - What specific use cases should it handle?
-   - Does it need executable scripts or just instructions?
-   - Any reference materials to include?
+## Naming
 
-2. **Draft the skill** - create:
-   - SKILL.md with concise instructions
-   - Additional reference files if content exceeds 500 lines
-   - Utility scripts if deterministic operations needed
+- Directory and `name` frontmatter must match exactly: kebab-case, ≤64 chars (`verify-frontmatter.sh` enforces this).
+- The `orc:<name>` namespace is shared between commands (`orc/commands/*.md`) and skills (`orc/skills/*/`). Before naming a skill, check both registers — a collision silently shadows one of the two.
+- Agents are `orc-` prefixed (`orc/agents/orc-*.md`); skills and commands are not.
 
-3. **Review with user** - present draft and ask:
-   - Does this cover your use cases?
-   - Anything missing or unclear?
-   - Should any section be more/less detailed?
+## Description as trigger
 
-## Skill Structure
+The description is the skill's always-loaded context pointer — write it per `orc:writing-for-agents`, plus these house rules:
 
-```
-skill-name/
-├── SKILL.md           # Main instructions (required)
-├── REFERENCE.md       # Detailed docs (if needed)
-├── EXAMPLES.md        # Usage examples (if needed)
-└── scripts/           # Utility scripts (if needed)
-    └── helper.js
-```
+- ≤1024 chars, single line, third person.
+- First sentence: what the skill does. Second sentence: "Use when [specific triggers]".
+- Cross-skill prose mentions use the `orc:<name>` form; only reference skills that actually exist in `orc/skills/` (CI checks this).
 
-## SKILL.md Template
+## The YAML colon-space trap
 
-```md
----
-name: skill-name
-description: Brief description of capability. Use when [specific triggers].
----
+Descriptions are single-line YAML scalars. An unquoted value containing colon-space (`: `) silently kills the whole frontmatter block — the skill loads with no metadata and never fires. Wrap the value in double quotes whenever it contains colon-space. Em-dashes are the house-preferred separator precisely because they dodge this.
 
-# Skill Name
-
-## Quick start
-
-[Minimal working example]
-
-## Workflows
-
-[Step-by-step processes with checklists for complex tasks]
-
-## Advanced features
-
-[Link to separate files: See [REFERENCE.md](REFERENCE.md)]
-```
-
-## Description Requirements
-
-The description is **the only thing your agent sees** when deciding which skill to load. It's surfaced in the system prompt alongside all other installed skills. Your agent reads these descriptions and picks the relevant skill based on the user's request.
-
-**Goal**: Give your agent just enough info to know:
-
-1. What capability this skill provides
-2. When/why to trigger it (specific keywords, contexts, file types)
-
-**Format**:
-
-- Max 1024 chars
-- Write in third person
-- First sentence: what it does
-- Second sentence: "Use when [specific triggers]"
-
-**Good example**:
+## Layout: progressive disclosure with references/
 
 ```
-Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDF files or when user mentions PDFs, forms, or document extraction.
+orc/skills/skill-name/
+├── SKILL.md           # the top: steps + inline reference every branch needs
+└── references/        # disclosed reference, reached by pointers from SKILL.md
+    └── TOPIC.md
 ```
 
-**Bad example**:
+- Disclosed files live under `references/`, UPPERCASE names, linked as `[<TOPIC>.md](references/<TOPIC>.md)`.
+- Cross-skill file links are relative: `../<other-skill>/references/<TOPIC>.md`. Every concrete link must resolve on disk (CI checks this).
+- Scripts (when an operation is deterministic) go in `scripts/` beside `references/`.
 
+## Provenance frontmatter for vendored skills
+
+Skills vendored or derived from an external source carry provenance in frontmatter:
+
+```yaml
+license: MIT
+metadata:
+  author: Matt Pocock
+  source: Vendored from https://github.com/mattpocock/skills @ 2ffb184
 ```
-Helps with documents.
-```
 
-The bad example gives your agent no way to distinguish this from other document skills.
+Use `Vendored from … @ <pin>` for near-verbatim copies and `Derived from …` for forks that diverge. If a later merge adds material from a second upstream, extend `source` to name both.
 
-## When to Add Scripts
+## CI gates a new skill must pass
 
-Add utility scripts when:
+Run from the repo root before shipping:
 
-- Operation is deterministic (validation, formatting)
-- Same code would be generated repeatedly
-- Errors need explicit handling
-
-Scripts save tokens and improve reliability vs generated code.
-
-## When to Split Files
-
-Split into separate files when:
-
-- SKILL.md exceeds 100 lines
-- Content has distinct domains (finance vs sales schemas)
-- Advanced features are rarely needed
-
-## Review Checklist
-
-After drafting, verify:
-
-- [ ] Description includes triggers ("Use when...")
-- [ ] SKILL.md under 100 lines
-- [ ] No time-sensitive info
-- [ ] Consistent terminology
-- [ ] Concrete examples included
-- [ ] References one level deep
+1. `scripts/ci/verify-frontmatter.sh` — name/dir match, kebab-case, description present and ≤1024 chars.
+2. `scripts/ci/verify-refs.sh` — every `orc:<name>` mention, `references/*.md` link, relative `../<skill>/…` link, and agent `skills:` entry resolves.
+3. `scripts/ci/verify-counts.sh` — README, marketplace.json, and docs/architecture.md counts; adding a skill changes the skill count, so update the prose these check.
+4. `claude plugin validate ./orc --strict` — the strict plugin validation CI runs. Beware: validate can mask non-zero exit codes when chained; run it as its own command and check `$?` directly.
