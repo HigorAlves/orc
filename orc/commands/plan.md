@@ -43,6 +43,14 @@ After the analyzer returns, print the Gate headline (`**⛔ Gate — PRD analysi
 
 If the input is short and clear, skip Phase 0 and go straight to Phase 1.
 
+### Phase 0b — Detect refactor-shaped input (optional)
+
+If the request is refactor-shaped — the user asks to refactor, restructure, pay down tech debt, or improve architecture, or `--type=refactor` was forwarded (e.g. from `/orc:flow`) — dispatch the `orc-refactor-architect` subagent via `Task` first. Pass it the request plus any named modules/paths. The agent compares documented intent (ADRs, `CONTEXT.md`) against the implementation and returns leverage-ranked refactor candidates with cost-vs-friction estimates.
+
+After the architect returns, print the Gate headline (`**⛔ Gate — refactor candidates**`, one line on candidate count + top leverage pick, per `orc:insights`), then `AskUserQuestion` listing the ranked candidates (plus "Different scope — describe it"). The chosen candidate becomes the scope Phase 2 drafts the plan around.
+
+Phase 0 and 0b are exclusive — input is brief-shaped or refactor-shaped, not both. If neither fits, go straight to Phase 1.
+
 ### Phase 1 — Initialize workspace
 
 0. **Detect context** — injected below (`ORC_*` vars are exported for any Bash you run — do not re-run detection):

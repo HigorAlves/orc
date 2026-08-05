@@ -99,7 +99,9 @@ Invoke `/orc:plan` (skip `--issues`, skip `--grill` unless user opts in). Forwar
 
 Invoke `orc:tdd`. Per its red-green-refactor doctrine:
 1. Pick the first vertical slice from the plan.
-2. Write the test that demonstrates the desired behavior.
+2. Author the test that demonstrates the desired behavior (same split as `/orc:flow` Phase 4):
+   - **Default**: dispatch `orc-test-author` via `Task`. The agent designs the failing test (happy path + boundary + error paths as the slice warrants) using the project's test idioms, runs it, reports.
+   - **Fallback — trivial test** (single obvious assertion, single function under test): write it inline.
 3. Run the test suite — it MUST fail with the expected message (not "test not found", not a setup error).
 4. If the failure isn't the right one, fix the test until it is.
 5. Stop. Do NOT implement yet. The whole point is that the next session knows exactly where to start.

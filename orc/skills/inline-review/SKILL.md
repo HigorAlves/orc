@@ -20,78 +20,21 @@ This skill replaces the legacy text-block summary format. The reviewed author op
 - For replying to an existing review comment → use the replies endpoint (`gh api repos/.../pulls/.../comments/<id>/replies`); see `orc:receiving-code-review`.
 - For your OWN PR's response loop → use `/orc:address`, not this skill.
 
-## The severity → event rule (the iron rule)
+## The contract (schema, severities, event rule)
 
-Every finding has a `severity` enum. The review event is computed from the **set** of severities — the agent's own narrative verdict is ignored. This prevents the failure mode where an agent writes *"Approve, non-blocking"* immediately followed by a list of real bugs.
+The finding schema, severity enum, severity→event mapping, event-computation
+algorithm, confidence ≥0.8 rule, and self-contradiction detection are defined
+**once**, in `orc:review-contract`. Read that skill before posting; this skill
+owns only the posting mechanics below.
 
-| Severity | Meaning | Effect |
-|----------|---------|--------|
-| `bug` | Real correctness problem in code that lands on this PR — runtime error, logic error, race, regression risk. | **Forces REQUEST_CHANGES.** One is enough. |
-| `security` | Auth bypass, injection, secret leak, unsafe deserialization, SSRF, etc. | **Forces REQUEST_CHANGES.** One is enough. |
-| `api-surface` | Wrongly exposed endpoint, dead code paths in public surface, breaking API change. | **Forces REQUEST_CHANGES.** |
-| `test` | Real test gap on the changed surface (untested branch, missing assertion, fail-open). | **Forces REQUEST_CHANGES** by default; `--soft-tests` relaxes to COMMENT. |
-| `nit` | Pure style/naming/formatting the linter doesn't catch. | COMMENT only. Never blocks. |
-| `suggestion` | Refactor / improvement opportunity, no correctness concern. | COMMENT only. |
-| `question` | Reviewer not sure if it's a bug — asking the author to confirm. | COMMENT only. |
+Posting-layer obligations from the contract, restated as duties (not schema):
 
-### Event computation algorithm
-
-```
-def compute_event(findings, soft_tests=False):
-    severities = {f.severity for f in findings}
-    blocking = {"bug", "security", "api-surface"}
-    if not findings:
-        return "APPROVE"
-    if severities & blocking:
-        return "REQUEST_CHANGES"
-    if "test" in severities and not soft_tests:
-        return "REQUEST_CHANGES"
-    return "COMMENT"
-```
-
-### Self-contradiction detection (mandatory)
-
-If the agent's `summary` text contains any of `["approve", "lgtm", "looks good", "no concerns", "non-blocking"]` AND any finding has severity in `{bug, security, api-surface}`, surface a warning to the user before posting:
-
-```markdown
-> **⚠️ Caution**
->
-> Reviewer wrote "Approve" but flagged 2 bug-severity findings. Severity rule overrides verdict — posting as REQUEST_CHANGES.
-```
-
-Then proceed with the computed REQUEST_CHANGES. Do not let the contradiction ship.
-
-## Finding schema
-
-Agents (orc-pr-reviewer, orc-security-reviewer) return findings in this shape:
-
-```json
-{
-  "summary": "One-paragraph framing of the PR. Informational only — does NOT decide the event.",
-  "findings": [
-    {
-      "path": "src/auth.ts",
-      "line": 42,
-      "start_line": null,
-      "side": "RIGHT",
-      "severity": "bug",
-      "title": "Null deref when token absent",
-      "body": "When `req.headers.authorization` is missing, `parseToken()` returns null and the next line dereferences `.userId` unconditionally — 500 to client, no log.",
-      "suggestion_code": "const token = parseToken(req);\nif (!token) return res.status(401).end();",
-      "confidence": 0.92
-    }
-  ]
-}
-```
-
-**Required:** `path`, `line`, `severity`, `title`, `body`, `confidence`. **Optional:** `start_line` (multi-line spans), `suggestion_code` (small concrete fix; see suggestion block rules).
-
-## Line-number semantics
-
-- `path` — repo-relative POSIX path (e.g. `src/api/users.ts`). NOT a URL, NOT prefixed with `a/` or `b/`.
-- `line` — line number in the **NEW** file (post-change). NOT the diff hunk offset, NOT the line in the old file. Agents must compute this from the diff hunk header `@@ -OLD_START,OLD_COUNT +NEW_START,NEW_COUNT @@` plus the offset of the matched line within the hunk.
-- `start_line` — for multi-line spans (e.g. a problem spanning lines 45–47), set `start_line: 45, line: 47`. Single-line findings leave `start_line: null` (or omit the key).
-- `side` — always `"RIGHT"` (the new/added side of the diff). `"LEFT"` is for comments on removed code, almost never useful for review findings.
+- Compute the event mechanically from the severity set — the agent's narrative
+  verdict is ignored. `--soft-tests` relaxes only the `test` severity.
+- Run self-contradiction detection on each agent `summary`; warn with a
+  `> **⚠️ Caution**` callout, then post the computed event anyway.
+- Validate each finding's `path`/`line` per the contract's line-number
+  semantics before posting.
 
 ## Posting backend selection
 
