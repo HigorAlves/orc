@@ -20,7 +20,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea043.svg" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/plugin-v0.15.0-2ea043.svg" alt="plugin v0.15.0">
+  <img src="https://img.shields.io/badge/plugin-v0.16.0-2ea043.svg" alt="plugin v0.16.0">
   <img src="https://img.shields.io/badge/runs-100%25%20local-2ea043.svg" alt="runs 100% local">
   <img src="https://img.shields.io/badge/telemetry-none-2ea043.svg" alt="no telemetry">
   <img src="https://img.shields.io/badge/platform-macOS%20%C2%B7%20Linux-555.svg" alt="platform macOS · Linux">
@@ -36,14 +36,14 @@
 </p>
 
 <p align="center">
-  <code>59 skills</code> &nbsp;·&nbsp; <code>22 commands</code> &nbsp;·&nbsp;
-  <code>12 agents</code> &nbsp;·&nbsp; <code>6 guardrail hooks</code> &nbsp;·&nbsp;
+  <code>74 skills</code> &nbsp;·&nbsp; <code>29 commands</code> &nbsp;·&nbsp;
+  <code>13 agents</code> &nbsp;·&nbsp; <code>7 guardrail hooks</code> &nbsp;·&nbsp;
   <code>0 telemetry</code> &nbsp;·&nbsp; <code>MIT</code>
 </p>
 
 ---
 
-`orc` is a personal-workflow plugin for Claude Code: **59 curated skills, 22 composite slash commands, 12 specialist subagents, and 6 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers, a dependency pre-flight, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged", with the `orc-implementer` agent writing the code slice-by-slice in between.
+`orc` is a full-SDLC workflow plugin for Claude Code: **74 curated skills, 29 composite slash commands, 13 specialist subagents, and 7 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers, destructive git commands gated, a dependency pre-flight, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged", with the `orc-implementer` agent writing the code slice-by-slice in between — and the lifecycle no longer stops at PR-open: `/orc:ci`, `/orc:release`, `/orc:deps`, and `/orc:incident` cover what happens after.
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
@@ -67,6 +67,7 @@ Every rule below is a short, readable shell script under [`orc/hooks/scripts/`](
 | Guardrail | What it does | Enforced by |
 |-----------|--------------|-------------|
 | **No commits to protected branches** | Intercepts `git commit` / `git push` on `main`/`master`/`develop` and downgrades them to a one-keystroke confirm prompt — no env-var escape hatch | [`pre-commit-branch-check.sh`](orc/hooks/scripts/pre-commit-branch-check.sh) |
+| **Destructive git gated** | Downgrades `git reset --hard`, `git clean -f`, `git branch -D`, and `git push --force` to a confirm prompt (`--force-with-lease` passes untouched) | [`pre-destructive-git-check.sh`](orc/hooks/scripts/pre-destructive-git-check.sh) |
 | **No AI attribution in your history** | Refuses `git commit` and `gh pr/issue create/edit` whose text contains `Co-Authored-By: Claude`, `Generated with Claude Code`, the 🤖 marker, or `noreply@anthropic.com` | [`pre-commit-no-ai-attribution.sh`](orc/hooks/scripts/pre-commit-no-ai-attribution.sh) |
 | **Dependency pre-flight** | Checks the CLI tools orc relies on at session start and warns (via `systemMessage`) if any are missing | [`session-start-tool-check.sh`](orc/hooks/scripts/session-start-tool-check.sh) |
 | **Rules in every session** | Injects the iron rules + skill routing at `SessionStart`, so discipline is loaded before the first action | [`session-start-using-orc.sh`](orc/hooks/scripts/session-start-using-orc.sh) |
@@ -83,7 +84,7 @@ orc maps the senior IC / tech-lead / architect day to a small set of composite c
 
 ```mermaid
 flowchart LR
-    plan["/orc:plan"] --> start["/orc:start"] --> impl["implement"] --> qa["/orc:qa"] --> ship["/orc:ship"] --> cleanup["/orc:cleanup"]
+    plan["/orc:plan"] --> start["/orc:start"] --> impl["implement"] --> qa["/orc:qa"] --> ship["/orc:ship"] --> ci["/orc:ci"] --> cleanup["/orc:cleanup"]
     cleanup -.->|"interrupted? /orc:resume"| plan
     cleanup -.->|"need status? /orc:status"| plan
 ```
@@ -104,6 +105,13 @@ Or skip the per-phase invocations and use **`/orc:flow`** to drive the whole loo
 | Parallel-dispatching N independent tasks | `/orc:fan-out` |
 | Filing/linking a Jira ticket from the terminal | `/orc:jira` |
 | Collecting browser evidence for a ticket | `/orc:evidence` |
+| Production incident happening right now | `/orc:incident` |
+| Dependencies stale or vulnerable | `/orc:deps` |
+| Cutting a release (semver, changelog, tag) | `/orc:release` |
+| Issue backlog to herd into agent-ready briefs | `/orc:triage` |
+| Work too big for one session | `/orc:wayfinder` |
+| First-time repo setup (tracker, labels, domain docs) | `/orc:setup` |
+| Not sure which of these? | `orc:map` — the router |
 
 ## Common scenarios — pick one
 
@@ -160,7 +168,7 @@ orc version
 orc doctor --fix
 ```
 
-Checks the tools orc relies on and installs any that are missing via your system package manager. **You should see** `git` and `jq` reported present — these two are **required** (`orc doctor` exits non-zero if either is missing). It also offers the **recommended** set (`gh`, `agent-browser`, `acli`, `docker`, `graphify`); those aren't required, but individual commands use them.
+Checks the tools orc relies on and installs any that are missing via your system package manager. **You should see** `git` and `jq` reported present — these two are **required** (`orc doctor` exits non-zero if either is missing). It also offers the **recommended** set (`gh`, `agent-browser`, `acli`, `docker`, `graphify`, `osv-scanner`, `gitleaks`, `sentry-cli`); those aren't required, but individual commands use them.
 
 > [!TIP]
 > Running unattended (CI, dotfiles)? Add `-y` to skip prompts: `orc doctor --fix -y`. Just want to check without installing? Run `orc doctor` on its own.
@@ -245,7 +253,7 @@ To pin a specific tag or commit, use the longhand source form in `~/.claude/sett
 
 ## What orc can do
 
-### Commands (22)
+### Commands (29)
 
 | Command | Purpose |
 |---------|---------|
@@ -268,15 +276,22 @@ To pin a specific tag or commit, use the longhand source form in `~/.claude/sett
 | `/orc:jira` | Manage Jira tickets via `acli`; bind/unbind a ticket to the current session |
 | `/orc:evidence` | Collect browser evidence scoped to a ticket, then upload or keep local |
 | `/orc:postmortem` | Author a blameless incident postmortem; files P0 items as tracker issues |
+| `/orc:ci` | Watch + diagnose CI after PR-open; classified failures routed to `orc-code-fixer` |
+| `/orc:incident` | Live incident triage — Sentry intake, mitigate-vs-root-cause gate, UTC timeline |
+| `/orc:deps` | Dependency audit / outdated / upgrade — one bump per commit, majors escalated |
+| `/orc:release` | Cut a user-project release: semver from commits, changelog, tag, GitHub release |
+| `/orc:setup` | Run-once tracker/labels/domain-docs interview; powers to-issues, triage, wayfinder |
+| `/orc:triage` | Herd issues + external PRs through triage roles into agent-ready briefs |
+| `/orc:wayfinder` | Plan multi-session work as decision tickets on the tracker |
 | `/orc:cleanup` | Remove `.orc/` state, worktree, and (if merged) branch for completed sessions |
 
-### Specialist agents (12)
+### Specialist agents (13)
 
-`orc-implementer` (writes code slice-by-slice), `orc-debug-investigator`, `orc-test-author`, `orc-code-fixer`, `orc-pr-reviewer`, `orc-security-reviewer`, `orc-qa-validator`, `orc-env-provisioner`, `orc-prd-analyzer`, `orc-refactor-architect`, `orc-reply-drafter`, `orc-stack-analyzer` — each a read-only investigator or a scoped executor, dispatched by the commands above.
+`orc-implementer` (writes code slice-by-slice), `orc-debug-investigator`, `orc-test-author`, `orc-code-fixer`, `orc-pr-reviewer`, `orc-security-reviewer`, `orc-ci-investigator`, `orc-qa-validator`, `orc-env-provisioner`, `orc-prd-analyzer`, `orc-refactor-architect`, `orc-reply-drafter`, `orc-stack-analyzer` — each a read-only investigator or a scoped executor, dispatched by the commands above. Every agent pins both a `model` (haiku for mechanical work, sonnet for senior-dev execution, opus for deep investigation) and a reasoning `effort` matched to its task shape.
 
-### Skills (59)
+### Skills (74)
 
-Under the commands and agents sit 59 skills — reusable, progressively-disclosed playbooks the model pulls in on demand: process doctrine (`tdd`, `systematic-debugging`, `verification-before-completion`), stack packs (Next.js, NestJS, PostgreSQL, SwiftUI, Tailwind, Turborepo, …), and authoring guides (PRD/TRD/ADR/RFC/postmortem). Each is a thin index that loads its detail only when invoked, so they cost almost nothing until used. **Total: 59 skills.**
+Under the commands and agents sit 74 curated skills — reusable, progressively-disclosed playbooks the model pulls in on demand: process doctrine (`tdd`, `systematic-debugging`, `verification-before-completion`, `grilling`, `codebase-design`, `domain-modeling`), stack packs (Next.js, NestJS, PostgreSQL, SwiftUI, Tailwind, Turborepo, …), authoring guides (PRD/TRD/ADR/RFC/postmortem), and the `orc:map` router when you're not sure which to reach for. Fifteen are vendored or merged from [mattpocock/skills](https://github.com/mattpocock/skills) and other MIT sources with full provenance ([THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md)); their descriptions are deliberately differentiated so co-installing the originals doesn't double-trigger. Each skill is a thin index that loads its detail only when invoked, so they cost almost nothing until used. **Total: 74 skills.**
 
 ### The orc CLI
 
@@ -306,6 +321,9 @@ orc's SessionStart pre-flight (`session-start-tool-check.sh`) verifies these CLI
 | `acli` | recommended | `/orc:jira`, Jira ticket linking, PRD/TRD `--from-jira` seeding |
 | `docker` | recommended | `/orc:env`, `/orc:qa` / `/orc:flow` env provisioning (host-mode fallback applies without it) |
 | `graphify` | recommended | `/orc:plan`, `/orc:start`, `/orc:flow`, `/orc:debug` — code discovery via a code graph instead of grep |
+| `osv-scanner` | recommended | `/orc:deps` — ecosystem-agnostic vulnerability audit (per-ecosystem scanners as fallback) |
+| `gitleaks` | recommended | `/orc:code-review --audit` — secret scanning (regex fallback without it) |
+| `sentry-cli` | recommended | `/orc:incident` — pull Sentry issues/events into live triage |
 
 Suppress the check where missing tools are intentional: `export ORC_SKIP_TOOL_CHECK=1`.
 
@@ -364,7 +382,7 @@ No. There is no orc backend and no telemetry — nothing in the tree tracks usag
 <details>
 <summary><strong>Can orc commit to <code>main</code> or force-push without me?</strong></summary>
 
-No. A PreToolUse hook (`pre-commit-branch-check.sh`) intercepts `git commit`/`git push` on `main`/`master`/`develop` and downgrades them to a confirm prompt that needs your keystroke — with no env-var escape hatch. The protected branch list is configurable (`protected_branches`).
+No. A PreToolUse hook (`pre-commit-branch-check.sh`) intercepts `git commit`/`git push` on `main`/`master`/`develop` and downgrades them to a confirm prompt that needs your keystroke — with no env-var escape hatch. The protected branch list is configurable (`protected_branches`). A second hook (`pre-destructive-git-check.sh`) applies the same confirm-prompt gate to `git reset --hard`, `git clean -f`, `git branch -D`, and `git push --force` on any branch.
 </details>
 
 <details>
@@ -395,18 +413,19 @@ orc is an open-source personal project (MIT), maintained in the open and used da
 
 ```
 orc/
-├── .claude-plugin/plugin.json   # manifest (v0.15.0)
+├── .claude-plugin/plugin.json   # manifest (v0.16.0)
 ├── .orc/                        # gitignored — workspace state per session
-├── skills/<name>/SKILL.md       # 59 skills — a thin index per skill
+├── skills/<name>/SKILL.md       # 74 skills — a thin index per skill
 │   └── <name>/references/*.md   #   lazy-loaded detail for large skills
-├── commands/<name>.md           # 22 slash commands (incl. /orc:flow umbrella)
-├── agents/orc-<role>.md         # 12 subagents (incl. orc-implementer)
+├── commands/<name>.md           # 29 slash commands (incl. /orc:flow umbrella)
+├── agents/orc-<role>.md         # 13 subagents (incl. orc-implementer)
 ├── hooks/
 │   ├── hooks.json
 │   └── scripts/                 # session-start-using-orc.sh
 │                                # session-start-tool-check.sh
 │                                # pre-commit-branch-check.sh
 │                                # pre-commit-no-ai-attribution.sh
+│                                # pre-destructive-git-check.sh
 │                                # worktree-create.sh
 │                                # worktree-remove.sh
 ├── lib/                         # shared bash helpers (workspace-detect, pr-size-budget)
