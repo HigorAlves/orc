@@ -46,30 +46,27 @@ run_branch_check() { # $1 = repo dir, $2 = command
 
 # MATCH: commit on a protected branch -> permissionDecision "ask"
 out="$(run_branch_check "$main_repo" 'git commit -m "x"')"
-printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "ask"' >/dev/null 2>&1 \
-  && ok || fail "branch-check: commit on main should ask"
+if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "ask"' >/dev/null 2>&1; then ok; else fail "branch-check: commit on main should ask"; fi
 
 # MATCH: compound command and git -C forms still intercepted on main
 out="$(run_branch_check "$main_repo" 'npm test && git commit -m "x"')"
-printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "ask"' >/dev/null 2>&1 \
-  && ok || fail "branch-check: compound 'npm test && git commit' on main should ask"
+if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "ask"' >/dev/null 2>&1; then ok; else fail "branch-check: compound 'npm test && git commit' on main should ask"; fi
 out="$(run_branch_check "$main_repo" 'git -C sub push origin main')"
-printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "ask"' >/dev/null 2>&1 \
-  && ok || fail "branch-check: 'git -C <path> push' on main should ask"
+if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "ask"' >/dev/null 2>&1; then ok; else fail "branch-check: 'git -C <path> push' on main should ask"; fi
 
 # NON-MATCH: same commands on a feature branch -> silent pass-through
 out="$(run_branch_check "$feat_repo" 'git commit -m "x"')"
-[ -z "$out" ] && ok || fail "branch-check: commit on feature branch must be silent, got: $out"
+if [ -z "$out" ]; then ok; else fail "branch-check: commit on feature branch must be silent, got: $out"; fi
 
 # NON-MATCH: innocent git commands on main -> silent (over-match guard)
 for cmd in 'git log --oneline' 'git status' 'echo "git commitment"' 'ls -la'; do
   out="$(run_branch_check "$main_repo" "$cmd")"
-  [ -z "$out" ] && ok || fail "branch-check: '$cmd' on main must be silent, got: $out"
+  if [ -z "$out" ]; then ok; else fail "branch-check: '$cmd' on main must be silent, got: $out"; fi
 done
 
 # CONFIG: custom protected set replaces the default
 out="$(cd "$main_repo" && payload 'git commit -m x' | ORC_PROTECTED_BRANCHES="release" bash "$branch_check")"
-[ -z "$out" ] && ok || fail "branch-check: main not in custom protected set must be silent"
+if [ -z "$out" ]; then ok; else fail "branch-check: main not in custom protected set must be silent"; fi
 
 # --- pre-commit-no-ai-attribution.sh --------------------------------------
 run_attribution() { # $1 = command
@@ -87,8 +84,7 @@ Co-Authored-By: Claude Fable <noreply@anthropic.com>"'
 )
 for cmd in "${deny_cases[@]}"; do
   out="$(run_attribution "$cmd")"
-  printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1 \
-    && ok || fail "attribution: should deny: $cmd"
+  if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then ok; else fail "attribution: should deny: $cmd"; fi
 done
 
 # NON-MATCH: innocent mentions must NOT be blocked (tight-pattern guarantee)
@@ -101,12 +97,12 @@ silent_cases=(
 )
 for cmd in "${silent_cases[@]}"; do
   out="$(run_attribution "$cmd")"
-  [ -z "$out" ] && ok || fail "attribution: must be silent for: $cmd — got: $out"
+  if [ -z "$out" ]; then ok; else fail "attribution: must be silent for: $cmd — got: $out"; fi
 done
 
 # OVERRIDE: explicit opt-in disables the guard
 out="$(payload 'git commit -m "x" -m "Co-Authored-By: Claude <noreply@anthropic.com>"' | ORC_ALLOW_AI_ATTRIBUTION=1 bash "$attribution_check")"
-[ -z "$out" ] && ok || fail "attribution: ORC_ALLOW_AI_ATTRIBUTION=1 must be silent"
+if [ -z "$out" ]; then ok; else fail "attribution: ORC_ALLOW_AI_ATTRIBUTION=1 must be silent"; fi
 
 # --- pre-destructive-git-check.sh -----------------------------------------
 run_destructive() { # $1 = command
@@ -126,8 +122,7 @@ ask_cases=(
 )
 for cmd in "${ask_cases[@]}"; do
   out="$(run_destructive "$cmd")"
-  printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "ask"' >/dev/null 2>&1 \
-    && ok || fail "destructive: should ask: $cmd"
+  if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "ask"' >/dev/null 2>&1; then ok; else fail "destructive: should ask: $cmd"; fi
 done
 
 # NON-MATCH: safe variants and prose mentions -> silent
@@ -143,12 +138,12 @@ destructive_silent=(
 )
 for cmd in "${destructive_silent[@]}"; do
   out="$(run_destructive "$cmd")"
-  [ -z "$out" ] && ok || fail "destructive: must be silent for: $cmd — got: $out"
+  if [ -z "$out" ]; then ok; else fail "destructive: must be silent for: $cmd — got: $out"; fi
 done
 
 # OVERRIDE: explicit opt-in disables the gate
 out="$(payload 'git reset --hard HEAD~1' | ORC_ALLOW_DESTRUCTIVE_GIT=1 bash "$destructive_check")"
-[ -z "$out" ] && ok || fail "destructive: ORC_ALLOW_DESTRUCTIVE_GIT=1 must be silent"
+if [ -z "$out" ]; then ok; else fail "destructive: ORC_ALLOW_DESTRUCTIVE_GIT=1 must be silent"; fi
 
 if [ "$status" -eq 0 ]; then
   echo "verify-guard-hooks: OK ($pass_count cases)"
