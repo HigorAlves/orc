@@ -1,6 +1,10 @@
 ---
 name: dispatching-parallel-agents
 description: Use when facing 2+ independent tasks that can be worked on without shared state or sequential dependencies
+license: MIT
+metadata:
+  author: Jesse Vincent
+  source: Derived from https://github.com/obra/superpowers
 ---
 
 # Dispatching Parallel Agents

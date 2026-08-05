@@ -411,7 +411,7 @@ orc/
 │                                # worktree-remove.sh
 ├── lib/                         # shared bash helpers (workspace-detect, pr-size-budget)
 cli/                             # the orc CLI (Go / Bubble Tea)
-docs/                            # architecture.md, contributing.md, STACKED-PRS.md, roadmap.md
+docs/                            # architecture.md, contributing.md, roadmap.md
 examples/                        # scenario walk-throughs (start here for usage)
 ```
 

@@ -1,6 +1,10 @@
 ---
 name: systematic-debugging
 description: Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes
+license: MIT
+metadata:
+  author: Jesse Vincent
+  source: Derived from https://github.com/obra/superpowers
 ---
 
 # Systematic Debugging

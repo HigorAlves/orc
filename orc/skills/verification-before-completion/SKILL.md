@@ -1,6 +1,10 @@
 ---
 name: verification-before-completion
 description: Use when about to claim work is complete, fixed, or passing, before committing or opening PRs — run verification commands and confirm output before any success claim. Evidence before assertions. Doctrine skill (preloaded into orc-implementer), not a command — the bundled /verify covers interactive one-off behavioral checks.
+license: MIT
+metadata:
+  author: Jesse Vincent
+  source: Derived from https://github.com/obra/superpowers
 ---
 
 # Verification Before Completion

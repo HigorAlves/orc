@@ -14,7 +14,7 @@ Every PR in a stack carries a `## Stacked PR (i/N)` block in its body. Example f
 ## Stacked PR (2/3)
 
 Stack: feat-export-2026-05-15
-Merge bottom-up. See docs/STACKED-PRS.md.
+Merge bottom-up — each merge retargets the next PR's base.
 
 | # | Subject                                      | PR          | Status |
 |---|----------------------------------------------|-------------|--------|

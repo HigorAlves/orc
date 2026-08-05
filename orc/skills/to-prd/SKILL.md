@@ -1,11 +1,15 @@
 ---
 name: to-prd
 description: Turn the current conversation context into a PRD and publish it to the project issue tracker. Use when user wants to create a PRD from the current context.
+license: MIT
+metadata:
+  author: Matt Pocock
+  source: Derived from https://github.com/mattpocock/skills (audit pin 2ffb184)
 ---
 
 This skill takes the current conversation context and codebase understanding and produces a PRD. Do NOT interview the user — just synthesize what you already know.
 
-The issue tracker and triage label vocabulary should have been provided to you — run `/setup-matt-pocock-skills` if not.
+The issue tracker and triage label vocabulary should have been provided to you — run `/orc:setup` if not.
 
 ## Process
 

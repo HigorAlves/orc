@@ -3,6 +3,7 @@ name: orc-debug-investigator
 description: Long-running root-cause investigation for hard bugs and unexpected behavior. Use when a bug needs disciplined isolation — reproduction, hypothesis, instrumentation, regression-testing — before any fix is attempted. Maintains an isolated context and produces a written diagnosis the implementing engineer can act on.
 tools: Read, Glob, Grep, Bash(git log:*), Bash(git blame:*), Bash(git diff:*), Bash(graphify:*)
 model: opus
+effort: high
 color: red
 maxTurns: 50
 disallowedTools: NotebookEdit

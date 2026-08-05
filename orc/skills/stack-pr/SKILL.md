@@ -113,7 +113,7 @@ order: bottom-up
 ## Stacked PR ({i}/{N})
 
 Stack: `{stackId}`
-Merge bottom-up. See [docs/STACKED-PRS.md](../docs/STACKED-PRS.md).
+Merge bottom-up — each merge retargets the next PR's base. See [references/STACKED-PRS.md](references/STACKED-PRS.md).
 
 | # | Subject | PR | Status |
 |---|---------|----|--------|

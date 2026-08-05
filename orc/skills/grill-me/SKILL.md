@@ -1,6 +1,10 @@
 ---
 name: grill-me
 description: Interview the user relentlessly about a plan or design until reaching shared understanding. Use when the user wants to stress-test a plan, get grilled on a design, or mentions "grill me".
+license: MIT
+metadata:
+  author: Matt Pocock
+  source: Derived from https://github.com/mattpocock/skills (audit pin 2ffb184)
 ---
 
 Interview me relentlessly about every aspect of this plan until we reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, provide your recommended answer.

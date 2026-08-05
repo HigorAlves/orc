@@ -1,13 +1,17 @@
 ---
 name: to-issues
 description: Break a plan, spec, or PRD into independently-grabbable tracker issues using tracer-bullet vertical slices. Use when converting a plan into issues or implementation tickets.
+license: MIT
+metadata:
+  author: Matt Pocock
+  source: Derived from https://github.com/mattpocock/skills (audit pin 2ffb184)
 ---
 
 # To Issues
 
 Break a plan into independently-grabbable issues using vertical slices (tracer bullets).
 
-The issue tracker and triage label vocabulary should have been provided to you — run `/setup-matt-pocock-skills` if not.
+The issue tracker and triage label vocabulary should have been provided to you — run `/orc:setup` if not.
 
 ## Process
 

@@ -1,6 +1,10 @@
 ---
 name: using-git-worktrees
 description: Use when starting feature work that needs isolation, or before executing an implementation plan — creates isolated git worktrees with smart directory selection and safety checks.
+license: MIT
+metadata:
+  author: Jesse Vincent
+  source: Derived from https://github.com/obra/superpowers
 ---
 
 # Using Git Worktrees
