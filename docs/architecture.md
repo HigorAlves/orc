@@ -10,9 +10,9 @@
 orc/
 ├── .claude-plugin/plugin.json     # manifest — what Claude Code reads to discover the plugin
 ├── .orc/                          # gitignored, ephemeral workspace state (per-session)
-├── skills/                        # 74 skills, namespaced /orc:<name>
-├── commands/                      # 29 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
-├── agents/                        # 13 specialist subagents (orc-<role>)
+├── skills/                        # 75 skills, namespaced /orc:<name>
+├── commands/                      # 30 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
+├── agents/                        # 14 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) + WorktreeCreate/Remove hooks
 ├── lib/                           # shared prompt fragments + templates (cross-skill)
 └── docs/                          # this directory
@@ -116,7 +116,7 @@ Plus the doc-authoring family for senior/architect practice: `adr-writing` (Arch
 
 orc borrows compozy's session-state idea, hook layout, and YAML-frontmatter conventions. It diverges in two places:
 1. Workspace state is **hidden + gitignored** (`.orc/`) instead of committed (`compozy/`). orc is a personal plugin; nothing needs sharing.
-2. Command surface covers the full SDLC (29 commands, all composing the same plan → debug → verify → ship spine, now extended past PR-open with ci/release/deps/incident), with explicit web-QA evidence as a first-class concern — including the environment it runs against: `/orc:qa` and `/orc:flow` provision a Docker dev environment via `orc-env-provisioner` before browser QA (`orc:env-provisioning` skill; `/orc:env` standalone).
+2. Command surface covers the full SDLC (30 commands, all composing the same plan → debug → verify → ship spine, now extended past PR-open with ci/release/deps/incident), with explicit web-QA evidence as a first-class concern — including the environment it runs against: `/orc:qa` and `/orc:flow` provision a Docker dev environment via `orc-env-provisioner` before browser QA (`orc:env-provisioning` skill; `/orc:env` standalone).
 
 ## See also
 

@@ -36,6 +36,7 @@ well-described feature; prefer the step commands when you want to steer.
 | "Where's the rot?" / refactor appetite | `/orc:plan` with the refactor framing (dispatches orc-refactor-architect) |
 | Chunk of work too big for one session | `/orc:wayfinder` |
 | Issue backlog needs herding | `/orc:triage` |
+| Feature needs a Jira Epic→Story→Task build-out | `/orc:jira-breakdown` |
 | Dependencies stale or vulnerable | `/orc:deps` |
 | Cut a release (user project) | `/orc:release` |
 | New package/service/app shell | `/orc:scaffold` |
