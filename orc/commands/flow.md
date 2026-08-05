@@ -27,6 +27,7 @@ allowed-tools:
   - Bash(orc-workspace-detect:*)
   - Bash(orc-pr-size:*)
   - Bash(orc-docker-env:*)
+effort: high
 ---
 
 # /orc:flow

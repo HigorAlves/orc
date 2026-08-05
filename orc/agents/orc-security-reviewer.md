@@ -3,6 +3,7 @@ name: orc-security-reviewer
 description: Reviews PR diffs (or any code change) for security vulnerabilities and threat-modeling gaps. Focuses on injection (SQL/command/template), auth/authz bypass, secret exposure, unsafe deserialization, SSRF/CSRF, insecure crypto, dependency CVEs, and exploitable input handling. Dispatched programmatically by /orc:code-review and /orc:qa when the diff touches security-sensitive paths; returns structured JSON findings for the inline-posting layer. For an interactive security pass over your own pending changes, prefer the bundled /security-review. Investigator role — produces a finding list with exploit scenarios; never edits code.
 tools: Read, Glob, Grep, Bash(gh pr diff:*), Bash(gh pr view:*), Bash(git log:*)
 model: opus
+effort: high
 color: red
 maxTurns: 25
 disallowedTools: Write, Edit, NotebookEdit

@@ -3,6 +3,7 @@ name: orc-stack-analyzer
 description: Analyzes a too-big branch's diff and proposes how to split it into a stack of smaller, logically-coherent PRs. Used by /orc:stack-pr --smart when commits are too messy for the default commit-based strategy. Investigator role — emits a JSON plan (slices + non-interactive rebase plan) for the orchestrator to execute. Never runs git rebase, cherry-pick, or any destructive operation.
 tools: Read, Glob, Grep, Bash(git log:*), Bash(git diff:*), Bash(git show:*), Bash(git rev-list:*), Bash(git numstat:*)
 model: opus
+effort: high
 color: cyan
 maxTurns: 25
 disallowedTools: Write, Edit, NotebookEdit

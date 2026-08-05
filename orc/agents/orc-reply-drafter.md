@@ -2,7 +2,8 @@
 name: orc-reply-drafter
 description: Drafts replies to PR review comments given the comment text, the relevant code, and what was (or wasn't) changed in response. Used by /orc:address. Returns one short reply per comment, ready to post via gh CLI.
 tools: Read, Glob, Grep
-model: sonnet
+model: haiku
+effort: low
 color: cyan
 maxTurns: 15
 disallowedTools: Write, Edit, NotebookEdit

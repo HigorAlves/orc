@@ -3,6 +3,7 @@ name: orc-refactor-architect
 description: Deep codebase scan to surface refactor opportunities — coupling that hurts testability, duplicated decisions, leaky abstractions, drift from documented architecture (ADRs, CONTEXT.md). Loaded on demand when the user is planning a refactor or asking "where's the rot?".
 tools: Read, Glob, Grep, Bash(git log:*), Bash(git blame:*), Bash(graphify:*)
 model: opus
+effort: high
 color: purple
 maxTurns: 40
 disallowedTools: Write, Edit, NotebookEdit

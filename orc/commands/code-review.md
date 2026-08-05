@@ -15,6 +15,7 @@ allowed-tools:
   - Bash(gh api repos:*/pulls:*/reviews:*)
   - Bash(jq:*)
   - Bash(orc-workspace-detect:*)
+effort: high
 ---
 
 # /orc:code-review
