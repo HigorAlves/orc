@@ -20,7 +20,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea043.svg" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/plugin-v0.16.0-2ea043.svg" alt="plugin v0.16.0">
+  <img src="https://img.shields.io/badge/plugin-v0.16.1-2ea043.svg" alt="plugin v0.16.1">
   <img src="https://img.shields.io/badge/runs-100%25%20local-2ea043.svg" alt="runs 100% local">
   <img src="https://img.shields.io/badge/telemetry-none-2ea043.svg" alt="no telemetry">
   <img src="https://img.shields.io/badge/platform-macOS%20%C2%B7%20Linux-555.svg" alt="platform macOS · Linux">
@@ -420,7 +420,7 @@ orc is an open-source personal project (MIT), maintained in the open and used da
 
 ```
 orc/
-├── .claude-plugin/plugin.json   # manifest (v0.16.0)
+├── .claude-plugin/plugin.json   # manifest (v0.16.1)
 ├── .orc/                        # gitignored — workspace state per session
 ├── skills/<name>/SKILL.md       # 75 skills — a thin index per skill
 │   └── <name>/references/*.md   #   lazy-loaded detail for large skills
