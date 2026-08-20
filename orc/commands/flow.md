@@ -34,7 +34,7 @@ effort: high
 
 Drive a piece of work from "I want to do X" to "PR merged, workspace cleaned up." `/orc:flow` is the umbrella — it walks the same phases the individual commands do, but with unified state, interactive gates between phases, and a single resume entry point.
 
-This command is interactive by design. Every phase ends with an `AskUserQuestion` select-from-list — you choose advance, iterate, skip, or abort. **Never silently advances past a gate.**
+This command is interactive at every genuine decision point. A phase that ends in a real choice gates via an `AskUserQuestion` select-from-list — you choose advance, iterate, skip, or abort. A phase whose outcome is machine-verified (a clean failing-test run, a QA `pass` with a complete evidence packet) prints its evidence and advances — anomalies still gate. **Never silently advances past a decision.**
 
 Immediately before each phase's `AskUserQuestion`, print a one-line Gate callout (terminal form per the `orc:callouts` palette — emoji header, no `[!TYPE]` tag):
 
@@ -59,8 +59,8 @@ Use `/orc:flow` when you want orc to drive the whole loop. Skip it (use the per-
 - `--driver agent-browser|chrome` — pass through to Phase 6's browser-driver gate: `agent-browser` = headless CLI via `orc-qa-validator`; `chrome` = Claude-in-Chrome extension run inline (watch the test live). Omitted → Phase 6 asks.
 - `--pause-at-implement` — pause Phase 5 for the human to write the implementation manually. Default behavior is autonomous: dispatches `orc-implementer` to drive the implementation slice-by-slice. Use `--pause-at-implement` when you want to write the code yourself.
 - `--jira <KEY>` — link a Jira ticket key (e.g. `JRA-123`) to this flow's session silently. Suppresses the Phase 1 link prompt. The key follows the work through every phase, surfaces in `/orc:status`, and lands as `Resolves <KEY>` in the Phase 7 PR body. Validate against `^[A-Z][A-Z0-9_]*-\d+$`.
-- `--max-loc <N>` — pass-through to `/orc:ship`'s Phase 4.5 size gate (default: 300, configurable via `$ORC_PR_LOC_BUDGET` or `<repo>/.orc/pr-budget.json`). Phase 7 also pre-flights the gate with one extra option ("Stack from plan slices") that single-repo `/orc:ship` doesn't have.
-- `--no-size-gate` — pass-through to `/orc:ship`. Skips both the Phase 7 pre-flight and `/orc:ship`'s gate. Use sparingly.
+- `--max-loc <N>` — pass-through to `/orc:ship`'s Phase 4.5 size gate (default: 300, configurable via `$ORC_PR_LOC_BUDGET` or `<repo>/.orc/pr-budget.json`). The gate runs once, inside ship — in a flow session it offers the extra "Stack from plan slices" option (see `ship.md` Phase 4.5).
+- `--no-size-gate` — pass-through to `/orc:ship`. Skips its Phase 4.5 gate. Use sparingly.
 - `--repos <list>` — workspace mode: comma-separated repo names to target (e.g. `--repos api,ui`). Mutually exclusive with `--repo`, `--all-repos`, `--this-repo`.
 - `--repo <name>` — workspace mode: target one repo. Mutually exclusive with `--repos`.
 - `--all-repos` — workspace mode: skip the Phase 1 repo prompt and broadcast to every detected repo.
@@ -68,7 +68,7 @@ Use `/orc:flow` when you want orc to drive the whole loop. Skip it (use the per-
 
 ## Phases
 
-The pipeline is **9 phases**, all gated. Some phases are skipped based on type and flags:
+The pipeline is **9 phases**. Decision points are gated; machine-verified outcomes (clean red in Phase 4, clean QA pass in Phase 6) print evidence and advance. Some phases are skipped based on type and flags:
 
 | # | Phase | Always? | Skips when … |
 |---|-------|---------|--------------|
@@ -235,13 +235,16 @@ Test MUST fail with the right message. Commit the failing test in its target rep
 
 For `--type=docs`: skip; advance to phase 6.
 
+**No gate on a clean red.** The failing run is machine-verified here and re-verified by `orc-implementer` before it goes green — a human confirm on top would rubber-stamp verified state. Print one line and advance to Phase 5:
+
 ```
-AskUserQuestion (after failing test committed):
-- Test fails as expected — ready to implement
-- Test failure isn't right — iterate
-- Skip TDD for this work (with rationale; logged to checkpoint)
-- Abort
+red verified: <test file> — <failure message>
 ```
+
+Gate only when something is genuinely undecided:
+
+- The failure message doesn't match the expected shape (wrong assertion, import error, framework misconfig) — surface the mismatch, then `AskUserQuestion`: iterate on the test / skip TDD for this work (with rationale; logged to checkpoint) / abort.
+- `--pause-at-implement` was passed — the human is about to write the code and seeing red matters to them. Keep the original confirm: test fails as expected / iterate / skip TDD / abort.
 
 ### Phase 5 — Implement (autonomous by default)
 
@@ -336,9 +339,12 @@ Then run the **browser-driver gate** from `/orc:qa` Phase 4.1 (`AskUserQuestion`
 
 If verification flags untested branches, dispatch `orc-test-author` to fill them in before continuing.
 
+**No gate on a clean pass.** The verdict is computed from the evidence packet, not vibes — when the verdict is `pass` AND the packet is complete (web mode: screenshots, `steps.md`, console log, HAR all present; code mode: suite + lint + type-check green), print the verdict line + artifact list and advance to Phase 7.
+
+Gate only on anomaly (verdict `partial`/`fail`, incomplete evidence, or web QA about to be skipped):
+
 ```
-AskUserQuestion (after QA verdict):
-- QA passed — proceed to ship
+AskUserQuestion (anomalous QA verdict):
 - QA partial — let me address findings, then re-run QA
 - QA failed — back to implement
 - Skip web QA (with rationale, logged) — only when --no-web justified
@@ -347,37 +353,17 @@ AskUserQuestion (after QA verdict):
 
 ### Phase 7 — Ship
 
-Pre-flight the **size gate** before invoking `/orc:ship`. Defer to `orc:pr-size-budget` for canonical mechanics. Skip when `--no-size-gate` is set.
+Invoke `/orc:ship` logic. The **size gate runs exactly once — inside ship's Phase 4.5** (never pre-flight it here; `ship.md` owns the gate and its "Stack from plan slices" option lights up automatically when this session has a plan whose commits map 1:1 to slices). Pass through `--max-loc` / `--no-size-gate` / `--verbose` / `--draft` unchanged.
 
-```bash
-# In workspace mode, iterate per target repo; in single-repo, run once.
-orc-pr-size gate --base "origin/$base" ${ARG_MAX_LOC:+--max-loc "$ARG_MAX_LOC"}
-```
+Flow-specific deltas from standalone `/orc:ship`:
 
-One call returns `loc:`, `budget:`, `verdict:`, the breakdown table, and the excluded-files line per repo. If `verdict: over`, render the gate exactly as `orc:pr-size-budget` specifies (the `[!WARNING]` **⛔ Gate — PR size** callout — in workspace mode add `(repo: <r>)` to the header — then the fenced breakdown), and surface a **flow-enriched 4-option** `AskUserQuestion` (the standalone `/orc:ship` gate has only the first three — Phase 7 adds option A because the flow knows the plan):
-
-```
-A. Stack from plan slices (Recommended, flow-only)
-   Use the existing per-slice commits as the stack scaffold. One PR per Phase 5 batch.
-   (Only enabled when commits map 1:1 to plan slices.)
-B. Stack via /orc:stack-pr [--smart]
-   Standalone analyzer; same outcome as A but doesn't rely on commit/slice alignment.
-   (Load the `orc:stack-pr` SKILL inline — the slash command is user-only.)
-C. Open as one big PR — requires a one-line reason (Size-budget-override: trailer).
-D. Abort to implement — go back, resize, re-run /orc:flow.
-```
-
-A is enabled iff `n_commits_on_branch == n_slices_in_plan` AND each commit subject contains the slice name (best-effort match). When the heuristic fails, hide A and present B/C/D only.
-
-Per-repo decisions are independent: in workspace mode, repo `api` can pick A while `ui` picks C. Record each decision in `checkpoint.md` (so `/orc:resume` knows we already gated this repo).
-
-Then invoke `/orc:ship` logic with the gate decision pre-applied (pass `--no-size-gate` to ship to avoid re-prompting):
-
+- **Skip `orc:finishing-a-development-branch`.** The flow's premise is already "open a PR" — merge-directly / keep-working / discard stay reachable via Abort at any remaining gate. (Standalone `/orc:ship` keeps that phase; its intent is genuinely unknown there.)
 - `orc:requesting-code-review` (gap check vs the plan)
-- `orc:finishing-a-development-branch` (presents structured options)
 - `orc:git-commit` (if uncommitted)
 - PR composition: `orc:caveman-pr` by default; the long-form template only if `--verbose` was passed
-- `gh pr create` — UNLESS this repo picked A or B above, in which case `/orc:stack-pr` already opened the PRs and Phase 7 only records the stack metadata in `linkedPRs`.
+- `gh pr create` — UNLESS this repo stacked in the size gate, in which case `/orc:stack-pr` already opened the PRs and Phase 7 only records the stack metadata in `linkedPRs`.
+
+Per-repo size-gate decisions are independent: in workspace mode, repo `api` can stack while `ui` opens single with an override. Record each decision in `checkpoint.md` (so `/orc:resume` knows we already gated this repo).
 
 In workspace mode, `/orc:ship` opens **N PRs** — one per target repo — and second-passes each with `gh pr edit` to inject a "Linked PRs" cross-link block + merge order from the plan. Captured PR URLs are written into the workspace registry's `linkedPRs` array (with `stackId`/`stackPosition`/`stackedOn` populated for repos that stacked).
 
@@ -396,16 +382,15 @@ AskUserQuestion (after PR composed):
 
 ### Phase 8 — Address (loop, optional)
 
-After the PR is open, orc would normally exit. But `/orc:flow` offers a stay-resident option:
+After the PR is open, flow exits — there is nothing to decide until reviewers comment, and the checkpoint already routes the next invocation here (every answer to the old "wait / come back / done" question resolved to exactly this). Echo the handoff instead of asking:
 
-```
-AskUserQuestion:
-- Wait for reviewer comments — orc keeps the flow open; re-invoke /orc:flow once comments arrive and orc routes to address
-- I'll come back later with /orc:address — flow advances to cleanup readiness
-- Done — flow exits at this phase (cleanup deferred)
+```markdown
+> **➡️ Next**
+>
+> PR open. When reviewer comments arrive, re-run `/orc:flow` (or `/orc:address`) and flow routes to the address loop. After merge, re-run `/orc:flow` for cleanup.
 ```
 
-If user picks "Wait" and comes back: dispatch `/orc:address` logic in parallel — `orc-code-fixer` + `orc-reply-drafter`. After the address loop completes, optionally loop again if more comments arrive, or advance.
+On re-invocation with unresolved comments: dispatch `/orc:address` logic in parallel — `orc-code-fixer` + `orc-reply-drafter`. After the address loop completes, loop again if more comments arrive, or advance. On re-invocation with the PR merged and no unresolved comments: advance to Phase 9.
 
 ### Phase 9 — Cleanup (post-merge)
 
@@ -444,7 +429,7 @@ Monday afternoon:  (user implements, commits per slice)
 
 Tuesday morning:   /orc:flow  (no args; reads checkpoint, picks up at QA)
                    → QA, ship
-                   → orc pauses at phase 8 ("waiting for review")
+                   → orc exits at phase 8 (PR open; handoff note)
 
 Tuesday afternoon: reviewers comment
                    /orc:flow  (reads checkpoint, routes to address)
@@ -458,7 +443,7 @@ Wednesday: PR merges
 
 ## Iron rules in play
 
-- **Every gate is a real gate.** No phase silently advances past `AskUserQuestion`. The user can always abort, iterate, or skip.
+- **Every gate is a real gate.** A gate that fires is never silently advanced past. Phases whose outcome is machine-verified (clean red, clean QA pass) print their evidence and advance — the moment the evidence is anomalous, the gate is back. The user can always abort, iterate, or skip at any gate.
 - **Phase state is durable.** `.orc/<branch>/files/checkpoint.md` updates after every phase. Crash-resumable.
 - **Per-phase rules still apply.** The web QA evidence rule, blameless postmortem framing (in /orc:flow type=bug for incident-driven debugging), no-AI-attribution, no-commits-to-main — all still enforced. /orc:flow doesn't relax any of them.
 - **/orc:flow is opt-in.** All the per-phase commands continue to work standalone for users who want fine-grained control.

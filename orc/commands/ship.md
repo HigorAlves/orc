@@ -63,6 +63,8 @@ Invoke `orc:requesting-code-review`. The skill walks through whether the work me
 
 Invoke `orc:finishing-a-development-branch`. The skill presents structured options via `AskUserQuestion` (typically: open PR / merge directly / keep working / discard). Execute the chosen option.
 
+(When `/orc:flow` Phase 7 drives this logic, it skips this phase — the flow's premise is already "open a PR", and the other outcomes stay reachable via the flow's Abort options. Standalone `/orc:ship` always runs it.)
+
 If the user picks "open PR":
 
 ### Phase 4 — Compose PR
@@ -97,13 +99,16 @@ One call returns `loc:`, `budget:`, `verdict:`, the top-contributors table, and 
 
 If `verdict: over`, render the gate exactly as `orc:pr-size-budget` specifies (the `[!WARNING]` **⛔ Gate — PR size** callout, then the breakdown + exclusions from the gate output above) and surface `AskUserQuestion`:
 
-1. **Stack it (Recommended)** — invoke `/orc:stack-pr` **inline as a skill** (load `stack-pr` skill in this session, run its phases). When stack-pr completes, this Phase 4.5 records the resulting `linkedPRs[]` entries and **short-circuits Phase 5** for this repo (PRs are already open). Continue the per-repo loop.
-2. **Open as one big PR** — prompt for a one-line reason (free text). Append to the PR body as the trailer:
+1. **Stack from plan slices (Recommended when shown)** — shown only when the active session has `${ORC_STATE_DIR}/<sanitized-branch>/files/plan.md` AND `n_commits_on_branch == n_slices_in_plan` AND each commit subject contains its slice name (best-effort match — hide this option when the heuristic fails). Uses the existing per-slice commits as the stack scaffold: load `orc:stack-pr` inline with the commit-based strategy pinned, one PR per slice batch. Records the resulting `linkedPRs[]` entries and **short-circuits Phase 5** for this repo.
+2. **Stack it** — invoke `/orc:stack-pr` **inline as a skill** (load `stack-pr` skill in this session, run its phases; `--smart` reshape available). Same short-circuit as option 1, but doesn't rely on commit/slice alignment. Recommended when option 1 is hidden.
+3. **Open as one big PR** — prompt for a one-line reason (free text). Append to the PR body as the trailer:
    ```
    Size-budget-override: <reason>
    ```
    placed after any Jira / `Closes #N` trailers. Continue to Phase 5 with the augmented body.
-3. **Abort** — exit non-zero with a hint: "Resize the diff and re-run `/orc:ship`, or run `/orc:stack-pr` directly when ready."
+4. **Abort** — exit non-zero with a hint: "Resize the diff and re-run `/orc:ship`, or run `/orc:stack-pr` directly when ready."
+
+This gate is the **single owner** of the size decision — `/orc:flow` Phase 7 never pre-flights it. In a flow session, per-repo decisions land in flow's `checkpoint.md` so `/orc:resume` knows the repo already gated.
 
 In **workspace mode**, the gate fires per repo inside the existing `for r in $targetRepos` loop. Each repo gets its own decision — one repo can stack while another opens single. Per-repo `stackId` is derived as `<sessionId>-<repo>` (see Phase 5 Pass 1 below).
 
