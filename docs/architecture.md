@@ -43,6 +43,10 @@ orc/
 - **`pre-commit-no-ai-attribution.sh`** (`git commit`/`gh pr`/`gh issue`) — denies (JSON `permissionDecision: "deny"`) any commit/PR/issue body carrying AI-attribution markers. Override only with `ORC_ALLOW_AI_ATTRIBUTION=1`.
 - **`pre-destructive-git-check.sh`** (`git reset`/`clean`/`branch`/`push`) — downgrades `reset --hard`, `clean -f*`, `branch -D`, and `push --force`/`-f` to the same confirm prompt on any branch; `--force-with-lease` passes untouched (stack-pr republishing depends on it). Override: `ORC_ALLOW_DESTRUCTIVE_GIT=1`.
 
+## Statusline
+
+`orc/settings.json` ships a default `statusLine` → `bin/orc-statusline` (renderer in `lib/statusline.sh`; user-level settings win). One jq pass over the payload + the shared `orc-state line` selector + a session-keyed 5s git cache; fixtures in `scripts/ci/verify-statusline.sh`. The renderer writes a per-session bridge file that `hooks/scripts/post-context-monitor.sh` (PostToolUse) reads to give the agent advisory low-context warnings — one tier scale, computed once in `lib/statusline.sh`.
+
 ## `.orc/` workspace state
 
 Multi-phase commands (`/orc:plan`, `/orc:start`, `/orc:debug`, `/orc:fan-out`, web-mode `/orc:qa`) checkpoint after every phase. **The normative schema lives in the `orc:state-protocol` skill, and `bin/orc-state` is the single writer** — registry entries and checkpoint frontmatter are written by the same verb, so they cannot drift. State lives in `.orc/<sanitized-branch>/files/`:
