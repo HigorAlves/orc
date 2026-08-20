@@ -85,18 +85,19 @@ Preview the fix list, then gate:
 > orc-code-fixer applies the list above and re-runs the local suite.
 ```
 
-`AskUserQuestion`:
-- "Apply the fix list" — dispatch `orc-code-fixer` via `Task` with the fix list + diagnosis path. The agent applies edits, runs tests, returns a diff + test summary.
-- "Edit the list first" — user trims/amends items, then dispatch.
-- "This needs real debugging" — jump to the `needs-debug` route below.
-- "Abort"
+`AskUserQuestion` — **one call, two questions** (the landing decision is collected up front, so a green fixer report lands without a second stop):
 
-After a green fixer report, offer the landing step via `AskUserQuestion`:
-- "Commit + push + re-watch" — invoke `orc:git-commit` (Conventional Commit from the diff), `git push`, then loop back to Phase 1 with `--watch` semantics until the run concludes.
-- "Commit only — I'll push later"
-- "Show me the diff first"
+1. **Apply the fix list?**
+   - "Apply the fix list" — dispatch `orc-code-fixer` via `Task` with the fix list + diagnosis path. The agent applies edits, runs tests, returns a diff + test summary.
+   - "Edit the list first" — user trims/amends items, then dispatch.
+   - "This needs real debugging" — jump to the `needs-debug` route below.
+   - "Abort"
+2. **After a green fixer report, land it how?** (ignored unless question 1 dispatched the fixer and its report came back green)
+   - "Commit + push + re-watch (Recommended)" — invoke `orc:git-commit` (Conventional Commit from the diff), `git push`, then loop back to Phase 1 with `--watch` semantics until the run concludes.
+   - "Commit only — I'll push later"
+   - "Show me the diff first" — render the diff, then confirm the landing choice.
 
-If the fixer report is red, return to Phase 2 with the new evidence (the investigator sees the failed attempt) — or offer the `needs-debug` hand-off.
+If the fixer report is red, discard the landing answer and return to Phase 2 with the new evidence (the investigator sees the failed attempt) — or offer the `needs-debug` hand-off.
 
 #### `flake`
 
