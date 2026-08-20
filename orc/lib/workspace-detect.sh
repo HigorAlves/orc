@@ -116,6 +116,39 @@ ORC_CONTEXT_CACHED_PWD=${cwd}
 EOF
 }
 
+# Resolve the interaction-policy autopilot level for inward gates.
+# Resolution order: $1 (a --auto flag value passed by the caller) >
+# the session's decisions.json autopilotLevel > $ORC_INTERACTION_POLICY >
+# userConfig interaction_policy (CLAUDE_PLUGIN_OPTION_INTERACTION_POLICY) >
+# manual. Unknown values degrade to manual — never fail open into autonomy.
+# Prints "<level> (<source>)"; use ${result%% *} for the bare level.
+# The flag argument is passed by external callers (commands resolving --auto);
+# in-file callers deliberately pass nothing.
+# shellcheck disable=SC2120
+orc_interaction_policy() (
+  flag="${1:-}"
+  validate() { case "$1" in manual|guided|auto) return 0 ;; *) return 1 ;; esac; }
+  if [ -n "$flag" ] && validate "$flag"; then printf '%s (flag)\n' "$flag"; return 0; fi
+  eval "$(orc_detect_context)"
+  if [ -n "${ORC_STATE_DIR:-}" ]; then
+    b="$(git branch --show-current 2>/dev/null | tr '/' '-')"
+    d="${ORC_STATE_DIR}/${b}/files/decisions.json"
+    if [ -n "$b" ] && [ -f "$d" ] && command -v jq >/dev/null 2>&1; then
+      lvl="$(jq -r '.autopilotLevel.value // empty' "$d" 2>/dev/null || true)"
+      if [ -n "$lvl" ] && validate "$lvl"; then printf '%s (decisions)\n' "$lvl"; return 0; fi
+    fi
+  fi
+  if [ -n "${ORC_INTERACTION_POLICY:-}" ] && validate "${ORC_INTERACTION_POLICY}"; then
+    printf '%s (env)\n' "${ORC_INTERACTION_POLICY}"
+    return 0
+  fi
+  if [ -n "${CLAUDE_PLUGIN_OPTION_INTERACTION_POLICY:-}" ] && validate "${CLAUDE_PLUGIN_OPTION_INTERACTION_POLICY}"; then
+    printf '%s (userConfig)\n' "${CLAUDE_PLUGIN_OPTION_INTERACTION_POLICY}"
+    return 0
+  fi
+  printf 'manual (default)\n'
+)
+
 orc_context_banner() (
   # Canonical one-look context banner — shared by the SessionStart hook and
   # (from 0.7.0) the dynamic `!`orc-workspace-detect --banner`` injection in
@@ -123,14 +156,18 @@ orc_context_banner() (
   eval "$(orc_detect_context)"
   case "${ORC_CONTEXT:-loose}" in
     workspace)
-      printf 'orc context: workspace[%s] — repos: %s — state: %s\n' \
-        "${ORC_WORKSPACE_NAME}" "${ORC_WORKSPACE_REPOS}" "${ORC_STATE_DIR}"
+      # shellcheck disable=SC2119
+      printf 'orc context: workspace[%s] — repos: %s — state: %s — policy: %s\n' \
+        "${ORC_WORKSPACE_NAME}" "${ORC_WORKSPACE_REPOS}" "${ORC_STATE_DIR}" \
+        "$(orc_interaction_policy)"
       printf 'In workspace mode, repo-scoped commands prompt for --repos/--repo before broadcasting; pass --this-repo to scope to cwd, --all-repos to fan out.\n'
       ;;
     repo)
       branch="$(git -C "${ORC_REPO_ROOT:-.}" branch --show-current 2>/dev/null || true)"
-      printf 'orc context: repo — root: %s — branch: %s — state: %s\n' \
-        "${ORC_REPO_ROOT}" "${branch:-detached}" "${ORC_STATE_DIR}"
+      # shellcheck disable=SC2119
+      printf 'orc context: repo — root: %s — branch: %s — state: %s — policy: %s\n' \
+        "${ORC_REPO_ROOT}" "${branch:-detached}" "${ORC_STATE_DIR}" \
+        "$(orc_interaction_policy)"
       ;;
     loose)
       printf 'orc context: loose — cwd is neither a git repo nor a workspace parent (no .orc state will be written here).\n'
