@@ -90,6 +90,36 @@ Analyze the diff to determine:
 - **Scope**: What area/module is affected?
 - **Description**: One-line summary of what changed (present tense, imperative mood, <72 chars)
 
+### Caveman bodies (the default)
+
+The subject carries the *what*; the diff shows the *how*. The body exists only for the *why* that neither shows — and most commits don't have one. Default to **no body**.
+
+When a body earns its place:
+
+- **≤ 3 short lines** (or bullets). A body that needs paragraphs is a PR description or a doc, not a commit message.
+- **Why only.** The motivating bug, constraint, or decision — one line each.
+- Never restate the diff ("adds X, renames Y" — the diff says so).
+- Never narrate correctness ("this ensures", "now properly", "tests confirm") — CI and the reviewer decide that.
+- Never tour the files touched. Never marketing voice.
+- Trailers (`Refs #N`, `Size-budget-override:`) go last, unchanged.
+
+```
+# Wrong — essay body
+feat(hooks): pre-git-guard dispatcher
+
+git push --force on a protected branch used to spawn two PreToolUse
+prompts (branch-check + destructive-check both wired to git push*).
+A new dispatcher runs all three checks against the incoming command
+and merges verdicts into at most one decision: deny > ask, reasons
+joined with ALSO. hooks.json collapses 9 wirings to 7 unique...
+
+# Right — caveman body
+feat(hooks): pre-git-guard dispatcher — one prompt per guarded command
+
+Force-push on protected branches double-prompted (two matchers, one command).
+Merge rule: deny > ask; reasons joined with ALSO.
+```
+
 ### 4. Execute Commit
 
 ```bash
@@ -114,6 +144,7 @@ EOF
 - Imperative mood: "fix bug" not "fixes bug"
 - Reference issues: `Closes #123`, `Refs #456`
 - Keep description under 72 characters
+- No body by default; when present, caveman rules above (≤3 lines of why)
 
 ## No AI attribution (overrides Claude Code default)
 
