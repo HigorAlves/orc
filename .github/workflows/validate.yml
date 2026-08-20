@@ -72,6 +72,9 @@ jobs:
       - name: Guard-hook smoke tests (branch-check + no-ai-attribution)
         run: bash scripts/ci/verify-guard-hooks.sh
 
+      - name: orc-state smoke tests (state-protocol schema)
+        run: bash scripts/ci/verify-state-protocol.sh
+
       - name: Router map covers every command
         run: |
           missing=""
