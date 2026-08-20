@@ -1,6 +1,6 @@
 ---
 name: env-provisioning
-description: "Provision a fast, reproducible dev environment for QA or standalone use — detection ladder (compose > devcontainer > Dockerfile > generated), healthcheck-gated boot, docker-env-state.json contract, reuse/teardown rules, host-mode fallback. Protocol for /orc:env, /orc:qa Phase 4, /orc:flow Phase 6, and the orc-env-provisioner agent."
+description: "Provision a fast, reproducible dev environment for QA or standalone use — healthcheck-gated boot, reuse/teardown rules, host-mode fallback. Protocol for /orc:env, /orc:qa Phase 4, /orc:flow Phase 6, and the orc-env-provisioner agent."
 ---
 
 # Environment Provisioning

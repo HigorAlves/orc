@@ -45,6 +45,10 @@ for skill_md in orc/skills/*/SKILL.md; do
     echo "verify-frontmatter: $skill_md missing 'description:'"; status=1
   elif [ "${#desc}" -gt 1024 ]; then
     echo "verify-frontmatter: $skill_md description is ${#desc} chars (>1024)"; status=1
+  elif [ "${#desc}" -gt 300 ]; then
+    # Soft warning only — the description catalog is always-resident context;
+    # keep entries to trigger + boundary (see orc:writing-for-agents).
+    echo "verify-frontmatter: note — $skill_md description is ${#desc} chars (>300; trigger+boundary target)"
   fi
 done
 

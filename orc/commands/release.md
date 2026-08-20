@@ -1,5 +1,5 @@
 ---
-description: "Cut a semver release for the current repo — verifies clean tree + green suite, computes the bump from conventional commits since the last tag, previews the evidence, then tags and publishes a GitHub release with generated notes. Use when releasing a version, tagging, or publishing release notes."
+description: "Cut a semver release for the current repo — bump computed from conventional commits, evidence preview, tag + GitHub release. Use when releasing a version, tagging, or publishing release notes."
 argument-hint: "[--dry-run] [--tag-only]"
 allowed-tools:
   - Read

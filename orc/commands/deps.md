@@ -1,5 +1,5 @@
 ---
-description: "Audit, survey, and upgrade project dependencies — severity-ranked vulnerability report, outdated table, and a one-bump-per-commit upgrade loop with the suite green between bumps; majors escalated, never auto-applied. Verbs: audit (default) | outdated | upgrade."
+description: "Audit, survey, and upgrade project dependencies — one-bump-per-commit loop, majors escalated, never auto-applied. Verbs: audit (default) | outdated | upgrade."
 argument-hint: "[audit|outdated|upgrade] [pkg | --all-safe] [--prod-only] [--repos a,b | --repo a | --all-repos | --this-repo]"
 arguments: [verb]
 allowed-tools:

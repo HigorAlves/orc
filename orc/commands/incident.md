@@ -1,5 +1,5 @@
 ---
-description: "Live incident response — intake a Sentry issue, stack trace, or symptom; assess severity and blast radius; gate mitigate-first vs root-cause-first; keep a UTC timeline as the fire unfolds; hand off to /orc:postmortem when stable. Use when production is broken RIGHT NOW; for the after-action write-up alone, use /orc:postmortem."
+description: "Live incident response — intake a Sentry issue, stack trace, or symptom; gate mitigate-first vs root-cause-first; keep a UTC timeline. Use when production is broken RIGHT NOW; for the after-action write-up alone, use /orc:postmortem."
 argument-hint: "[<sentry-issue-id-or-url> | <pasted stack trace> | <symptom>] [--severity sev-1|sev-2|sev-3]"
 allowed-tools:
   - Read

@@ -1,6 +1,6 @@
 ---
 name: wizard
-description: "Generate an interactive bash wizard that walks a human, step by step, through work only they can perform — opening each URL, capturing values, writing .env entries and GitHub secrets. Use when provisioning infrastructure or third-party credentials, running a one-off migration or cutover, or when orc-env-provisioner escalates a human-only condition (port conflicts, secrets it cannot mint) that a guided script can walk the user through; never for steps the agent can perform itself."
+description: "Generate an interactive bash wizard walking a human through work only they can perform — credentials, secrets, one-off migrations. Use when provisioning infrastructure or third-party credentials, or when orc-env-provisioner escalates a human-only condition; never for steps the agent can do itself."
 license: MIT
 metadata:
   author: Matt Pocock

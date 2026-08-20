@@ -1,6 +1,6 @@
 ---
 name: codebase-design
-description: "Shared vocabulary for designing deep modules — module, interface, seam, adapter, depth, leverage, locality — the vocabulary layer shared by orc:tdd, orc:improve-codebase-architecture, and the orc-refactor-architect agent. Use when designing or reshaping a module's interface, deciding where a seam goes, hunting deepening opportunities, making code more testable or AI-navigable, or when another orc skill or agent needs the deep-module vocabulary."
+description: "Shared vocabulary for designing deep modules — seam, adapter, depth, leverage, locality. Use when designing or reshaping a module's interface, deciding where a seam goes, making code more testable or AI-navigable, or when another orc skill or agent needs the deep-module vocabulary."
 license: MIT
 metadata:
   author: Matt Pocock

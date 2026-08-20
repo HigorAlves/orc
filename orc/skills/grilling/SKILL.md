@@ -1,6 +1,6 @@
 ---
 name: grilling
-description: Round-based interview primitive — map the topic as a design tree, ask the whole settled frontier each round with recommended answers, and dispatch sub-agents for facts so only decisions go to the user. The engine under orc's grill entry points (orc:grill-me, /orc:plan --grill, /orc:rfc --grill, /orc:flow medium+ scope). Use when a grill entry point needs the interview engine, when stress-testing a plan or design decision-by-decision, or when a session must end with nothing left silently assumed.
+description: Round-based interview engine under orc's grill entry points (orc:grill-me, /orc:plan --grill, /orc:rfc --grill, /orc:flow medium+ scope). Use when stress-testing a plan or design decision-by-decision, or when a session must end with nothing left silently assumed.
 license: MIT
 metadata:
   author: Matt Pocock

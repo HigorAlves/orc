@@ -1,5 +1,5 @@
 ---
-description: Collect browser evidence scoped to a ticket (or shared context) and deliver it — drives Chrome (Claude-in-Chrome) or agent-browser to navigate + screenshot, writes a .orc evidence packet, then uploads it to the ticket or keeps it local (always asks). For proving a ticket's behavior without a code diff/PR. Workspace-aware.
+description: Collect browser evidence scoped to a ticket (or shared context) and deliver it — evidence packet, then upload to the ticket or keep local (always asks). For proving a ticket's behavior without a code diff/PR. Workspace-aware.
 argument-hint: "[<TICKET-KEY>] [--web <url>] [--driver chrome|agent-browser] [--context \"<what to test>\"] [--no-env] [--repos a,b | --repo a | --this-repo]"
 arguments: [ticket]
 allowed-tools:
