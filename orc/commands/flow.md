@@ -239,18 +239,20 @@ Two modes, picked by the `--pause-at-implement` flag:
 
 #### Default: dispatch `orc-implementer` (autonomous)
 
-Read the plan and group slices into **dispatch batches**.
+Group slices into **dispatch batches from the ledger** — `slices.json` (installed at plan approval; shape per `orc:state-protocol`) carries `parallelGroup`, `dependsOn`, and `touchpoints` per slice, so independence is declared, never re-derived here. No ledger (pre-ledger plan) → fall back to reading plan.md headers.
 
 **Workspace mode pre-step:** group slices by their `repo:` tag first. Each repo group gets its own implementer dispatch chain. Repo groups run in parallel with each other (one implementer per repo, simultaneously). Within each repo group, the existing sequential/parallel-batch logic applies. The outer loop is `for repo in targetRepos: dispatch implementer(s)`. Each implementer receives `repo`, `repoPath: <workspaceRoot>/<repo>` (or its worktree path), `siblingRepos: [<other targets>]`, and (when present) `crossRepoContract: <plan section pointer>`. **Sibling implementers must not touch each other's files** — the worktree path boundary already guarantees this.
 
 After grouping by repo, for each repo's slices:
 
-- A **sequential batch** is one slice that can't run in parallel with others (depends on a prior slice's output, or shares files with siblings). Run as a single implementer dispatch with that one slice.
-- A **parallel batch** is N slices marked parallel-safe in the plan AND with disjoint file ownership. Dispatch N implementer instances **in parallel** (single response, multiple `Task` calls), each receiving a 1-slice list and `mode: parallel` so they return diffs instead of committing.
+- A **sequential batch** is a `parallelGroup` with one slice. Run as a single implementer dispatch with that slice.
+- A **parallel batch** is a `parallelGroup` with N slices (pairwise-disjoint `touchpoints` by construction). Dispatch N implementer instances **in parallel** (single response, multiple `Task` calls), each receiving a 1-slice list, its slice's `touchpoints` as the file-ownership boundary, and `mode: parallel` so they return diffs instead of committing. Sanity-validate declared disjointness before dispatching — a violation means the plan annotations are wrong; surface it.
 
-Iterate batches in plan order. After each batch:
-- Sequential: implementer already committed; advance.
-- Parallel: collect all returned diffs + test reports, apply them in plan order via `orc:git-commit` (one commit per slice, in order), run the full suite once after all diffs are applied to confirm green.
+Iterate groups in ascending order. After each batch:
+- Sequential: implementer already committed and set its slice `committed` in the ledger; advance.
+- Parallel: collect all returned diffs + test reports, apply them in group order via `orc:git-commit` (one commit per slice, in order), run the full suite once after all diffs are applied to confirm green, then `orc-state slice set <id> --status committed --commit <sha>` per slice.
+
+**Phase 5 → 6 advance is a query, not a claim**: `orc-state slice list --status pending,red,escalated` must exit clean. A non-empty result blocks the advance and surfaces the stragglers — a stale ledger fails safe.
 
 Each implementer instance gets:
 - The plan path (`${ORC_STATE_DIR}/<branch>/files/plan.md`) or diagnosis path for bugs.
@@ -316,7 +318,11 @@ The next invocation of `/orc:flow` (or `/orc:resume`) reads the checkpoint and j
 
 ### Phase 6 — QA
 
-Detect web vs code mode (heuristic on changed files vs main). Invoke `orc:verification-before-completion` (tests + lint + type-check) and `orc:caveman-review` (self-review of diff).
+Detect web vs code mode (heuristic on changed files vs main).
+
+**Skip the redundant suite re-run when the evidence is current**: if the ledger shows every slice `committed` AND the digest records `Suite: green @ <sha>` with `<sha>` == current HEAD AND Phase 5 ran sequentially (per-slice suite runs happened on this exact tree), go straight to self-review — the suite verdict is already on record. Re-run `orc:verification-before-completion` (tests + lint + type-check) when any of those fail: sha mismatch, incomplete ledger, or the parallel batch-apply path ran (applied diffs invalidate per-slice evidence). This skip is evidence-keyed, not trust-keyed — one paragraph to revert if recorded evidence ever proves unreliable.
+
+Always invoke `orc:caveman-review` (self-review of diff) — that's a different lens, not re-derivation.
 
 When the diff touches security-sensitive paths (auth, sessions, raw SQL, deserialization, file upload, network egress, dependency surface) — dispatch `orc-security-reviewer` in parallel with the self-review. Merge findings before surfacing.
 
