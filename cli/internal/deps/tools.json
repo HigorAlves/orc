@@ -1,5 +1,5 @@
 {
-  "_comment": "Canonical registry of the CLI tools orc relies on. Consumed by both the SessionStart tool-check hook (orc/hooks/scripts/session-start-tool-check.sh, via jq) and the orc installer CLI (cli/internal/deps, which embeds a CI-verified mirror at cli/internal/deps/tools.json). Keep the two byte-identical — the validate.yml `static` job enforces it. Hint keys are platform ids (macos/debian/fedora/arch/linux) with a `default` fallback, matching platform detection in both consumers. `install` maps a package manager (brew/apt/dnf/pacman/npm) to the args passed after its install verb; omit a manager when there is no safe unattended recipe (the CLI then falls back to printing the hint).",
+  "_comment": "Canonical registry of the CLI tools orc relies on. Consumed by both the SessionStart tool-check hook (orc/hooks/scripts/session-start-tool-check.sh, via jq) and the orc installer CLI (cli/internal/deps, which embeds a CI-verified mirror at cli/internal/deps/tools.json). Keep the two byte-identical — the validate.yml `static` job enforces it. Hint keys are platform ids (macos/debian/fedora/arch/linux) with a `default` fallback, matching platform detection in both consumers. `install` maps a package manager (brew/apt/dnf/pacman/npm/uv/pipx) to the args passed after its install verb; omit a manager when there is no safe unattended recipe (the CLI then falls back to printing the hint). Resolution order is system manager (brew/apt/dnf/pacman), then npm, then uv, then pipx. `postInstall` is an optional argv run once after a successful install to finish setup (e.g. fetching browser binaries) — add it whenever a hint ends in a second command, or the unattended path silently leaves the tool half-installed.",
   "tools": [
     {
       "name": "git",
@@ -57,18 +57,21 @@
       "tier": "recommended",
       "usedBy": "`/orc:qa` (web mode — required for browser-driven QA evidence)",
       "hints": {
+        "macos": "brew install agent-browser && agent-browser install",
         "default": "npm install -g agent-browser && agent-browser install"
       },
       "install": {
+        "brew": ["agent-browser"],
         "npm": ["agent-browser"]
-      }
+      },
+      "postInstall": ["agent-browser", "install"]
     },
     {
       "name": "acli",
       "tier": "recommended",
       "usedBy": "`/orc:jira`, `/orc:plan|start|debug|flow` (Jira ticket linking), `/orc:prd|trd` (`--from-jira` seeding)",
       "hints": {
-        "macos": "brew install --cask atlassian-acli  — then: acli jira auth login --web",
+        "macos": "brew install atlassian/acli/acli  — then: acli jira auth login --web",
         "debian": "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/  — then: acli jira auth login --web",
         "fedora": "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/  — then: acli jira auth login --web",
         "arch": "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/  — then: acli jira auth login --web",
@@ -76,7 +79,7 @@
         "default": "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/"
       },
       "install": {
-        "brew": ["--cask", "atlassian-acli"]
+        "brew": ["atlassian/acli/acli"]
       }
     },
     {
@@ -84,14 +87,14 @@
       "tier": "recommended",
       "usedBy": "`/orc:env`, `/orc:qa`/`/orc:flow` env provisioning (host-mode fallback applies without it)",
       "hints": {
-        "macos": "brew install --cask docker  (or OrbStack: brew install --cask orbstack)",
+        "macos": "brew install --cask docker-desktop  (or OrbStack: brew install --cask orbstack)",
         "debian": "see https://docs.docker.com/engine/install/debian/",
         "fedora": "see https://docs.docker.com/engine/install/fedora/",
         "arch": "sudo pacman -S docker docker-compose",
         "default": "see https://docs.docker.com/get-docker/"
       },
       "install": {
-        "brew": ["--cask", "docker"],
+        "brew": ["--cask", "docker-desktop"],
         "pacman": ["docker", "docker-compose"]
       }
     },
@@ -154,14 +157,14 @@
       "hints": {
         "macos": "brew install ffmpeg",
         "debian": "sudo apt-get install -y ffmpeg",
-        "fedora": "sudo dnf install -y ffmpeg",
+        "fedora": "sudo dnf install -y ffmpeg-free  (or enable RPM Fusion for the full ffmpeg)",
         "arch": "sudo pacman -S ffmpeg",
         "default": "see https://ffmpeg.org/download.html"
       },
       "install": {
         "brew": ["ffmpeg"],
         "apt": ["ffmpeg"],
-        "dnf": ["ffmpeg"],
+        "dnf": ["ffmpeg-free"],
         "pacman": ["ffmpeg"]
       }
     }
