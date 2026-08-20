@@ -185,12 +185,15 @@ The `qa/` directory MUST contain the full packet for the driver you ran (this ru
 
 - ≥ 1 `screenshot-NN-<step>.png` for the golden path (annotated)
 - ≥ 1 `screenshot-NN-<step>.png` for edge cases (or explicit "no edge cases applicable, here's why" in `steps.md`)
+- one `ac-<sliceId>-<idx>-<slug>.png` per acceptance criterion scored `pass` or `fail`
+- `qa-<branch>.webm` — the recorded walk (this change is visual, so it's required — assuming `ffmpeg` is installed; without it, a stated skip line in `steps.md`)
+- `qa-manifest.json`
 - `snapshot-final.txt`
 - `console.log`
 - `network.har`
 - `steps.md`
 
-**Optional bonus** (when relevant): `trace.json` (Chrome DevTools trace), `react-renders.json`, `vitals.json`, OS-recorded `video.mov`. agent-browser doesn't record video natively.
+**Optional bonus** (when relevant): `trace.json` (Chrome DevTools trace), `react-renders.json`, `vitals.json`.
 
 If anything required is missing, the QA is NOT passed. The command surfaces the gap and stops.
 
@@ -205,6 +208,10 @@ If anything required is missing, the QA is NOT passed. The command surfaces the 
 ├── screenshot-05-server-error.png
 ├── screenshot-06-declined.png
 ├── screenshot-07-empty-cart.png
+├── ac-2-1-invalid-card-inline-error.png
+├── ac-2-2-declined-retry-cta.png
+├── qa-feat-checkout-error-states.webm
+├── qa-manifest.json
 ├── snapshot-final.txt
 ├── console.log
 ├── network.har
@@ -223,9 +230,9 @@ Then: `/orc:ship` — and the PR body links to `qa/steps.md` so reviewers can ve
 ## Variants
 
 - **Pure backend change (no UI files in diff)** — code mode. No browser. No `qa/` artifacts. Verification + self-review only.
-- **Animation-heavy change** — add an OS screen recording manually (`screencapture -v qa/video.mov` on macOS). It's optional, but for visual regressions it's the most useful single artifact.
+- **Animation-heavy change** — the `qa-<branch>.webm` recording covers it, provided `ffmpeg` is installed (`brew install ffmpeg`; `orc doctor` flags it). Convert to `qa-<branch>.gif` when the evidence is headed for a ticket — Jira renders a GIF inline and a WebM not at all. No ffmpeg, no headless recording: pick the Claude-in-Chrome driver instead, whose `gif_creator` has no such dependency.
 - **Multiple devices/breakpoints** — repeat the golden path with `agent-browser set viewport <w> <h>` for each. Save screenshots per breakpoint (`screenshot-01a-mobile-loaded.png`, `screenshot-01b-desktop-loaded.png`).
-- **Watch the QA live** — pick the Claude-in-Chrome driver at the gate (or `--driver chrome`). The walk runs inline in your real browser (real sessions, cookies, extensions), narrated step by step; the evidence packet swaps per-step screenshots for a GIF recording and the HAR for a distilled `network-summary.md`.
+- **Watch the QA live** — pick the Claude-in-Chrome driver at the gate (or `--driver chrome`). The walk runs inline in your real browser (real sessions, cookies, extensions), narrated step by step; the evidence packet swaps per-step screenshots for a `gif_creator` recording and the HAR for a distilled `network-summary.md`. Acceptance scoring is identical — each criterion anchors to a numbered step in `steps.md` instead of its own PNG.
 - **Behind a feature flag** — boot the app with the flag enabled, document the flag state at the top of `steps.md`.
 - **App not yet boot-able locally** — ask the user for a deployed preview URL (Vercel preview, staging, etc.). Don't fake QA against the prod app.
 

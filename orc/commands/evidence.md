@@ -65,10 +65,10 @@ Same as `/orc:qa` Phase 4.0 (do **not** duplicate the logic): `orc-docker-env is
 Pick the packet directory: an active branch session → `${ORC_STATE_DIR}/<sanitized-branch>/files/qa/`; no session → `.orc/evidence/<sanitized-KEY>/` (context-only → `.orc/evidence/adhoc-<sanitized-context>/`). Then run the driver:
 
 - Choose it from `--driver`, else the **Phase 4.1 driver gate from `/orc:qa`** (`⛔ Gate — browser driver`).
-- **Driver `chrome`** — follow `/orc:qa` **Driver B** verbatim: load the Claude-in-Chrome tools via one `ToolSearch`, call `tabs_context_mcp` first (if the extension isn't connected, say so and fall back to `agent-browser` — never silently), open a **new** tab, start a `gif_creator` recording named `qa-<sanitized-branch>.gif`, narrate each step, avoid `alert`/`confirm` elements.
+- **Driver `chrome`** — follow `/orc:qa` **Driver B** verbatim: load the Claude-in-Chrome tools via one `ToolSearch`, call `tabs_context_mcp` first (if the extension isn't connected, say so and fall back to `agent-browser` — never silently), open a **new** tab, start a `gif_creator` recording named `qa-<sanitized-branch>.gif`, narrate each step under a numbered `### Step <N>` heading, avoid `alert`/`confirm` elements. Score the Phase 1 expected-behavior list into `qa-manifest.json` exactly as `/orc:qa` requires — the ticket's acceptance criteria are the rubric here, standing in for `slices.json`.
 - **Driver `agent-browser`** — dispatch **`orc-qa-validator`** (Driver A) with the Phase 1 scope as the feature description + `appUrl` + the packet dir.
 
-Walk the scoped golden path plus any reachable edge cases, and write the packet exactly as `/orc:qa`'s Iron-rule table requires (visual proof + `snapshot-final.txt` + `console.log` + network + `steps.md`). Verdict: `pass|fail|partial`.
+Walk the scoped golden path plus any reachable edge cases, and write the packet exactly as `/orc:qa`'s Iron-rule table requires (visual proof + criterion proof + motion proof + `qa-manifest.json` + `snapshot-final.txt` + `console.log` + network + `steps.md`). Verdict: `pass|fail|partial`.
 
 ### Phase 4 — Deliver
 

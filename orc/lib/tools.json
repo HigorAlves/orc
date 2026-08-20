@@ -146,6 +146,24 @@
         "brew": ["getsentry/tools/sentry-cli"],
         "npm": ["@sentry/cli"]
       }
+    },
+    {
+      "name": "ffmpeg",
+      "tier": "recommended",
+      "usedBy": "`/orc:qa`, `/orc:evidence` (motion evidence — agent-browser's `record` wraps ffmpeg; without it a headless QA run captures stills only)",
+      "hints": {
+        "macos": "brew install ffmpeg",
+        "debian": "sudo apt-get install -y ffmpeg",
+        "fedora": "sudo dnf install -y ffmpeg",
+        "arch": "sudo pacman -S ffmpeg",
+        "default": "see https://ffmpeg.org/download.html"
+      },
+      "install": {
+        "brew": ["ffmpeg"],
+        "apt": ["ffmpeg"],
+        "dnf": ["ffmpeg"],
+        "pacman": ["ffmpeg"]
+      }
     }
   ]
 }

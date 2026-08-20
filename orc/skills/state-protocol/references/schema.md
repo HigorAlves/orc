@@ -69,6 +69,7 @@ Digest bullets, fixed order:
 | `jira-breakdown.json` | `/orc:jira-breakdown` on agent return | creation preview |
 | `slices/slice-NN.diff` + `slice-NN-report.md` | `/orc:flow` Phase 5 parallel collection | apply/commit step |
 | `qa-verdict.json` | `/orc:qa` Phase 5 | ship gate |
+| `files/qa/qa-manifest.json` | the browser driver, on QA completion | verdict + evidence-publish |
 
 Each carries `headSha` + `generatedAt`. Re-entry with matching HEAD → reuse without re-dispatch; mismatch → offer reuse vs re-dispatch.
 
@@ -79,10 +80,33 @@ Each carries `headSha` + `generatedAt`. Re-entry with matching HEAD → reuse wi
   "checks": [
     { "id": "tests", "kind": "suite", "result": "pass", "evidence": "58/58" },
     { "id": "slice-3-ac-1", "kind": "acceptance", "sliceId": 3,
-      "criterion": "POST /export returns 202", "result": "pass", "evidence": "qa/screenshot-04.png" },
+      "criterion": "POST /export returns 202", "result": "pass", "evidence": "qa/ac-3-1-export-202.png" },
     { "id": "browser-golden-path", "kind": "browser", "result": "partial", "evidence": "qa/steps.md#step-6" }
 ]}
 ```
+
+The `kind: "acceptance"` rows are **copied from the packet's `qa-manifest.json`**, never re-derived from prose — `id`, `sliceId`, `criterion`, and `result` map across directly, and `evidence` takes the manifest row's first `evidence` entry.
+
+## Browser-QA packet manifest: `.orc/<sessionId>/files/qa/qa-manifest.json`
+
+Written by whichever browser driver ran (`orc:browser-qa`), and the only machine-readable description of the packet. Callers read it for artifact completeness, publish curation, and acceptance scoring — they do not parse `steps.md`.
+
+```json
+{ "schema": 1, "driver": "agent-browser", "generatedAt": "…", "verdict": "pass",
+  "artifacts": [{ "file": "screenshot-01-loaded.png", "role": "golden path step 1" }],
+  "curated": ["qa-feat-export.webm", "ac-3-1-export-202.png"],
+  "acceptance": [
+    { "id": "slice-3-ac-1", "sliceId": 3, "criterion": "POST /export returns 202 + Location header",
+      "result": "pass", "evidence": ["ac-3-1-export-202.png"], "note": "" }
+  ],
+  "summary": "Golden path passes. Edge cases pass. No console errors."
+}
+```
+
+- `driver` enum: `agent-browser` · `chrome`.
+- `result` enum: `pass` · `fail` · `skipped`. A `skipped` row MUST carry a non-empty `note` — un-scoreable criteria stay visible rather than silently dropping out of the verdict.
+- `evidence` paths are relative to the packet dir. Driver A names an `ac-<sliceId>-<idx>-<slug>.png`; Driver B, which cannot write binary from the session, names `qa-<branch>.gif#step-<N>` pointing at the numbered heading in `steps.md`.
+- `curated` is the publish payload — `orc:evidence-publish` takes it verbatim.
 
 ## Settled decisions: `.orc/<sessionId>/files/decisions.json`
 

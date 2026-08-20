@@ -32,12 +32,14 @@ Exact commands: `references/jira-adapter.md`. The tracker-agnostic interface (to
 
 ### 2. Curate the payload
 
-Read `qaDir` and adapt to the driver's packet shape:
+**Prefer the manifest.** When `qaDir/qa-manifest.json` exists, its `curated` array IS the payload — the driver already picked the items that best prove the behavior; take them verbatim and add `steps.md`. Also read its `acceptance` rows: the comment body names each criterion and its result, so the ticket says what was proven rather than "QA passed".
+
+No manifest (a hand-built packet) ⇒ fall back to the driver's packet shape:
 
 - **Driver B (Chrome)** → `qa-<branch>.gif` + `steps.md`.
-- **Driver A (agent-browser)** → golden-path `screenshot-NN-*.png` + any failing-step shots + `steps.md`.
+- **Driver A (agent-browser)** → the `ac-*.png` criterion shots + `qa-<branch>.webm` (or its `.gif`) + any failing-step shots + `steps.md`.
 
-Never attach `console.log` / `network.har` / `network-summary.md` / `snapshot-final.txt` — noise on a ticket; they stay local. When **attach** is unavailable (comment tier only), the payload is comment-only — note it in the preview.
+Attach `.webm`/`.gif`/`.png` alike — the REST upload path in `references/jira-adapter.md` is content-type agnostic. Never attach `console.log` / `network.har` / `network-summary.md` / `snapshot-final.txt` — noise on a ticket; they stay local. When **attach** is unavailable (comment tier only), the payload is comment-only — note it in the preview.
 
 ### 3. Preview gate — always ask
 
