@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# orc-state — deterministic .orc/ session-state CLI (plugin bin/, on PATH
+# while orc is enabled). Wraps lib/state.sh: registry entry and checkpoint
+# frontmatter are written by the same verb, so the mirror cannot drift, and
+# commands stop routing whole state files through the model context.
+# Schema + usage doctrine: the orc:state-protocol skill.
+set -euo pipefail
+
+dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+# shellcheck disable=SC1091
+. "${dir}/../lib/state.sh"
+
+usage() {
+  cat <<'EOF'
+usage: orc-state <verb> [args]   (state root: $ORC_STATE_DIR, else <git root>/.orc)
+
+  init --command <cmd> --total-phases <N> [--branch <raw>] [--description S]
+       [--jira KEY] [--scope workspace --repos a,b] [--plan-file P]
+                                    create/refresh the session + checkpoint skeleton
+  current                           entry JSON for the current git branch (exit 1 if none)
+  get [<branch>] [--field F]        read-for-data: entry JSON or a single field
+  sessions [--status S]             one line per session (route-from-state callers only)
+  phase set <n|done> [--label L]    bump phase in registry + checkpoint mirror
+  status set <status>               in_progress | paused | completed | abandoned
+  link-pr --repo R --url U [--number N] [--stack-id S --stack-position P --stacked-on U2]
+  digest write -                    stdin -> replaces '## Resume digest' (30-line/2KB cap)
+  slice init <slices.json>          install the slice ledger
+  slice set <id> --status S [--commit SHA] [--actual-loc N] [--note S]
+  slice list [--status a,b]         with filter: prints matches, exit 0 ONLY when none match
+  verify [<branch>]                 frontmatter parses; registry/checkpoint mirror agree
+  migrate                           legacy registry vocabulary -> schema 1
+
+Most verbs accept --branch <raw-or-sanitized>; default is the current git branch.
+EOF
+}
+
+sub="${1:-}"
+if [ -z "$sub" ]; then usage >&2; exit 2; fi
+shift
+
+case "$sub" in
+  init)     orc_state_init "$@" ;;
+  current)  orc_state_current ;;
+  get)      orc_state_get "$@" ;;
+  sessions) orc_state_sessions "$@" ;;
+  phase)
+    verb="${1:-}"; shift || true
+    [ "$verb" = "set" ] || { echo "orc-state phase: only 'set' is supported" >&2; exit 2; }
+    orc_state_phase_set "$@"
+    ;;
+  status)
+    verb="${1:-}"; shift || true
+    [ "$verb" = "set" ] || { echo "orc-state status: only 'set' is supported" >&2; exit 2; }
+    orc_state_status_set "$@"
+    ;;
+  link-pr)  orc_state_link_pr "$@" ;;
+  digest)
+    verb="${1:-}"; shift || true
+    [ "$verb" = "write" ] || { echo "orc-state digest: only 'write' is supported" >&2; exit 2; }
+    orc_state_digest_write "$@"
+    ;;
+  slice)
+    verb="${1:-}"; shift || true
+    case "$verb" in
+      init) orc_state_slice_init "$@" ;;
+      set)  orc_state_slice_set "$@" ;;
+      list) orc_state_slice_list "$@" ;;
+      *) echo "orc-state slice: unknown verb '$verb' (init|set|list)" >&2; exit 2 ;;
+    esac
+    ;;
+  verify)   orc_state_verify "$@" ;;
+  migrate)  orc_state_migrate ;;
+  help|--help|-h) usage ;;
+  *) printf 'orc-state: unknown verb %s\n' "$sub" >&2; usage >&2; exit 2 ;;
+esac
