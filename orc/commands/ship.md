@@ -59,15 +59,9 @@ In workspace mode, run all four checks **per target repo** (cd into each `repoPa
 
 Invoke `orc:requesting-code-review`. The skill walks through whether the work meets requirements and is review-ready. If the skill flags gaps, surface them; user decides whether to proceed.
 
-### Phase 3 — Branch completion options
+### Phase 3 — Compose PR (no gate)
 
-Invoke `orc:finishing-a-development-branch`. The skill presents structured options via `AskUserQuestion` (typically: open PR / merge directly / keep working / discard). Execute the chosen option.
-
-(When `/orc:flow` Phase 7 drives this logic, it skips this phase — the flow's premise is already "open a PR", and the other outcomes stay reachable via the flow's Abort options. Standalone `/orc:ship` always runs it.)
-
-If the user picks "open PR":
-
-### Phase 4 — Compose PR
+Compose **before** asking anything — the completion decision and the PR preview then fit in one gate (Phase 4) instead of two.
 
 Invoke `orc:git-commit` if there are uncommitted changes. Then:
 
@@ -82,7 +76,14 @@ Invoke `orc:git-commit` if there are uncommitted changes. Then:
    ```
 
    `KEYWORD` defaults to `Resolves`. Override per-shop with `export ORC_JIRA_PR_KEYWORD=Closes` (or `Fixes`). Both modes (terse and verbose) get this trailer. Skip silently when no `jiraTicket` is set.
-4. Show the user the title + body via `AskUserQuestion`: `Open as-is` / `Edit first` / `Cancel`.
+
+### Phase 4 — Branch completion + PR preview (one gate)
+
+Invoke `orc:finishing-a-development-branch` in its **caller-supplied preview mode**, passing the composed title + body. The skill renders the preview and asks ONE question: open as previewed / open as draft / edit title-body first / another completion path (merge back locally, keep as-is, discard — follow-up per the skill). The preview shown is the payload posted.
+
+(When `/orc:flow` Phase 7 drives this logic, it skips the completion options — the flow's premise is already "open a PR" — and gates only the composed preview. Standalone `/orc:ship` always offers the full set.)
+
+If the outcome is "open PR" (as-is or draft):
 
 ### Phase 4.5 — Size gate
 
