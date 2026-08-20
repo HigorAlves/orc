@@ -47,7 +47,7 @@ orc install
 Registers the `orc` marketplace and enables the `orc@orc` plugin. When the `claude` CLI is on your `PATH`, orc drives it; otherwise it writes the same entries into `~/.claude/settings.json` directly.
 
 > [!TIP]
-> Pin a specific version: `orc install --ref orc--v0.21.0` (any existing release tag, or a commit SHA). Using `--ref` writes `settings.json` directly.
+> Pin a specific version: `orc install --ref orc--v0.22.0` (any existing release tag, or a commit SHA). Using `--ref` writes `settings.json` directly.
 
 ## 4. Load the plugin in Claude Code
 
@@ -103,7 +103,7 @@ To pin a specific tag or commit, use the longhand source form in `~/.claude/sett
       "source": {
         "source": "url",
         "url": "https://github.com/HigorAlves/orc.git",
-        "ref": "orc--v0.21.0"
+        "ref": "orc--v0.22.0"
       }
     }
   },
