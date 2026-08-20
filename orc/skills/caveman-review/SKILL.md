@@ -28,6 +28,8 @@ Write code review comments terse and actionable. One line per finding. Location,
 - Exact line numbers
 - Exact symbol/function/variable names in backticks
 - Concrete fix, not "consider refactoring this"
+- A ` ```suggestion ` block when the fix is an exact ≤6-line replacement (posting rules per `orc:inline-review`) — one click beats one paragraph
+- `<details>` for rationale that must exist but shouldn't dominate the thread
 - The *why* if the fix isn't obvious from the problem statement
 
 ## Examples
