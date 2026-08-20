@@ -67,6 +67,29 @@ When a task's natural decomposition would exceed **1.5× the budget** (~450 LOC)
 
 The estimate is a **budget contract**, not a precision prediction — the implementer escalates when actual exceeds `est_loc * 1.5` rather than ballooning silently.
 
+## Per-slice concurrency + acceptance annotations (mandatory)
+
+Every slice header also carries — same vocabulary `orc-jira-architect` emits for Jira tasks, so one contract covers both surfaces:
+
+```markdown
+### Slice 3 — POST /export endpoint
+- repo: api                # workspace mode only
+- est_loc: 140
+- touchpoints: src/routes/export.ts, test/export.test.ts
+- parallel_group: 2
+- depends_on: [1]
+- acceptance:
+  - POST /export returns 202 + a Location header
+  - row-stream test covers a 10k-row report
+```
+
+- **`touchpoints`** — the files this slice owns. Evidence-based, never guessed: use the graph (`graphify affected`) or Grep to confirm what the slice actually touches. These become the implementer's file-ownership boundary.
+- **`parallel_group`** — two slices share a group **iff** no `depends_on` edge connects them AND their touchpoints are pairwise disjoint. Groups execute in ascending order; slices in the same group may run as parallel implementer dispatches. A slice with any doubt gets its own group — sequential is the safe default.
+- **`depends_on`** — slice IDs whose output this slice consumes. Drives group ordering.
+- **`acceptance`** — 2–5 **testable** criteria: each names a command to run or an observable behavior, never "works correctly". They are the slice's contract for the implementer and the scoring rubric for QA.
+
+On plan approval, the dispatching command copies these annotations into the `slices.json` ledger (`orc-state slice init`; shape per `orc:state-protocol`) — consumers read the ledger, not the prose.
+
 ## Plan Document Header
 
 **Every plan MUST start with this header:**

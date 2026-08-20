@@ -121,9 +121,11 @@ Defer to `orc:pr-size-budget` for the budget resolution order and exclusion list
 
 Invoke `orc:grill-me`. The skill drives an interview that exposes hidden assumptions. Update `plan.md` with answers. Bump `checkpoint.md`.
 
-### Phase 4 — Confirm with user
+### Phase 4 — Confirm with user + install the slice ledger
 
 Print the Gate headline (`**⛔ Gate — plan review**`), then `AskUserQuestion` with two options: `Looks good — proceed` / `Iterate — revise plan`. If iterate, return to Phase 2.
+
+On approval, **generate the slice ledger**: parse the approved plan's slice headers (`est_loc`, `repo`, `ships_as_stack`, `touchpoints`, `parallel_group`, `depends_on`, `acceptance` — per `orc:writing-plans`) into a `slices.json` (shape per `orc:state-protocol` `references/schema.md`, every slice `status: "pending"`, `planSha256` = sha of plan.md) and install it: `orc-state slice init <file>`. Consumers (`/orc:flow` Phase 5, `/orc:fan-out`, `orc-implementer`) read the ledger, not the prose; "all slices done" becomes `orc-state slice list --status pending,red,escalated` exiting clean. On plan re-approval after iteration, regenerate — statuses of slices whose `title` still matches are preserved.
 
 ### Phase 5 (optional, with `--issues`) — Decompose
 
