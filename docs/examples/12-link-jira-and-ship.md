@@ -36,22 +36,25 @@ flowchart TD
 What happens:
 
 1. `orc:using-git-worktrees` is invoked. `/orc:start` fetches the ticket summary via `acli jira workitem view JRA-123 --fields "summary" --json`, slugifies it, and proposes the branch name `feat/JRA-123-webhook-retries`. You can accept or override.
-2. Worktree created at `.orc/.worktrees/orc/feat-JRA-123-webhook-retries/`. New branch `feat/JRA-123-webhook-retries` checked out.
+2. Worktree created at `.orc/.worktrees/feat-JRA-123-webhook-retries/`. New branch `feat/JRA-123-webhook-retries` checked out.
 3. `/orc:start` Phase 2 delegates to `/orc:plan`. Because `--jira JRA-123` was forwarded, `/orc:plan`'s Phase 1 prompt is **suppressed** — the link is set silently.
 4. `.orc/feat-JRA-123-webhook-retries/files/checkpoint.md` is written with frontmatter:
 
    ```yaml
    ---
-   phase: 1
+   schema: 1
    command: plan
-   status: in_progress
-   started_at: 2026-05-02T10:14:00Z
    branch: feat-JRA-123-webhook-retries
+   gitBranch: feat/JRA-123-webhook-retries
+   phase: 1
+   totalPhases: 4
+   status: in_progress
    jiraTicket: JRA-123
+   updatedAt: 2026-05-02T10:14:00Z
    ---
    ```
 
-5. `.orc/orc.json` gets a registry entry with `"jiraTicket": "JRA-123"`.
+5. `.orc/orc.json` gets a registry entry with `"jiraTicket": "JRA-123"` (`orc-state init --command plan --jira JRA-123` — the one writer, per `orc:state-protocol`).
 
 ### Phase 2 — Plan + first failing test
 
@@ -80,7 +83,7 @@ Output now ends each session line with the bound ticket:
 /orc:ship
 ```
 
-`/orc:ship` Phase 4 (PR composition) reads the active session's `jiraTicket` from `.orc/orc.json`. If present, it appends to the PR body:
+`/orc:ship` Phase 3 (PR composition — composed *before* the single completion + preview gate) reads the active session's `jiraTicket` via `orc-state get --field jiraTicket`. If present, it appends to the PR body:
 
 ```
 ## Why
@@ -114,7 +117,6 @@ Removes `.orc/feat-JRA-123-webhook-retries/`, the worktree, and (if merged) the 
 ├── checkpoint.md              # frontmatter has jiraTicket: JRA-123
 ├── plan.md
 ├── progress.md
-├── orc.json                   # session metadata, includes jiraTicket
 └── (qa/ if web change)
 
 .orc/orc.json
@@ -129,7 +131,7 @@ Removes `.orc/feat-JRA-123-webhook-retries/`, the worktree, and (if merged) the 
 
 ## Variants
 
-- **You learned the Jira key after starting** — skip `--jira` on `/orc:start`. orc Phase 1 prompt asks once, you skip it. Later, run `/orc:jira bind JRA-123` to attach the key. From that point on, `/orc:status` and `/orc:ship` see it.
+- **You learned the Jira key after starting** — skip `--jira` on `/orc:start`. orc Phase 1 prompt asks once, you skip it. Later, run `/orc:jira bind JRA-123` to attach the key (persisted via `orc-state jira bind` — registry + checkpoint mutated together). From that point on, `/orc:status` and `/orc:ship` see it.
 - **You don't have a ticket yet — create one first** — `/orc:jira create --summary "implement webhook retries" --project PLAT --type Story` returns a key (e.g. `PLAT-456`), prompts to bind it, then continue with `/orc:start --jira PLAT-456`.
 - **Sub-task during implementation** — mid-flow you realize you need a child ticket. `/orc:jira subtask --summary "wire feature flag" --type Sub-task` defaults `--parent` to the bound `jiraTicket` (after confirming via `AskUserQuestion`).
 - **Linking a related ticket** — `/orc:jira link --in PLAT-789 --type "Relates to"` defaults `--out` to the bound key. Same confirm-before-send pattern.

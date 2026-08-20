@@ -135,6 +135,8 @@ findings include severity ∈ {bug, security, api-surface}
 
 The agent's `summary` ("looks reasonable") is informational only; the severity rule overrides any verdict it implies. If the agent had written *"Approve, looks good"* the orchestrator would surface a contradiction warning at the preview gate (see below).
 
+Before the gate, the merged findings + computed event persist to `.orc/<branch>/files/review-findings.json`, stamped with the PR's head sha — an interrupted review re-enters at the preview from this file; matching head sha means no agent re-dispatch.
+
 ### Phase 6 — Preview gate (mandatory)
 
 `AskUserQuestion` — but first, the constructed payload is shown:
@@ -186,7 +188,7 @@ The teammate opens PR #142 and sees:
 
 ## Artifacts
 
-`/orc:code-review` is **stateless from orc's perspective** — no `.orc/` writes. The artifact lives on GitHub (the submitted review). Discussion happens in the PR.
+The artifact lives on GitHub (the submitted review); discussion happens in the PR. One `.orc/` write: `review-findings.json` (merged findings + computed event, head-sha-stamped) persists before the preview gate, so an interrupted review resumes at the preview instead of re-running the agents.
 
 ## Done when
 
@@ -211,7 +213,7 @@ The teammate opens PR #142 and sees:
   
   This is the failure mode the new severity rule was specifically designed to catch.
 - **PR is too big to review in one shot** — comment that the PR should be split, then APPROVE the trivial portion or REQUEST_CHANGES on the structural pieces. Don't pretend to review 60 files in one read.
-- **You disagree with a finding** — pick `Edit / drop specific comments` at the preview gate; per-comment loop lets you keep / drop / rewrite each before posting.
+- **You disagree with a finding** — pick `Edit / drop specific comments` at the preview gate. The comments are numbered and edited in ONE batched `AskUserQuestion` call (`multiSelect` questions covering chunks of 4; default = keep all; rewrites ride each question's free-text Other as `<n>: <new text>`), then a single loop back to the preview — never a one-question-per-comment loop.
 - **You want to do a "vibes" review without the agent** — fine, but you lose the systematic guideline + bug + security + tests + requirements pass. Use the agent for the systematic pass and add your "vibes" reading on top.
 - **`/orc:code-review --audit`** — repo-wide security pass instead of a PR review: `orc-security-reviewer` in audit scope over the whole working tree, plus a secret scan (gitleaks when installed, high-signal Grep fallback). No PR ref needed; nothing is posted to GitHub — output is a markdown summary grouped by severity.
 

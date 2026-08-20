@@ -38,7 +38,7 @@ You passed `--severity sev-2`. If you'd omitted it, `AskUserQuestion` would prop
 
 ### Phase 3 — Init workspace
 
-Creates `.orc/checkout-degradation-2026-05-01/files/` and writes `checkpoint.md`. Decides where the doc lives — for engineering-only postmortems, `docs/postmortems/2026-05-01-checkout-degradation.md`.
+Registers state via `orc-state init --command postmortem` — `.orc/checkout-degradation-2026-05-01/files/` plus checkpoint and registry entry in one verb. Decides where the doc lives — for engineering-only postmortems, `docs/postmortems/2026-05-01-checkout-degradation.md`.
 
 ### Phase 4 — Timeline FIRST
 

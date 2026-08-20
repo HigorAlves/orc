@@ -47,13 +47,13 @@ flowchart TD
 > Recommended: GitHub Issues.
 ```
 
-You answer with one word: **GitHub**. Jira wasn't even offered — no usable `acli` means no Jira recommendation.
+You answer with one word: **GitHub**. Jira wasn't recommended — no usable `acli` means no Jira recommendation.
 
 Section B — labels: no existing vocabulary was found, so exactly one question: *keep the default triage labels?* (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`, plus `bug` / `enhancement`). **Yes.**
 
 Section C — domain docs: never asked. No monorepo signals → single-context (`CONTEXT.md` + `docs/adr/` at the root) is written automatically, with a one-line note saying so. That's the auto-skip: setup only asks single- vs multi-context when it actually finds workspace signals.
 
-**Phase 3 — Preview.** `📋 Preview — tracker layer`, followed by full drafts of `docs/agents/issue-tracker.md` (GitHub seed: `gh` conventions, "PRs as a request surface: no", wayfinding operations), `triage-labels.md` (role → label-string table), `domain.md`, and the `## Agent skills` block. Confirm: **Write them**.
+**Phase 3 — Preview.** `📋 Preview — tracker layer`, followed by full drafts of `docs/agents/issue-tracker.md` (GitHub seed from `orc:tracker-config`'s templates: `gh` conventions, "PRs as a request surface: no", wayfinding operations), `triage-labels.md` (role → label-string table), `domain.md`, and the `## Agent skills` block. Confirm: **Write them**.
 
 **Phase 4 — Write.** The three files land in `docs/agents/`; `CLAUDE.md` exists, so the `## Agent skills` block goes there (with neither `CLAUDE.md` nor `AGENTS.md` present, setup asks which to create — never picks silently). No labels created, no issues filed, no `.orc/` state — the written files ARE the durable state.
 
@@ -70,7 +70,7 @@ Section C — domain docs: never asked. No monorepo signals → single-context (
 /orc:triage "show me anything that needs my attention"
 ```
 
-Phase 0 reads `issue-tracker.md` + `triage-labels.md` (tracker: GitHub via `gh`) and `domain.md`'s consumer rules for every codebase look below. The attention queue:
+Phase 0 runs the shared `orc:tracker-config` read protocol on `issue-tracker.md` + `triage-labels.md` (tracker: GitHub via `gh`; its one canonical missing-config gate stays silent — Act 1 wrote the layer) and reads `domain.md`'s consumer rules for every codebase look below. The attention queue:
 
 ```
 Unlabeled (3):

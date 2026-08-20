@@ -42,13 +42,15 @@ Example plan tasks:
 
 `AskUserQuestion`: looks good — proceed / iterate first.
 
+On approval, the slice headers (`est_loc`, `touchpoints`, `parallel_group`, `depends_on`, `acceptance`) are parsed into a `slices.json` ledger via `orc-state slice init` — downstream phases read the ledger, not the prose.
+
 ### Phase 2 — Start
 
 ```
 /orc:start
 ```
 
-Composes `using-git-worktrees` + `writing-plans` (re-loads from `.orc/`) + `tdd`. Creates an isolated worktree (pinned under `.orc/.worktrees/`, e.g. `.orc/.worktrees/orc/feat-csv-export`), creates the feature branch (`feat/csv-export`), then dispatches `orc-test-author` to design the first failing test from slice 1 (a trivial single-assertion test gets written inline instead).
+Composes `using-git-worktrees` + `writing-plans` (re-loads from `.orc/`) + `tdd`. Creates an isolated worktree (pinned under `.orc/.worktrees/`, e.g. `.orc/.worktrees/feat-csv-export`), creates the feature branch (`feat/csv-export`), then dispatches `orc-test-author` to design the first failing test from slice 1 (a trivial single-assertion test gets written inline instead).
 
 From here on, any commit to `main` triggers the PreToolUse hook's confirm prompt — the feature branch is the only frictionless path.
 
@@ -67,7 +69,7 @@ For a feature with UI (the export button), web mode is required. `orc-qa-validat
 - Golden path: open a report, click Export, confirm CSV downloads with the right rows.
 - Edge cases: empty report (no rows), large report (1000+ rows — does it stream?), permission-denied report.
 
-Captures `.orc/feat-csv-export/files/qa/{screenshots, console.log, network.har, steps.md}`.
+Captures `.orc/feat-csv-export/files/qa/{screenshots, snapshot-final.txt, console.log, network.har, steps.md}`.
 
 ### Phase 5 — Ship
 
@@ -75,7 +77,7 @@ Captures `.orc/feat-csv-export/files/qa/{screenshots, console.log, network.har, 
 /orc:ship
 ```
 
-Composes `verification-before-completion` (final tests/lint/type-check) + `requesting-code-review` (gap check vs the plan) + `finishing-a-development-branch` (offers structured options) + `git-commit` (if uncommitted) + `gh pr create`.
+Composes `verification-before-completion` (final tests/lint/type-check) + `requesting-code-review` (gap check vs the plan) + `git-commit` (if uncommitted), composes the PR up front (terse `orc:caveman-pr` by default; `--verbose` for long-form), then `finishing-a-development-branch` renders preview + completion options as ONE merged gate. Ship's soft LOC size gate (Phase 4.5 — stack from slices / stack / override with reason / abort) runs before `gh pr create`.
 
 PR body auto-includes:
 - Summary from the plan
@@ -98,12 +100,14 @@ Removes the worktree (clean), the local branch (merged into main), and the `.orc
 .orc/feat-csv-export/files/
 ├── checkpoint.md
 ├── plan.md
+├── slices.json
 ├── progress.md
 └── qa/
     ├── screenshot-01-reports-loaded.png
     ├── screenshot-02-export-button-clicked.png
     ├── screenshot-03-csv-downloaded.png
     ├── screenshot-04-empty-report-edge.png
+    ├── snapshot-final.txt
     ├── steps.md
     ├── console.log
     └── network.har
@@ -120,7 +124,8 @@ Removes the worktree (clean), the local branch (merged into main), and the `.orc
 
 - **Bigger feature (multi-week)** — start with `/orc:rfc` instead of `/orc:plan`. The RFC surfaces alternatives BEFORE you commit to a design. Once approved, run `/orc:plan --issues` to decompose into tickets, then `/orc:start` per ticket.
 - **Backend-only feature (no UI)** — same flow, `/orc:qa` runs in code mode (no browser). Web QA hard rule doesn't apply.
-- **Multi-developer feature** — use `/orc:fan-out` to dispatch the parallel-safe slices to different sub-sessions or teammates. Each slice has its own checkpoint.
+- **Multi-developer feature** — use `/orc:fan-out` to dispatch the parallel-safe slices (grouped by the ledger's `parallel_group`) to different sub-sessions or teammates. Each task gets its own subdir under `files/fan-out/`.
+- **Fewer confirms** — every command here takes `--auto[=guided|full]`: guided auto-advances mechanical confirms with a printed one-liner; full pre-approves from settled decisions. Hard-outward gates still ask.
 
 ## Iron rules in play
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Count/consistency drift check (extends the old inline count-drift step):
-#   - README prose counts (skills/commands/agents/hooks);
+#   - README + docs/commands.md prose counts (skills/commands/agents/hooks);
 #   - marketplace.json description counts (all four, not just skills) plus
 #     plugins[].name == plugin.json name and source == "./orc";
 #   - docs/architecture.md tree counts + the prose command count.
@@ -22,13 +22,17 @@ need() { # need <literal-string> <file>
   grep -qF "$1" "$2" || { echo "verify-counts: expected \"$1\" in $2"; status=1; }
 }
 
-# README.md
+# README.md — intro paragraph carries all four counts.
 need "${skills} curated skills" README.md
-need "Total: ${skills} skills" README.md
 need "${commands} composite slash commands" README.md
-need "# ${commands} slash commands" README.md
 need "${agents} specialist subagents" README.md
 need "${hooks} hook scripts" README.md
+
+# docs/commands.md — the full catalog page (section headings + skills prose).
+need "Commands (${commands})" docs/commands.md
+need "agents (${agents})" docs/commands.md
+need "Skills (${skills})" docs/commands.md
+need "Total: ${skills} skills" docs/commands.md
 
 # marketplace.json — all four counts embedded in the plugin description.
 need "${skills} curated skills" .claude-plugin/marketplace.json

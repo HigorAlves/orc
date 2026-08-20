@@ -7,15 +7,18 @@
 ## Components
 
 ```
-orc/
+orc/                               # the plugin
 ├── .claude-plugin/plugin.json     # manifest — what Claude Code reads to discover the plugin
-├── .orc/                          # gitignored, ephemeral workspace state (per-session)
 ├── skills/                        # 80 skills, namespaced /orc:<name>
 ├── commands/                      # 30 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
 ├── agents/                        # 14 specialist subagents (orc-<role>)
-├── hooks/                         # SessionStart + PreToolUse(Bash) + WorktreeCreate/Remove hooks
-├── lib/                           # shared prompt fragments + templates (cross-skill)
-└── docs/                          # this directory
+├── hooks/                         # SessionStart + PreToolUse(Bash) + PostToolUse + WorktreeCreate/Remove
+├── bin/                           # deterministic CLIs, on PATH while enabled (orc-state, orc-statusline, …)
+├── lib/                           # shared bash libraries behind bin/ + hooks (state.sh, statusline.sh, workspace-detect.sh, …)
+└── settings.json                  # plugin-shipped defaults (statusLine; user-level settings always win)
+cli/                               # the orc installer CLI (Go / Bubble Tea)
+docs/                              # this directory (incl. examples/ — scenario walk-throughs)
+.orc/                              # gitignored, ephemeral workspace state (per-session, per-repo)
 ```
 
 ## Why the four-component split
@@ -31,7 +34,7 @@ orc/
 
 `hooks/hooks.json` wires two scripts:
 
-1. **`session-start-using-orc.sh`** (matcher `startup|resume|clear|compact`) — reads `skills/using-orc/SKILL.md` and emits it as additional session context. The model sees orc's iron rules, skill routing, and the callout-palette pointer (`orc:callouts` — GitHub-flavored `[!IMPORTANT]`/`[!WARNING]`/`[!CAUTION]`/`[!NOTE]`/`[!TIP]` blocks with emoji headers) before its first response.
+1. **`session-start-using-orc.sh`** (matcher `startup|resume|clear|compact`) — reads `skills/using-orc/SKILL.md` and emits it as additional session context. The model sees orc's iron rules, skill routing, and the callout-palette pointer (`orc:callouts` — GitHub-flavored `[!IMPORTANT]`/`[!WARNING]`/`[!CAUTION]`/`[!NOTE]`/`[!TIP]` blocks with emoji headers) before its first response. The payload is **source-aware**: `startup`/`clear` inject the full skill, `resume` a 3-line reminder (the pre-summary context already carries the rules), `compact` the iron-rules digest only. It also persists workspace detection + the resolved `interaction_policy` into `CLAUDE_ENV_FILE`, and sets the session title from the live orc session via the shared `orc-state line` selector.
 
 2. **`session-start-tool-check.sh`** (matcher `startup` only — binaries don't vanish mid-session) — pre-flight check for orc's CLI dependencies (`git`, `jq` required; `gh`, `agent-browser`, `acli`, `docker`, `graphify`, `osv-scanner`, `gitleaks`, `sentry-cli` recommended). Silent when everything's present; otherwise delivers a `[!WARNING]`/`[!CAUTION]` callout directly to the user via `systemMessage` and a short do-not-reprint note to the model. Suppress with `ORC_SKIP_TOOL_CHECK=1`. Adding new tooling checks later is additive — drop another script alongside.
 
@@ -42,6 +45,10 @@ orc/
 - **`pre-commit-branch-check.sh`** (`git commit`/`git push`) — on protected branches (`main`/`master`/`develop`) it emits `permissionDecision: "ask"`, downgrading the commit/push to a one-keystroke confirm prompt with the reason attached. No env-var escape; the confirm *is* the override.
 - **`pre-commit-no-ai-attribution.sh`** (`git commit`/`gh pr`/`gh issue`) — denies (JSON `permissionDecision: "deny"`) any commit/PR/issue body carrying AI-attribution markers. Override only with `ORC_ALLOW_AI_ATTRIBUTION=1`.
 - **`pre-destructive-git-check.sh`** (`git reset`/`clean`/`branch`/`push`) — downgrades `reset --hard`, `clean -f*`, `branch -D`, and `push --force`/`-f` to the same confirm prompt on any branch; `--force-with-lease` passes untouched (stack-pr republishing depends on it). Override: `ORC_ALLOW_DESTRUCTIVE_GIT=1`.
+
+## Gates + interaction policy (autopilot)
+
+Multi-phase commands pause at gates, and gates are classified: **hard-outward** (tracker writes, PR review posting, evidence publish — always ask, at every autopilot level), **soft-inward** (plan approval, previews, mechanical confirms), and escalation-only stops. The `interaction_policy` userConfig — or `--auto[=guided|full]` per invocation — sets how soft-inward gates behave: `manual` asks at every gate, `guided` auto-advances mechanical confirms, `auto` runs phases autonomously against a sprint contract agreed at kickoff. Settled answers persist in `.orc/<branch>/files/decisions.json` (`orc-state decision set`, write-once per key with provenance `flag|asked|policy|inferred`), so a question answered once is never re-asked in the same session.
 
 ## Statusline
 
@@ -125,5 +132,7 @@ orc borrows compozy's session-state idea, hook layout, and YAML-frontmatter conv
 ## See also
 
 - `docs/contributing.md` — how to add a new skill, command, or agent
-- `README.md` — user-facing catalog
+- `docs/commands.md` — the full command / agent / skill catalog
+- `docs/examples/` — scenario walk-throughs
+- `README.md` — the landing page
 - `skills/using-orc/SKILL.md` — iron rules (also injected at SessionStart)

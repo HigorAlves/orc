@@ -31,7 +31,7 @@ flowchart TD
 /orc:ci 214
 ```
 
-The explicit PR number wins the resolution order (no `--run` pin given). `gh pr checks 214` shows two failed checks; the newest failed run for the head SHA is `16482093011` — pinned. State is initialized: `.orc/feat-order-export/files/` created, an entry appended to `.orc/orc.json` (`command: "ci"`, `status: in_progress`), and `checkpoint.md` records the resolved ref + run ID.
+The explicit PR number wins the resolution order (no `--run` pin given). `gh pr checks 214` shows two failed checks; the newest failed run for the head SHA is `16482093011` — pinned. State is registered via the `orc-state init --command ci` one-liner: `.orc/feat-order-export/files/` created, an entry in `.orc/orc.json` (`command: "ci"`, `status: in_progress`), and `checkpoint.md` records the resolved ref + run ID.
 
 Had everything been green, `/orc:ci` would say so and stop — green is a valid answer, and the command never manufactures work.
 
@@ -64,7 +64,7 @@ One root cause, not two: the unit failure is the branch's own doing (a test asse
 
 ### Phase 3 — Route on the verdict: `fixable`
 
-`/orc:ci` previews the fix list, then gates:
+Routing follows `orc:ci-routing`. The diagnosis was saved via `Write` — the single-render rule — so this preview is its ONE capped rendering:
 
 > **📋 Preview — CI fix list**
 >
@@ -77,11 +77,11 @@ One root cause, not two: the unit failure is the branch's own doing (a test asse
 
 > **⛔ Gate — apply CI fixes**
 >
-> orc-code-fixer applies the list above and re-runs the local suite.
+> ONE `AskUserQuestion` call, two questions: apply the fix list? — and, collected up front, how to land a green fixer report.
 
-You pick **"Apply the fix list"**. **`orc-code-fixer`** receives the fix list + the diagnosis path — never "CI is red, go fix it" — applies the one-line edit, runs `npm test` locally (212 passed), and reports the diff + test summary.
+You answer **"Apply the fix list"** and **"Commit + push + re-watch"**. **`orc-code-fixer`** receives the fix list + the diagnosis path — never "CI is red, go fix it" — applies the one-line edit, runs `npm test` locally (212 passed), and reports the diff + test summary.
 
-The landing step is offered next; you pick **"Commit + push + re-watch"**. `orc:git-commit` composes `test(orders): assert renamed order-status validation message`, pushes, and `/orc:ci` loops back to Phase 1 with `--watch` semantics: `gh run watch 16482210447` until the new run concludes.
+The pre-collected landing answer executes without a second stop: `orc:git-commit` composes `test(orders): assert renamed order-status validation message`, pushes, and `/orc:ci` loops back to Phase 1 with `--watch` semantics: `gh run watch 16482210447` until the new run concludes.
 
 ### Phase 4 — The flake strikes again
 
@@ -123,6 +123,7 @@ Plus the fix commit on the branch (`test(orders): assert renamed order-status va
 - **Verdict `needs-debug`** — the test failure is a genuine regression beyond the diff. `/orc:ci` hands off: `/orc:debug` starts pre-seeded with `ci-diagnosis.md` as the bug description instead of starting from zero.
 - **Red fixer report** — if the fixer's local suite stays red, the loop returns to Phase 2 with the new evidence; the investigator sees the failed attempt.
 - **Workspace mode, 2+ linked PRs** — no silent broadcast: `/orc:ci` asks which PR(s) to investigate, then dispatches one investigator per targeted PR in parallel.
+- **`--auto=full`** — the `fixable` route applies the fix list and lands it (commit + push + re-watch) after printing the capped preview; a red fixer report or a `flake`/`infra`/`needs-debug` verdict still stops.
 
 ## Iron rules in play
 
