@@ -75,6 +75,9 @@ jobs:
       - name: orc-state smoke tests (state-protocol schema)
         run: bash scripts/ci/verify-state-protocol.sh
 
+      - name: statusline render fixtures
+        run: bash scripts/ci/verify-statusline.sh
+
       - name: Router map covers every command
         run: |
           missing=""
