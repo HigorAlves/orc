@@ -1,6 +1,6 @@
 ---
 name: skill-writing
-description: Create new agent skills following orc's house conventions — kebab-case naming, description-as-trigger doctrine, progressive-disclosure layout with references/, provenance frontmatter, and the CI gates a skill must pass. Use when creating, writing, or building a skill for THIS plugin. For skill evals, trigger-rate measurement, and description tuning, use the official skill-creator plugin.
+description: Create new agent skills following orc's house conventions and CI gates. Use when creating, writing, or building a skill for THIS plugin. For skill evals, trigger-rate measurement, and description tuning, use the official skill-creator plugin.
 ---
 
 # Write a Skill

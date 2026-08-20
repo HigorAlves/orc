@@ -1,6 +1,6 @@
 ---
 name: prototype
-description: "Throwaway code that answers a design question before real implementation begins — slots between /orc:plan and /orc:start when a plan hinges on an unvalidated state model or an unsettled look. Use when the user wants to feel out whether logic, a state machine, or a data shape holds up (single-file clickable HTML demo), or wants to compare radically different UI variants on one route before committing to a design."
+description: "Throwaway code that answers a design question before real implementation — slots between /orc:plan and /orc:start. Use when feeling out whether logic, a state machine, or a data shape holds up, or when comparing radically different UI variants on one route before committing to a design."
 license: MIT
 metadata:
   author: Matt Pocock

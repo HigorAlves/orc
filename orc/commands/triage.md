@@ -1,5 +1,5 @@
 ---
-description: "Move tracker issues and external PRs through the triage state machine — categorise, verify the claim read-only, grill into shape when needed, and write agent-ready briefs; rejected enhancements land in the docs/agents/out-of-scope.md knowledge base. Use when triaging incoming issues, an external PR, or the backlog. Reads the tracker + label config written by /orc:setup."
+description: "Move tracker issues and external PRs through the triage state machine into agent-ready briefs. Use when triaging incoming issues, an external PR, or the backlog. Reads the tracker + label config written by /orc:setup."
 argument-hint: "[<issue/PR number, Jira key, or natural-language request>]"
 license: MIT
 metadata:

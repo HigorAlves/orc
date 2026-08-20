@@ -1,6 +1,6 @@
 ---
 name: evidence-publish
-description: "Deliver a QA/evidence packet to a tracker or keep it local — tracker-enablement detection, curated-payload selection, an always-ask preview gate, a Jira adapter (comment via acli + attachments via REST), local-only fallback, and provenance recorded in steps.md. Protocol for /orc:qa Phase 6, /orc:evidence, and any evidence-delivery step."
+description: "Deliver a QA/evidence packet to a tracker or keep it local, behind an always-ask preview gate. Protocol for /orc:qa Phase 6, /orc:evidence, and any evidence-delivery step."
 ---
 
 # Evidence Publishing

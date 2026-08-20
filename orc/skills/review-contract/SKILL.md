@@ -1,6 +1,6 @@
 ---
 name: review-contract
-description: The canonical review findings contract — JSON finding schema, severity enum, mechanical severity→event mapping, and the confidence ≥0.8 rule shared by orc-pr-reviewer, orc-security-reviewer, and the inline-review posting layer. Use when producing, merging, or posting structured review findings, or when building a new reviewer agent.
+description: The canonical review findings contract — JSON schema, severity enum, mechanical severity→event mapping, confidence ≥0.8 rule. Use when producing, merging, or posting structured review findings, or when building a new reviewer agent.
 ---
 
 # Review contract

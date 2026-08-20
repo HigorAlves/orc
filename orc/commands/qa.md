@@ -1,5 +1,5 @@
 ---
-description: Pre-PR quality gate — browser-driven QA for web changes (screenshots, a11y snapshot, console, HAR, narrative) against a Docker-provisioned environment. Driver choice per run — agent-browser CLI (headless, full evidence) or Claude-in-Chrome (watch live in your browser). No QA-passed claim without artifacts. Workspace-aware. For a quick behavioral check without the evidence packet, prefer the bundled /verify or /run.
+description: Pre-PR quality gate — browser-driven QA for web changes with a mandatory evidence packet against a provisioned environment. No QA-passed claim without artifacts. Workspace-aware. For a quick behavioral check without the evidence packet, prefer the bundled /verify or /run.
 argument-hint: "[--web <url>] [--no-web] [--no-env] [--driver agent-browser|chrome] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 allowed-tools:
   - Read

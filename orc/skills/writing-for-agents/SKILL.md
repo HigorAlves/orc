@@ -1,6 +1,6 @@
 ---
 name: writing-for-agents
-description: orc's doctrine layer for writing any document an agent consumes — skills, AGENTS.md/CLAUDE.md, agent-facing reference docs — covering context pointers, the two loads, information hierarchy, completion criteria, leading words, and pruning; orc:skill-writing layers house conventions on top of this. Use when writing or editing a skill or SKILL.md body, modifying AGENTS.md or CLAUDE.md, tuning a skill description that fires unreliably, or deciding what to inline versus push behind a pointer.
+description: orc's doctrine layer for writing any document an agent consumes — skills, AGENTS.md/CLAUDE.md, reference docs. Use when writing or editing a SKILL.md or AGENTS.md/CLAUDE.md, tuning a skill description that fires unreliably, or deciding what to inline versus push behind a pointer.
 license: MIT
 metadata:
   author: Matt Pocock

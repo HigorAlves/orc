@@ -1,6 +1,6 @@
 ---
 name: resolving-merge-conflicts
-description: "Resolve an in-progress git merge or rebase conflict by tracing each side's intent back to primary sources — commit messages, PRs, original tickets — before touching a hunk; always resolve, never --abort. Use when a merge or rebase stops on conflicts during /orc:ship, /orc:address, or an /orc:stack-pr restack, or when conflict markers appear anywhere in the working tree."
+description: "Resolve an in-progress git merge or rebase conflict by tracing each side's intent back to primary sources before touching a hunk; always resolve, never --abort. Use when a merge or rebase stops on conflicts, or when conflict markers appear anywhere in the working tree."
 license: MIT
 metadata:
   author: Matt Pocock

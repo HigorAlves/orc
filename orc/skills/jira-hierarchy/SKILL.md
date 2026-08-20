@@ -1,6 +1,6 @@
 ---
 name: jira-hierarchy
-description: "The Jira backlog contract — Epic-as-micro-PRD, Stories as user-facing increments under an active Epic, Tasks/Sub-tasks/Bugs atomized for conflict-free parallel development, and the mandatory Description / Desired Behavior / Acceptance Criteria template on every child ticket. Use when creating or restructuring Jira epics, stories, or task breakdowns, or when enforcing ticket structure — /orc:jira-breakdown and orc-jira-architect are built on it."
+description: "The Jira backlog contract — Epic-as-micro-PRD, Stories, concurrency-sliced Tasks, and the mandatory child-ticket template. Use when creating or restructuring Jira epics, stories, or task breakdowns, or when enforcing ticket structure — /orc:jira-breakdown and orc-jira-architect are built on it."
 ---
 
 # Jira hierarchy contract

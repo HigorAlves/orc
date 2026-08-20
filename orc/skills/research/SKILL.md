@@ -1,6 +1,6 @@
 ---
 name: research
-description: "Delegate a research question to a background agent that reads primary sources — official docs, source code, specs, first-party APIs — and lands the findings as a cited Markdown file in the repo. Use when an orc planning or implementation step needs docs or API facts verified at the source, when the user asks to research a topic, or when reading legwork should run in the background while work continues."
+description: "Delegate a research question to a background agent that reads primary sources and lands cited findings as a Markdown file in the repo. Use when the user asks to research a topic, when docs or API facts need verifying at the source, or when reading legwork should run in the background."
 license: MIT
 metadata:
   author: Matt Pocock

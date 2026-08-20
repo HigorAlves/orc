@@ -1,6 +1,6 @@
 ---
 name: domain-modeling
-description: Actively maintain a project's ubiquitous language and decision record — challenge terms against CONTEXT.md, sharpen fuzzy vocabulary, and capture glossary entries and ADRs as they crystallise. The model-maintenance discipline behind orc:grill-with-docs and the CONTEXT.md habit in orc:improve-codebase-architecture. Use when defining or disputing domain terminology, when a design session resolves a term that belongs in CONTEXT.md, or when a decision made mid-session passes the ADR gate.
+description: Maintain a project's ubiquitous language and decision record against CONTEXT.md. Use when defining or disputing domain terminology, when a design session resolves a term that belongs in CONTEXT.md, or when a decision made mid-session passes the ADR gate.
 license: MIT
 metadata:
   author: Matt Pocock

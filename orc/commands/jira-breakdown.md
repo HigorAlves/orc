@@ -1,5 +1,5 @@
 ---
-description: "Turn a feature brief, PRD, or existing Epic into a full Jira hierarchy — Epic micro-PRD, Stories, concurrency-sliced Tasks — drafted by orc-jira-architect, previewed behind a gate, then created via Jira MCP tools or acli. Use when building out a Jira epic/backlog, breaking a feature into Jira tickets, or enforcing the Epic→Story→Task structure."
+description: "Turn a feature brief, PRD, or existing Epic into a full Jira hierarchy behind a preview gate. Use when building out a Jira epic/backlog, breaking a feature into Jira tickets, or enforcing the Epic→Story→Task structure."
 argument-hint: "[<brief> | <prd-path> | --epic <KEY>] [--project <KEY>] [--team-size <n>] [--dry-run]"
 allowed-tools:
   - Read
