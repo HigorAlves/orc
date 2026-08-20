@@ -76,6 +76,8 @@ If `needs_input` is non-empty, surface every question via `AskUserQuestion` firs
 
 Run the contract checks from `orc:jira-hierarchy` over the draft — all three template sections on every child, no orphan Stories, parallel groups touchpoint-disjoint. A violation means the draft goes back to Phase 2 with the finding; never "create it and fix it in Jira".
 
+**Persist before the gate**: save the architect's JSON verbatim to `${ORC_STATE_DIR}/<sanitized-branch>/files/jira-breakdown.json` (stamped `generatedAt`, per `orc:state-protocol`) — an interrupted run re-previews or resumes mid-creation from the file without re-dispatching `orc-jira-architect`; track per-ticket creation status in the same file as tickets land.
+
 Then preview:
 
 ```markdown

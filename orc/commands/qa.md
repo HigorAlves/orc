@@ -103,8 +103,9 @@ Remember the choice for this session's re-runs (the "QA partial → fix → re-r
    - **`appUrl` + `serviceEndpoints` + `envStatePath`** from `docker-env-state.json` (the validator NEVER boots infra when env state exists — it attaches). Only when step 0 was skipped: the `--web` URL, or legacy boot instructions under `--no-env`.
    - The artifact directory.
    - **Workspace mode only**: `repo` (the web-surface repo from Phase 0), `repoPath`, `siblingRepos` (already running via the provisioned environment — verify their traffic through `serviceEndpoints` in the HAR; the agent does NOT touch them), and `crossRepoContract` (when present in the plan — the agent walks an integration golden path that exercises the contract end-to-end).
-3. The agent walks the golden path + edge cases, captures screenshots/video/console.log, writes `steps.md`, returns a verdict.
-4. Read its `steps.md` and verdict. If `pass`, proceed. If `fail` or `partial`, surface the failure with the screenshot link to the user.
+3. When the session has a `slices.json` ledger, also pass the relevant slices' **`acceptance` lists** — the agent scores each criterion against observed behavior (evidence-cited), instead of narrating vibes.
+4. The agent walks the golden path + edge cases, captures screenshots/video/console.log, writes `steps.md`, and returns its verdict + **manifest** (artifact list, curated visual-proof selection, per-acceptance results, 3-line summary).
+5. Consume the returned manifest — do NOT re-read `steps.md`; the manifest is the summary. If `pass`, proceed. If `fail` or `partial`, surface the failure with the screenshot link from the manifest. Phase 6 hands the same manifest to `orc:evidence-publish` as its pre-curated payload.
 
 #### Driver B — Claude-in-Chrome (run inline; the user is watching)
 
@@ -123,7 +124,9 @@ Do NOT dispatch `orc-qa-validator` — the extension binds to the user's browser
 
 ### Phase 5 — Write the verdict
 
-Append to `.orc/<branch>/files/progress.md`:
+Write `${ORC_STATE_DIR}/<sanitized-branch>/files/qa-verdict.json` (shape per `orc:state-protocol` `references/schema.md`): one `checks[]` row per suite check (tests/lint/type-check), per slice acceptance criterion scored (`kind: "acceptance"`, evidence = the artifact that proves it; un-scoreable → `result: "skipped"`, visibly), and per browser walk. **The `verdict` is computed mechanically — any `fail` → `fail`; else any `partial` → `partial`; else `pass`. Agents never decide it; this file is what ship/flow gates read.** Stamp `headSha` + `generatedAt`.
+
+Also append the human-readable block to `.orc/<branch>/files/progress.md`:
 ```
 ## QA — <ISO-timestamp>
 - Tests: pass/fail
