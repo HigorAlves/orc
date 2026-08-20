@@ -5,6 +5,7 @@ model: haiku
 context: fork
 agent: Explore
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Glob
   - Grep
@@ -70,7 +71,7 @@ In workspace mode, render in two groups:
    ```
 2. **Standalone sessions in workspace children** (only if non-empty) — header `## Standalone repo sessions`. Same shape as single-repo mode, with a `Repo` column added.
 
-Apply filters before rendering. Sort each group by `updated_at` descending.
+Apply filters before rendering. Sort each group by `updatedAt` descending. (`orc-state sessions [--status]` gives the one-line-per-session base table; this command is a route-from-state reader per `orc:state-protocol`.)
 
 ### Phase 4 — Per-session detail
 

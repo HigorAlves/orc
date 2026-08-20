@@ -2,6 +2,7 @@
 description: Pre-PR quality gate — browser-driven QA for web changes with a mandatory evidence packet against a provisioned environment. No QA-passed claim without artifacts. Workspace-aware. For a quick behavioral check without the evidence packet, prefer the bundled /verify or /run.
 argument-hint: "[--web <url>] [--no-web] [--no-env] [--driver agent-browser|chrome] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Edit
@@ -134,7 +135,7 @@ Append to `.orc/<branch>/files/progress.md`:
 - Artifact dir: .orc/<branch>/files/qa/  (if web mode)
 ```
 
-Bump `checkpoint.md` to mark QA complete.
+Mark QA complete: `orc-state phase set <n> --label qa-complete` + `orc-state digest write -` (per `orc:state-protocol`).
 
 ### Phase 6 — Publish evidence (web mode, optional)
 

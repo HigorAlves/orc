@@ -2,6 +2,7 @@
 description: "Live incident response — intake a Sentry issue, stack trace, or symptom; gate mitigate-first vs root-cause-first; keep a UTC timeline. Use when production is broken RIGHT NOW; for the after-action write-up alone, use /orc:postmortem."
 argument-hint: "[<sentry-issue-id-or-url> | <pasted stack trace> | <symptom>] [--severity sev-1|sev-2|sev-3]"
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Edit
@@ -42,7 +43,7 @@ Context is injected above (`ORC_*` vars are exported for any Bash you run — do
 ### Phase 1 — Intake + timeline start
 
 1. Determine the current branch: `git branch --show-current`. Sanitize (`/` → `-`). Create `${ORC_STATE_DIR}/<sanitized-branch>/files/incident/`.
-2. **Register the session.** Append an entry to `.orc/orc.json` with `command: "incident"`, `status: in_progress`, `current_phase: 1`, `total_phases: 5`, branch, `startedAt`. Write `checkpoint.md` (phase=1, command=incident) in `${ORC_STATE_DIR}/<sanitized-branch>/files/`.
+2. **Register state**: `orc-state init --command incident --total-phases 5`. Defer to `orc:state-protocol` for schema and rules.
 3. **Start the timeline.** Create `${ORC_STATE_DIR}/<sanitized-branch>/files/incident/timeline.md`:
 
 ```markdown

@@ -2,6 +2,7 @@
 description: Answer reviewer comments on YOUR open PR — categorize unresolved threads, push fixes, and post replies. Workspace-aware across linked PRs.
 argument-hint: "[<pr-number>] [--repo <name>] [--repos a,b]  (omitted = current branch's PR / all linked PRs)"
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Edit
   - Glob
@@ -40,7 +41,7 @@ Context is injected above (`ORC_*` vars are exported for any Bash you run — do
 
 In workspace mode, identify the active workspace session and resolve the PR set:
 
-- Read `${ORC_STATE_DIR}/orc.json`. Find the in-progress session whose `branch` matches the active branch (or whose `linkedPRs` includes the explicit `<pr-number>` if given).
+- `orc-state get --field linkedPRs` for the active branch's session (read-for-data per `orc:state-protocol`; when an explicit `<pr-number>` is given, `orc-state sessions` rows locate the session whose `linkedPRs` includes it).
 - The default address target is **every URL in `linkedPRs`** (broadcast across all linked PRs of the workspace flow).
 - `--repo <name>` narrows to one repo's PR; `--repos a,b` narrows to a subset. Iron rule: no silent broadcast — when no flag is given and `linkedPRs` has 2+ entries, prompt via `AskUserQuestion`: "Address comments on all N PRs / pick a subset / just one PR / cancel."
 

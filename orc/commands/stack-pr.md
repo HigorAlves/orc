@@ -3,6 +3,7 @@ description: Break a too-big branch into a stack of smaller chained PRs — comm
 argument-hint: "[--smart] [--base <branch>] [--draft] [--max-loc <N>] [--repos a,b | --repo a | --all-repos | --this-repo]"
 disable-model-invocation: true
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Glob
   - Grep
@@ -225,23 +226,16 @@ for i in 1..N; do
 done
 ```
 
-If the active session does not yet exist (the user invoked `/orc:stack-pr` standalone, no prior `/orc:flow`/`/orc:ship`), create a minimal entry:
+If the active session does not yet exist (the user invoked `/orc:stack-pr` standalone, no prior `/orc:flow`/`/orc:ship`), register one and record the stack:
 
-```json
-{
-  "session_id": "<ulid>",
-  "command": "stack-pr",
-  "branch": "<current_branch>",
-  "branchSanitized": "<sanitized>",
-  "scope": "repo|workspace",
-  "status": "in_progress",
-  "linkedPRs": [/* the entries above */],
-  "current_phase": 6,
-  "total_phases": 7,
-  "created_at": "<utc>",
-  "updated_at": "<utc>"
-}
+```bash
+orc-state init --command stack-pr --total-phases 7
+orc-state phase set 6
+# one call per stacked PR:
+orc-state link-pr --repo <r> --url <u> --number <n> --stack-id <id> --stack-position <p> [--stacked-on <u2>]
 ```
+
+(Schema per `orc:state-protocol` — never hand-write the registry entry.)
 
 ### Phase 7 — Reviewer hint + summary
 

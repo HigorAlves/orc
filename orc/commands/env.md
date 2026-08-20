@@ -3,6 +3,7 @@ description: "Provision a fast containerized dev environment for the current rep
 argument-hint: "[up|status|down] [--containerize-app] [--rebuild] [--fresh] [--down-volumes] [--wait-timeout <s>] [--repos a,b | --repo a | --all-repos | --this-repo]"
 arguments: [verb]
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Glob
@@ -51,7 +52,7 @@ Context is injected above (`ORC_*` vars are exported for any Bash you run — do
 ### Phase 2 — `up`
 
 1. Invoke the `orc:env-provisioning` skill (announce it). Quick attach check first: `orc-docker-env is-ready <state-file>` — `ready` → echo the reuse line (project, services, appUrl, "reused") and skip to step 3.
-2. Dispatch **`orc-env-provisioner`** via `Task`. Pass: `repoPath` (worktree), `stateDir`, `branchSanitized`, the flags, and — workspace mode — `repos[]`/`repoPaths`, `webSurfaceRepo` (from the plan's "Repo touchpoints" when present), plan path for dependency order. On `failed` verdict: re-print the agent's 🛑 callout and `AskUserQuestion` — retry / `--fresh` retry / abort. On `fallback`: re-print the ⚠️ callout and continue.
+2. Dispatch **`orc-env-provisioner`** via `Task`. Pass: `repoPath` (worktree), `stateDir`, `sessionId` (sanitized branch per `orc:state-protocol`), the flags, and — workspace mode — `repos[]`/`repoPaths`, `webSurfaceRepo` (from the plan's "Repo touchpoints" when present), plan path for dependency order. On `failed` verdict: re-print the agent's 🛑 callout and `AskUserQuestion` — retry / `--fresh` retry / abort. On `fallback`: re-print the ⚠️ callout and continue.
 3. **Register the session.** If `.orc/orc.json` has an in-progress session for this branch, append `docker_env_status: <status> (…)` to its checkpoint. Otherwise register a lightweight entry (`command: "env"`, `status: "in_progress"`, branch, `startedAt`) so `/orc:status` shows the running environment and `/orc:cleanup` can find it.
 4. Echo: state path, appUrl + serviceEndpoints, boot seconds, reused flag.
 

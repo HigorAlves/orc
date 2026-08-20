@@ -2,6 +2,7 @@
 description: Resume an interrupted multi-phase orc command from its last checkpoint. Reads .orc/orc.json for active sessions, picks one, jumps to the next pending phase. Workspace-aware.
 argument-hint: "[<session-id-or-branch>] [--phase <n>] [--repo <name>]"
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Edit
@@ -21,7 +22,7 @@ Pick up where an earlier orc command left off. Required for any work that pauses
 
 ## Arguments
 
-- `<session-id-or-branch>` — optional. If provided, resume that session directly. Accepts either the `session_id` from `.orc/orc.json` or a branch name (sanitized or not).
+- `<session-id-or-branch>` — optional. If provided, resume that session directly. Accepts either the `sessionId` from `.orc/orc.json` (list via `orc-state sessions`) or a branch name (sanitized or not); schema per `orc:state-protocol`.
 - `--phase <n>` — optional. Skip to a specific phase rather than the next pending one. Use sparingly.
 - `--repo <name>` — workspace mode only. Drill into a specific repo's slice of a workspace session (e.g. `--repo api` resumes only the api side of a cross-repo flow). Phase A scope: this command resumes one repo at a time; broadcast resume across all repos arrives in Phase C.
 

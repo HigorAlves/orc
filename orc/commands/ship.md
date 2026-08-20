@@ -2,6 +2,7 @@
 description: Finalize and open the PR — verifies tests, presents commit/branch/PR options, executes the chosen path, with a soft LOC size-budget gate. Last command before review; adds a Jira Resolves trailer when bound. Workspace-aware.
 argument-hint: "[--draft] [--base <branch>] [--verbose] [--max-loc <N>] [--no-size-gate] [--repos a,b | --repo a | --all-repos | --this-repo]"
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Glob
   - Grep
@@ -41,7 +42,7 @@ You're done implementing. Time to integrate. This command runs the structured br
 
 Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection).
 
-In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. Default in workspace mode is to ship every repo in the active workspace session's `repos` array (resolve via `${ORC_STATE_DIR}/orc.json`). Iron rule: no silent broadcast — confirm before opening multiple PRs.
+In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. Default in workspace mode is to ship every repo in the active workspace session's `repos` array (`orc-state get --field repos` — read-for-data per `orc:state-protocol`). Iron rule: no silent broadcast — confirm before opening multiple PRs.
 
 ### Phase 1 — Pre-ship verification
 
@@ -69,7 +70,7 @@ Invoke `orc:git-commit` if there are uncommitted changes. Then:
 2. Compose the body. Two modes:
    - **Default (terse)** — invoke `orc:caveman-pr` and follow it exactly: a tight title + body with only the sections that add signal (Why / What changed / How tested / Notes / trailers). Reviewers need a why and a how-tested, not a tour of the diff.
    - **`--verbose` mode** — the long-form template: **What** (one-paragraph summary), **Why** (link to plan / issue / PRD if available; `.orc/<branch>/files/plan.md` if present), **How tested** (test commands run; browser QA artifacts if web change at `.orc/<branch>/files/qa/`), **Checklist** (boxes for the reviewer). Use when the change genuinely needs narrative context (big migrations, multi-team reviews).
-3. **Append the Jira trailer if a ticket is bound.** Read the active session's `jiraTicket` from `.orc/orc.json` (find the entry whose `branch` matches the sanitized current branch). If present, append a single trailer line at the bottom of the body:
+3. **Append the Jira trailer if a ticket is bound.** `orc-state get --field jiraTicket` (read-for-data per `orc:state-protocol`). If present, append a single trailer line at the bottom of the body:
 
    ```
    <KEYWORD> <KEY>

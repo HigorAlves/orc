@@ -2,6 +2,7 @@
 description: Start a feature — set up an isolated worktree, draft the plan, and write the first failing test before any production code. --jira <KEY> links a ticket and informs the branch name. Workspace-aware.
 argument-hint: "[--worktree <path>] [--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Edit
@@ -110,7 +111,7 @@ In workspace mode, the first failing test goes in whichever repo the plan's slic
 
 ### Phase 4 — Checkpoint
 
-Update `${ORC_STATE_DIR}/<branch>/files/checkpoint.md` (phase=ready-for-implementation, last_artifact=test-file:line). Update `${ORC_STATE_DIR}/orc.json`. In workspace mode, also update each per-repo `<workspaceRoot>/<repo>/.orc/<branch>/checkpoint.md` (slice cursor) and ensure each repo's `workspace-link.json` back-pointer is in place.
+Checkpoint: `orc-state phase set <n> --label ready-for-implementation`, then `orc-state digest write -` with `Next:` naming the failing test file:line (per `orc:state-protocol`). In workspace mode, also update each per-repo `<workspaceRoot>/<repo>/.orc/<branch>/checkpoint.md` (slice cursor) and ensure each repo's `workspace-link.json` back-pointer is in place.
 
 ## Output
 

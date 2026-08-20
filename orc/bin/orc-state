@@ -27,6 +27,7 @@ usage: orc-state <verb> [args]   (state root: $ORC_STATE_DIR, else <git root>/.o
   slice init <slices.json>          install the slice ledger
   slice set <id> --status S [--commit SHA] [--actual-loc N] [--note S]
   slice list [--status a,b]         with filter: prints matches, exit 0 ONLY when none match
+  jira bind <KEY> | jira unbind     set/clear jiraTicket (key validated) in registry + mirror
   verify [<branch>]                 frontmatter parses; registry/checkpoint mirror agree
   migrate                           legacy registry vocabulary -> schema 1
 
@@ -68,6 +69,7 @@ case "$sub" in
       *) echo "orc-state slice: unknown verb '$verb' (init|set|list)" >&2; exit 2 ;;
     esac
     ;;
+  jira)     orc_state_jira "$@" ;;
   verify)   orc_state_verify "$@" ;;
   migrate)  orc_state_migrate ;;
   help|--help|-h) usage ;;
