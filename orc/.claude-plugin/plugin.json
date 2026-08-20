@@ -42,6 +42,24 @@
       "title": "Interaction policy",
       "description": "Default autopilot level for inward gates: manual (every gate asks), guided (mechanical confirms auto-advance), auto (sprint contract; phases run autonomously against agreed criteria). Outward-facing gates (tracker writes, PR review posting, evidence publish) always ask regardless.",
       "default": "manual"
+    },
+    "statusline": {
+      "type": "boolean",
+      "title": "Statusline",
+      "description": "Render the orc statusline (session, phase, branch, PR, context, cost). false hides it even with the plugin-shipped default installed.",
+      "default": true
+    },
+    "statusline_style": {
+      "type": "string",
+      "title": "Statusline style",
+      "description": "full (two lines, width-aware) or compact (always a single dense line)",
+      "default": "full"
+    },
+    "statusline_context_reserve": {
+      "type": "number",
+      "title": "Statusline context reserve (%)",
+      "description": "0-50. When >0, the context percentage is normalized against this reserved slice (e.g. your auto-compact reserve) and rendered with a ~ prefix. 0 shows the raw payload percentage.",
+      "default": 0
     }
   }
 }
