@@ -54,6 +54,10 @@ if [ -f "${PLUGIN_ROOT}/lib/workspace-detect.sh" ]; then
       printf 'export ORC_STATE_DIR=%q\n'       "${ORC_STATE_DIR:-}"
       printf 'export ORC_CONTEXT_CACHED=1\n'
       printf 'export ORC_CONTEXT_CACHED_PWD=%q\n' "$(pwd -P 2>/dev/null || pwd)"
+      # Resolved autopilot level (bare value; source dropped) — commands and
+      # gates read this instead of re-resolving per Bash call.
+      policy="$(orc_interaction_policy 2>/dev/null || echo 'manual (default)')"
+      printf 'export ORC_INTERACTION_POLICY=%q\n' "${policy%% *}"
     } >> "$CLAUDE_ENV_FILE"
   fi
 

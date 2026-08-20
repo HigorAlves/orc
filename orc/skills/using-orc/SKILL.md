@@ -36,6 +36,10 @@ Use the `Skill` tool — never `Read` a skill file. Every skill's description is
 7. **No silent broadcast in workspace mode** — when the SessionStart banner says `workspace[…]`, repo-touching commands need an explicit `--repos` / `--repo` / `--all-repos` / `--this-repo` or a confirming `AskUserQuestion`. → `orc:workspace-mode`
 8. **No PR over the size budget without a recorded choice** — default **300 LOC** (additions+deletions, post-exclusion); over budget → stack / open-big with a `Size-budget-override:` trailer / abort. → `orc:pr-size-budget`. A web change → browser QA with `.orc/<branch>/files/qa/` artifacts, no exceptions. → `orc:qa` (drives `orc:agent-browser`)
 
+## Gate taxonomy (interaction policy)
+
+Gates come in three classes. **Hard-outward** — anything writing to a tracker, posting a PR review, or publishing evidence: always asks; no flag or policy skips it. **Soft-inward** — decisions about the user's own working tree (plan approval, driver choice, PR compose): convertible to pre-approved defaults by the `interaction_policy` autopilot ladder (`manual` | `guided` | `auto`, via userConfig or `--auto`; banner shows the resolved level). **Escalation-only** — never asked proactively; always stop the run when triggered (implementer escalations, env failures, criteria misses), at every policy level.
+
 ## Skill routing
 
 - **Process skills first** — `orc:systematic-debugging`, `orc:tdd`, `orc:verification-before-completion` decide HOW to approach a task; implementation skills come second.

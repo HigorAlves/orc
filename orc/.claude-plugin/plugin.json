@@ -36,6 +36,12 @@
       "title": "Learn from outcomes",
       "description": "Record verified debug outcomes into the local Graphify work-memory (graphify-out/, git-ignored) so code discovery improves across sessions. No effect when Graphify is absent.",
       "default": true
+    },
+    "interaction_policy": {
+      "type": "string",
+      "title": "Interaction policy",
+      "description": "Default autopilot level for inward gates: manual (every gate asks), guided (mechanical confirms auto-advance), auto (sprint contract; phases run autonomously against agreed criteria). Outward-facing gates (tracker writes, PR review posting, evidence publish) always ask regardless.",
+      "default": "manual"
     }
   }
 }
