@@ -184,6 +184,14 @@ mk_bridge mon-r critical 92 red 0
 out="$(hook_in mon-r | bash "$monitor")"
 if printf '%s' "$out" | jq -e '.hookSpecificOutput.additionalContext | test("92%")' >/dev/null 2>&1; then ok; else fail "11f: critical must escalate past red: $out"; fi
 
+# --- 12: userConfig toggles ------------------------------------------------
+out="$(payload "$repo_a" sl-fix-12 "$FULL_EXTRA" | CLAUDE_PLUGIN_OPTION_STATUSLINE=false "$sl")"; rc=$?
+if [ "$rc" -eq 0 ] && [ -z "$out" ]; then ok; else fail "12a: statusline=false must render nothing (rc=$rc out=$out)"; fi
+out="$(payload "$repo_a" sl-fix-12b "$FULL_EXTRA" | CLAUDE_PLUGIN_OPTION_STATUSLINE_CONTEXT_RESERVE=20 "$sl" | strip_ansi)"
+if printf '%s' "$out" | grep -qF "~85%"; then ok; else fail "12b: reserve=20 must normalize 68 -> ~85%, got: $out"; fi
+out="$(payload "$repo_a" sl-fix-12c "$FULL_EXTRA" | CLAUDE_PLUGIN_OPTION_STATUSLINE_STYLE=compact "$sl" | strip_ansi)"
+if [ "$(printf '%s\n' "$out" | wc -l | tr -d ' ')" = "1" ]; then ok; else fail "12c: style=compact must render one line"; fi
+
 # --- 13: perf guard (5 renders well under budget) --------------------------
 start="$(date +%s)"
 for _ in 1 2 3 4 5; do payload "$repo_a" sl-fix-13 "$FULL_EXTRA" | "$sl" >/dev/null; done

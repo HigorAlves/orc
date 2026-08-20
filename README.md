@@ -315,6 +315,21 @@ orc update                # update to latest (or --to <ref> to repin)
 
 See [`cli/README.md`](cli/README.md) for the full command reference.
 
+## Statusline
+
+While orc is enabled, Claude Code's status bar shows the work and the machine at a glance — no configuration needed (the plugin ships the default; your own `statusLine` in `~/.claude/settings.json` always wins):
+
+```
+orc flow 6/9 implement │ PROJ-142 │ slices 3/7 │ auto │ ⎇ feat/checkout-retry* │ #128 ✔ approved
+Opus 4.5 high think │ ctx ▓▓▓▓▓▓▓░░░ 68% │ $4.83 +412/−88 │ 5h 71%
+```
+
+Line 1 is the work: the live orc session (command, phase, label), bound Jira ticket, slice-ledger progress, autopilot level, git branch (`*` = dirty), and the branch's open PR with its review state — all from the session payload and one cached git probe; no `gh` calls, ever. Line 2 is the machine: model + reasoning effort, an honest context bar (the raw payload percentage — set `statusline_context_reserve` to normalize against your auto-compact reserve, shown with a `~`), session cost with lines added/removed, and your worst rate limit once it passes 50%. It adapts to terminal width, honors `NO_COLOR`, falls back to ASCII on non-UTF-8 locales, and never breaks a render — every path exits clean.
+
+The statusline also feeds the **context-monitor bridge**: it's the only surface that sees context usage, so it shares that with a PostToolUse hook that gives the agent an advisory nudge ("consider checkpointing") when context runs red — once per tier, never imperative.
+
+Tune via `userConfig`: `statusline` (off switch), `statusline_style` (`full`/`compact`), `statusline_context_reserve` (0–50). Prefer an explicit user-level entry? `orc statusline install|uninstall|status` (the CLI never clobbers a statusline it doesn't own).
+
 ## Requirements
 
 orc's SessionStart pre-flight (`session-start-tool-check.sh`) verifies these CLI tools and, if anything's missing, delivers an "orc tool check" callout to you via `systemMessage`.
