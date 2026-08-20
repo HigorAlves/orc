@@ -206,8 +206,12 @@ or
 
 Return:
 1. Path to the populated `qa/` directory.
-2. A 2-paragraph human summary: golden path verdict, edge-case verdict, anything notable.
-3. The exit verdict: `pass` / `fail` / `partial`.
+2. A **manifest block** — the caller consumes this instead of re-reading `steps.md`:
+   - `artifacts`: every file written (name + one-line role)
+   - `curated`: the 3–5 items that best prove the behavior (evidence-publish uses this selection verbatim)
+   - `acceptance`: when the brief carried per-slice acceptance criteria, one `pass|fail|skipped` row per criterion with the artifact that proves it
+   - `summary`: ≤3 lines — golden path verdict, edge-case verdict, anything notable
+3. The exit verdict: `pass` / `fail` / `partial`. (The dispatching command computes the session verdict mechanically from all checks — yours is one input, never the final word.)
 
 ## Iron rules
 
