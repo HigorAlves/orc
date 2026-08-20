@@ -122,6 +122,9 @@ EOF
 # userConfig interaction_policy (CLAUDE_PLUGIN_OPTION_INTERACTION_POLICY) >
 # manual. Unknown values degrade to manual — never fail open into autonomy.
 # Prints "<level> (<source>)"; use ${result%% *} for the bare level.
+# The flag argument is passed by external callers (commands resolving --auto);
+# in-file callers deliberately pass nothing.
+# shellcheck disable=SC2120
 orc_interaction_policy() (
   flag="${1:-}"
   validate() { case "$1" in manual|guided|auto) return 0 ;; *) return 1 ;; esac; }
@@ -153,6 +156,7 @@ orc_context_banner() (
   eval "$(orc_detect_context)"
   case "${ORC_CONTEXT:-loose}" in
     workspace)
+      # shellcheck disable=SC2119
       printf 'orc context: workspace[%s] — repos: %s — state: %s — policy: %s\n' \
         "${ORC_WORKSPACE_NAME}" "${ORC_WORKSPACE_REPOS}" "${ORC_STATE_DIR}" \
         "$(orc_interaction_policy)"
@@ -160,6 +164,7 @@ orc_context_banner() (
       ;;
     repo)
       branch="$(git -C "${ORC_REPO_ROOT:-.}" branch --show-current 2>/dev/null || true)"
+      # shellcheck disable=SC2119
       printf 'orc context: repo — root: %s — branch: %s — state: %s — policy: %s\n' \
         "${ORC_REPO_ROOT}" "${branch:-detached}" "${ORC_STATE_DIR}" \
         "$(orc_interaction_policy)"
