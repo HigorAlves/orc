@@ -84,6 +84,19 @@ Each carries `headSha` + `generatedAt`. Re-entry with matching HEAD → reuse wi
 ]}
 ```
 
+## Settled decisions: `.orc/<sessionId>/files/decisions.json`
+
+```json
+{ "schema": 1, "decisions": {
+    "driver": { "value": "agent-browser", "provenance": "asked", "settledAt": "…" },
+    "jiraTicket": { "value": "none", "provenance": "inferred", "settledAt": "…" }
+}}
+```
+
+- Written only via `orc-state decision set` — write-once per key; `--supersede` required to change an answer (an explicit event, never a silent overwrite).
+- `provenance` enum: `flag` (a CLI flag pre-answered it) · `asked` (an answered gate) · `policy` (the interaction-policy ladder chose the default) · `inferred` (derived from config, e.g. no-Jira tracker layer).
+- Read rule: before asking a question whose key is settled, use the value and echo `using settled decision: <key>=<value> (<provenance>)`. Readable by nested and sibling commands — it lives in per-branch `files/`, not the registry, so the route-from-state rule doesn't apply.
+
 ## Migration notes
 
 Pre-schema-1 state keeps working for reads (`orc-state get` matches on `sessionId` **or** `branch`). Run `orc-state migrate` once per repo to upgrade; checkpoints are upgraded lazily — the next mutating verb regenerates their frontmatter. Nothing else touches historical `files/` artifacts.

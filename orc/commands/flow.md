@@ -109,7 +109,7 @@ If the user provided a long-form PRD, a Jira/issue link, or a multi-paragraph br
 
 If the input is a short one-liner ("add CSV export"), skip the analyzer and proceed.
 
-**One triage gate.** Everything still undecided is asked in a SINGLE `AskUserQuestion` call — it carries up to 4 questions, which is exactly the triage set. A flag pre-answers its question and drops it from the call; when flags cover everything, Phase 1 asks nothing.
+**One triage gate.** Everything still undecided is asked in a SINGLE `AskUserQuestion` call — it carries up to 4 questions, which is exactly the triage set. A flag pre-answers its question and drops it from the call; so does a **settled decision** (`orc-state decision get <key>` per `orc:state-protocol` — echo `using settled decision: <key>=<value> (<provenance>)`). Every answer collected here is recorded via `orc-state decision set` so nested commands never re-ask. When everything is pre-answered, Phase 1 asks nothing.
 
 1. **Type** (dropped when `--type=` passed):
    - feature — new capability, plan + start + ship loop
@@ -127,7 +127,7 @@ If the input is a short one-liner ("add CSV export"), skip the analyzer and proc
    - Pick a subset (multi-select follow-up)
    - Just this repo (cwd) — only when cwd is inside a workspace child
    - Cancel
-4. **Jira link** (dropped when `--jira` passed): "Link a Jira ticket to this flow?"
+4. **Jira link** (dropped when `--jira` passed, or when the tracker layer declares no Jira per `orc:tracker-config` — then record `jiraTicket=none` as an inferred decision silently): "Link a Jira ticket to this flow?"
    - Paste a key (then prompt for the key; validate `^[A-Z][A-Z0-9_]*-\d+$`, re-ask on mismatch)
    - Skip — I'll bind later via /orc:jira bind
    - No ticket — this work has no tracker entry

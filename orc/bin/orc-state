@@ -28,6 +28,8 @@ usage: orc-state <verb> [args]   (state root: $ORC_STATE_DIR, else <git root>/.o
   slice set <id> --status S [--commit SHA] [--actual-loc N] [--note S]
   slice list [--status a,b]         with filter: prints matches, exit 0 ONLY when none match
   jira bind <KEY> | jira unbind     set/clear jiraTicket (key validated) in registry + mirror
+  decision set <k> <v> --provenance flag|asked|policy|inferred [--supersede]
+  decision get [<k>]                settled-decision store (write-once per key)
   verify [<branch>]                 frontmatter parses; registry/checkpoint mirror agree
   migrate                           legacy registry vocabulary -> schema 1
 
@@ -67,6 +69,14 @@ case "$sub" in
       set)  orc_state_slice_set "$@" ;;
       list) orc_state_slice_list "$@" ;;
       *) echo "orc-state slice: unknown verb '$verb' (init|set|list)" >&2; exit 2 ;;
+    esac
+    ;;
+  decision)
+    verb="${1:-}"; shift || true
+    case "$verb" in
+      set) orc_state_decision_set "$@" ;;
+      get) orc_state_decision_get "$@" ;;
+      *) echo "orc-state decision: unknown verb '$verb' (set|get)" >&2; exit 2 ;;
     esac
     ;;
   jira)     orc_state_jira "$@" ;;

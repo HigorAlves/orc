@@ -94,7 +94,7 @@ Never auto-install: orc's own guards run as harness-level PreToolUse matchers, n
 
 ### Phase 2 — Plan
 
-Invoke `/orc:plan` (skip `--issues`, skip `--grill` unless user opts in). Forward `--jira <KEY>` if it was passed to `/orc:start` — `/orc:plan`'s Phase 1 prompt will be suppressed and the link recorded silently in `${ORC_STATE_DIR}/orc.json` + `checkpoint.md`. The plan is written to `${ORC_STATE_DIR}/<branch>/files/plan.md`. Forward `--repos`/`--repo`/`--all-repos`/`--this-repo` so `/orc:plan` doesn't re-prompt and the plan template gets workspace-mode sections (Repo touchpoints, Cross-repo contract, Merge order, per-slice `repo:` tags).
+Record what's already settled as decisions — `orc-state decision set jiraTicket <KEY> --provenance flag` (when `--jira` was passed) and `targetRepos` likewise — then invoke `/orc:plan` (skip `--issues`, skip `--grill` unless user opts in). `/orc:plan` reads the settled decisions per `orc:state-protocol` and doesn't re-ask; no manual flag-forwarding needed. The plan is written to `${ORC_STATE_DIR}/<branch>/files/plan.md`, and workspace-mode plan sections (Repo touchpoints, Cross-repo contract, Merge order, per-slice `repo:` tags) key off the settled `targetRepos`.
 
 ### Phase 3 — First failing test
 
