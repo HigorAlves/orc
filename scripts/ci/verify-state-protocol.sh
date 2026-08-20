@@ -81,6 +81,18 @@ if run slice list --status pending,red,escalated --branch feat/x >/dev/null; the
 run slice set 2 --status committed --commit def5678 --branch feat/x >/dev/null
 if run slice list --status pending,red,escalated --branch feat/x >/dev/null; then ok; else fail "slice list: must exit 0 when the filter matches nothing"; fi
 
+# --- decisions (settled-decision store) ------------------------------------
+run decision set driver agent-browser --provenance asked --branch feat/x >/dev/null
+if jq -e '.decisions.driver.value == "agent-browser" and .decisions.driver.provenance == "asked"' \
+    "$ORC_STATE_DIR/feat-x/files/decisions.json" >/dev/null 2>&1; then ok; else fail "decision set: value/provenance not recorded"; fi
+if [ "$(run decision get driver --branch feat/x)" = "agent-browser" ]; then ok; else fail "decision get: wrong value"; fi
+# write-once: same key without --supersede must fail; with it, must win
+if run decision set driver chrome --provenance asked --branch feat/x >/dev/null 2>&1; then fail "decision set: re-set without --supersede must fail"; else ok; fi
+run decision set driver chrome --provenance asked --supersede --branch feat/x >/dev/null
+if [ "$(run decision get driver --branch feat/x)" = "chrome" ]; then ok; else fail "decision set --supersede: not applied"; fi
+if run decision set foo bar --provenance vibes --branch feat/x >/dev/null 2>&1; then fail "decision set: must reject provenance outside the enum"; else ok; fi
+if run decision get missing-key --branch feat/x >/dev/null 2>&1; then fail "decision get: missing key must exit 1"; else ok; fi
+
 # --- jira bind/unbind ------------------------------------------------------
 run jira bind JRA-123 --branch feat/x >/dev/null
 if jq -e '.sessions[0].jiraTicket == "JRA-123"' "$reg" >/dev/null; then ok; else fail "jira bind: key not recorded"; fi

@@ -495,6 +495,63 @@ orc_state_verify() { # [branch]
   return "$errs"
 }
 
+ORC_STATE_DECISION_PROVENANCE="flag asked policy inferred"
+
+orc_state__decisions_path() { # $1 = sid
+  printf '%s/%s/files/decisions.json\n' "$(orc_state__dir)" "$1"
+}
+
+orc_state_decision_set() { # <key> <value> --provenance P [--supersede] [--branch B]
+  local key="" value="" prov="" supersede=0 branch=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --provenance) prov="${2:-}"; shift 2 ;;
+      --supersede)  supersede=1; shift ;;
+      --branch)     branch="${2:-}"; shift 2 ;;
+      *) if [ -z "$key" ]; then key="$1"; else value="$1"; fi; shift ;;
+    esac
+  done
+  if [ -z "$key" ] || [ -z "$value" ] || [ -z "$prov" ]; then
+    echo "orc-state decision set: <key> <value> --provenance are required" >&2
+    return 2
+  fi
+  case " $ORC_STATE_DECISION_PROVENANCE " in
+    *" $prov "*) : ;;
+    *) echo "orc-state decision set: provenance '$prov' not in: $ORC_STATE_DECISION_PROVENANCE" >&2; return 2 ;;
+  esac
+  local sid f
+  sid="$(orc_state__sid "$branch")" || return 1
+  f="$(orc_state__decisions_path "$sid")"
+  mkdir -p "$(dirname "$f")"
+  [ -f "$f" ] || printf '{"schema": 1, "decisions": {}}\n' > "$f"
+  if [ "$supersede" -ne 1 ] && jq -e --arg k "$key" '.decisions[$k]' "$f" >/dev/null 2>&1; then
+    echo "orc-state decision set: '$key' already settled ($(jq -r --arg k "$key" '.decisions[$k].value' "$f")); pass --supersede to change it" >&2
+    return 1
+  fi
+  jq --arg k "$key" --arg v "$value" --arg p "$prov" --arg now "$(orc_state__now)" \
+     '.decisions[$k] = {value: $v, provenance: $p, settledAt: $now}' \
+     "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+}
+
+orc_state_decision_get() { # [<key>] [--branch B]   (no key = full JSON)
+  local key="" branch=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --branch) branch="${2:-}"; shift 2 ;;
+      *) key="$1"; shift ;;
+    esac
+  done
+  local sid f
+  sid="$(orc_state__sid "$branch")" || return 1
+  f="$(orc_state__decisions_path "$sid")"
+  [ -f "$f" ] || return 1
+  if [ -z "$key" ]; then
+    jq '.' "$f"
+  else
+    jq -er --arg k "$key" '.decisions[$k].value' "$f" 2>/dev/null || return 1
+  fi
+}
+
 orc_state_jira() { # bind <KEY> | unbind  [--branch B]
   local verb="${1:-}" key="" branch=""
   shift || true

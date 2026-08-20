@@ -35,13 +35,7 @@ A finished map typically hands off to `/orc:plan` or `orc:to-issues` — the des
 
 ## Phase 0 — Read the tracker layer
 
-Read `docs/agents/issue-tracker.md` and consult its **"Wayfinding operations"** section — where the map, child tickets, blocking edges, frontier query, claim, and resolve physically live is tracker-specific (GitHub sub-issues + native dependencies; Jira links via `acli`; local markdown files). If the file is missing, don't hard-fail — print:
-
-> **⚠️ Caution — tracker layer not configured**
->
-> `/orc:wayfinder` stores its map on the tracker configured in `docs/agents/issue-tracker.md`. Run `/orc:setup` once to write it.
-
-then `AskUserQuestion`: **Run /orc:setup now** (recommended) / **Use the local-markdown tracker for this map** / **Abort**.
+Run the `orc:tracker-config` read protocol, then consult issue-tracker.md's **"Wayfinding operations"** section — where the map, child tickets, blocking edges, frontier query, claim, and resolve physically live is tracker-specific (GitHub sub-issues + native dependencies; Jira links via `acli`; local markdown files). The skill owns the missing-config gate (one canonical ask; a defaults answer is a settled decision for the session).
 
 ## Principles
 

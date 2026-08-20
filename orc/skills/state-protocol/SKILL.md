@@ -89,6 +89,10 @@ updatedAt: 2026-08-20T18:11:00Z
 
 **Persistence rule:** structured agent output that gates a decision (review findings, stack plans, breakdown JSON, parallel diffs, QA verdicts) is written to `files/` **before** the gate is shown, stamped with `headSha` + `generatedAt` — matching HEAD on re-entry means reuse, not re-dispatch.
 
+## Settled decisions (`decisions.json`)
+
+Per-branch store for answers already given — by a flag, an answered gate, a policy, or a safe inference: `orc-state decision set <key> <value> --provenance flag|asked|policy|inferred` (write-once per key; changing an answer requires `--supersede`), `orc-state decision get <key>`. **Protocol: before any `AskUserQuestion` for a key present in the store, use the recorded value and echo one line — `using settled decision: <key>=<value> (<provenance>)`.** This is how nested commands (flow→plan→qa→ship) stop re-asking what a parent already settled, replacing manual flag-forwarding. Common keys: `autopilotLevel, type, scope, targetRepos, jiraTicket, driver, sizeGate, prMode, cleanupPolicy, trackerDefaults`. Lifetime = the session's branch; `/orc:cleanup` removes it with the rest of `files/`.
+
 ## Consumers
 
 Registered by every multi-phase command; the startup sequence is executed by `/orc:resume` and `/orc:flow` self-resume; the ledger by `/orc:plan`, `/orc:flow` Phase 5, `/orc:fan-out`, and `orc-implementer`. A new multi-phase command preloads nothing — it calls `orc-state` and cites this skill.

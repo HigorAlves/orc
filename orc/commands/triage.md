@@ -35,13 +35,7 @@ If the tracker config treats external pull requests as a request surface, triage
 
 ## Phase 0 — Read the tracker layer
 
-Read `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md`. If either is missing, don't hard-fail — print:
-
-> **⚠️ Caution — tracker layer not configured**
->
-> `/orc:triage` reads the tracker choice and label vocabulary from `docs/agents/`. Run `/orc:setup` once to write them.
-
-then `AskUserQuestion`: **Run /orc:setup now** (recommended — then return here) / **Continue this session with defaults** (GitHub Issues via `gh`, canonical label strings) / **Abort**.
+Run the `orc:tracker-config` read protocol (issue-tracker.md + triage-labels.md). It owns the missing-config gate — one canonical ask, and a "use defaults" answer is recorded as a settled decision so no tracker-aware command re-asks this session.
 
 Tracker dispatch:
 

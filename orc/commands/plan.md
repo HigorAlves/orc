@@ -64,6 +64,7 @@ Phase 0 and 0b are exclusive — input is brief-shaped or refactor-shaped, not b
 3. Create `${ORC_STATE_DIR}/<sanitized-branch>/files/` if it doesn't exist. In workspace mode, also create `<workspaceRoot>/<repo>/.orc/<sanitized-branch>/` per target repo with a `workspace-link.json` back-pointer.
 4. **Resolve the Jira link.**
    - If `--jira <KEY>` was passed: validate against `^[A-Z][A-Z0-9_]*-\d+$`. Reject and stop on mismatch.
+   - Else if the key is a settled decision (`orc-state decision get jiraTicket` — a parent flow/start already resolved it) or the tracker layer declares no Jira (`orc:tracker-config` — record `jiraTicket=none` inferred): use it silently, echo the settled-decision line, don't ask.
    - Otherwise: ask via `AskUserQuestion` — *"Link a Jira ticket to this session?"* with options:
      - `Paste a key` (then prompt for the key, validate the same way)
      - `Skip — I'll bind later via /orc:jira bind`
