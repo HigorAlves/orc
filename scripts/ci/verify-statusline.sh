@@ -144,7 +144,7 @@ payload "$repo_a" sl-fix-10 "$FULL_EXTRA" | "$sl" >/dev/null
 bridge="$TMPDIR/orc-ctx-sl-fix-10.json"
 if [ -f "$bridge" ]; then ok; else fail "10: bridge file missing at $bridge"; fi
 if [ "$(wc -l < "$bridge" | tr -d ' ')" -le 1 ]; then ok; else fail "10: bridge must be one line"; fi
-perms="$(stat -f %Lp "$bridge" 2>/dev/null || stat -c %a "$bridge" 2>/dev/null)"
+perms="$(stat -c %a "$bridge" 2>/dev/null || stat -f %Lp "$bridge" 2>/dev/null)"
 if [ "$perms" = "600" ]; then ok; else fail "10: bridge perms $perms != 600"; fi
 if jq -e '.schema == 1 and .raw_pct == 68 and .tier == "yellow"' "$bridge" >/dev/null 2>&1; then ok; else fail "10: bridge content wrong: $(cat "$bridge")"; fi
 
