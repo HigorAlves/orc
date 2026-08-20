@@ -108,48 +108,34 @@ If the user provided a long-form PRD, a Jira/issue link, or a multi-paragraph br
 
 If the input is a short one-liner ("add CSV export"), skip the analyzer and proceed.
 
-Determine the **type** of work if `--type=` wasn't passed:
+**One triage gate.** Everything still undecided is asked in a SINGLE `AskUserQuestion` call — it carries up to 4 questions, which is exactly the triage set. A flag pre-answers its question and drops it from the call; when flags cover everything, Phase 1 asks nothing.
 
-```
-AskUserQuestion: What kind of work?
-- feature       — new capability, plan + start + ship loop
-- bug           — root-cause investigation, then fix with TDD
-- refactor      — restructuring without changing behavior
-- docs          — README, architecture, ADR/RFC, Diátaxis quadrants
-- something else / let me describe — opens free-form follow-up
-```
+1. **Type** (dropped when `--type=` passed):
+   - feature — new capability, plan + start + ship loop
+   - bug — root-cause investigation, then fix with TDD
+   - refactor — restructuring without changing behavior
+   - docs — README, architecture, ADR/RFC, Diátaxis quadrants
+   - (free-form via Other: "something else — let me describe")
+2. **Scope** (always asked):
+   - < 1 day — small; skip RFC, simple plan
+   - 1–5 days — medium; full plan, optional grill-me
+   - 1–4 weeks — big; suggest --rfc; offers /orc:rfc next
+   - multi-quarter — too big for /orc:flow; suggests breaking down with /orc:plan --issues first
+3. **Repo set** (workspace mode only; dropped when `--repos`/`--repo`/`--all-repos`/`--this-repo` passed): "This is a workspace with N repos: <list from $ORC_WORKSPACE_REPOS>. Scope this flow to which repos?"
+   - All N detected repos
+   - Pick a subset (multi-select follow-up)
+   - Just this repo (cwd) — only when cwd is inside a workspace child
+   - Cancel
+4. **Jira link** (dropped when `--jira` passed): "Link a Jira ticket to this flow?"
+   - Paste a key (then prompt for the key; validate `^[A-Z][A-Z0-9_]*-\d+$`, re-ask on mismatch)
+   - Skip — I'll bind later via /orc:jira bind
+   - No ticket — this work has no tracker entry
 
-Determine **scope:**
+If `--jira <KEY>` was passed, validate against `^[A-Z][A-Z0-9_]*-\d+$`; reject and stop on mismatch.
 
-```
-AskUserQuestion: Scope?
-- < 1 day        — small; skip RFC, simple plan
-- 1–5 days       — medium; full plan, optional grill-me
-- 1–4 weeks      — big; suggest --rfc; offers /orc:rfc next
-- multi-quarter  — too big for /orc:flow; suggests breaking down with /orc:plan --issues first
-```
+Record the resolved repo set as `targetRepos` in `checkpoint.md`. When the resolved set has exactly one repo and the user is inside that repo via `--this-repo`, treat the rest of the flow as a single-repo flow against that `repoPath` (no workspace state).
 
-**Resolve repo selection (workspace mode only).** When `ORC_CONTEXT=workspace` and the user did not pass `--repos`, `--repo`, `--all-repos`, or `--this-repo`:
-
-```
-AskUserQuestion: This is a workspace with N repos: <list from $ORC_WORKSPACE_REPOS>. Scope this flow to which repos?
-- All N detected repos
-- Pick a subset (multi-select follow-up)
-- Just this repo (cwd) — only when cwd is inside a workspace child
-- Cancel
-```
-
-Record the resolved set as `targetRepos` in `checkpoint.md`. When the resolved set has exactly one repo and the user is inside that repo via `--this-repo`, treat the rest of the flow as a single-repo flow against that `repoPath` (no workspace state).
-
-**Iron rule (no silent broadcast):** workspace mode never proceeds past Triage without an explicit repo set.
-
-**Resolve the Jira link.** Before initializing workspace state:
-
-- If `--jira <KEY>` was passed, validate against `^[A-Z][A-Z0-9_]*-\d+$`. Reject and stop on mismatch.
-- Otherwise, ask via `AskUserQuestion` — *"Link a Jira ticket to this flow?"* with options:
-  - `Paste a key` (then prompt for the key, validate the same way)
-  - `Skip — I'll bind later via /orc:jira bind`
-  - `No ticket — this work has no tracker entry`
+**Iron rule (no silent broadcast):** workspace mode never proceeds past Triage without an explicit repo set — the repo-set question is bundled, never inferred or defaulted.
 
 Initialize `${ORC_STATE_DIR}/<sanitized-branch>/files/` and write `checkpoint.md` (phase=1, command=flow, total_phases=9 — adjust for skipped phases). Add `jiraTicket: <KEY>` to the frontmatter when set. Append entry to `${ORC_STATE_DIR}/orc.json` with `command: "flow"`, `jiraTicket: <KEY>` (omit field if null), and — in workspace mode — `scope: "workspace"`, `repos: targetRepos`, `perRepoState: { <repo>: { repoPath, currentSlice: 0, prUrl: null } }`.
 

@@ -70,6 +70,19 @@ Which option?
 
 **Don't add explanation** - keep options concise.
 
+### Caller-supplied preview mode (one gate instead of two)
+
+When the calling command has **already composed the PR title + body** (e.g. `/orc:ship`, which composes before gating), it passes them in and Steps 3–4's two questions collapse into ONE. Print the Gate headline (`**⛔ Gate — ship**`, one line: tests green, N commits on `<branch>`), render the composed title + body in a fence, then `AskUserQuestion`:
+
+```
+1. Open PR as previewed (Recommended)
+2. Open as draft
+3. Edit title/body first — collect edits, re-render the preview, re-ask
+4. Another completion path — merge back locally / keep as-is / discard
+```
+
+Options 1–2 execute Option 2 below (push + `gh pr create`; `--draft` for option 2) with the previewed body verbatim. Option 4 opens the standard 4-option question from Step 3 as a follow-up and proceeds per Steps 4–5 (the discard confirmation still applies). The preview shown IS the payload posted — any edit loops back through the preview.
+
 ### Step 4: Execute Choice
 
 #### Option 1: Merge Locally
