@@ -403,7 +403,7 @@ After cleanup: mark `.orc/orc.json` entry `status: completed`, echo a summary.
 
 ## Resume
 
-If interrupted at any phase, `/orc:resume` reads `.orc/<branch>/files/checkpoint.md` and re-enters at the next pending phase. Or just re-run `/orc:flow` — the command itself reads the checkpoint and jumps forward.
+If interrupted at any phase, `/orc:resume` re-enters at the next pending phase. Or just re-run `/orc:flow` — self-resume runs the **session-startup sequence from `orc:state-protocol`** (entry via `orc-state current` → bounded checkpoint → git cross-check vs the digest → slice list → the one artifact the digest's `Next:` names → `orc-state verify`) and jumps forward. Flow's self-resume is scoped: it may only resume an `in_progress` `command: "flow"` session on the **current branch**; anything else is handed to `/orc:resume`.
 
 This means a typical workday looks like:
 
