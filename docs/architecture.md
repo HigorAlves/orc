@@ -37,7 +37,7 @@ orc/
 
 ## PreToolUse(Bash) hooks
 
-`hooks/hooks.json` narrows the guards with `"if"` permission-rule filters so each only spawns on its relevant git/gh commands. The `if:` filter is documented but best-effort — it **fails open** on unparseable commands — so every guard re-matches the command in-script; those regexes are smoke-tested in CI (`scripts/ci/verify-guard-hooks.sh`):
+`hooks/hooks.json` wires every git/gh pattern to a single dispatcher, **`pre-git-guard.sh`**, which pipes the command through all three checks below and merges their verdicts into at most one permission prompt (deny > ask; reasons joined with `ALSO:`) — a `git push --force` on a protected branch trips two checks but asks once. The `"if"` permission-rule filters narrow which commands spawn the dispatcher, but that filter is best-effort — it **fails open** on unparseable commands — so every check re-matches the command in-script; the regexes and the dispatcher merge are smoke-tested in CI (`scripts/ci/verify-guard-hooks.sh`):
 
 - **`pre-commit-branch-check.sh`** (`git commit`/`git push`) — on protected branches (`main`/`master`/`develop`) it emits `permissionDecision: "ask"`, downgrading the commit/push to a one-keystroke confirm prompt with the reason attached. No env-var escape; the confirm *is* the override.
 - **`pre-commit-no-ai-attribution.sh`** (`git commit`/`gh pr`/`gh issue`) — denies (JSON `permissionDecision: "deny"`) any commit/PR/issue body carrying AI-attribution markers. Override only with `ORC_ALLOW_AI_ATTRIBUTION=1`.
