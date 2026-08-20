@@ -148,6 +148,42 @@ perms="$(stat -c %a "$bridge" 2>/dev/null || stat -f %Lp "$bridge" 2>/dev/null)"
 if [ "$perms" = "600" ]; then ok; else fail "10: bridge perms $perms != 600"; fi
 if jq -e '.schema == 1 and .raw_pct == 68 and .tier == "yellow"' "$bridge" >/dev/null 2>&1; then ok; else fail "10: bridge content wrong: $(cat "$bridge")"; fi
 
+# --- 11: context-monitor bridge hook ---------------------------------------
+# Advisory warnings for the agent, fed by the bridge file. Once per tier;
+# critical escalates past a red warning; stale/missing/quiet tiers silent.
+monitor="$repo_root/orc/hooks/scripts/post-context-monitor.sh"
+hook_in() { jq -n --arg sid "$1" '{session_id: $sid, hook_event_name: "PostToolUse"}'; }
+mk_bridge() { # $1 = sid, $2 = tier, $3 = eff pct, $4 = warned, $5 = age-seconds
+  jq -cn --arg ts "$(( $(date +%s) - ${5:-0} ))" --arg t "$2" --arg e "$3" --arg w "${4:-}" \
+    '{schema:1, ts:($ts|tonumber), raw_pct:($e|tonumber), effective_pct:($e|tonumber), tier:$t, warned_tier:$w}' \
+    > "$TMPDIR/orc-ctx-$1.json"
+}
+
+# no bridge file -> silent exit 0
+out="$(hook_in mon-none | bash "$monitor")"; rc=$?
+if [ "$rc" -eq 0 ] && [ -z "$out" ]; then ok; else fail "11a: missing bridge must be silent rc0, got rc=$rc out=$out"; fi
+# yellow tier -> silent
+mk_bridge mon-y yellow 65 "" 0
+out="$(hook_in mon-y | bash "$monitor")"
+if [ -z "$out" ]; then ok; else fail "11b: yellow must not warn"; fi
+# stale red -> silent
+mk_bridge mon-stale red 84 "" 500
+out="$(hook_in mon-stale | bash "$monitor")"
+if [ -z "$out" ]; then ok; else fail "11c: stale bridge must not warn"; fi
+# fresh red -> warns once, advisory wording, then records warned_tier
+mk_bridge mon-r red 84 "" 0
+out="$(hook_in mon-r | bash "$monitor")"
+if printf '%s' "$out" | jq -e '.hookSpecificOutput.additionalContext | test("84%")' >/dev/null 2>&1; then ok; else fail "11d: red must warn with pct: $out"; fi
+if printf '%s' "$out" | jq -r '.hookSpecificOutput.additionalContext' | grep -qiE "must|immediately"; then fail "11d: wording must stay advisory"; else ok; fi
+if jq -e '.warned_tier == "red"' "$TMPDIR/orc-ctx-mon-r.json" >/dev/null; then ok; else fail "11d: warned_tier not recorded"; fi
+# same tier again -> silent (debounce)
+out="$(hook_in mon-r | bash "$monitor")"
+if [ -z "$out" ]; then ok; else fail "11e: red must warn only once"; fi
+# escalation to critical past a red warning -> warns again
+mk_bridge mon-r critical 92 red 0
+out="$(hook_in mon-r | bash "$monitor")"
+if printf '%s' "$out" | jq -e '.hookSpecificOutput.additionalContext | test("92%")' >/dev/null 2>&1; then ok; else fail "11f: critical must escalate past red: $out"; fi
+
 # --- 13: perf guard (5 renders well under budget) --------------------------
 start="$(date +%s)"
 for _ in 1 2 3 4 5; do payload "$repo_a" sl-fix-13 "$FULL_EXTRA" | "$sl" >/dev/null; done
