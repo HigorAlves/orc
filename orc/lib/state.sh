@@ -150,7 +150,10 @@ orc_state_init() { # --command C --total-phases N [--branch B] [--description D]
       *) echo "orc-state init: unknown argument $1" >&2; return 2 ;;
     esac
   done
-  [ -n "$command" ] && [ -n "$total" ] || { echo "orc-state init: --command and --total-phases are required" >&2; return 2; }
+  if [ -z "$command" ] || [ -z "$total" ]; then
+    echo "orc-state init: --command and --total-phases are required" >&2
+    return 2
+  fi
   if [ -z "$branch" ]; then branch="$(orc_state__current_branch)"; fi
   [ -n "$branch" ] || { echo "orc-state init: no --branch and no current git branch" >&2; return 2; }
   local sid now
@@ -285,7 +288,10 @@ orc_state_link_pr() { # --repo R --url U [--number N] [--stack-id S] [--stack-po
       *) echo "orc-state link-pr: unknown argument $1" >&2; return 2 ;;
     esac
   done
-  [ -n "$repo" ] && [ -n "$url" ] || { echo "orc-state link-pr: --repo and --url are required" >&2; return 2; }
+  if [ -z "$repo" ] || [ -z "$url" ]; then
+    echo "orc-state link-pr: --repo and --url are required" >&2
+    return 2
+  fi
   local sid
   sid="$(orc_state__sid "$branch")" || return 1
   orc_state__entry "$sid" >/dev/null || return 1
@@ -412,7 +418,10 @@ orc_state_slice_set() { # <id> --status S [--commit SHA] [--actual-loc N] [--not
       *) id="$1"; shift ;;
     esac
   done
-  [ -n "$id" ] && [ -n "$new" ] || { echo "orc-state slice set: <id> and --status are required" >&2; return 2; }
+  if [ -z "$id" ] || [ -z "$new" ]; then
+    echo "orc-state slice set: <id> and --status are required" >&2
+    return 2
+  fi
   case " $ORC_STATE_SLICE_STATUSES " in
     *" $new "*) : ;;
     *) echo "orc-state slice set: '$new' not in: $ORC_STATE_SLICE_STATUSES" >&2; return 2 ;;
