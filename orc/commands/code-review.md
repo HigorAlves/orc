@@ -137,6 +137,8 @@ Each agent gets:
    else:                                                       event = "COMMENT"
    ```
 
+**Persist before the gate** (per `orc:state-protocol`'s persistence rule): write the merged, validated findings + computed event to `${ORC_STATE_DIR}/<sanitized-branch>/files/review-findings.json`, stamped with the PR's `headSha` + `generatedAt`. An interrupted review re-enters at Phase 6 from this file — matching head sha means no agent re-dispatch (each reviewer run is the expensive part); a mismatch offers reuse vs re-review.
+
 ### Phase 5 — Compose the review
 
 Invoke `orc:inline-review`. Build:

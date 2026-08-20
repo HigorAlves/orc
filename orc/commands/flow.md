@@ -250,7 +250,7 @@ After grouping by repo, for each repo's slices:
 
 Iterate groups in ascending order. After each batch:
 - Sequential: implementer already committed and set its slice `committed` in the ledger; advance.
-- Parallel: collect all returned diffs + test reports, apply them in group order via `orc:git-commit` (one commit per slice, in order), run the full suite once after all diffs are applied to confirm green, then `orc-state slice set <id> --status committed --commit <sha>` per slice.
+- Parallel: **persist each returned diff + report first** — `${ORC_STATE_DIR}/<branch>/files/slices/slice-NN.diff` + `slice-NN-report.md` (per `orc:state-protocol`; a crash between collection and apply re-applies from disk instead of re-dispatching implementers) — then apply them in group order via `orc:git-commit` (one commit per slice, in order), run the full suite once after all diffs are applied to confirm green, then `orc-state slice set <id> --status committed --commit <sha>` per slice.
 
 **Phase 5 → 6 advance is a query, not a claim**: `orc-state slice list --status pending,red,escalated` must exit clean. A non-empty result blocks the advance and surfaces the stragglers — a stale ledger fails safe.
 

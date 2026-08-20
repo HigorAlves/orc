@@ -118,6 +118,8 @@ Read the returned JSON. If `unsplittable: true`, surface the agent's rationale a
 
 ### Phase 4 — Preview & confirm
 
+**Persist before the gate**: write the slice + rebase plan to `${ORC_STATE_DIR}/<sanitized-branch>/files/stack-plan.json` (stamped `headSha` + `generatedAt`, per `orc:state-protocol`) — an interrupted run restacks or re-previews from the file without re-dispatching `orc-stack-analyzer`.
+
 Render the preview headline, then the stack table in a fence (tables never go inside callouts):
 
 ```markdown
