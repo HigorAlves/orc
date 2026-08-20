@@ -108,12 +108,17 @@ Discovery — finding and understanding the code relevant to a task — is the l
 
 Any change touching a web surface goes through `/orc:qa --web` (or auto-detected). The `orc-qa-validator` agent drives a real browser via the [vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser) CLI (loaded via the `orc:agent-browser` skill), capturing **required** artifacts:
 - per-step `screenshot-NN-<step>.png` (use `--annotate` to overlay element refs `@eN`)
+- `ac-<sliceId>-<idx>-<slug>.png` — one shot per acceptance criterion, captured at the moment it becomes observable
+- `qa-<branch>.webm` — the recorded walk (from `agent-browser record start/stop`), required whenever the change touches a rendered surface. agent-browser's recorder wraps `ffmpeg` (a **recommended** tool in the tool-check above), so a host without it degrades to stills plus a stated reason in `steps.md` — the run is never blocked and the gap is never silent
+- `qa-manifest.json` — the machine-readable packet spine: artifacts, curated publish payload, and one scored `acceptance` row per criterion
 - `snapshot-final.txt` — accessibility tree at end of run (from `agent-browser snapshot`)
 - `console.log` — browser console output (from `agent-browser console`)
 - `network.har` — network traffic (from `agent-browser network har start/stop`)
 - `steps.md` — narrated golden-path + edge cases
 
-Optional bonus artifacts (NOT required): `trace.json` (Chrome DevTools), `react-renders.json`, `vitals.json`, OS-recorded `video.mov`. agent-browser does not record video natively; use `screencapture -v` (macOS) or similar when video is genuinely needed.
+The acceptance criteria are the rubric, not the decoration: both drivers load them from `slices.json` before touching the browser, and both score every one into `qa-manifest.json`, which is what `/orc:qa` Phase 5 reads to build `qa-verdict.json`. The Claude-in-Chrome driver produces a `qa-<branch>.gif` instead of on-disk screenshots (the session cannot write binary), so its criterion evidence anchors to numbered steps in `steps.md`.
+
+Optional bonus artifacts (NOT required): `trace.json` (Chrome DevTools), `react-renders.json`, `vitals.json`.
 
 No "QA passed" claim is accepted without the required artifacts in `.orc/<branch>/files/qa/`. `orc:verification-before-completion` enforces this.
 

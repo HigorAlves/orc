@@ -33,7 +33,7 @@ orc version
 orc doctor --fix
 ```
 
-Checks the tools orc relies on and installs any that are missing via your system package manager. **You should see** `git` and `jq` reported present — these two are **required** (`orc doctor` exits non-zero if either is missing). It also offers the **recommended** set (`gh`, `agent-browser`, `acli`, `docker`, `graphify`, `osv-scanner`, `gitleaks`, `sentry-cli`); those aren't required, but individual commands use them — see [Requirements](#requirements) for who uses what.
+Checks the tools orc relies on and installs any that are missing via your system package manager. **You should see** `git` and `jq` reported present — these two are **required** (`orc doctor` exits non-zero if either is missing). It also offers the **recommended** set (`gh`, `agent-browser`, `acli`, `docker`, `graphify`, `osv-scanner`, `gitleaks`, `sentry-cli`, `ffmpeg`); those aren't required, but individual commands use them — see [Requirements](#requirements) for who uses what.
 
 > [!TIP]
 > Running unattended (CI, dotfiles)? Add `-y` to skip prompts: `orc doctor --fix -y`. Just want to check without installing? Run `orc doctor` on its own.
@@ -132,5 +132,6 @@ orc's SessionStart pre-flight (`session-start-tool-check.sh`) verifies these CLI
 | `osv-scanner` | recommended | `/orc:deps` — ecosystem-agnostic vulnerability audit (per-ecosystem scanners as fallback) |
 | `gitleaks` | recommended | `/orc:code-review --audit` — secret scanning (regex fallback without it) |
 | `sentry-cli` | recommended | `/orc:incident` — pull Sentry issues/events into live triage |
+| `ffmpeg` | recommended | `/orc:qa`, `/orc:evidence` — motion evidence; agent-browser's `record` wraps ffmpeg, so headless QA captures stills only without it |
 
 Suppress the check where missing tools are intentional: `export ORC_SKIP_TOOL_CHECK=1`.

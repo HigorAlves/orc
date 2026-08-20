@@ -99,6 +99,9 @@ jobs:
       - name: Version / release-ref consistency
         run: bash scripts/ci/verify-version.sh
 
+      - name: Tool registry integrity
+        run: bash scripts/ci/verify-tools.sh
+
   plugin-validate:
     runs-on: ubuntu-latest
     timeout-minutes: 10

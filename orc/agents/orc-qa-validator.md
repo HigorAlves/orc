@@ -1,7 +1,7 @@
 ---
 name: orc-qa-validator
-description: Executor role — drives a real browser via the agent-browser CLI (vercel-labs/agent-browser) to QA a running web application — golden path + edge cases — and writes an evidence packet (annotated screenshots, accessibility snapshots, browser console, network HAR, narrated steps) to .orc/<branch>/files/qa/. Used by /orc:qa whenever a change touches a web surface. Required for any "QA passed" claim on web changes.
-tools: Read, Write, Edit, Glob, Grep, Skill, Bash(curl:*), Bash(node:*), Bash(npm:*), Bash(pnpm:*), Bash(agent-browser:*), Bash(npx agent-browser:*)
+description: Executor role — drives a real browser via the agent-browser CLI (vercel-labs/agent-browser) to QA a running web application — golden path + edge cases — and writes an evidence packet (criterion-anchored annotated screenshots, a WebM recording, accessibility snapshots, browser console, network HAR, narrated steps, qa-manifest.json) to .orc/<branch>/files/qa/. Used by /orc:qa whenever a change touches a web surface. Required for any "QA passed" claim on web changes.
+tools: Read, Write, Edit, Glob, Grep, Skill, Bash(curl:*), Bash(node:*), Bash(npm:*), Bash(pnpm:*), Bash(agent-browser:*), Bash(npx agent-browser:*), Bash(command -v:*), Bash(ffmpeg:*)
 model: sonnet
 effort: low
 color: orange
@@ -32,6 +32,8 @@ Given:
 - **Usually:** `appUrl` + `serviceEndpoints` + `envStatePath` from a provisioned environment (`docker-env-state.json`) — the caller ran `orc-env-provisioner` before dispatching you.
 - Only when no environment was provisioned: a `--web` URL, or legacy boot instructions.
 - A target directory: `.orc/<sanitized-branch>/files/qa/`.
+- **Acceptance criteria** — the relevant slices' `acceptance` lists, each tagged with its slice id and index. These are your scoring rubric: you walk the app to prove them, and every one ends the run scored with the artifact that proves it.
+- **`isVisual`** — whether the change touches a rendered surface. When true, recording the walk is a required artifact (step 2).
 
 You produce an evidence packet that proves the change works (or does not).
 
@@ -55,6 +57,11 @@ You never run `docker`, never start sibling repos, never tear the environment do
 ```bash
 agent-browser open <url>
 agent-browser network har start
+
+# Record the walk (WebM). agent-browser's recorder wraps ffmpeg, so probe first —
+# `record start` succeeds optimistically and only `record stop` fails without it:
+command -v ffmpeg >/dev/null 2>&1 && \
+  agent-browser record start "<qa-dir>/qa-<sanitized-branch>.webm"
 ```
 
 Set viewport if relevant (e.g. mobile breakpoint check):
@@ -73,6 +80,10 @@ agent-browser snapshot
 
 # Capture an annotated screenshot — labels every interactive element with @eN refs:
 agent-browser screenshot --annotate "<qa-dir>/screenshot-NN-<step-slug>.png"
+
+# When this moment is where an acceptance criterion becomes observable, ALSO
+# capture a shot named for that criterion — this is what proves the row:
+agent-browser screenshot --annotate "<qa-dir>/ac-<sliceId>-<idx>-<criterion-slug>.png"
 
 # Interact via the refs from the snapshot:
 agent-browser click @e2
@@ -126,20 +137,33 @@ agent-browser console > "<qa-dir>/console.log"
 # Final accessibility tree (useful for AI agents reviewing later)
 agent-browser snapshot > "<qa-dir>/snapshot-final.txt"
 
+# Stop the recording BEFORE closing — closing first loses the file
+command -v ffmpeg >/dev/null 2>&1 && agent-browser record stop
+
 # Close the browser cleanly
 agent-browser close
 ```
+
+**Motion proof is ffmpeg-gated.** `agent-browser record` shells out to ffmpeg; without it, `record start` prints a success line and `record stop` then fails with `ffmpeg not found`. So probe with `command -v ffmpeg` rather than trusting the start line.
+
+- **ffmpeg present + visual change** → the WebM is a required artifact. Optionally also emit a GIF for ticket embedding (a GIF renders inline in a Jira comment; a WebM does not):
+  ```bash
+  ffmpeg -y -i "<qa-dir>/qa-<branch>.webm" -vf "fps=8,scale=960:-1:flags=lanczos" \
+    "<qa-dir>/qa-<branch>.gif" || echo "gif conversion failed — webm stands"
+  ```
+- **ffmpeg missing** → you still pass, on stills alone. Never install it yourself, never fail the run. Write the reason into `steps.md` verbatim — `Motion proof: skipped — ffmpeg not installed`. Silence here would read as "the change isn't visual", which is a different claim.
 
 Optional (NOT required, but useful):
 
 - **Chrome DevTools trace** for perf-sensitive QA: `agent-browser trace start "<qa-dir>/trace.json"` ... `agent-browser trace stop`.
 - **React-specific perf** (Next.js / RSC): `agent-browser react renders start` / `stop --json > "<qa-dir>/react-renders.json"`.
 - **Web Vitals**: `agent-browser vitals --json > "<qa-dir>/vitals.json"`.
-- **Screen video** — agent-browser does NOT record video natively. If the change visually animates, capture an OS screen recording (e.g. `screencapture -v` on macOS) into `<qa-dir>/video.mov`. Treat as bonus, not required.
 
-### 6. Write `steps.md`
+### 6. Write `steps.md` + `qa-manifest.json`
 
 Author a numbered narrative at `<qa-dir>/steps.md` (template below). Reference each screenshot.
+
+Then write `<qa-dir>/qa-manifest.json` — the machine-readable spine the caller reads instead of parsing your prose. Shape and field rules: `orc:state-protocol` `references/schema.md`. Set `driver: "agent-browser"`, list every file you wrote, curate the 3–5 items that best prove the behavior, and emit one `acceptance[]` row per criterion you were given — `evidence` names the `ac-*.png` that proves it, and a `skipped` row MUST carry a `note` saying why it was un-scoreable.
 
 ### 7. Update workspace state
 
@@ -151,6 +175,9 @@ A `qa/` directory is **valid evidence** only if it contains all of:
 
 - ≥ 1 `screenshot-<NN>-<step>.png` for the golden path
 - ≥ 1 `screenshot-<NN>-<step>.png` for edge cases (or an explicit note in `steps.md` saying "no edge cases applicable, here's why")
+- One `ac-<sliceId>-<idx>-<slug>.png` per acceptance criterion you scored `pass` or `fail` (a `skipped` row carries a reason instead)
+- `qa-<branch>.webm` — the recording, whenever `isVisual` **and** ffmpeg is installed. Any other case ⇒ an explicit one-line reason in `steps.md` (`non-visual change` or `ffmpeg not installed`), never a silent omission
+- `qa-manifest.json` (the machine-readable spine — the caller reads this, not your prose)
 - `snapshot-final.txt` (accessibility tree at end of run)
 - `console.log` (even if empty — proves you captured)
 - `network.har` (even if small)
@@ -172,6 +199,14 @@ agent-browser: <agent-browser --version output>
 1. **Open <page>** — expected: <…> — actual: <…> — ![](screenshot-01-open.png)
 2. **Fill form with valid data** — expected: <…> — actual: <…> — ![](screenshot-02-filled.png)
 3. **Submit** — expected: redirect to /dashboard — actual: <…> — ![](screenshot-03-success.png)
+
+## Acceptance criteria
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| slice-3-ac-1 — POST /export returns 202 + Location header | pass | ac-3-1-export-202.png |
+| slice-3-ac-2 — Toast reads "Export queued" | fail | ac-3-2-toast.png (toast never renders) |
+| slice-3-ac-3 — Retry after 24h resets quota | skipped | not reachable in a browser session — needs a clock-shift harness |
 
 ## Edge cases
 
@@ -206,11 +241,7 @@ or
 
 Return:
 1. Path to the populated `qa/` directory.
-2. A **manifest block** — the caller consumes this instead of re-reading `steps.md`:
-   - `artifacts`: every file written (name + one-line role)
-   - `curated`: the 3–5 items that best prove the behavior (evidence-publish uses this selection verbatim)
-   - `acceptance`: when the brief carried per-slice acceptance criteria, one `pass|fail|skipped` row per criterion with the artifact that proves it
-   - `summary`: ≤3 lines — golden path verdict, edge-case verdict, anything notable
+2. Confirmation that `qa-manifest.json` is written, plus its `summary` inline: ≤3 lines — golden path verdict, edge-case verdict, anything notable. **The manifest file is the contract** — the caller reads `artifacts`, `curated`, and `acceptance` from it, never from your prose or from `steps.md`.
 3. The exit verdict: `pass` / `fail` / `partial`. (The dispatching command computes the session verdict mechanically from all checks — yours is one input, never the final word.)
 
 ## Iron rules

@@ -43,7 +43,7 @@ Run a quality gate before opening a PR. Two modes:
 - `--web <url>` — explicit URL of a running app (skips env provisioning AND the validator's boot path — you're saying it's already up).
 - `--no-web` — force code-only mode even if web files were touched.
 - `--no-env` — skip Docker env provisioning; the validator falls back to its legacy dev-script boot.
-- `--driver agent-browser|chrome` — pick the browser driver up front and skip the Phase 4.1 prompt. `agent-browser` = headless CLI via `orc-qa-validator` (annotated screenshots, HAR, network mocking). `chrome` = Claude-in-Chrome extension, run inline so the user watches live in their real browser (real sessions/extensions, GIF recording).
+- `--driver agent-browser|chrome` — pick the browser driver up front and skip the Phase 4.1 prompt. `agent-browser` = headless CLI via `orc-qa-validator` (criterion-anchored annotated screenshots, WebM recording when `ffmpeg` is installed, HAR, network mocking). `chrome` = Claude-in-Chrome extension, run inline so the user watches live in their real browser (real sessions/extensions, GIF recording).
 - The remaining argument is the feature description (used to scope golden-path testing).
 
 ## Workflow
@@ -76,11 +76,11 @@ If verification (Phase 2) flagged untested branches — dispatch **`orc-test-aut
 
 ### Phase 4 (web mode only) — Browser QA
 
-Invoke **`orc:browser-qa`** and execute its protocol end-to-end: env attach/provision (step 0), the driver gate (step 1 — `--driver` or a settled `driver` decision skips it), then Driver A (validator dispatch with the acceptance lists and manifest return) or Driver B (Claude-in-Chrome inline with the chrome-mode evidence packet). This command adds nothing to the protocol — the skill is the single source of truth shared with `/orc:flow` Phase 6.
+Invoke **`orc:browser-qa`** and execute its protocol end-to-end: env attach/provision (step 0), the driver gate (step 1 — `--driver` or a settled `driver` decision skips it), the acceptance-criteria load (step 2 — both drivers), then Driver A (validator dispatch) or Driver B (Claude-in-Chrome inline). Either way the driver writes `qa-manifest.json` into the packet dir. This command adds nothing to the protocol — the skill is the single source of truth shared with `/orc:flow` Phase 6.
 
 ### Phase 5 — Write the verdict
 
-Write `${ORC_STATE_DIR}/<sanitized-branch>/files/qa-verdict.json` (shape per `orc:state-protocol` `references/schema.md`): one `checks[]` row per suite check (tests/lint/type-check), per slice acceptance criterion scored (`kind: "acceptance"`, evidence = the artifact that proves it; un-scoreable → `result: "skipped"`, visibly), and per browser walk. **The `verdict` is computed mechanically — any `fail` → `fail`; else any `partial` → `partial`; else `pass`. Agents never decide it; this file is what ship/flow gates read.** Stamp `headSha` + `generatedAt`.
+Write `${ORC_STATE_DIR}/<sanitized-branch>/files/qa-verdict.json` (shape per `orc:state-protocol` `references/schema.md`): one `checks[]` row per suite check (tests/lint/type-check), per slice acceptance criterion, and per browser walk. **The acceptance rows are copied from the packet's `qa-manifest.json` `acceptance[]`, not re-derived from prose** — `kind: "acceptance"`, `evidence` = the manifest row's first `evidence` entry; un-scoreable → `result: "skipped"` with the manifest's `note`, visibly. A web-mode run whose manifest is missing or whose criteria are unscored is incomplete evidence, not a pass. **The `verdict` is computed mechanically — any `fail` → `fail`; else any `partial` → `partial`; else `pass`. Agents never decide it; this file is what ship/flow gates read.** Stamp `headSha` + `generatedAt`.
 
 Also append the human-readable block to `.orc/<branch>/files/progress.md`:
 ```
@@ -106,13 +106,18 @@ For any web-mode QA, the `qa/` directory MUST contain the driver's full packet:
 
 | Artifact | Driver A — agent-browser | Driver B — chrome |
 |----------|--------------------------|-------------------|
-| Visual proof | `screenshot-NN-<step>.png` per golden-path step (`--annotate`) + edge-case shots | `qa-<branch>.gif` recording (edge cases included, or an explicit "no edge cases applicable, here's why" note in `steps.md`) |
+| Visual proof | `screenshot-NN-<step>.png` per golden-path step (`--annotate`) + edge-case shots | in-conversation screenshots, referenced by step number in `steps.md` (`Write` cannot emit binary) |
+| Criterion proof | `ac-<sliceId>-<idx>-<slug>.png` per scored criterion | the numbered `### Step <N>` anchor a criterion's `evidence` points at |
+| Motion proof | `qa-<branch>.webm` (`agent-browser record` — needs `ffmpeg`) (+ optional `.gif` for ticket embedding) | `qa-<branch>.gif` (`gif_creator`, edge cases included) |
+| Manifest | `qa-manifest.json` | `qa-manifest.json` |
 | A11y snapshot | `snapshot-final.txt` (`agent-browser snapshot`) | `snapshot-final.txt` (`read_page` output) |
 | Console | `console.log` (`agent-browser console`) | `console.log` (`read_console_messages`; state any filter used) |
 | Network | `network.har` (`agent-browser network har stop`) | `network-summary.md` (distilled `read_network_requests`) |
 | Narrative | `steps.md` | `steps.md` (same template) |
 
-Optional bonus evidence (NOT required): `trace.json` (Chrome DevTools trace), `react-renders.json`, `vitals.json`, an OS-recorded `video.mov`. Add these only when relevant to the change.
+Motion proof is required whenever the change touches a rendered surface. Two exemptions, both of which must be stated as a one-line reason in `steps.md` rather than silently omitted: a non-visual change, or (Driver A only) `ffmpeg` not installed — agent-browser's recorder wraps ffmpeg, so a headless run without it captures stills only. The Claude-in-Chrome driver's `gif_creator` has no such dependency. Every acceptance criterion must appear in `qa-manifest.json` with a result, and a `skipped` row must say why.
+
+Optional bonus evidence (NOT required): `trace.json` (Chrome DevTools trace), `react-renders.json`, `vitals.json`. Add these only when relevant to the change.
 
 The chrome driver trades HAR-grade network capture and request mocking for live visibility — that's the user's call at the gate, not a loophole: its packet above is still mandatory in full.
 
