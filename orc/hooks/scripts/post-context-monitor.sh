@@ -41,5 +41,7 @@ jq -n --arg ctx "$msg" '{
 }'
 
 # Debounce: record the tier we just warned at (atomic, best-effort).
-jq --arg w "$tier" '.warned_tier = $w' "$f" > "$f.tmp" 2>/dev/null && mv "$f.tmp" "$f" || true
+if jq --arg w "$tier" '.warned_tier = $w' "$f" > "$f.tmp" 2>/dev/null; then
+  mv "$f.tmp" "$f" 2>/dev/null || true
+fi
 exit 0
