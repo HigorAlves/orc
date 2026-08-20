@@ -28,6 +28,12 @@ if [ -n "$session_payload" ] && command -v jq >/dev/null 2>&1; then
 fi
 [ -z "$session_cwd" ] && session_cwd="$PWD"
 
+# Sweep stale statusline bridge/cache files (>24h) so tmp never accumulates
+# across sessions — the statusline's own sweep only runs while it renders.
+if [ "$session_source" = "startup" ] || [ -z "$session_source" ]; then
+  find "${TMPDIR:-/tmp}" -maxdepth 1 \( -name 'orc-ctx-*' -o -name 'orc-sl-*' \) -mmin +1440 -delete 2>/dev/null || true
+fi
+
 # Detect workspace vs repo vs loose. The hook is its own short-lived process,
 # so detection runs in the main shell — the vars feed the banner, the env-file
 # persistence, and the session title below.
