@@ -82,42 +82,7 @@ These rules are **always enforced**. Each links to a file with Incorrect/Correct
 
 ## Key Patterns
 
-These are the most common patterns that differentiate correct shadcn/ui code. For edge cases, see the linked rule files above.
-
-```tsx
-// Form layout: FieldGroup + Field, not div + Label.
-<FieldGroup>
-  <Field>
-    <FieldLabel htmlFor="email">Email</FieldLabel>
-    <Input id="email" />
-  </Field>
-</FieldGroup>
-
-// Validation: data-invalid on Field, aria-invalid on the control.
-<Field data-invalid>
-  <FieldLabel>Email</FieldLabel>
-  <Input aria-invalid />
-  <FieldDescription>Invalid email.</FieldDescription>
-</Field>
-
-// Icons in buttons: data-icon, no sizing classes.
-<Button>
-  <SearchIcon data-icon="inline-start" />
-  Search
-</Button>
-
-// Spacing: gap-*, not space-y-*.
-<div className="flex flex-col gap-4">  // correct
-<div className="space-y-4">           // wrong
-
-// Equal dimensions: size-*, not w-* h-*.
-<Avatar className="size-10">   // correct
-<Avatar className="w-10 h-10"> // wrong
-
-// Status colors: Badge variants or semantic tokens, not raw colors.
-<Badge variant="secondary">+20.1%</Badge>    // correct
-<span className="text-emerald-600">+20.1%</span> // wrong
-```
+Init/add/build/search invocations, presets, monorepo + namespaced-registry flows: [PATTERNS.md](references/PATTERNS.md).
 
 ## Component Selection
 
@@ -137,33 +102,10 @@ These are the most common patterns that differentiate correct shadcn/ui code. Fo
 | Menus                      | `DropdownMenu`, `ContextMenu`, `Menubar`                                                            |
 | Tooltips/info              | `Tooltip`, `HoverCard`, `Popover`                                                                   |
 
-## Key Fields
 
-The injected project context contains these key fields:
+## Key Fields + Component Docs
 
-- **`aliases`** → use the actual alias prefix for imports (e.g. `@/`, `~/`), never hardcode.
-- **`isRSC`** → when `true`, components using `useState`, `useEffect`, event handlers, or browser APIs need `"use client"` at the top of the file. Always reference this field when advising on the directive.
-- **`tailwindVersion`** → `"v4"` uses `@theme inline` blocks; `"v3"` uses `tailwind.config.js`.
-- **`tailwindCssFile`** → the global CSS file where custom CSS variables are defined. Always edit this file, never create a new one.
-- **`style`** → component visual treatment (e.g. `nova`, `vega`).
-- **`base`** → primitive library (`radix` or `base`). Affects component APIs and available props.
-- **`iconLibrary`** → determines icon imports. Use `lucide-react` for `lucide`, `@tabler/icons-react` for `tabler`, etc. Never assume `lucide-react`.
-- **`resolvedPaths`** → exact file-system destinations for components, utils, hooks, etc.
-- **`framework`** → routing and file conventions (e.g. Next.js App Router vs Vite SPA).
-- **`packageManager`** → use this for any non-shadcn dependency installs (e.g. `pnpm add date-fns` vs `npm install date-fns`).
-- **`preset`** → resolved preset code and values for the current project. Use `npx shadcn@latest preset resolve --json` when you only need preset information.
-
-See [cli.md — `info` command](./cli.md) for the full field reference.
-
-## Component Docs, Examples, and Usage
-
-Run `npx shadcn@latest docs <component>` to get the URLs for a component's documentation, examples, and API reference. Fetch these URLs to get the actual content.
-
-```bash
-npx shadcn@latest docs button dialog select
-```
-
-**When creating, fixing, debugging, or using a component, always run `npx shadcn@latest docs` and fetch the URLs first.** This ensures you're working with the correct API and usage patterns rather than guessing.
+components.json / registry item fields and where to find per-component docs + examples: [REGISTRY-FIELDS.md](references/REGISTRY-FIELDS.md).
 
 ## Workflow
 
@@ -184,70 +126,10 @@ npx shadcn@latest docs button dialog select
    - **Skip**: `npx shadcn@latest init --preset <code> --force --no-reinstall`. Only updates config and CSS, leaves components as-is.
    - **Important**: Always run preset commands inside the user's project directory. `apply` only works in an existing project with a `components.json` file. The CLI automatically preserves the current base (`base` vs `radix`) from `components.json`. If you must use a scratch/temp directory (e.g. for `--dry-run` comparisons), pass `--base <current-base>` explicitly — preset codes do not encode the base.
 
-## Updating Components
 
-When the user asks to update a component from upstream while keeping their local changes, use `--dry-run` and `--diff` to intelligently merge. **NEVER fetch raw files from GitHub manually — always use the CLI.**
+## Updating + Quick Reference
 
-1. Run `npx shadcn@latest add <component> --dry-run` to see all files that would be affected.
-2. For each file, run `npx shadcn@latest add <component> --diff <file>` to see what changed upstream vs local.
-3. Decide per file based on the diff:
-   - No local changes → safe to overwrite.
-   - Has local changes → read the local file, analyze the diff, and apply upstream updates while preserving local modifications.
-   - User says "just update everything" → use `--overwrite`, but confirm first.
-4. **Never use `--overwrite` without the user's explicit approval.**
-
-## Quick Reference
-
-```bash
-# Create a new project.
-npx shadcn@latest init --name my-app --preset base-nova
-npx shadcn@latest init --name my-app --preset a2r6bw --template vite
-
-# Create a monorepo project.
-npx shadcn@latest init --name my-app --preset base-nova --monorepo
-npx shadcn@latest init --name my-app --preset base-nova --template next --monorepo
-
-# Initialize existing project.
-npx shadcn@latest init --preset base-nova
-npx shadcn@latest init --defaults  # shortcut: --template=next --preset=nova (base style implied)
-
-# Apply a preset to an existing project.
-npx shadcn@latest apply a2r6bw
-npx shadcn@latest apply a2r6bw --only theme
-npx shadcn@latest apply a2r6bw --only font
-npx shadcn@latest apply a2r6bw --only theme,font
-
-# Inspect preset codes and project preset state.
-npx shadcn@latest preset decode a2r6bw
-npx shadcn@latest preset url a2r6bw
-npx shadcn@latest preset open a2r6bw
-npx shadcn@latest preset resolve
-npx shadcn@latest preset resolve --json
-
-# Add components.
-npx shadcn@latest add button card dialog
-npx shadcn@latest add @magicui/shimmer-button
-npx shadcn@latest add --all
-
-# Preview changes before adding/updating.
-npx shadcn@latest add button --dry-run
-npx shadcn@latest add button --diff button.tsx
-npx shadcn@latest add @acme/form --view button.tsx
-
-# Search registries.
-npx shadcn@latest search @shadcn -q "sidebar"
-npx shadcn@latest search @tailark -q "stats"
-
-# Get component docs and example URLs.
-npx shadcn@latest docs button dialog select
-
-# View registry item details (for items not yet installed).
-npx shadcn@latest view @shadcn/button
-```
-
-**Named presets:** `nova`, `vega`, `maia`, `lyra`, `mira`, `luma`
-**Templates:** `next`, `vite`, `start`, `react-router`, `astro` (all support `--monorepo`) and `laravel` (not supported for monorepo)
-**Preset codes:** Version-prefixed base62 strings (e.g. `a2r6bw` or `b0`), from [ui.shadcn.com](https://ui.shadcn.com).
+Update/diff flows and the full CLI flag reference: [CLI-REFERENCE.md](references/CLI-REFERENCE.md).
 
 ## Detailed References
 
