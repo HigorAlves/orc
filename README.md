@@ -89,7 +89,7 @@ orc install                                                                     
 Then **restart Claude Code** (or `/reload-plugins`) and type `/orc:` — the command palette should populate. That's the whole setup.
 
 > [!TIP]
-> Pin a version with `orc install --ref orc--v0.21.0`, install without the CLI (`/plugin marketplace add HigorAlves/orc`), or build from source — the step-by-step guide with verification checkpoints, the marketplace-only path, and the full requirements table are in [docs/install.md](./docs/install.md).
+> Pin a version with `orc install --ref orc--v0.22.0`, install without the CLI (`/plugin marketplace add HigorAlves/orc`), or build from source — the step-by-step guide with verification checkpoints, the marketplace-only path, and the full requirements table are in [docs/install.md](./docs/install.md).
 
 ## Statusline
 
