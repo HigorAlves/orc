@@ -55,7 +55,43 @@ while IFS= read -r key; do
   status=1
 done < <(jq -r '(.userConfig // {}) | keys[]' "$plugin_json")
 
+# 4. SessionStart payload is source-aware: full skill on startup/clear, a
+#    short reminder on resume, the iron-rules digest on compact. Assert on
+#    the additionalContext each source produces (run outside any env-file
+#    persistence; cwd payload keeps detection in-repo).
+ss_script="orc/hooks/scripts/session-start-using-orc.sh"
+ss_ctx() { # $1 = source
+  jq -n --arg s "$1" --arg cwd "$repo_root" '{source: $s, cwd: $cwd}' \
+    | env -u CLAUDE_ENV_FILE bash "$ss_script" \
+    | jq -r '.hookSpecificOutput.additionalContext // empty'
+}
+
+ctx_startup="$(ss_ctx startup)"
+ctx_resume="$(ss_ctx resume)"
+ctx_compact="$(ss_ctx compact)"
+
+if ! printf '%s' "$ctx_startup" | grep -q '## Instruction priority'; then
+  echo "verify-hooks: startup payload must carry the full using-orc body"
+  status=1
+fi
+if printf '%s' "$ctx_resume" | grep -q '## Instruction priority'; then
+  echo "verify-hooks: resume payload must NOT carry the full using-orc body"
+  status=1
+fi
+if [ "${#ctx_resume}" -gt 2000 ]; then
+  echo "verify-hooks: resume payload too large (${#ctx_resume} chars; cap 2000)"
+  status=1
+fi
+if ! printf '%s' "$ctx_compact" | grep -q 'No commits to main/master/develop'; then
+  echo "verify-hooks: compact payload must carry the iron-rules digest"
+  status=1
+fi
+if printf '%s' "$ctx_compact" | grep -q '## Instruction priority'; then
+  echo "verify-hooks: compact payload must NOT carry the full using-orc body"
+  status=1
+fi
+
 if [ "$status" -eq 0 ]; then
-  echo "verify-hooks: OK (hook scripts, using-orc skill, userConfig consumers all resolve)"
+  echo "verify-hooks: OK (hook scripts, using-orc skill, userConfig consumers, source-aware SessionStart all resolve)"
 fi
 exit "$status"

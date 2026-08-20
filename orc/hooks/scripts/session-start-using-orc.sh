@@ -2,23 +2,29 @@
 # SessionStart hook for orc plugin.
 # Injects the using-orc skill content as additional session context, so
 # the model sees the iron rules + skill catalog before its first response.
+#
+# Payload is source-aware: startup/clear inject the full skill (context is
+# genuinely empty); resume injects a 3-line reminder; compact injects the
+# iron-rules digest only — the full rules were already in the pre-compaction
+# context, and the highest-risk rules are hook-enforced regardless.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-using_orc_content=$(cat "${PLUGIN_ROOT}/skills/using-orc/SKILL.md" 2>&1 || echo "Error reading using-orc skill")
-
-# Read cwd from the SessionStart payload (Claude Code passes one-line JSON on
-# stdin; jq is required by the orc tool-check hook so it's safe to depend on).
+# Read cwd + source from the SessionStart payload (Claude Code passes one-line
+# JSON on stdin; jq is required by the orc tool-check hook so it's safe to
+# depend on).
 session_payload=""
 if [ ! -t 0 ]; then
   session_payload="$(cat 2>/dev/null || true)"
 fi
 session_cwd=""
+session_source=""
 if [ -n "$session_payload" ] && command -v jq >/dev/null 2>&1; then
   session_cwd="$(printf '%s' "$session_payload" | jq -r '.cwd // empty' 2>/dev/null || true)"
+  session_source="$(printf '%s' "$session_payload" | jq -r '.source // empty' 2>/dev/null || true)"
 fi
 [ -z "$session_cwd" ] && session_cwd="$PWD"
 
@@ -74,13 +80,39 @@ ${context_banner}
 "
 fi
 
-session_context="<EXTREMELY_IMPORTANT>
+# Source-aware payload: full skill only when the context is genuinely empty.
+case "$session_source" in
+  resume)
+    # Context (or its summary) carries the session-start injection already.
+    session_context="<EXTREMELY_IMPORTANT>
+orc is active — the full rules from session start still apply.
+
+${banner_section}Reminders: invoke orc skills via the Skill tool (never Read a skill file); no commits to main/master/develop; no claim without verification; multi-phase state lives in .orc/ (resume via /orc:resume).
+</EXTREMELY_IMPORTANT>"
+    ;;
+  compact)
+    # Compaction can drop rules from the summary — re-inject the iron rules
+    # only, sourced from the skill itself so there is no second copy to drift.
+    iron_rules="$(awk '/^## Iron rules$/{f=1; next} /^## /{f=0} f' "${PLUGIN_ROOT}/skills/using-orc/SKILL.md" 2>/dev/null || true)"
+    session_context="<EXTREMELY_IMPORTANT>
+orc is active — post-compaction digest (full rules + skill routing were injected at session start; see the 'orc:using-orc' skill).
+
+${banner_section}**Iron rules:**
+${iron_rules}
+</EXTREMELY_IMPORTANT>"
+    ;;
+  *)
+    # startup, clear, and anything unrecognized: full injection.
+    using_orc_content=$(cat "${PLUGIN_ROOT}/skills/using-orc/SKILL.md" 2>&1 || echo "Error reading using-orc skill")
+    session_context="<EXTREMELY_IMPORTANT>
 You have orc.
 
 ${banner_section}**Below are the core rules of orc (your 'orc:using-orc' skill) — your introduction to using orc skills. For all other skills, use the 'Skill' tool:**
 
 ${using_orc_content}
 </EXTREMELY_IMPORTANT>"
+    ;;
+esac
 
 # jq owns the JSON encoding — it's a hard required dependency; if it's
 # absent, degrade silently (the tool-check hook reports the missing dep).
