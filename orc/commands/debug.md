@@ -105,11 +105,12 @@ graphify save-result --type query --outcome dead_end --nodes <cited-nodes> --que
 
 In workspace mode, group the diagnosis's remediation slices by their `repo:` tag and dispatch **one fixer per repo** (parallel, single response, multiple `Task` calls), each scoped to its own `repoPath`. Aggregate per-repo test reports into a single verdict before deciding green/red.
 
-### Phase 6 — Verify thoroughly
+### Phase 6 — Verify (evidence-currency check, not an automatic re-run)
 
-Invoke `orc:verification-before-completion`. Confirm:
-- The new regression test passes.
-- The full suite passes (no other tests broke).
+The fixer already ran the tests in Phase 5 — verifying means confirming that evidence is real and current, per `orc:verification-before-completion`'s actual doctrine (evidence before assertions, not always-re-execute):
+
+- The fixer's report must **cite the regression-test pass and full-suite-green output with the HEAD sha it ran at**. Evidence present and sha == current HEAD → accept it; record it in the digest (`Suite: green @ <sha>`).
+- Re-run the suite only when the report lacks explicit output, the sha mismatches, or anything touched the tree since. (Evidence-keyed skip — one paragraph to revert if recorded evidence ever proves unreliable.)
 - Any related code paths still behave correctly (`orc:error-handling-patterns` if error handling was touched).
 
 **Record the graph outcome (work-memory loop).** The suite is now green — a *verified* outcome, the only honest moment to reward the graph. If graphify is installed, `graphify-out/graph.json` exists, the `learn_from_outcomes` user config is not `false`, and the investigator's report carried a `## Graph nodes relied on` line, record that those nodes led to a confirmed fix so future discovery prefers them:
