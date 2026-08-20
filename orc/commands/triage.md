@@ -175,7 +175,7 @@ build time; theming is a downstream-consumer concern. Durable reasons only —
 
 ## Iron rules
 
-- **No tracker write without the preview gate.** Every comment, label change, and close is shown verbatim and confirmed first.
+- **No tracker write without the preview gate.** Every comment, label change, and close is shown verbatim and confirmed first — hard-outward per `orc:using-orc`; `--auto`/`interaction_policy` never skip it.
 - **Verify-the-claim is read-only.** Reproduce and run tests; never commit fixes from triage — that's `/orc:debug` or `/orc:flow` work, seeded by the brief.
 - **No AI attribution** in any posted comment, brief, or close message.
 - Session state lives **on the tracker** (triage-note comments), not in `.orc/` — resuming means re-reading the item's notes, checking what the reporter answered, and presenting an updated picture. No checkpoint to register.

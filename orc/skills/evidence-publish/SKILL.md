@@ -41,7 +41,7 @@ Never attach `console.log` / `network.har` / `network-summary.md` / `snapshot-fi
 
 ### 3. Preview gate — always ask
 
-Emit the Preview callout, then the payload **outside** it (blockquotes break alignment), then `AskUserQuestion`. No flag bypasses this — the tracker is outward-facing.
+Emit the Preview callout, then the payload **outside** it (blockquotes break alignment), then `AskUserQuestion`. No flag bypasses this — the tracker is outward-facing (hard-outward per `orc:using-orc`; `--auto`/`interaction_policy` never skip it).
 
 ```
 > **📋 Preview — evidence for <KEY>**

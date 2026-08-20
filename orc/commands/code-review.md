@@ -160,7 +160,7 @@ AskUserQuestion: "20 findings exceed the 15-comment cap. Pick which to drop:"
 
 ### Phase 6 — Preview gate (mandatory)
 
-Show the user the constructed payload before posting. No `--no-confirm` flag bypasses this. Open with the preview callout, then the payload in a fence (aligned comment list never goes inside the callout), then any verdict-override warnings as a separate `[!WARNING]` callout after the fence:
+Show the user the constructed payload before posting. No `--no-confirm` flag bypasses this, and neither do `--auto`/`interaction_policy` — hard-outward per `orc:using-orc`. Open with the preview callout, then the payload in a fence (aligned comment list never goes inside the callout), then any verdict-override warnings as a separate `[!WARNING]` callout after the fence:
 
 ```markdown
 > **📋 Preview — review for #<PR>: <title>**

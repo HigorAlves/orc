@@ -1,6 +1,6 @@
 ---
 description: "Diagnose and fix a red CI run — dispatches orc-ci-investigator, then routes on its verdict: auto-fix via orc-code-fixer, flake re-run, infra escalation, or /orc:debug hand-off. Use when CI is red, PR checks fail, or after a push with --watch."
-argument-hint: "[<pr-number>|<branch>] [--run <id>] [--watch]"
+argument-hint: "[--auto[=guided|full]] [<pr-number>|<branch>] [--run <id>] [--watch]"
 allowed-tools:
   - Bash(orc-state:*)
   - Read
@@ -27,6 +27,8 @@ allowed-tools:
 CI is red and you want to know why — and, when it's the code's fault, get it fixed without hand-reading 4,000 lines of logs. `/orc:ci` dispatches `orc-ci-investigator` for an evidence-cited diagnosis, then routes on the verdict: fix, re-run, escalate, or hand off to `/orc:debug`.
 
 ## Arguments
+
+- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`; taxonomy in `orc:using-orc`). Soft-inward gates consult the resolved policy — `guided` auto-advances mechanical confirms with a printed one-liner; `full` pre-approves them from settled decisions (`orc:state-protocol`), stopping only on escalation-only conditions. Hard-outward gates are unaffected at every level.
 
 - `<pr-number>` or `<branch>` — optional ref. Omitted → the current branch (and its PR, if one exists).
 - `--run <id>` — pin the investigation to an explicit run ID instead of resolving the newest run for the ref.
@@ -62,6 +64,8 @@ The agent returns the structured diagnosis (verdict + evidence table + fix list)
 ### Phase 3 — Route on the verdict
 
 Invoke **`orc:ci-routing`** and execute its protocol: the single-render rule (diagnosis saved via Write, ONE capped preview, 3-line evidence quotes), the `fixable` one-call apply+landing gate, and the `flake` / `infra` / `needs-debug` routes. The skill is the single source of truth shared with `/orc:flow`'s post-open CI gate.
+
+Autopilot: at `full`, the `fixable` route applies the fix list and lands it (commit + push + re-watch) without asking, after printing the capped preview; a red fixer report or a `flake`/`infra`/`needs-debug` verdict still stops (escalation-only).
 
 ### Phase 4 — Checkpoint
 
