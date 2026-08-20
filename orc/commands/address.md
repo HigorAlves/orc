@@ -84,10 +84,13 @@ Then two `Task` calls in the same response:
 
 ### Phase 4 — Review the artifacts
 
-Show the diff + drafted replies to the user via `AskUserQuestion`:
-- "Looks good — commit, push, post replies"
-- "Edit replies first" → re-prompt for which to edit
-- "Edit fix first" → return to Phase 3 with adjusted fix list
+Show the diff + the drafted replies (numbered) — then ONE `AskUserQuestion` call:
+
+1. **Fixes + replies?**
+   - "Looks good — commit, push, post replies"
+   - "Edit fix first" → return to Phase 3 with adjusted fix list
+   - "Abort"
+2. **Drop or rewrite any replies?** (`multiSelect`; chunks of 4 replies per question when more than 4 exist, up to 3 chunks in the same call) — default keep all; select numbers to drop; rewrites via the free-text Other as `<n>: <new text>`. Edited replies re-render in a final preview with the same question 1 before anything posts.
 
 ### Phase 5 — Commit + push + post
 

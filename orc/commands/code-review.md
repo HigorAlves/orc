@@ -186,7 +186,7 @@ Comments (<count>):
 Then `AskUserQuestion`:
 
 - `Post the review as shown`
-- `Edit / drop specific comments` — loop into a per-comment `AskUserQuestion`: keep / drop / rewrite, then loop back to Phase 6 with the trimmed list
+- `Edit / drop specific comments` — batched, never one-question-per-comment: number the comments in the preview, then ask ONE `AskUserQuestion` call with up to 4 `multiSelect` questions, each covering a chunk of 4 ("Drop which of comments 1–4?" / "5–8?" / "9–12?" / "13–15?"; default = keep all). Rewrites ride each question's free-text Other as `<n>: <new text>`. More than 16 comments never happens (Phase 5 cap). Then loop back to Phase 6 once with the trimmed list — worst case 2 extra turns total, not 15.
 - `Switch to summary-only mode` — fall through to Phase 8 (legacy text-block) and don't post inline
 - `Cancel` — exit cleanly; echo the constructed payload as JSON for the user to copy
 
