@@ -1,6 +1,6 @@
 ---
 description: "Diagnose and fix a red CI run — dispatches orc-ci-investigator, then routes on its verdict: auto-fix via orc-code-fixer, flake re-run, infra escalation, or /orc:debug hand-off. Use when CI is red, PR checks fail, or after a push with --watch."
-argument-hint: "[<pr-number>|<branch>] [--run <id>] [--watch]"
+argument-hint: "[--auto[=guided|full]] [<pr-number>|<branch>] [--run <id>] [--watch]"
 allowed-tools:
   - Bash(orc-state:*)
   - Read
@@ -27,6 +27,8 @@ allowed-tools:
 CI is red and you want to know why — and, when it's the code's fault, get it fixed without hand-reading 4,000 lines of logs. `/orc:ci` dispatches `orc-ci-investigator` for an evidence-cited diagnosis, then routes on the verdict: fix, re-run, escalate, or hand off to `/orc:debug`.
 
 ## Arguments
+
+- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`; taxonomy in `orc:using-orc`). Soft-inward gates consult the resolved policy — `guided` auto-advances mechanical confirms with a printed one-liner; `full` pre-approves them from settled decisions (`orc:state-protocol`), stopping only on escalation-only conditions. Hard-outward gates are unaffected at every level.
 
 - `<pr-number>` or `<branch>` — optional ref. Omitted → the current branch (and its PR, if one exists).
 - `--run <id>` — pin the investigation to an explicit run ID instead of resolving the newest run for the ref.
@@ -61,68 +63,9 @@ The agent returns the structured diagnosis (verdict + evidence table + fix list)
 
 ### Phase 3 — Route on the verdict
 
-#### `green`
+Invoke **`orc:ci-routing`** and execute its protocol: the single-render rule (diagnosis saved via Write, ONE capped preview, 3-line evidence quotes), the `fixable` one-call apply+landing gate, and the `flake` / `infra` / `needs-debug` routes. The skill is the single source of truth shared with `/orc:flow`'s post-open CI gate.
 
-Say so — one line, run ID cited. Mark the session `completed` and stop.
-
-#### `fixable`
-
-Preview the fix list, then gate:
-
-```markdown
-> **📋 Preview — CI fix list**
->
-> <N> root cause(s) across <M> failed job(s). Applying clears the run.
-```
-
-```
-1. <file>:<line> — <what to change> — clears <job(s)>
-2. …
-```
-
-```markdown
-> **⛔ Gate — apply CI fixes**
->
-> orc-code-fixer applies the list above and re-runs the local suite.
-```
-
-`AskUserQuestion` — **one call, two questions** (the landing decision is collected up front, so a green fixer report lands without a second stop):
-
-1. **Apply the fix list?**
-   - "Apply the fix list" — dispatch `orc-code-fixer` via `Task` with the fix list + diagnosis path. The agent applies edits, runs tests, returns a diff + test summary.
-   - "Edit the list first" — user trims/amends items, then dispatch.
-   - "This needs real debugging" — jump to the `needs-debug` route below.
-   - "Abort"
-2. **After a green fixer report, land it how?** (ignored unless question 1 dispatched the fixer and its report came back green)
-   - "Commit + push + re-watch (Recommended)" — invoke `orc:git-commit` (Conventional Commit from the diff), `git push`, then loop back to Phase 1 with `--watch` semantics until the run concludes.
-   - "Commit only — I'll push later"
-   - "Show me the diff first" — render the diff, then confirm the landing choice.
-
-If the fixer report is red, discard the landing answer and return to Phase 2 with the new evidence (the investigator sees the failed attempt) — or offer the `needs-debug` hand-off.
-
-#### `flake`
-
-Re-print the agent's evidence (run-history lines proving intermittency), then `AskUserQuestion`:
-- "Re-run failed jobs" — `gh run rerun <id> --failed`, then watch with `gh run watch <id>` and report the outcome.
-- "Re-run everything" — `gh run rerun <id>`.
-- "Not convinced — treat as fixable/needs-debug" — re-route.
-- "Skip"
-
-#### `infra`
-
-No code changes to make. Surface the diagnosis + the agent's recommendation (pin the action version, report to the platform team, wait out the outage) with its evidence. Offer a re-run only when the agent recommended one.
-
-#### `needs-debug`
-
-The failure needs root-cause work beyond the diff. Hand off:
-
-```markdown
-> **➡️ Next**
->
-> Genuine regression — run `/orc:debug` seeded with the CI diagnosis at `.orc/<branch>/files/ci-diagnosis.md`.
-```
-
-`AskUserQuestion`: "Start /orc:debug now (diagnosis pre-seeded as the bug description)" / "I'll run it later" / "Abort". On "now", invoke the `/orc:debug` workflow with the failing test name + diagnosis path as its input — its investigator starts from the CI evidence instead of zero.
+Autopilot: at `full`, the `fixable` route applies the fix list and lands it (commit + push + re-watch) without asking, after printing the capped preview; a red fixer report or a `flake`/`infra`/`needs-debug` verdict still stops (escalation-only).
 
 ### Phase 4 — Checkpoint
 
@@ -130,10 +73,8 @@ Update `checkpoint.md`: phase=done, verdict, run ID, fix commit SHA (if any), fi
 
 ## Iron rules
 
-- **No fix without the investigator's diagnosis.** The fixer only ever receives an evidence-cited fix list — never "CI is red, go fix it".
-- **Green is a valid answer.** Newest run passes → report and stop.
-- **Re-runs are gated.** `gh run rerun` only after the flake evidence is shown and the user confirms.
-- **Never `git push --force`** — a red pipeline is not a license for history rewrites.
+- **Green is a valid answer.** Newest run passes → report and stop — never manufacture work.
+- The routing iron rules (no fix without the diagnosis, gated re-runs, never force-push) live in `orc:ci-routing` — they apply verbatim here.
 
 ## Output
 

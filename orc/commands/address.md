@@ -1,6 +1,6 @@
 ---
 description: Answer reviewer comments on YOUR open PR — categorize unresolved threads, push fixes, and post replies. Workspace-aware across linked PRs.
-argument-hint: "[<pr-number>] [--repo <name>] [--repos a,b]  (omitted = current branch's PR / all linked PRs)"
+argument-hint: "[--auto[=guided|full]] [<pr-number>] [--repo <name>] [--repos a,b]  (omitted = current branch's PR / all linked PRs)"
 allowed-tools:
   - Bash(orc-state:*)
   - Read
@@ -28,6 +28,8 @@ allowed-tools:
 Address the reviewer feedback on your own PR. Closes the loop: code fixes + thread replies + push.
 
 ## Arguments
+
+- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`; taxonomy in `orc:using-orc`). Soft-inward gates consult the resolved policy — `guided` auto-advances mechanical confirms with a printed one-liner; `full` pre-approves them from settled decisions (`orc:state-protocol`), stopping only on escalation-only conditions. Hard-outward gates are unaffected at every level.
 
 - `<pr-number>` — optional. If omitted, the command uses `gh pr list --head $(git branch --show-current)` to find the PR for the current branch.
 
@@ -84,6 +86,8 @@ Then two `Task` calls in the same response:
 **Workspace mode**: dispatch one `orc-code-fixer` per repo (parallel, single response, multiple `Task` calls), each with `repo`, `repoPath`, `siblingRepos`, and the ACTION items filtered to that repo's PR. Reply-drafter stays singular — pass ALL comments across ALL linked PRs at once so it can write coherent replies that reference cross-repo context where appropriate. The dispatcher merges per-repo fixer outputs before Phase 4.
 
 ### Phase 4 — Review the artifacts
+
+(Hard-outward per `orc:using-orc` — this gate posts replies to reviewers' threads; `--auto`/`interaction_policy` never skip it. Iron rule 1 below stands at every level.)
 
 Show the diff + the drafted replies (numbered) — then ONE `AskUserQuestion` call:
 

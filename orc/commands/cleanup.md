@@ -1,6 +1,6 @@
 ---
 description: Clean up after completed or abandoned orc sessions — removes workspace state, registry entry, git worktree, and optionally the merged branch. Destructive; always previews and asks first. Workspace-aware.
-argument-hint: "[--dry-run] [--all-completed] [--per-repo] [--down-volumes] [<session-id-or-branch>]"
+argument-hint: "[--auto[=guided|full]] [--dry-run] [--all-completed] [--per-repo] [--down-volumes] [<session-id-or-branch>]"
 disable-model-invocation: true
 allowed-tools:
   - Bash(orc-state:*)
@@ -31,7 +31,11 @@ Close the loop on finished orc work — remove the workspace state, the worktree
 
 ## Arguments
 
+- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`; taxonomy in `orc:using-orc`). Soft-inward gates consult the resolved policy — `guided` auto-advances mechanical confirms with a printed one-liner; `full` pre-approves them from settled decisions (`orc:state-protocol`), stopping only on escalation-only conditions. Hard-outward gates are unaffected at every level.
+
 - `<session-id-or-branch>` — optional. Clean up exactly one session. Accepts the `sessionId` from `.orc/orc.json` (list via `orc-state sessions`; schema per `orc:state-protocol`) or a (sanitized or raw) branch name.
+
+Autopilot: at `guided`/`full`, the standard cleanup plan (state dir, clean worktree, merged branch) auto-applies after printing it; anything anomalous — partial workspace merges, unmerged branches, a dirty worktree — still gates at every level.
 - `--all-completed` — clean up every session whose `status` in `.orc/orc.json` is `completed` or `abandoned`. Respects all the safety checks below per session.
 - `--dry-run` — print what *would* happen but make no changes. Recommended for the first run.
 - `--per-repo` — workspace mode: clean each linked repo independently as its PR merges, instead of waiting for all to merge. Use only when you intend to abandon some repos (rare).

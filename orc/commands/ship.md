@@ -1,6 +1,6 @@
 ---
 description: Finalize and open the PR — verifies tests, presents commit/branch/PR options, executes the chosen path, with a soft LOC size-budget gate. Last command before review; adds a Jira Resolves trailer when bound. Workspace-aware.
-argument-hint: "[--draft] [--base <branch>] [--verbose] [--max-loc <N>] [--no-size-gate] [--repos a,b | --repo a | --all-repos | --this-repo]"
+argument-hint: "[--auto[=guided|full]] [--draft] [--base <branch>] [--verbose] [--max-loc <N>] [--no-size-gate] [--repos a,b | --repo a | --all-repos | --this-repo]"
 allowed-tools:
   - Bash(orc-state:*)
   - Read
@@ -27,6 +27,8 @@ allowed-tools:
 You're done implementing. Time to integrate. This command runs the structured branch-completion flow.
 
 ## Arguments
+
+- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`; taxonomy in `orc:using-orc`). Soft-inward gates consult the resolved policy — `guided` auto-advances mechanical confirms with a printed one-liner; `full` pre-approves them from settled decisions (`orc:state-protocol`), stopping only on escalation-only conditions. Hard-outward gates are unaffected at every level.
 
 - `--draft` — open the PR as a draft.
 - `--base <branch>` — target a non-default base (e.g. `develop`, `release/v2`).
@@ -83,6 +85,8 @@ Invoke `orc:git-commit` if there are uncommitted changes. Then:
 Invoke `orc:finishing-a-development-branch` in its **caller-supplied preview mode**, passing the composed title + body. The skill renders the preview and asks ONE question: open as previewed / open as draft / edit title-body first / another completion path (merge back locally, keep as-is, discard — follow-up per the skill). The preview shown is the payload posted.
 
 (When `/orc:flow` Phase 7 drives this logic, it skips the completion options — the flow's premise is already "open a PR" — and gates only the composed preview. Standalone `/orc:ship` always offers the full set.)
+
+Autopilot: at `full`, with `prMode` settled (contract or decision), open as previewed without asking — echo the settled-decision line. At `guided`/`manual` this gate always asks. The size gate at `full` auto-stacks when over budget or escalates — it never selects the override (that attestation stays human, iron rule 8).
 
 If the outcome is "open PR" (as-is or draft):
 

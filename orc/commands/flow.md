@@ -1,6 +1,6 @@
 ---
 description: End-to-end feature/bug/refactor pipeline (plan → start → implement → QA → ship → address → cleanup) with an interactive gate at every phase. Resumable via /orc:resume. --jira <KEY> links a ticket. Workspace-aware.
-argument-hint: "[--type=feature|bug|refactor|docs] [--rfc] [--verbose] [--pause-at-implement] [--jira <KEY>] [--max-loc <N>] [--no-size-gate] [--driver agent-browser|chrome] [--repos a,b | --repo a | --all-repos | --this-repo] <one-line task description>"
+argument-hint: "[--auto[=guided|full]] [--type=feature|bug|refactor|docs] [--rfc] [--verbose] [--pause-at-implement] [--jira <KEY>] [--max-loc <N>] [--no-size-gate] [--driver agent-browser|chrome] [--repos a,b | --repo a | --all-repos | --this-repo] <one-line task description>"
 allowed-tools:
   - Bash(orc-state:*)
   - Read
@@ -31,61 +31,45 @@ allowed-tools:
 effort: high
 ---
 
+
 # /orc:flow
 
-Drive a piece of work from "I want to do X" to "PR merged, workspace cleaned up." `/orc:flow` is the umbrella — it walks the same phases the individual commands do, but with unified state, interactive gates between phases, and a single resume entry point.
+Drive a piece of work from "I want to do X" to "PR merged, workspace cleaned up." `/orc:flow` is the umbrella — it walks the same phases the individual commands do, but with unified state, gates at genuine decision points, and a single resume entry point.
 
-This command is interactive at every genuine decision point. A phase that ends in a real choice gates via an `AskUserQuestion` select-from-list — you choose advance, iterate, skip, or abort. A phase whose outcome is machine-verified (a clean failing-test run, a QA `pass` with a complete evidence packet) prints its evidence and advances — anomalies still gate. **Never silently advances past a decision.**
-
-Immediately before each phase's `AskUserQuestion`, print a one-line Gate callout (terminal form per the `orc:callouts` palette — emoji header, no `[!TYPE]` tag):
-
-```markdown
-> **⛔ Gate — <phase name>**
->
-> [1–2 lines: what was produced, what's being decided]
-```
-
-Options never go inside the callout — the question widget renders them natively.
-
-## When to use
-
-Use `/orc:flow` when you want orc to drive the whole loop. Skip it (use the per-phase commands directly: `/orc:plan`, `/orc:debug`, `/orc:qa`, `/orc:ship`, etc.) when you want fine-grained control over a single phase, or when the work clearly fits a single command.
+Interactivity follows the gate taxonomy (`orc:using-orc`) and the resolved `interaction_policy` (the banner's `policy:` segment): real choices gate via `AskUserQuestion`; machine-verified outcomes (clean red, QA pass with a complete packet) print their evidence and advance; hard-outward gates always ask at every level. Immediately before each gate, print the one-line `> **⛔ Gate — <phase>**` callout per `orc:callouts` (options never go inside the callout).
 
 ## Arguments
 
 - `<task description>` — required. One sentence describing the work.
-- `--type=feature|bug|refactor|docs` — optional. If omitted, the first phase asks via `AskUserQuestion`. The type changes which phases run and which skills get invoked.
-- `--rfc` — for `--type=feature` or `--type=refactor`: insert an RFC phase before planning. Required when the work is multi-week, multi-team, or has genuine alternatives.
-- `--verbose` — pass through to `/orc:ship` so the PR body uses the long-form template. Default everywhere is terse (`orc:caveman-pr` bodies, `orc:caveman-review` tone). (`--caveman` is accepted as a deprecated no-op alias of the default.)
-- `--driver agent-browser|chrome` — pass through to Phase 6's browser-driver gate: `agent-browser` = headless CLI via `orc-qa-validator`; `chrome` = Claude-in-Chrome extension run inline (watch the test live). Omitted → Phase 6 asks.
-- `--pause-at-implement` — pause Phase 5 for the human to write the implementation manually. Default behavior is autonomous: dispatches `orc-implementer` to drive the implementation slice-by-slice. Use `--pause-at-implement` when you want to write the code yourself.
-- `--jira <KEY>` — link a Jira ticket key (e.g. `JRA-123`) to this flow's session silently. Suppresses the Phase 1 link prompt. The key follows the work through every phase, surfaces in `/orc:status`, and lands as `Resolves <KEY>` in the Phase 7 PR body. Validate against `^[A-Z][A-Z0-9_]*-\d+$`.
-- `--max-loc <N>` — pass-through to `/orc:ship`'s Phase 4.5 size gate (default: 300, configurable via `$ORC_PR_LOC_BUDGET` or `<repo>/.orc/pr-budget.json`). The gate runs once, inside ship — in a flow session it offers the extra "Stack from plan slices" option (see `ship.md` Phase 4.5).
-- `--no-size-gate` — pass-through to `/orc:ship`. Skips its Phase 4.5 gate. Use sparingly.
-- `--repos <list>` — workspace mode: comma-separated repo names to target (e.g. `--repos api,ui`). Mutually exclusive with `--repo`, `--all-repos`, `--this-repo`.
-- `--repo <name>` — workspace mode: target one repo. Mutually exclusive with `--repos`.
-- `--all-repos` — workspace mode: skip the Phase 1 repo prompt and broadcast to every detected repo.
-- `--this-repo` — workspace mode: pin to cwd's repo (escape hatch from workspace prompts when cwd is inside one of the workspace's children).
+- `--auto[=guided|full]` — autopilot level for this run (bare `--auto` = full). Overrides the configured `interaction_policy`. See "Autopilot" below.
+- `--type=feature|bug|refactor|docs` — optional; pre-answers the triage type question. The type changes which phases run.
+- `--rfc` — insert an RFC phase before planning (multi-week, multi-team, or genuine-alternatives work).
+- `--verbose` — pass through to `/orc:ship` (long-form PR body; terse `orc:caveman-pr` is the default).
+- `--driver agent-browser|chrome` — pre-answers Phase 6's browser-driver gate.
+- `--pause-at-implement` — Phase 5 pauses for the human to write the code (keeps Phase 4's red-confirm gate).
+- `--jira <KEY>` — link a Jira ticket silently (validate `^[A-Z][A-Z0-9_]*-\d+$`); lands as `Resolves <KEY>` in the PR body.
+- `--max-loc <N>` / `--no-size-gate` — pass-through to `/orc:ship`'s Phase 4.5 size gate (single owner; flow never pre-flights it).
+- `--repos a,b` / `--repo a` / `--all-repos` / `--this-repo` — workspace-mode targeting per `orc:workspace-mode`.
+
+Every flag records its answer as a settled decision (`orc-state decision set … --provenance flag`) so nested commands never re-ask.
 
 ## Phases
 
-The pipeline is **9 phases**. Decision points are gated; machine-verified outcomes (clean red in Phase 4, clean QA pass in Phase 6) print evidence and advance. Some phases are skipped based on type and flags:
+**9 phases; the playbooks for Phases 2–9 load one at a time via `orc:flow-phases` — entering phase N, Read exactly its `references/PHASE-<N>-*.md` first. Do not run a phase from memory.** Decision points gate; machine-verified outcomes print evidence and advance.
 
 | # | Phase | Always? | Skips when … |
 |---|-------|---------|--------------|
-| 1 | Triage — confirm type and scope | yes | — |
-| 2 | RFC — pre-implementation design (`/orc:rfc`) | optional | `--rfc` not passed and not flagged in triage |
-| 3 | Plan — TDD-shaped plan (`/orc:plan` logic + skill) | yes | type=docs uses `/orc:scaffold` instead |
-| 4 | Start — worktree + failing test (`/orc:start` logic) | for code | type=docs skips |
-| 5 | Implement — RETURN TO CONVERSATION; orc pauses | for code | type=docs writes the docs in conversation directly |
-| 6 | QA — pre-PR quality gate (`/orc:qa` logic + skill) | yes | type=docs runs lint only |
-| 7 | Ship — open the PR (`/orc:ship` logic; caveman-pr body by default) | yes | — |
-| 8 | Address — if reviewer comments arrive (`/orc:address` logic) | optional loop | no comments → skip |
-| 9 | Cleanup — post-merge (`/orc:cleanup` logic) | yes | — |
+| 1 | Triage + contract (below — always in context) | yes | — |
+| 2 | RFC | optional | `--rfc` absent and not flagged in triage |
+| 3 | Plan (+ slice ledger install) | yes | type=docs uses `/orc:scaffold` instead |
+| 4 | Start — worktree + failing test | for code | type=docs skips |
+| 5 | Implement — orc-implementer batches from the ledger | for code | type=docs writes docs in conversation |
+| 6 | QA — `orc:browser-qa` for web + qa-verdict.json | yes | type=docs runs lint only |
+| 7 | Ship — `/orc:ship` logic; ship owns the size gate | yes | — |
+| 8 | Address — reviewer-comment loop | optional | no comments → exit note |
+| 9 | Cleanup — post-merge | yes | — |
 
-For `--type=bug`, phases 2–3 collapse into a single `/orc:debug` invocation that produces the diagnosis, regression test, and plan all at once.
-
-## Workflow
+For `--type=bug`, phases 2–3 collapse into a single `/orc:debug` invocation (diagnosis + regression test + plan in one).
 
 ### Phase 0 — Detect context
 
@@ -148,264 +132,21 @@ In workspace mode, also seed each target repo's `<workspaceRoot>/<repo>/.orc/<sa
 
 This is the back-pointer `/orc:status` and `/orc:resume` follow when the user `cd`s into one repo.
 
-### Phase 2 — RFC (optional)
+## Autopilot (the sprint contract)
 
-If triage flagged "1–4 weeks" or `--rfc` was passed, invoke the RFC sub-flow (same logic as `/orc:rfc`). Saves to `.orc/<branch>/files/rfc-NNNN.md` workspace draft, optionally commits to `docs/rfcs/NNNN-*.md`.
+The resolved policy (flag > settled decision > env > userConfig > `manual`) sets how much of the run needs you:
 
-```
-AskUserQuestion (after RFC drafted):
-- RFC looks good — proceed to plan
-- Iterate on RFC — loop back
-- Pause here — RFC is the deliverable for now (mark flow as completed)
-- Abort the whole flow
-```
+- **manual** — every soft-inward gate asks, exactly as the phase playbooks specify.
+- **guided** — mechanical confirms auto-advance with a printed one-liner: the driver defaults to `agent-browser` (recorded as a policy decision), a clean QA pass advances, Phase 9 auto-applies the standard cleanup plan. Plan approval, the size gate, and PR compose still ask.
+- **auto (full)** — Phases 1–3 collapse into **one contract gate**: infer type/scope from the description (recorded as inferred decisions; `orc-prd-analyzer` still runs for long briefs and P0 questions still stop the run), draft the plan, then a single `AskUserQuestion` call:
+  1. **Approve the contract** — the deliverable one-liner, the slice list, and the testable success criteria: suite + lint + type-check green, every `slices.json` acceptance criterion `pass` in `qa-verdict.json`, `orc-state slice list --status pending,red,escalated` clean, PR ≤ budget or stacked, CI green on the PR. Options: approve / iterate the plan / abort.
+  2. **Repo set** (workspace mode only — asked at every level, never inferred; iron rule 7).
+  3. **Jira link** (dropped when settled or the tracker layer has no Jira).
+  4. **Run policy** — driver, PR mode (non-draft caveman body), size-over handling (auto-stack from slices — auto NEVER selects the size-budget override; that attestation stays human, iron rule 8), cleanup (standard plan).
 
-### Phase 3 — Plan
+  On approval the contract is recorded in `decisions.json` and **Phases 4–9 run without inward gates**, stopping only for escalation-only conditions (implementer escalations, env `failed`, CI `needs-debug`/`infra`, QA `fail`/`partial`) or a criteria miss — either re-opens exactly that one decision with the evidence.
 
-For `--type=feature|refactor`: invoke `orc:writing-plans`, optionally `orc:grill-me` if scope ≥ medium. Saves `${ORC_STATE_DIR}/<branch>/files/plan.md`.
-
-In workspace mode, the plan template MUST include:
-
-1. A **Repo touchpoints** section listing each target repo and what changes there (e.g. `api: new POST /export endpoint`, `ui: download button + progress state`).
-2. A **Cross-repo contract** section (when applicable) describing the API/wire-format shape both repos must respect — endpoint paths, schemas, message types. This contract is frozen during Phase 5.
-3. A **Merge order** line (e.g. `api → ui`) when there's a deploy ordering dependency. Omit if either order works.
-4. Each slice tagged with `repo: <name>` so the Phase 5 dispatcher knows which implementer instance owns it.
-
-For `--type=docs`: invoke `/orc:scaffold` if greenfield, or `orc:documentation-writing` if augmenting existing.
-
-For `--type=bug`: this phase becomes `/orc:debug` instead — dispatches `orc-debug-investigator` to produce `diagnosis.md`. Treat the diagnosis as the plan.
-
-```
-AskUserQuestion (after plan drafted):
-- Plan looks good — proceed
-- Iterate — loop back
-- Add --grill stress-test pass
-- Decompose into issues (orc:to-issues) — for big plans
-- Abort
-```
-
-### Phase 4 — Start
-
-For code work (`feature`, `bug`, `refactor`): invoke `orc:using-git-worktrees` (worktree + branch), then write the first failing test.
-
-In workspace mode, repeat the worktree+branch step for every repo in `targetRepos`. Worktrees live at `${ORC_WORKSPACE_ROOT}/.orc/.worktrees/<repo>/<sanitized-branch>/`. Run the **branch-collision check** for every target repo before creating worktrees:
-
-```bash
-for r in $targetRepos; do
-  git -C "$ORC_WORKSPACE_ROOT/$r" show-ref --verify --quiet "refs/heads/<branch>"
-done
-```
-
-| Repo state | Action |
-|------------|--------|
-| Branch absent locally and on origin | OK — create. |
-| Branch absent locally, present on origin | OK — `git fetch && git worktree add -B`. |
-| Branch present, points at base HEAD | OK — adopt. |
-| Branch present, has divergent commits | **Conflict** — `AskUserQuestion` with the 5 recovery options below. |
-
-Recovery options on conflict (one prompt covering all conflicting repos at once):
-
-1. Suffix all repos with `-2` (or user-chosen short suffix).
-2. Suffix only conflicting repos (e.g. `feat/sso-login-api`); keep canonical name elsewhere.
-3. Adopt the existing branch (surface divergent commits in the plan-confirmation gate).
-4. Pick a different canonical name (restart this step).
-5. Abort the flow.
-
-Record any suffix overrides in `checkpoint.md` and `perRepoState[<repo>].branch` so `/orc:resume` and `/orc:ship` know the actual branch per repo.
-
-Then write the first failing test in whichever repo it naturally lives in (per the plan's slice-1 `repo:` tag):
-
-- **Simple first test** (single assertion, single function under test): invoke `orc:tdd` skill inline.
-- **Complex first test** (state machine, async coordination, integration boundary, multiple branches): dispatch `orc-test-author` via `Task`. The agent designs a comprehensive suite (happy path + boundary + error paths) using the project's test idioms, runs it, reports.
-
-Test MUST fail with the right message. Commit the failing test in its target repo.
-
-For `--type=docs`: skip; advance to phase 6.
-
-**No gate on a clean red.** The failing run is machine-verified here and re-verified by `orc-implementer` before it goes green — a human confirm on top would rubber-stamp verified state. Print one line and advance to Phase 5:
-
-```
-red verified: <test file> — <failure message>
-```
-
-Gate only when something is genuinely undecided:
-
-- The failure message doesn't match the expected shape (wrong assertion, import error, framework misconfig) — surface the mismatch, then `AskUserQuestion`: iterate on the test / skip TDD for this work (with rationale; logged to checkpoint) / abort.
-- `--pause-at-implement` was passed — the human is about to write the code and seeing red matters to them. Keep the original confirm: test fails as expected / iterate / skip TDD / abort.
-
-### Phase 5 — Implement (autonomous by default)
-
-Two modes, picked by the `--pause-at-implement` flag:
-
-#### Default: dispatch `orc-implementer` (autonomous)
-
-Group slices into **dispatch batches from the ledger** — `slices.json` (installed at plan approval; shape per `orc:state-protocol`) carries `parallelGroup`, `dependsOn`, and `touchpoints` per slice, so independence is declared, never re-derived here. No ledger (pre-ledger plan) → fall back to reading plan.md headers.
-
-**Workspace mode pre-step:** group slices by their `repo:` tag first. Each repo group gets its own implementer dispatch chain. Repo groups run in parallel with each other (one implementer per repo, simultaneously). Within each repo group, the existing sequential/parallel-batch logic applies. The outer loop is `for repo in targetRepos: dispatch implementer(s)`. Each implementer receives `repo`, `repoPath: <workspaceRoot>/<repo>` (or its worktree path), `siblingRepos: [<other targets>]`, and (when present) `crossRepoContract: <plan section pointer>`. **Sibling implementers must not touch each other's files** — the worktree path boundary already guarantees this.
-
-After grouping by repo, for each repo's slices:
-
-- A **sequential batch** is a `parallelGroup` with one slice. Run as a single implementer dispatch with that slice.
-- A **parallel batch** is a `parallelGroup` with N slices (pairwise-disjoint `touchpoints` by construction). Dispatch N implementer instances **in parallel** (single response, multiple `Task` calls), each receiving a 1-slice list, its slice's `touchpoints` as the file-ownership boundary, and `mode: parallel` so they return diffs instead of committing. Sanity-validate declared disjointness before dispatching — a violation means the plan annotations are wrong; surface it.
-
-Iterate groups in ascending order. After each batch:
-- Sequential: implementer already committed and set its slice `committed` in the ledger; advance.
-- Parallel: **persist each returned diff + report first** — `${ORC_STATE_DIR}/<branch>/files/slices/slice-NN.diff` + `slice-NN-report.md` (per `orc:state-protocol`; a crash between collection and apply re-applies from disk instead of re-dispatching implementers) — then apply them in group order via `orc:git-commit` (one commit per slice, in order), run the full suite once after all diffs are applied to confirm green, then `orc-state slice set <id> --status committed --commit <sha>` per slice.
-
-**Phase 5 → 6 advance is a query, not a claim**: `orc-state slice list --status pending,red,escalated` must exit clean. A non-empty result blocks the advance and surfaces the stragglers — a stale ledger fails safe.
-
-Each implementer instance gets:
-- The plan path (`${ORC_STATE_DIR}/<branch>/files/plan.md`) or diagnosis path for bugs.
-- The workspace directory (per-repo `.orc/<branch>/files/` for `progress.md` writes; in workspace mode also the workspace-level `<workspaceRoot>/.orc/<branch>/files/`).
-- The current branch + worktree path.
-- Its assigned slice list (1 slice in parallel mode, N in sequential).
-- The file-ownership boundary for those slices.
-- The failing test from Phase 4 (if slice 1 is in the list).
-- Project test/lint/type-check commands (auto-detected from `package.json`, `Makefile`, etc.).
-- Mode flag: `mode: sequential` (default) or `mode: parallel` (for parallel-batch members).
-- **Workspace mode only**: `repo`, `repoPath`, `siblingRepos`, optional `crossRepoContract`. The slice list is pre-filtered to slices tagged `repo: <name>`.
-
-The agent then drives its assigned slice(s): read spec → write/confirm failing test → implement → run test green → run full suite → lint/type-check → refactor → commit (sequential) or return diff (parallel) → bump checkpoint → next slice in its list.
-
-The agent runs without further user gates UNLESS one of the **escalation conditions** triggers (see `agents/orc-implementer.md`):
-
-- A test can't be made green after 3 attempts.
-- A slice spec is ambiguous (multiple valid implementations).
-- A new dependency needs to be installed.
-- The slice requires touching files outside its declared scope.
-- A pre-existing test breaks unexpectedly.
-- A security/architecture concern surfaces mid-implementation.
-- The plan is wrong (the slice as written would produce incorrect behavior).
-
-When the agent escalates, re-print BOTH blocks it emitted verbatim — the `[!CAUTION]` **🛑 Escalation** callout AND its context fence (file:line evidence + the option definitions; see `agents/orc-implementer.md`) — then `AskUserQuestion`:
-
-```
-A. <option A from agent>
-B. <option B from agent>
-C. Pause flow — I'll come back to /orc:flow
-```
-
-User picks → re-dispatch the agent with the resolution, or pause the flow.
-
-When the agent reports all slices complete, advance to Phase 6 (QA) automatically — no extra gate needed (you can pre-approve advance via the agent's status echo, or the umbrella's Phase 6 will gate before running QA anyway).
-
-#### Opt-out: `--pause-at-implement` (human writes the code)
-
-If the flag is passed, fall back to the original behavior:
-
-```
-checkpoint.md → phase=5, status=ready-for-implementation, last_artifact=<test-file>:<line>
-progress.md → "Implementation phase started. Run /orc:flow again (or /orc:resume) when ready for QA."
-```
-
-Echo to the user — the handoff callout (a `[!TIP]`, not a Gate: flow exits here, no question follows), then the details in a fence:
-
-```markdown
-> **➡️ Next**
->
-> orc paused (`--pause-at-implement`). Re-run `/orc:flow` (or `/orc:resume`) when you're done implementing and flow picks up at QA.
-```
-
-```
-Worktree:     <path>
-Failing test: <file>:<line>
-Plan:         .orc/<branch>/files/plan.md
-```
-
-Remind: the PreToolUse hook keeps you off main — commit per slice (Conventional Commits via `orc:git-commit`).
-
-The next invocation of `/orc:flow` (or `/orc:resume`) reads the checkpoint and jumps to phase 6.
-
-### Phase 6 — QA
-
-Detect web vs code mode (heuristic on changed files vs main).
-
-**Skip the redundant suite re-run when the evidence is current**: if the ledger shows every slice `committed` AND the digest records `Suite: green @ <sha>` with `<sha>` == current HEAD AND Phase 5 ran sequentially (per-slice suite runs happened on this exact tree), go straight to self-review — the suite verdict is already on record. Re-run `orc:verification-before-completion` (tests + lint + type-check) when any of those fail: sha mismatch, incomplete ledger, or the parallel batch-apply path ran (applied diffs invalidate per-slice evidence). This skip is evidence-keyed, not trust-keyed — one paragraph to revert if recorded evidence ever proves unreliable.
-
-Always invoke `orc:caveman-review` (self-review of diff) — that's a different lens, not re-derivation.
-
-When the diff touches security-sensitive paths (auth, sessions, raw SQL, deserialization, file upload, network egress, dependency surface) — dispatch `orc-security-reviewer` in parallel with the self-review. Merge findings before surfacing.
-
-For web changes, **provision or attach the environment first** (same step as `/orc:qa` Phase 4.0): `orc-docker-env is-ready <state-file>` → attach when `ready`, else dispatch `orc-env-provisioner` (worktree path; workspace mode adds `repos[]` + `webSurfaceRepo` from the plan's "Repo touchpoints" + the plan path for dependency order). `fallback` → re-print the ⚠️ callout and continue; `failed` → 🛑 callout + gate. The environment **stays up across the QA-partial → fix → re-run loop** — re-runs attach in seconds; teardown happens in Phase 9.
-
-Then run the **browser-driver gate** from `/orc:qa` Phase 4.1 (`AskUserQuestion`: agent-browser headless vs Claude-in-Chrome watch-live; a `--driver` pass-through skips it). **Driver A** dispatches `orc-qa-validator` (drives `agent-browser`, captures evidence to `.orc/<branch>/files/qa/`) with `appUrl` + `serviceEndpoints` + `envStatePath` from `docker-env-state.json` — the validator attaches, never boots. **Driver B** runs inline in this session per `/orc:qa` Phase 4 Driver B (the user watches live in their Chrome; chrome-mode evidence packet). In workspace mode, the web-surface repo comes from the plan's "Repo touchpoints" section (`repoPath = <workspaceRoot>/<that repo>`); cross-repo integration evidence (e.g. ui+api walks) lands at the workspace-level `<workspaceRoot>/.orc/<branch>/files/qa/`, repo-local QA stays per-repo.
-
-If verification flags untested branches, dispatch `orc-test-author` to fill them in before continuing.
-
-**No gate on a clean pass.** The verdict is computed from the evidence packet, not vibes — when the verdict is `pass` AND the packet is complete (web mode: screenshots, `steps.md`, console log, HAR all present; code mode: suite + lint + type-check green), print the verdict line + artifact list and advance to Phase 7.
-
-Gate only on anomaly (verdict `partial`/`fail`, incomplete evidence, or web QA about to be skipped):
-
-```
-AskUserQuestion (anomalous QA verdict):
-- QA partial — let me address findings, then re-run QA
-- QA failed — back to implement
-- Skip web QA (with rationale, logged) — only when --no-web justified
-- Abort
-```
-
-### Phase 7 — Ship
-
-Invoke `/orc:ship` logic. The **size gate runs exactly once — inside ship's Phase 4.5** (never pre-flight it here; `ship.md` owns the gate and its "Stack from plan slices" option lights up automatically when this session has a plan whose commits map 1:1 to slices). Pass through `--max-loc` / `--no-size-gate` / `--verbose` / `--draft` unchanged.
-
-Flow-specific deltas from standalone `/orc:ship`:
-
-- **Skip `orc:finishing-a-development-branch`.** The flow's premise is already "open a PR" — merge-directly / keep-working / discard stay reachable via Abort at any remaining gate. (Standalone `/orc:ship` keeps that phase; its intent is genuinely unknown there.)
-- `orc:requesting-code-review` (gap check vs the plan)
-- `orc:git-commit` (if uncommitted)
-- PR composition: `orc:caveman-pr` by default; the long-form template only if `--verbose` was passed
-- `gh pr create` — UNLESS this repo stacked in the size gate, in which case `/orc:stack-pr` already opened the PRs and Phase 7 only records the stack metadata in `linkedPRs`.
-
-Per-repo size-gate decisions are independent: in workspace mode, repo `api` can stack while `ui` opens single with an override. Record each decision in `checkpoint.md` (so `/orc:resume` knows we already gated this repo).
-
-In workspace mode, `/orc:ship` opens **N PRs** — one per target repo — and second-passes each with `gh pr edit` to inject a "Linked PRs" cross-link block + merge order from the plan. Captured PR URLs are written into the workspace registry's `linkedPRs` array (with `stackId`/`stackPosition`/`stackedOn` populated for repos that stacked).
-
-```
-AskUserQuestion (after PR composed):
-- Open as-is
-- Edit title/body first
-- Open as draft
-- Cancel
-```
-
-**Post-open CI gate.** Once the PR(s) are open, watch CI before advancing: `gh pr checks <pr> --watch` (fallback: `gh run watch` on the head branch's newest run). In workspace mode, watch every PR in `linkedPRs`.
-
-- **Green** → record `ci: green` in `checkpoint.md` and advance to Phase 8.
-- **Red** → run the `/orc:ci` routing inline: dispatch `orc-ci-investigator` via `Task` with the PR ref + head SHA, save its report to `${ORC_STATE_DIR}/<branch>/files/ci-diagnosis.md`, then route on the verdict exactly as `/orc:ci` Phase 3 does — `fixable`: 📋 preview the fix list, ⛔ gate via `AskUserQuestion`, dispatch `orc-code-fixer`, commit per `orc:git-commit`, push, re-watch; `flake`: offer `gh run rerun <id> --failed` with the evidence shown; `infra`: surface the recommendation; `needs-debug`: offer a `/orc:debug` hand-off seeded with the diagnosis. Loop until green or the user explicitly advances with red CI (logged to checkpoint).
-
-### Phase 8 — Address (loop, optional)
-
-After the PR is open, flow exits — there is nothing to decide until reviewers comment, and the checkpoint already routes the next invocation here (every answer to the old "wait / come back / done" question resolved to exactly this). Echo the handoff instead of asking:
-
-```markdown
-> **➡️ Next**
->
-> PR open. When reviewer comments arrive, re-run `/orc:flow` (or `/orc:address`) and flow routes to the address loop. After merge, re-run `/orc:flow` for cleanup.
-```
-
-On re-invocation with unresolved comments: dispatch `/orc:address` logic in parallel — `orc-code-fixer` + `orc-reply-drafter`. After the address loop completes, loop again if more comments arrive, or advance. On re-invocation with the PR merged and no unresolved comments: advance to Phase 9.
-
-### Phase 9 — Cleanup (post-merge)
-
-After merge in GitHub, the user re-invokes `/orc:flow` and orc detects `gh pr view <ref> --json state` returns `merged`. Then run `/orc:cleanup` logic for this session:
-
-- Tear down the Docker environment if `docker-env-state.json` exists (execute its `teardownCommand` BEFORE removing state — the state file holds the command; volumes kept unless `--down-volumes`)
-- Remove `.orc/<branch>/`
-- Remove worktree (if clean)
-- Remove local branch (if merged)
-- Update central registry
-
-In workspace mode, cleanup runs only when **every** PR in `linkedPRs` is merged (use `gh pr view` per URL). When some are merged and others are still open, surface that list and `AskUserQuestion`: wait, clean per-repo (using `--per-repo`), or abort. After all merge, clean each repo's worktree + per-repo `.orc/<branch>/` AND the workspace-level `<workspaceRoot>/.orc/<branch>/` together.
-
-```
-AskUserQuestion (preview the cleanup plan):
-- Apply as shown
-- Edit (skip individual items)
-- Skip cleanup — keep state for now
-- Abort cleanup
-```
-
-After cleanup: mark `.orc/orc.json` entry `status: completed`, echo a summary.
+**Hard-outward gates ask at every level** — evidence publish to a tracker, posting PR reviews, tracker writes. `--auto` has no effect on them.
 
 ## Resume
 
@@ -457,12 +198,4 @@ After the entire flow:
 
 Total active time: ~2 days (paused 14h overnight Mon→Tue)
 Active orc sessions remaining: 0
-```
-
-Close with one `[!TIP]` handoff when anything remains for the user (skip it when the summary already says "0 sessions remaining" and nothing is pending):
-
-```markdown
-> **➡️ Next**
->
-> [the single most useful next command, e.g. `/orc:status` or `/orc:resume`]
 ```

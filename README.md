@@ -36,14 +36,14 @@
 </p>
 
 <p align="center">
-  <code>77 skills</code> &nbsp;·&nbsp; <code>30 commands</code> &nbsp;·&nbsp;
+  <code>80 skills</code> &nbsp;·&nbsp; <code>30 commands</code> &nbsp;·&nbsp;
   <code>14 agents</code> &nbsp;·&nbsp; <code>7 guardrail hooks</code> &nbsp;·&nbsp;
   <code>0 telemetry</code> &nbsp;·&nbsp; <code>MIT</code>
 </p>
 
 ---
 
-`orc` is a full-SDLC workflow plugin for Claude Code: **77 curated skills, 30 composite slash commands, 14 specialist subagents, and 8 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers, destructive git commands gated, a dependency pre-flight, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged", with the `orc-implementer` agent writing the code slice-by-slice in between — and the lifecycle no longer stops at PR-open: `/orc:ci`, `/orc:release`, `/orc:deps`, and `/orc:incident` cover what happens after.
+`orc` is a full-SDLC workflow plugin for Claude Code: **80 curated skills, 30 composite slash commands, 14 specialist subagents, and 8 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers, destructive git commands gated, a dependency pre-flight, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged", with the `orc-implementer` agent writing the code slice-by-slice in between — and the lifecycle no longer stops at PR-open: `/orc:ci`, `/orc:release`, `/orc:deps`, and `/orc:incident` cover what happens after.
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
@@ -298,7 +298,7 @@ To pin a specific tag or commit, use the longhand source form in `~/.claude/sett
 
 ### Skills (75)
 
-Under the commands and agents sit 77 curated skills — reusable, progressively-disclosed playbooks the model pulls in on demand: process doctrine (`tdd`, `systematic-debugging`, `verification-before-completion`, `grilling`, `codebase-design`, `domain-modeling`), stack packs (Next.js, NestJS, PostgreSQL, SwiftUI, Tailwind, Turborepo, …), authoring guides (PRD/TRD/ADR/RFC/postmortem), and the `orc:map` router when you're not sure which to reach for. Fifteen are vendored or merged from [mattpocock/skills](https://github.com/mattpocock/skills) and other MIT sources with full provenance ([THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md)); their descriptions are deliberately differentiated so co-installing the originals doesn't double-trigger. Each skill is a thin index that loads its detail only when invoked, so they cost almost nothing until used. **Total: 77 skills.**
+Under the commands and agents sit 80 curated skills — reusable, progressively-disclosed playbooks the model pulls in on demand: process doctrine (`tdd`, `systematic-debugging`, `verification-before-completion`, `grilling`, `codebase-design`, `domain-modeling`), stack packs (Next.js, NestJS, PostgreSQL, SwiftUI, Tailwind, Turborepo, …), authoring guides (PRD/TRD/ADR/RFC/postmortem), and the `orc:map` router when you're not sure which to reach for. Fifteen are vendored or merged from [mattpocock/skills](https://github.com/mattpocock/skills) and other MIT sources with full provenance ([THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md)); their descriptions are deliberately differentiated so co-installing the originals doesn't double-trigger. Each skill is a thin index that loads its detail only when invoked, so they cost almost nothing until used. **Total: 80 skills.**
 
 ### The orc CLI
 
@@ -422,7 +422,7 @@ orc is an open-source personal project (MIT), maintained in the open and used da
 orc/
 ├── .claude-plugin/plugin.json   # manifest (v0.16.1)
 ├── .orc/                        # gitignored — workspace state per session
-├── skills/<name>/SKILL.md       # 77 skills — a thin index per skill
+├── skills/<name>/SKILL.md       # 80 skills — a thin index per skill
 │   └── <name>/references/*.md   #   lazy-loaded detail for large skills
 ├── commands/<name>.md           # 30 slash commands (incl. /orc:flow umbrella)
 ├── agents/orc-<role>.md         # 14 subagents (incl. orc-implementer)
