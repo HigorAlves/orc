@@ -495,6 +495,58 @@ orc_state_verify() { # [branch]
   return "$errs"
 }
 
+# One-line JSON summary of the live session — the shared selector behind the
+# SessionStart sessionTitle, the statusline, and command prose. Statusline
+# contract: exit 0 with EMPTY stdout when there is no live session, registry,
+# or branch — never exit 1, never stderr, never multi-line.
+orc_state_line() { # [--branch B] (default: current git branch)
+  local branch=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --branch) branch="${2:-}"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
+  local dir reg b sid entry
+  dir="$(orc_state__dir 2>/dev/null)" || return 0
+  reg="$dir/orc.json"
+  [ -f "$reg" ] || return 0
+  b="${branch:-$(orc_state__current_branch)}"
+  sid=""
+  [ -n "$b" ] && sid="$(orc_state__sanitize "$b")"
+  entry="$(jq -c --arg b "$b" --arg sid "$sid" '
+    ([.sessions[]? | select(.status == "in_progress")]) as $live
+    | (($live | map(select(.gitBranch == $b or .sessionId == $sid or .branch == $sid))
+        | sort_by(.updatedAt // .updated_at // .startedAt // "") | last)
+       // ($live | sort_by(.updatedAt // .updated_at // .startedAt // "") | last))
+    // empty' "$reg" 2>/dev/null || true)"
+  [ -n "$entry" ] || return 0
+  local esid slices_done="null" slices_total="null" policy="null" ledger dfile
+  esid="$(printf '%s' "$entry" | jq -r '.sessionId // .branch // empty')"
+  ledger="$dir/$esid/files/slices.json"
+  if [ -n "$esid" ] && [ -f "$ledger" ]; then
+    slices_total="$(jq '[.slices[]?] | length' "$ledger" 2>/dev/null || echo null)"
+    slices_done="$(jq '[.slices[]? | select(.status == "committed" or .status == "skipped")] | length' "$ledger" 2>/dev/null || echo null)"
+  fi
+  dfile="$dir/$esid/files/decisions.json"
+  if [ -n "$esid" ] && [ -f "$dfile" ]; then
+    policy="$(jq '.decisions.autopilotLevel.value // null' "$dfile" 2>/dev/null || echo null)"
+  fi
+  printf '%s' "$entry" | jq -c --argjson sd "${slices_done:-null}" --argjson st "${slices_total:-null}" --argjson pol "${policy:-null}" '{
+    command: (.command // "session"),
+    phase: (.phase // "?"),
+    totalPhases: (.totalPhases // null),
+    phaseLabel: (.phaseLabel // null),
+    status: .status,
+    jiraTicket: (.jiraTicket // null),
+    gitBranch: (.gitBranch // .branch),
+    slicesDone: $sd,
+    slicesTotal: $st,
+    policy: $pol,
+    title: "orc: \(.command // "session") \(.gitBranch // .branch) [\(.phase // "?")]"
+  }' 2>/dev/null || true
+}
+
 ORC_STATE_DECISION_PROVENANCE="flag asked policy inferred"
 
 orc_state__decisions_path() { # $1 = sid

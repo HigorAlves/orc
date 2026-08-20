@@ -67,12 +67,12 @@ if [ -f "${PLUGIN_ROOT}/lib/workspace-detect.sh" ]; then
   # elsewhere.
   if [ -n "${ORC_STATE_DIR:-}" ] && [ -f "${ORC_STATE_DIR}/orc.json" ] && command -v jq >/dev/null 2>&1; then
     current_branch="$(git -C "$session_cwd" branch --show-current 2>/dev/null || true)"
-    session_title="$(jq -r --arg b "$current_branch" '
-      ([.sessions[]? | select(.status == "in_progress")]) as $live
-      | (($live | map(select(.gitBranch == $b or .branch == $b)) | sort_by(.updated_at // .startedAt // "") | last)
-         // ($live | sort_by(.updated_at // .startedAt // "") | last))
-      | if . then "orc: \(.command // "session") \(.gitBranch // .branch) [\(.phase // "?")]" else empty end
-    ' "${ORC_STATE_DIR}/orc.json" 2>/dev/null || true)"
+    # Shared selector (orc:state-protocol): orc_state_line is the single
+    # renderer of "the live session, one line" — also consumed by the
+    # statusline. Never fork this logic.
+    # shellcheck disable=SC1091
+    . "${PLUGIN_ROOT}/lib/state.sh"
+    session_title="$(orc_state_line --branch "$current_branch" 2>/dev/null | jq -r '.title // empty' 2>/dev/null || true)"
   fi
 fi
 

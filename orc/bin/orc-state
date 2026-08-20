@@ -20,6 +20,7 @@ usage: orc-state <verb> [args]   (state root: $ORC_STATE_DIR, else <git root>/.o
   current                           entry JSON for the current git branch (exit 1 if none)
   get [<branch>] [--field F]        read-for-data: entry JSON or a single field
   sessions [--status S]             one line per session (route-from-state callers only)
+  line [--branch B]                 live-session one-line JSON summary; empty + exit 0 when none
   phase set <n|done> [--label L]    bump phase in registry + checkpoint mirror
   status set <status>               in_progress | paused | completed | abandoned
   link-pr --repo R --url U [--number N] [--stack-id S --stack-position P --stacked-on U2]
@@ -71,6 +72,7 @@ case "$sub" in
       *) echo "orc-state slice: unknown verb '$verb' (init|set|list)" >&2; exit 2 ;;
     esac
     ;;
+  line)     orc_state_line "$@" ;;
   decision)
     verb="${1:-}"; shift || true
     case "$verb" in

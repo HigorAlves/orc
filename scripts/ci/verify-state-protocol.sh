@@ -121,6 +121,49 @@ if jq -e '.sessions[0] | has("session_id") or has("current_phase") or has("creat
 if jq -e '.sessions[0].totalPhases == 6' "$reg" >/dev/null; then ok; else fail "migrate: total_phases -> totalPhases"; fi
 if jq -e '.sessions[0].startedAt == "2026-01-01T00:00:00Z"' "$reg" >/dev/null; then ok; else fail "migrate: created_at -> startedAt"; fi
 
+# --- line (shared one-line live-session summary) ---------------------------
+# Contract: one line of compact JSON; exit 0 + EMPTY stdout when no live
+# session / no registry / no branch — statusline-safe, unlike `current`.
+export ORC_STATE_DIR="$tmp/.orc-line"
+run init --command flow --total-phases 9 --branch feat/line-a --description "line test" >/dev/null
+run phase set 6 --label implement --branch feat/line-a >/dev/null
+run jira bind PROJ-142 --branch feat/line-a >/dev/null
+cat > "$tmp/line-slices.json" <<'EOF'
+{"schema":1,"planPath":"plan.md","planSha256":"x","slices":[
+ {"id":1,"title":"a","status":"committed","commit":"aaa1111"},
+ {"id":2,"title":"b","status":"skipped","commit":null},
+ {"id":3,"title":"c","status":"pending","commit":null}]}
+EOF
+run slice init "$tmp/line-slices.json" --branch feat/line-a >/dev/null
+
+out="$(run line --branch feat/line-a)"
+if [ "$(printf '%s\n' "$out" | wc -l | tr -d ' ')" = "1" ]; then ok; else fail "line: output must be exactly one line"; fi
+if printf '%s' "$out" | jq -e '.command == "flow" and .phase == 6 and .totalPhases == 9 and .phaseLabel == "implement" and .jiraTicket == "PROJ-142"' >/dev/null; then ok; else fail "line: session fields wrong: $out"; fi
+if printf '%s' "$out" | jq -e '.slicesDone == 2 and .slicesTotal == 3' >/dev/null; then ok; else fail "line: slices summary wrong (done=committed+skipped): $out"; fi
+if printf '%s' "$out" | jq -e '.title == "orc: flow feat/line-a [6]"' >/dev/null; then ok; else fail "line: title format wrong: $out"; fi
+
+# freshest-in_progress fallback when the asked branch has no session
+out="$(run line --branch no/such-branch)"
+if printf '%s' "$out" | jq -e '.command == "flow"' >/dev/null; then ok; else fail "line: must fall back to freshest live session"; fi
+
+# completed sessions are invisible
+run status set completed --branch feat/line-a >/dev/null
+if [ -z "$(run line --branch feat/line-a)" ]; then ok; else fail "line: completed session must yield empty output"; fi
+if run line --branch feat/line-a >/dev/null 2>&1; then ok; else fail "line: empty case must still exit 0"; fi
+
+# no registry at all -> exit 0, empty, silent
+if out="$(ORC_STATE_DIR="$tmp/.orc-void" run line --branch feat/line-a 2>&1)" && [ -z "$out" ]; then ok; else fail "line: missing registry must be exit-0 empty silent, got: $out"; fi
+
+# legacy entry (post-migrate vocabulary) renders null-safe
+export ORC_STATE_DIR="$tmp/.orc-line-legacy"
+mkdir -p "$ORC_STATE_DIR"
+cat > "$ORC_STATE_DIR/orc.json" <<'EOF'
+{"sessions":[{"branch":"old-x","gitBranch":"old/x","status":"in_progress","phase":"released-thing","startedAt":"2026-01-01T00:00:00Z"}]}
+EOF
+out="$(run line --branch old/x)"
+if printf '%s' "$out" | jq -e '.command == "session" and .title == "orc: session old/x [released-thing]"' >/dev/null; then ok; else fail "line: legacy null-safety broken: $out"; fi
+export ORC_STATE_DIR="$tmp/.orc"
+
 # --- vocabulary ban: legacy state fields must not reappear in prose --------
 # (schema.md's migration section is the one allowed mention, so commands and
 # agents are the scope — the recipe literally isn't spelled anywhere else.)
