@@ -4,6 +4,7 @@ argument-hint: "<verb> [args] [--project KEY] [--type Story|Task|Bug|Epic|Sub-ta
 arguments: [verb]
 disable-model-invocation: true
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Edit
@@ -111,34 +112,22 @@ If `--type` is missing, default to `Blocks` and surface the choice. If `acli` re
 The orc-specific glue. Persists the linked Jira ticket key into `.orc/` state.
 
 1. **Validate** the key shape: `^[A-Z][A-Z0-9_]*-\d+$`. If it doesn't match, refuse and explain.
-2. **Resolve the active session.** Determine the current branch:
-   ```bash
-   BRANCH=$(git branch --show-current)
-   ```
-   Sanitize: replace `/` with `-`. The session entry to mutate is the one in `.orc/orc.json` whose `branch` field matches the sanitized name AND whose `status` is `in_progress`.
-3. **Iron rule:** If no in-progress session exists for this branch, REFUSE. Surface:
+2. **Iron rule:** If no in-progress session exists for this branch (`orc-state current` fails), REFUSE. Surface:
 
    ```markdown
    > **🛑 Blocked — no active session**
    >
    > No active orc session for branch `<sanitized>`. Run `/orc:plan`, `/orc:start`, `/orc:debug`, or `/orc:flow` first to create one.
    ```
-4. **Mutate `.orc/orc.json`** — set `jiraTicket` on the matching entry. Use `jq`:
+3. **Bind via the one writer** (`orc:state-protocol` — registry + checkpoint frontmatter mutated together):
    ```bash
-   jq --arg b "$SANITIZED_BRANCH" --arg k "$KEY" \
-      'map(if .branch == $b and .status == "in_progress" then .jiraTicket = $k else . end)' \
-      .orc/orc.json > .orc/orc.json.tmp && mv .orc/orc.json.tmp .orc/orc.json
+   orc-state jira bind "$KEY"
    ```
-5. **Mutate `.orc/<sanitized-branch>/files/checkpoint.md` frontmatter** — add or replace the `jiraTicket: <KEY>` line. Read, edit, write.
-6. Echo: `✓ Bound <KEY> to session on branch <sanitized-branch>.`
+4. Echo: `✓ Bound <KEY> to session on branch <sanitized-branch>.`
 
 ### Verb: `unbind`
 
-Same session-resolution as `bind`. Then clear:
-
-1. `jq` on `.orc/orc.json`: `map(if .branch == $b and .status == "in_progress" then del(.jiraTicket) else . end)`.
-2. Remove the `jiraTicket:` line from `checkpoint.md` frontmatter.
-3. Echo: `✓ Unbound <PREVIOUS-KEY> from session on branch <sanitized-branch>.`
+Same session-resolution as `bind`. Then `orc-state jira unbind`. Echo: `✓ Unbound <PREVIOUS-KEY> from session on branch <sanitized-branch>.`
 
 If no `jiraTicket` was set, exit with a plain one-line echo: `No ticket bound to this session.` (status echoes stay plain — no callout).
 

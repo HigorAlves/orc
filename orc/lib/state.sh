@@ -495,6 +495,36 @@ orc_state_verify() { # [branch]
   return "$errs"
 }
 
+orc_state_jira() { # bind <KEY> | unbind  [--branch B]
+  local verb="${1:-}" key="" branch=""
+  shift || true
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --branch) branch="${2:-}"; shift 2 ;;
+      *) key="$1"; shift ;;
+    esac
+  done
+  local sid
+  sid="$(orc_state__sid "$branch")" || return 1
+  orc_state__entry "$sid" >/dev/null || return 1
+  case "$verb" in
+    bind)
+      printf '%s' "$key" | grep -qE '^[A-Z][A-Z0-9_]*-[0-9]+$' || {
+        echo "orc-state jira bind: key must match ^[A-Z][A-Z0-9_]*-\\d+\$ (got '$key')" >&2
+        return 2
+      }
+      orc_state__update '(.sessions[] | select(.sessionId == $sid)) |= (.jiraTicket = $key | .updatedAt = $now)' \
+        --arg sid "$sid" --arg key "$key" --arg now "$(orc_state__now)"
+      ;;
+    unbind)
+      orc_state__update '(.sessions[] | select(.sessionId == $sid)) |= (.jiraTicket = null | .updatedAt = $now)' \
+        --arg sid "$sid" --arg now "$(orc_state__now)"
+      ;;
+    *) echo "orc-state jira: verb must be bind or unbind" >&2; return 2 ;;
+  esac
+  orc_state__write_checkpoint "$sid"
+}
+
 orc_state_migrate() {
   local reg
   reg="$(orc_state__registry)"

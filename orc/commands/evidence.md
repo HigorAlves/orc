@@ -3,6 +3,7 @@ description: Collect browser evidence scoped to a ticket (or shared context) and
 argument-hint: "[<TICKET-KEY>] [--web <url>] [--driver chrome|agent-browser] [--context \"<what to test>\"] [--no-env] [--repos a,b | --repo a | --this-repo]"
 arguments: [ticket]
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Edit
@@ -42,7 +43,7 @@ Collection **reuses `/orc:qa`'s browser drivers verbatim**; delivery reuses the 
 
 !`orc-workspace-detect --banner`
 
-Context is injected above (`ORC_*` vars exported; don't re-run detection). Resolve the target ticket: positional `<KEY>` → session's bound `jiraTicket` (`.orc/orc.json`, sanitized-branch match) → `AskUserQuestion`: `Provide a key` / `Run context-only (save locally, no delivery)` / `Cancel`. A key is optional — context-only runs still collect and save the packet, just with no delivery target.
+Context is injected above (`ORC_*` vars exported; don't re-run detection). Resolve the target ticket: positional `<KEY>` → session's bound `jiraTicket` (`orc-state get --field jiraTicket`, read-for-data per `orc:state-protocol`) → `AskUserQuestion`: `Provide a key` / `Run context-only (save locally, no delivery)` / `Cancel`. A key is optional — context-only runs still collect and save the packet, just with no delivery target.
 
 ### Phase 1 — Scope the run
 

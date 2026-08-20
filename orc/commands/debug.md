@@ -2,6 +2,7 @@
 description: Systematic root-cause investigation, then fix with TDD — never proposes a fix before finding the cause; resumable diagnosis + regression test in .orc/ state. Workspace-aware. For a quick one-off look without session state, prefer the bundled /debug.
 argument-hint: "[--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <bug description or failing test name>"
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Edit
@@ -55,7 +56,7 @@ In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. Th
 3. **Resolve the Jira link.**
    - If `--jira <KEY>` was passed: validate against `^[A-Z][A-Z0-9_]*-\d+$`. Reject and stop on mismatch.
    - Otherwise: ask via `AskUserQuestion` — *"Link a Jira ticket to this session?"* with options: `Paste a key` / `Skip — I'll bind later via /orc:jira bind` / `No ticket — this work has no tracker entry`.
-4. Append/update an entry in `.orc/orc.json` with `command: "debug"`, `status: in_progress`, `current_phase: 1`, `total_phases: 7`, and `jiraTicket: <KEY>` (omit field if null). Write `checkpoint.md` with `jiraTicket` in the frontmatter when set.
+4. Register state: `orc-state init --command debug --total-phases 7 [--jira <KEY>]`. Defer to `orc:state-protocol` for schema and rules; per phase, `orc-state phase set <n>` + `orc-state digest write -`.
 
 ### Phase 2 — Investigate (no fixes)
 

@@ -20,7 +20,7 @@ You provision the environment the app under test runs in. You are not QA — you
 ## Inputs
 
 - `repoPath` — the worktree to provision for (detect + bind-mount THIS path, never the main checkout).
-- `stateDir` + `branchSanitized` — where state and evidence live (`<stateDir>/<branch>/files/`).
+- `stateDir` + `sessionId` (the sanitized branch) — where state and evidence live (`<stateDir>/<sessionId>/files/`).
 - Optional: `featureDescription`, `appUrl` hint, flags (`--containerize-app`, `--rebuild`, `--fresh`, `--wait-timeout <s>`).
 - **Workspace mode**: `repos[]` + `repoPaths`, `webSurfaceRepo`, optional `crossRepoContract`/plan path (dependency order), workspace-level `stateDir`.
 

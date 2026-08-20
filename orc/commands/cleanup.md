@@ -3,6 +3,7 @@ description: Clean up after completed or abandoned orc sessions — removes work
 argument-hint: "[--dry-run] [--all-completed] [--per-repo] [--down-volumes] [<session-id-or-branch>]"
 disable-model-invocation: true
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Edit
@@ -30,7 +31,7 @@ Close the loop on finished orc work — remove the workspace state, the worktree
 
 ## Arguments
 
-- `<session-id-or-branch>` — optional. Clean up exactly one session. Accepts the `session_id` from `.orc/orc.json` or a (sanitized or raw) branch name.
+- `<session-id-or-branch>` — optional. Clean up exactly one session. Accepts the `sessionId` from `.orc/orc.json` (list via `orc-state sessions`; schema per `orc:state-protocol`) or a (sanitized or raw) branch name.
 - `--all-completed` — clean up every session whose `status` in `.orc/orc.json` is `completed` or `abandoned`. Respects all the safety checks below per session.
 - `--dry-run` — print what *would* happen but make no changes. Recommended for the first run.
 - `--per-repo` — workspace mode: clean each linked repo independently as its PR merges, instead of waiting for all to merge. Use only when you intend to abandon some repos (rare).
@@ -47,7 +48,7 @@ Context is injected above (`ORC_*` vars are exported for any Bash you run — do
 In workspace mode, the registry to read in Phase 2 is `${ORC_STATE_DIR}/orc.json` (workspace-level). Workspace sessions have `scope: "workspace"` and a `repos` array. For each candidate workspace session, fetch PR merge status for every URL in `linkedPRs`:
 
 ```bash
-for url in $(jq -r '.sessions[] | select(.session_id == "'$ID'") | .linkedPRs[].url' "$ORC_STATE_DIR/orc.json"); do
+for url in $(jq -r '.sessions[] | select(.sessionId == "'$ID'") | .linkedPRs[].url' "$ORC_STATE_DIR/orc.json"); do
   gh pr view "$url" --json state -q .state
 done
 ```
@@ -113,7 +114,7 @@ Unpushed commits? <count>
 ```bash
 # Per stack: ordered list of {position, url, branch, state}
 jq -r --arg sid "$SESSION_ID" '
-  .sessions[] | select(.session_id == $sid) | .linkedPRs
+  .sessions[] | select(.sessionId == $sid) | .linkedPRs
   | map(select(.stackId != null))
   | group_by(.stackId)
   | map({

@@ -2,6 +2,7 @@
 description: Author a blameless incident postmortem — timeline, root causes, action items — filing each P0 action item as a tracker issue. Status reaches Final only when all P0 items close.
 argument-hint: "[<short-slug>] [--severity sev-1|sev-2|sev-3]"
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Edit
@@ -53,7 +54,7 @@ If the project doesn't have severity definitions, note this — surface a sugges
 
 ### Phase 3 — Initialize workspace
 
-Determine current branch. Create `.orc/<sanitized-branch>/files/`. Write `checkpoint.md` (phase=3, command=postmortem, severity=<tier>, total_phases=7). Register in `.orc/orc.json`.
+Register state: `orc-state init --command postmortem --total-phases 7`, then `orc-state phase set 3 --label "severity-<tier>"`. Defer to `orc:state-protocol` for schema and rules.
 
 Decide where the document lives via `AskUserQuestion`:
 - "In-repo at `docs/postmortems/YYYY-MM-DD-<slug>.md`"

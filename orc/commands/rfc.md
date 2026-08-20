@@ -3,6 +3,7 @@ description: Author a system-design RFC — proposes a non-trivial change BEFORE
 argument-hint: "[--grill] [--review <path>] [<title>]"
 effort: high
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Edit
@@ -44,7 +45,7 @@ If none are true, print the Gate headline (`**⛔ Gate — is this RFC-worthy?**
 
 Determine the current branch (sanitize). Create `.orc/<sanitized-branch>/files/` if absent. Locate `docs/rfcs/` (create if absent, add `docs/rfcs/README.md` linking to the convention). Find the next sequence number.
 
-Write `checkpoint.md`: phase=2, status=in_progress, command=rfc, total_phases=5 (or 6 with `--grill`), started_at=now. Append entry to `.orc/orc.json`.
+Register state: `orc-state init --command rfc --total-phases 5` (6 with `--grill`), then `orc-state phase set 2`. Defer to `orc:state-protocol` for schema and rules.
 
 ### Phase 3 — Draft Goals + Non-goals first
 

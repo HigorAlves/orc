@@ -3,6 +3,7 @@ description: "Audit, survey, and upgrade project dependencies — one-bump-per-c
 argument-hint: "[audit|outdated|upgrade] [pkg | --all-safe] [--prod-only] [--repos a,b | --repo a | --all-repos | --this-repo]"
 arguments: [verb]
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Edit
@@ -87,7 +88,7 @@ Context is injected above (`ORC_*` vars are exported for any Bash you run — do
 ### Phase 4 — `upgrade [pkg | --all-safe]`
 
 1. **Resolve the bump list.** Named `pkg` → just that one. `--all-safe` → the patch/minor in-range set from a fresh outdated survey. Arrived from Phase 2 → the fixable-vuln list. Dirty working tree → stop and surface; the loop needs clean commits.
-2. **Register the session** (iron rule #6). Determine the branch (`git branch --show-current`), sanitize (`/` → `-`), create `${ORC_STATE_DIR}/<sanitized-branch>/files/`, append an entry to `.orc/orc.json` (`command: "deps"`, `status: in_progress`, `current_phase: 4`, `total_phases: 5`), and write `checkpoint.md` listing the bump queue.
+2. **Register state** (iron rule #6): `orc-state init --command deps --total-phases 5`, then `orc-state phase set 4`; record the bump queue via `orc-state digest write -`. Defer to `orc:state-protocol` for schema and rules.
 3. **Preview the queue** and gate:
 
 ```markdown

@@ -2,6 +2,7 @@
 description: "Diagnose and fix a red CI run — dispatches orc-ci-investigator, then routes on its verdict: auto-fix via orc-code-fixer, flake re-run, infra escalation, or /orc:debug hand-off. Use when CI is red, PR checks fail, or after a push with --watch."
 argument-hint: "[<pr-number>|<branch>] [--run <id>] [--watch]"
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Glob
@@ -46,7 +47,7 @@ In workspace mode, read `${ORC_STATE_DIR}/orc.json` for the in-progress session'
 1. Resolution order: `--run <id>` wins; else the explicit `<pr-number>`/`<branch>` argument; else the current branch (`git branch --show-current`) and its PR via `gh pr list --head <branch>`.
 2. `--watch`: run `gh run watch <id>` for the newest run on the ref (or `gh pr checks <pr> --watch` when the ref is a PR) and wait for the conclusion. Success → echo the green summary and stop. Failure → continue with that run pinned.
 3. Without `--watch`: `gh run list --branch <branch> --limit 5` / `gh pr checks <pr>` for a quick read. Everything green → say so and stop — never manufacture work.
-4. Initialize state: create `${ORC_STATE_DIR}/<sanitized-branch>/files/` if missing; append/update an entry in `.orc/orc.json` with `command: "ci"`, `status: in_progress`, `current_phase: 1`, `total_phases: 4`; write `checkpoint.md` with the resolved ref + run ID. (If an in-progress session already exists for this branch — e.g. a flow — append a `ci_status` line to its checkpoint instead of registering a duplicate.)
+4. Register state: `orc-state init --command ci --total-phases 4`, then record the resolved ref + run ID via `orc-state digest write -`. Defer to `orc:state-protocol` for schema and rules. (If an in-progress session already exists for this branch — e.g. a flow — do NOT re-init as `ci`; append a `ci_status` line to that session's checkpoint body instead.)
 
 ### Phase 2 — Dispatch the investigator
 

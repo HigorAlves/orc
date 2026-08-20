@@ -2,6 +2,7 @@
 description: "Turn a feature brief, PRD, or existing Epic into a full Jira hierarchy behind a preview gate. Use when building out a Jira epic/backlog, breaking a feature into Jira tickets, or enforcing the Epic→Story→Task structure."
 argument-hint: "[<brief> | <prd-path> | --epic <KEY>] [--project <KEY>] [--team-size <n>] [--dry-run]"
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Glob
@@ -57,7 +58,7 @@ Pick the Jira backend:
    ```
 
    `AskUserQuestion`: attach to a listed Epic / "Draft a new Epic (micro-PRD) from this input" / cancel.
-3. Register the session: entry in `.orc/orc.json` (`command: "jira-breakdown"`, `status: in_progress`, `total_phases: 4`) + `checkpoint.md` per iron rule #6.
+3. Register state: `orc-state init --command jira-breakdown --total-phases 4` (iron rule #6; schema per `orc:state-protocol`).
 
 ### Phase 2 — Dispatch the architect
 

@@ -2,6 +2,7 @@
 description: End-to-end feature/bug/refactor pipeline (plan → start → implement → QA → ship → address → cleanup) with an interactive gate at every phase. Resumable via /orc:resume. --jira <KEY> links a ticket. Workspace-aware.
 argument-hint: "[--type=feature|bug|refactor|docs] [--rfc] [--verbose] [--pause-at-implement] [--jira <KEY>] [--max-loc <N>] [--no-size-gate] [--driver agent-browser|chrome] [--repos a,b | --repo a | --all-repos | --this-repo] <one-line task description>"
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Edit
@@ -137,7 +138,7 @@ Record the resolved repo set as `targetRepos` in `checkpoint.md`. When the resol
 
 **Iron rule (no silent broadcast):** workspace mode never proceeds past Triage without an explicit repo set — the repo-set question is bundled, never inferred or defaulted.
 
-Initialize `${ORC_STATE_DIR}/<sanitized-branch>/files/` and write `checkpoint.md` (phase=1, command=flow, total_phases=9 — adjust for skipped phases). Add `jiraTicket: <KEY>` to the frontmatter when set. Append entry to `${ORC_STATE_DIR}/orc.json` with `command: "flow"`, `jiraTicket: <KEY>` (omit field if null), and — in workspace mode — `scope: "workspace"`, `repos: targetRepos`, `perRepoState: { <repo>: { repoPath, currentSlice: 0, prUrl: null } }`.
+Register state: `orc-state init --command flow --total-phases 9 [--jira <KEY>]` (adjust `--total-phases` for skipped phases; workspace mode adds `--scope workspace --repos <targetRepos>`). Defer to `orc:state-protocol` for schema and rules; per phase boundary, `orc-state phase set <n>` + `orc-state digest write -`.
 
 In workspace mode, also seed each target repo's `<workspaceRoot>/<repo>/.orc/<sanitized-branch>/workspace-link.json`:
 

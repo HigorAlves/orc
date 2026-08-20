@@ -2,6 +2,7 @@
 description: Parallel-dispatch N independent tasks that share no state — investigations, multi-PR review, multi-repo or bulk-doc work. Standalone parallelism primitive with no surrounding lifecycle. Workspace-aware.
 argument-hint: "[--from-plan] [--max <n>] [--agent <name>] [--repos a,b | --repo a | --all-repos | --this-repo] <task list or 'use plan.md'>"
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Edit
@@ -53,7 +54,7 @@ Invoke `orc:dispatching-parallel-agents`. The skill enforces that no two tasks s
 
 ### Phase 3 — Init workspace
 
-Create `${ORC_STATE_DIR}/<branch>/files/fan-out/` with one subdir per task. In workspace mode the subdir naming includes the repo: `task-01-api-health/`, `task-01-ui-health/`. Write `${ORC_STATE_DIR}/<branch>/files/checkpoint.md` (phase=3, status=in_progress, total_phases=6, command=fan-out, started_at=now). Append entry to `${ORC_STATE_DIR}/orc.json` central registry with the task count and per-task status. In workspace mode, set `scope: "workspace"` and `repos: targetRepos` on the registry entry.
+Create `${ORC_STATE_DIR}/<branch>/files/fan-out/` with one subdir per task. In workspace mode the subdir naming includes the repo: `task-01-api-health/`, `task-01-ui-health/`. Register state: `orc-state init --command fan-out --total-phases 6` (workspace mode adds `--scope workspace --repos <targetRepos>`), then `orc-state phase set 3` and record the task list + per-task status via `orc-state digest write -`. Defer to `orc:state-protocol` for schema and rules.
 
 ### Phase 4 — Dispatch (parallel)
 

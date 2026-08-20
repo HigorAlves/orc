@@ -2,6 +2,7 @@
 description: "Cut a semver release for the current repo — bump computed from conventional commits, evidence preview, tag + GitHub release. Use when releasing a version, tagging, or publishing release notes."
 argument-hint: "[--dry-run] [--tag-only]"
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Edit
@@ -65,7 +66,7 @@ On any failure, print the danger callout and stop:
 > <dirty tree: N modified/untracked files | test suite failed: summary>. Fix, commit, and re-run — there is no override.
 ```
 
-4. Register the session: append an entry to `.orc/orc.json` (`command: "release"`, `status: in_progress`, `current_phase: 1`, `total_phases: 5`, branch, `startedAt`) and create `${ORC_STATE_DIR}/<sanitized-branch>/files/` with a `checkpoint.md`. Checkpoint after each phase so `/orc:resume` can continue an interrupted run.
+4. Register state: `orc-state init --command release --total-phases 5`. Defer to `orc:state-protocol` for schema and rules; checkpoint each phase (`orc-state phase set <n>` + `orc-state digest write -`) so `/orc:resume` can continue an interrupted run.
 
 ### Phase 2 — Compute the bump
 

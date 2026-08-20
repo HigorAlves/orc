@@ -3,6 +3,7 @@ description: Plan a feature or refactor — produces a TDD-shaped plan, optional
 argument-hint: "[--grill] [--issues] [--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 effort: high
 allowed-tools:
+  - Bash(orc-state:*)
   - Read
   - Write
   - Edit
@@ -68,7 +69,7 @@ Phase 0 and 0b are exclusive — input is brief-shaped or refactor-shaped, not b
      - `Skip — I'll bind later via /orc:jira bind`
      - `No ticket — this work has no tracker entry`
    - When a key is resolved, set `JIRA_TICKET=<KEY>`. Otherwise leave `JIRA_TICKET=null`.
-5. Append/update an entry in `${ORC_STATE_DIR}/orc.json` (registry) with `command: "plan"`, `status: in_progress`, `current_phase: 1`, `total_phases: 4` (or 5 with `--issues`, 6 with `--grill --issues`), and `jiraTicket: <KEY>` (omit field if null). In workspace mode, also set `scope: "workspace"`, `repos: targetRepos`, and `perRepoState` rows.
+5. Register state: `orc-state init --command plan --total-phases 4 [--jira <KEY>]` (5 with `--issues`, 6 with `--grill --issues`; workspace mode adds `--scope workspace --repos <targetRepos>`). Defer to `orc:state-protocol` for schema and rules.
 6. Write `checkpoint.md` with frontmatter including `jiraTicket: <KEY>` if set, and (workspace mode) `repos: [<list>]`.
 
 ### Phase 1b — Prime code discovery (optional, non-blocking)

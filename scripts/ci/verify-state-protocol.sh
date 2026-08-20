@@ -81,6 +81,14 @@ if run slice list --status pending,red,escalated --branch feat/x >/dev/null; the
 run slice set 2 --status committed --commit def5678 --branch feat/x >/dev/null
 if run slice list --status pending,red,escalated --branch feat/x >/dev/null; then ok; else fail "slice list: must exit 0 when the filter matches nothing"; fi
 
+# --- jira bind/unbind ------------------------------------------------------
+run jira bind JRA-123 --branch feat/x >/dev/null
+if jq -e '.sessions[0].jiraTicket == "JRA-123"' "$reg" >/dev/null; then ok; else fail "jira bind: key not recorded"; fi
+if grep -q '^jiraTicket: JRA-123$' "$ckpt"; then ok; else fail "jira bind: checkpoint mirror missing jiraTicket"; fi
+if run jira bind lowercase-1 --branch feat/x >/dev/null 2>&1; then fail "jira bind: must reject malformed keys"; else ok; fi
+run jira unbind --branch feat/x >/dev/null
+if jq -e '.sessions[0].jiraTicket == null' "$reg" >/dev/null; then ok; else fail "jira unbind: key not cleared"; fi
+
 # --- verify ----------------------------------------------------------------
 if run verify feat-x >/dev/null 2>&1; then ok; else fail "verify: healthy session must pass"; fi
 jq '(.sessions[0].phase) = 99' "$reg" > "$reg.tmp" && mv "$reg.tmp" "$reg"
@@ -100,6 +108,40 @@ if jq -e '.sessions[0].phase == 3 and .sessions[0].phaseLabel == "released-thing
 if jq -e '.sessions[0] | has("session_id") or has("current_phase") or has("created_at") or has("total_phases")' "$reg" >/dev/null; then fail "migrate: banned legacy keys must be removed"; else ok; fi
 if jq -e '.sessions[0].totalPhases == 6' "$reg" >/dev/null; then ok; else fail "migrate: total_phases -> totalPhases"; fi
 if jq -e '.sessions[0].startedAt == "2026-01-01T00:00:00Z"' "$reg" >/dev/null; then ok; else fail "migrate: created_at -> startedAt"; fi
+
+# --- vocabulary ban: legacy state fields must not reappear in prose --------
+# (schema.md's migration section is the one allowed mention, so commands and
+# agents are the scope — the recipe literally isn't spelled anywhere else.)
+banned='session_id|current_phase|total_phases|created_at|updated_at|branchSanitized'
+hits="$(grep -rnE "$banned" "$repo_root/orc/commands" "$repo_root/orc/agents" 2>/dev/null | grep -v -- '--total-phases' || true)"
+if [ -z "$hits" ]; then ok; else
+  fail "banned legacy state vocabulary in commands/agents:
+$hits"
+fi
+
+# --- reference closure: state-touching commands defer to the protocol ------
+closure_miss=""
+for f in "$repo_root"/orc/commands/*.md; do
+  if grep -qE 'checkpoint\.md|orc\.json' "$f"; then
+    if ! grep -qE 'orc:state-protocol|orc-state ' "$f"; then
+      closure_miss="$closure_miss $(basename "$f")"
+    fi
+  fi
+done
+if [ -z "$closure_miss" ]; then ok; else
+  fail "commands mention checkpoint.md/orc.json without deferring to orc:state-protocol or orc-state:$closure_miss"
+fi
+
+# --- verb existence: every orc-state verb used in prose exists in the CLI --
+used_verbs="$(grep -rhoE 'orc-state (init|current|get|sessions|phase|status|link-pr|digest|slice|verify|migrate|[a-z-]+)' \
+  "$repo_root/orc/commands" "$repo_root/orc/skills" 2>/dev/null | awk '{print $2}' | sort -u || true)"
+for v in $used_verbs; do
+  if ! grep -qE "^  $v\)|^  ${v}\|" "$orc_state" && ! grep -qE "^\s+${v}\)" "$orc_state"; then
+    fail "orc-state verb '$v' referenced in prose but missing from bin/orc-state"
+  else
+    ok
+  fi
+done
 
 if [ "$status" -eq 0 ]; then
   echo "verify-state-protocol: OK ($pass_count cases)"
