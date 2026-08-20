@@ -86,7 +86,7 @@ You add the test, re-run Phase 2. Now clean.
 
 Created. Two beats precede the dispatch: without `--web <url>`, a Docker environment is provisioned or attached first (`orc-env-provisioner`; the validator attaches to the running app, it never boots infra itself), and the **browser-driver gate** asks agent-browser (headless, richest evidence) vs Claude-in-Chrome (watch live in your own browser) — `--driver` skips the prompt. This run: `--web` said the app is already up, and we pick agent-browser.
 
-`orc-qa-validator` is dispatched via `Task`. The agent's first move is to invoke the `orc:agent-browser` skill (the discovery stub points at the live CLI workflow).
+`orc-qa-validator` is dispatched via `Task`. The `orc:agent-browser` skill is preloaded into the agent — its entry point (the discovery stub points at the live CLI workflow).
 
 Then it walks the **golden path**:
 
@@ -145,7 +145,7 @@ The agent then writes `qa/steps.md` — a numbered narrative referencing each sc
 
 ### Phase 5 — Verdict
 
-The agent returns a verdict — `pass`, `partial`, or `fail`. Example summary:
+The agent returns its verdict — `pass`, `partial`, or `fail` — plus a **manifest** (artifact list, curated visual proof, per-acceptance results, ≤3-line summary). The orchestrator consumes the manifest; it does NOT re-read `steps.md`. Example summary:
 
 ```
 QA — checkout error states — 2026-05-01
@@ -162,7 +162,9 @@ If `fail`: a screenshot + the failing console/network line is surfaced; you don'
 
 ### Phase 6 — Write the verdict
 
-Appended to `.orc/feat-checkout-error-states/files/progress.md`:
+First the machine-readable file the ship/flow gates read: `.orc/feat-checkout-error-states/files/qa-verdict.json` — one `checks[]` row per suite check and browser walk, `headSha`-stamped, with the **verdict computed mechanically** (any `fail` → `fail`; else any `partial` → `partial`; else `pass`). The agent's browser verdict is one input, never the final word.
+
+Then the human-readable block, appended to `.orc/feat-checkout-error-states/files/progress.md`:
 
 ```
 ## QA — 2026-05-01T14:22Z
@@ -170,11 +172,12 @@ Appended to `.orc/feat-checkout-error-states/files/progress.md`:
 - Lint: pass
 - Type-check: pass
 - Self-review findings: 0 (after one round of fix)
+- Env: skipped (--web said the app is already up)
 - Browser QA: pass
 - Artifact dir: .orc/feat-checkout-error-states/files/qa/
 ```
 
-`checkpoint.md` bumps to `qa-complete`.
+`orc-state phase set <n> --label qa-complete` marks QA complete.
 
 ## Required artifacts (the hard rule)
 
@@ -210,10 +213,10 @@ If anything required is missing, the QA is NOT passed. The command surfaces the 
 
 ## Done when
 
-- Verdict is `pass`.
+- `qa-verdict.json`'s computed verdict is `pass`.
 - All required artifacts exist.
 - `progress.md` has the verdict block.
-- `checkpoint.md` reflects QA complete.
+- The session is marked `qa-complete` (via `orc-state phase set`).
 
 Then: `/orc:ship` — and the PR body links to `qa/steps.md` so reviewers can verify the evidence.
 

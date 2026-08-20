@@ -49,10 +49,10 @@ orc: ⚙ Phase 1 — Triage
      │ ○ < 1 day   ◉ 1–5 days   ○ 1–4 weeks   ○ multi-qtr │
      └───────────────────────────────────────────────────┘
 
-You: feature · 1–5 days   (one turn — with --type too, Phase 1 asks nothing)
+You: feature · 1–5 days   (one turn — a --type flag would drop its question from the bundle too)
 
-orc: ⚙ Phase 1 done. Initialized .orc/feat-csv-export/files/.
-     jiraTicket: JRA-123 written to .orc/orc.json + checkpoint.md.
+orc: ⚙ Phase 1 done. orc-state init --command flow --jira JRA-123
+     → session registered (.orc/orc.json + checkpoint mirror, one verb).
      ⚙ Phase 2 (RFC) — skipped (scope < 1 week, no --rfc).
      ⚙ Phase 3 — Plan
      [invokes orc:writing-plans, drafts plan to .orc/feat-csv-export/files/plan.md]
@@ -69,8 +69,10 @@ orc: ⚙ Phase 1 done. Initialized .orc/feat-csv-export/files/.
 
 You: Yes — proceed
 
-orc: ⚙ Phase 4 — Start
-     [invokes orc:using-git-worktrees → .orc/.worktrees/orc/feat-csv-export]
+orc: ✓ Plan approved — slices.json ledger installed via orc-state slice init
+     (each slice carries touchpoints, parallel_group, depends_on, acceptance).
+     ⚙ Phase 4 — Start
+     [invokes orc:using-git-worktrees → .orc/.worktrees/feat-csv-export]
      [slice-1 test is a single assertion → orc:tdd inline; a complex
       first test would dispatch orc-test-author instead]
      [runs the test → fails with "Cannot find module '../export/csv'"]
@@ -190,7 +192,8 @@ orc: ⚙ Phase 7 — Ship
 
 You: Open as-is
 
-orc: ⚙ git push -u origin feat/csv-export
+orc: ⚙ Size gate (ship's Phase 4.5): under budget — passes silently.
+     ⚙ git push -u origin feat/csv-export
      ⚙ gh pr create --title "feat(reports): add CSV export" --body ...
      ✓ PR opened: https://github.com/you/repo/pull/523
 
@@ -262,7 +265,7 @@ orc: 📍 Resuming. PR #523 status: MERGED at 2026-05-03T14:22Z.
 
      Plan:
      ✓ rm -rf .orc/feat-csv-export/
-     ✓ git worktree remove .orc/.worktrees/orc/feat-csv-export   (clean)
+     ✓ git worktree remove .orc/.worktrees/feat-csv-export   (clean)
      ✓ git branch -d feat/csv-export                   (merged into main)
 
      Apply?
@@ -296,10 +299,12 @@ orc: ✓ Worktree removed.
 - **Ship doesn't end at PR-open.** Phase 7 watches CI (`gh pr checks --watch`) before advancing. A red run dispatches `orc-ci-investigator` and routes its verdict — fixable (gated `orc-code-fixer` dispatch), flake (re-run), infra, or needs-debug — until the checks are green.
 - **Resume is automatic.** You don't pass any args on the second/third invocation — orc reads `.orc/orc.json`, finds the in-progress flow, jumps to the next pending phase.
 - **The PR description was synthesized from accumulated evidence**: plan.md (Why), the diff (What changed), qa/steps.md (How tested), and ticket links.
+- **The statusline tracked it all.** The two-line orc statusline showed `flow 6/9 · [JRA-123] · slices 4/4 · feat/csv-export · #523` plus model/context throughout — a glance replaces `/orc:status` mid-flow.
 - **Jira followed the work end-to-end.** `JRA-123` was bound at Phase 1 (via `--jira` flag), persisted in `.orc/orc.json` + `checkpoint.md`, surfaced in every resume header, and emitted as a `Resolves JRA-123` trailer at PR composition. Override the keyword with `ORC_JIRA_PR_KEYWORD=Closes` (or `Fixes`) per shop convention.
 
 ## Variants
 
+- **Hands-off run** — pass `--auto` (bare = full; `--auto=guided` for the middle level; a configured `interaction_policy` sets the default). Full collapses Phases 1–3 into one contract gate — deliverable, slice list, testable success criteria — then Phases 4–9 run without inward gates, stopping only on escalations. Hard-outward gates (tracker writes, posting reviews) still ask.
 - **You want to write the code yourself** — pass `--pause-at-implement`. Phase 5 stops at Phase 4's failing test and hands back to you (the original behavior). Useful for exploratory refactors, learning a new codebase, or UI tweaks that are easier to do interactively. Everything else (gates, /orc:resume, autonomous QA dispatch, /orc:cleanup) stays the same.
 - **Bug instead of feature** — phase 3 becomes `/orc:debug`. The diagnosis substitutes for the plan; orc-implementer drives the regression test → fix loop in Phase 5.
 - **Multi-week effort** — pass `--rfc` (or pick "1–4 weeks" in triage) to insert phase 2 (RFC drafting) before planning. The RFC produces alternatives and a decision deadline before any code is touched.
@@ -307,7 +312,7 @@ orc: ✓ Worktree removed.
 - **Verbose PR** — pass `--verbose`. Phase 7 swaps the default terse `orc:caveman-pr` body for the long-form What/Why/How tested/Checklist template.
 - **You want fine-grained control over a single phase** — invoke the per-phase commands directly (`/orc:plan`, `/orc:debug`, `/orc:qa`, `/orc:ship`, etc.) instead of `/orc:flow`. Useful when only one phase of the loop is interesting and the rest is already done.
 - **No Jira ticket yet (or this work has no tracker entry)** — drop `--jira`. Phase 1 asks once with options `Paste a key` / `Skip — I'll bind later via /orc:jira bind` / `No ticket`. The rest of the flow behaves identically; the `Resolves <KEY>` trailer is just omitted from the PR body. You can attach a ticket mid-flow with `/orc:jira bind <KEY>` from the worktree.
-- **Need to file the Jira ticket from inside the flow** — pause at Phase 1, run `/orc:jira create --summary "add CSV export" --project PLAT --type Story` (it will offer to bind the new key automatically), then re-run `/orc:flow` and pass `--jira <NEW-KEY>`. End-to-end walkthrough in `examples/12-link-jira-and-ship.md`.
+- **Need to file the Jira ticket from inside the flow** — pause at Phase 1, run `/orc:jira create --summary "add CSV export" --project PLAT --type Story` (it will offer to bind the new key automatically), then re-run `/orc:flow` and pass `--jira <NEW-KEY>`. End-to-end walkthrough in `12-link-jira-and-ship.md`.
 
 ## Iron rules in play
 

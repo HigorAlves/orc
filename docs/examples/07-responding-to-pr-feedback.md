@@ -83,15 +83,16 @@ DISAGREE: <acknowledge in 1 sentence, explain in 1-2 with evidence, offer to dis
 
 Returns a JSON list of `{comment_id, file, line, category, reply}`.
 
+Replies lean on GitHub-markdown craft: bare shas (`abc1234`) and `#N` refs auto-link, so never a commit URL; a DISAGREE counter-proposal that's an exact ≤6-line change rides a ` ```suggestion ` block the reviewer can one-click; evidence that would blow the sentence cap collapses under `<details>`.
+
 ### Phase 4 — Review
 
-Show the diff + drafted replies via `AskUserQuestion`:
+Show the diff + the drafted replies (numbered), then ONE bundled `AskUserQuestion` call:
 
-- "Looks good — commit, push, post replies"
-- "Edit replies" → re-prompt for which to edit
-- "Edit fix" → return to Phase 3 with adjustments
+1. **Fixes + replies?** — "Looks good — commit, push, post replies" / "Edit fix first" (return to Phase 3 with adjustments) / "Abort"
+2. **Drop or rewrite any replies?** — `multiSelect`, chunks of 4 replies per question; default keep all, rewrites via the free-text Other as `<n>: <new text>`. Edited replies re-render in a final preview before anything posts.
 
-**Iron rule from the skill: never post a reply that has not been shown to the user first.** The user is the engineer of record on every PR thread.
+This gate is hard-outward — no `--auto` level skips it. **Iron rule from the skill: never post a reply that has not been shown to the user first.** The user is the engineer of record on every PR thread.
 
 ### Phase 5 — Commit + push + post
 
@@ -154,3 +155,4 @@ Echo: "Addressed 12 comments. Fix commit `abc1234` pushed. 12 replies posted (5 
 - **No AI attribution.** PR replies are your voice.
 - **#3 — verify before claim.** Tests run as part of `orc-code-fixer`'s output; if they fail, the reply ACTION items can't say "Done" yet.
 - **Reply categories are non-negotiable.** Skipping the categorization step (just blasting "I'll fix all of these") leads to drafts that can't tell QUESTION from DISAGREE.
+- **Inline replies only.** Never a top-level "Addressed in abc1234" recap comment — one reply per thread, via the replies endpoint; anything else duplicates signal and clutters the PR.

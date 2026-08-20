@@ -98,7 +98,7 @@ Output: a TDD-shaped task list, then `to-issues` files each as a tracker issue w
 /orc:fan-out --from-plan
 ```
 
-The plan marked which slices are parallel-safe (e.g. "DB migration", "API endpoint", "UI bell component" — all touch different files). Dispatches each as a sub-session.
+Reads the `slices.json` ledger installed at plan approval — slices sharing a `parallel_group` are parallel-safe by construction (e.g. "DB migration", "API endpoint", "UI bell component" — disjoint `touchpoints`). Dispatches each as a sub-session.
 
 ### Phase 5 — Per-issue ship cycle
 
@@ -135,6 +135,7 @@ docs/adr/0009-realtime-delivery-via-websocket.md
 .orc/<branch>/files/                            # per-issue workspace
 ├── checkpoint.md
 ├── plan.md
+├── slices.json                                 # ledger installed at plan approval
 └── issues.md                                   # filed issue URLs
 
 GitHub:

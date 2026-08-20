@@ -49,6 +49,8 @@ orc: ⚙ Phase 1 — Loading tasks
        holds; proceeding.
 
      ⚙ Phase 3 — Workspace init
+     orc-state init --command fan-out --total-phases 6
+       (registry + checkpoint written by orc-state — never by hand)
      Created: .orc/multi-pr-review-2026-05-09/files/fan-out/
        task-01-pr-523/   (alice — feat(reports): CSV export)
        task-02-pr-524/   (bob — fix(billing): proration)
@@ -60,7 +62,7 @@ orc: ⚙ Phase 1 — Loading tasks
      [3 Task calls issued in a single response — agents run concurrently]
 ```
 
-While the three agents run, each does its own `/orc:code-review` style review against its assigned PR — fetches the diff, reads project guidelines (CLAUDE.md scoped to changed files), walks the diff, and produces a categorized finding list with the `orc:caveman-review` discipline (one line per finding, file:line — problem — fix).
+While the three agents run, each does its own `/orc:code-review` style review against its assigned PR — fetches the diff, reads project guidelines (CLAUDE.md scoped to changed files), walks the diff, and returns structured JSON findings per the `orc:review-contract` schema, in `orc:caveman-review` tone (one line per finding: file:line — problem — fix).
 
 After all three complete:
 
@@ -73,7 +75,7 @@ orc: ⚙ Phase 5 — Results in
 
      ✓ task-02-pr-524 (bob — proration)
        Findings: 0 bugs, 0 missing tests, 0 architecture, 0 nits
-       Result: APPROVE — no actionable issues
+       Result: no findings → computed event APPROVE
        Result file: .../task-02-pr-524/result.md
 
      ✓ task-03-pr-525 (carol — session split)
@@ -100,7 +102,7 @@ PR #523 (alice — CSV export) — 2 bugs, 1 missing test
 │ ○ Hold — review manually                           │
 └───────────────────────────────────────────────────┘
 
-PR #524 (bob — proration) — clean, agent recommends APPROVE
+PR #524 (bob — proration) — clean, computed event APPROVE (no findings)
 ┌───────────────────────────────────────────────────┐
 │ ◉ Submit APPROVE — "Looks good — no issues found"  │
 │ ○ APPROVE with optional praise / context           │
@@ -116,20 +118,19 @@ PR #525 (carol — session split) — 1 bug, 1 architecture, 2 missing tests
 └───────────────────────────────────────────────────┘
 ```
 
-You confirm each. fan-out fires the appropriate `gh pr review` + `gh api ... /comments` calls per PR. All three reviews land on GitHub.
+You confirm each. Posting runs through the `orc:inline-review` layer — one batched `gh api repos/.../pulls/<n>/reviews` POST per PR (inline comments + the computed event). All three reviews land on GitHub.
 
 ## Artifacts
 
 ```
 .orc/multi-pr-review-2026-05-09/files/
-├── checkpoint.md
-├── orc.json
+├── checkpoint.md          # frontmatter mirrored from the central .orc/orc.json registry
 └── fan-out/
     ├── summary.md                          # aggregated table of all 3 reviews
     ├── task-01-pr-523/
     │   └── result.md                       # alice — full categorized findings
     ├── task-02-pr-524/
-    │   └── result.md                       # bob — APPROVE recommendation
+    │   └── result.md                       # bob — no findings (APPROVE computed)
     └── task-03-pr-525/
         └── result.md                       # carol — full categorized findings
 ```
@@ -139,7 +140,7 @@ You confirm each. fan-out fires the appropriate `gh pr review` + `gh api ... /co
 ```
 # Multi-PR review — 2026-05-09
 
-| PR | Author | Title | Findings | Recommendation |
+| PR | Author | Title | Findings | Computed event |
 |----|--------|-------|----------|----------------|
 | #523 | alice | feat(reports): add CSV export | 2 bugs, 1 missing test | REQUEST_CHANGES |
 | #524 | bob | fix(billing): correct proration | clean | APPROVE |

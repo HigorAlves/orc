@@ -38,12 +38,14 @@ All true → proceed. (If none were true, it'd suggest `/orc:plan` or `/orc:adr`
 
 ### Phase 2 — Init
 
+State registration is a one-liner — the registry (`.orc/orc.json`) and the checkpoint frontmatter are only ever written by `orc-state`, never by hand:
+
+```bash
+orc-state init --command rfc --total-phases 6   # 6 because --grill
+orc-state phase set 2
 ```
-.orc/feat-rfc-feature-flags/files/
-├── checkpoint.md              # phase=2, command=rfc
-├── rfc-0008.md                # workspace draft
-└── orc.json
-```
+
+The workspace draft lands at `.orc/feat-rfc-feature-flags/files/rfc-0008.md`.
 
 Sequence number `0008` because `docs/rfcs/0007-in-app-notifications.md` was the last one.
 
@@ -133,7 +135,7 @@ The skill interviews you against the draft. Likely questions:
 - "Why is build-in-house's ongoing cost only 5%? What if we hit a feature gap and need to extend?"
 - "Success criteria #1 is a behavior change — is that an org-change problem, not a tooling problem?"
 
-You answer; the RFC document gets revised. `checkpoint.md` bumps.
+You answer; the RFC document gets revised. `orc-state phase set 5` bumps the checkpoint.
 
 ### Phase 6 — Decision deadline
 

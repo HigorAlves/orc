@@ -69,7 +69,7 @@ to be "$0 of $0", not "$NaN of $undefined".
 
 ### Phase 3 — Write the regression test (TDD red)
 
-`/orc:debug` invokes `orc:tdd`. You write the test from the diagnosis, run the suite, watch it fail with the expected message. Commit the failing test on a fix branch (you're already on one — the worktrees skill handled that). For complex regression tests (multi-branch state machines, async coordination, integration boundaries), a gate offers to dispatch `orc-test-author` instead of writing inline — this one is a single assertion, so inline it is.
+`/orc:debug` invokes `orc:tdd`. You write the test from the diagnosis, run the suite, watch it fail with the expected message. Commit the failing test on a fix branch (the PreToolUse hook keeps you off `main`). For complex regression tests (multi-branch state machines, async coordination, integration boundaries), a gate offers to dispatch `orc-test-author` instead of writing inline — this one is a single assertion, so inline it is.
 
 ### Phase 4 — Fix
 
@@ -77,7 +77,7 @@ to be "$0 of $0", not "$NaN of $undefined".
 
 ### Phase 5 — Verify
 
-`orc:verification-before-completion` runs the full suite, lint, type-check. No "looks fine" without seeing green output.
+`orc:verification-before-completion` — an evidence-currency check, not an automatic re-run: the fixer's report must cite the regression pass + full-suite green at the current HEAD sha; a missing citation or sha mismatch triggers a real re-run. No "looks fine" without green output on record.
 
 ### Phase 6 — Web QA (if visible to users)
 
@@ -85,7 +85,7 @@ to be "$0 of $0", not "$NaN of $undefined".
 /orc:qa --web http://localhost:3000
 ```
 
-For a billing-page bug, this is required (iron rule: web changes need browser-driven QA evidence). `orc-qa-validator` walks the golden path + edge cases, captures `.orc/<branch>/files/qa/screenshot-NN-*.png`, `console.log`, `network.har`, `steps.md`.
+For a billing-page bug, this is required (iron rule: web changes need browser-driven QA evidence). `orc-qa-validator` walks the golden path + edge cases, captures `.orc/<branch>/files/qa/screenshot-NN-*.png`, `snapshot-final.txt`, `console.log`, `network.har`, `steps.md`.
 
 ### Phase 7 — Ship
 
@@ -105,6 +105,7 @@ Composes commit message ("fix(billing): guard zero-cap users against NaN"), open
 └── qa/
     ├── screenshot-01-billing-loaded.png
     ├── screenshot-02-zero-cap-formatted-correctly.png
+    ├── snapshot-final.txt
     ├── steps.md
     ├── console.log
     └── network.har
@@ -120,6 +121,7 @@ Composes commit message ("fix(billing): guard zero-cap users against NaN"), open
 
 ## Variants
 
+- **Ticketed bug** — `--jira BUG-42` links the ticket silently; without the flag, Phase 1 asks once (paste a key / bind later / no ticket).
 - **Performance regression, not a logic bug** — same flow. `orc-debug-investigator` is good for "this got 3× slower" too; the diagnosis just describes the regression mechanism instead.
 - **Can't reproduce locally** — the investigator surfaces this *first*. Don't spend hours guessing — get a customer's session ID, a Sentry trace, or a feature flag state from the user before re-running `/orc:debug`.
 - **The "fix" is a workaround** — fine for a hotfix, but write a follow-up issue immediately. orc treats workarounds as debt, not solutions.
