@@ -145,6 +145,63 @@ done
 out="$(payload 'git reset --hard HEAD~1' | ORC_ALLOW_DESTRUCTIVE_GIT=1 bash "$destructive_check")"
 if [ -z "$out" ]; then ok; else fail "destructive: ORC_ALLOW_DESTRUCTIVE_GIT=1 must be silent"; fi
 
+# --- pre-git-guard.sh (dispatcher) ----------------------------------------
+# One Bash command must produce AT MOST ONE permission prompt, even when it
+# trips several checks (e.g. `git push --force` on main matches both the
+# protected-branch and destructive-git guards). deny > ask; reasons merge.
+guard="$repo_root/orc/hooks/scripts/pre-git-guard.sh"
+
+run_guard() { # $1 = repo dir, $2 = command
+  (cd "$1" && payload "$2" | ORC_PROTECTED_BRANCHES="" CLAUDE_PLUGIN_OPTION_PROTECTED_BRANCHES="" \
+     env -u ORC_ALLOW_DESTRUCTIVE_GIT -u ORC_ALLOW_AI_ATTRIBUTION bash "$guard")
+}
+
+# Helper: assert output is exactly one JSON doc with the given decision, and
+# the reason contains ($3) / does not contain ($4, optional) given substrings.
+guard_expect() { # $1=repo $2=cmd $3=decision $4=must-contain(| separated) $5=must-not-contain
+  local out n d r want_d="$3" needle
+  out="$(run_guard "$1" "$2")"
+  n="$(printf '%s' "$out" | jq -s 'length' 2>/dev/null || echo 0)"
+  if [ "$n" != "1" ]; then fail "guard: '$2' must emit exactly one JSON doc, got $n"; return; fi
+  d="$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecision')"
+  r="$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecisionReason')"
+  if [ "$d" != "$want_d" ]; then fail "guard: '$2' decision must be $want_d, got $d"; return; fi
+  if [ -n "${4:-}" ]; then
+    while IFS= read -r needle; do
+      [ -n "$needle" ] || continue
+      if ! printf '%s' "$r" | grep -qF "$needle"; then fail "guard: '$2' reason must mention '$needle'"; return; fi
+    done < <(printf '%s' "$4" | tr '|' '\n')
+  fi
+  if [ -n "${5:-}" ] && printf '%s' "$r" | grep -qF "$5"; then
+    fail "guard: '$2' reason must NOT mention '$5'"; return
+  fi
+  ok
+}
+
+# THE dedup case: force-push on protected branch trips two checks -> ONE ask
+guard_expect "$main_repo" 'git push --force origin main' ask 'iron rule #1|Destructive git command'
+
+# Single-check cases across the {protected,feature} x {push,push --force,commit} matrix
+guard_expect "$main_repo" 'git push origin main' ask 'iron rule #1' 'Destructive git command'
+guard_expect "$main_repo" 'git commit -m "x"' ask 'iron rule #1'
+guard_expect "$feat_repo" 'git push --force origin feat-x' ask 'Destructive git command' 'iron rule #1'
+guard_expect "$feat_repo" 'git reset --hard HEAD~1' ask 'Destructive git command'
+
+# deny beats ask: attribution (deny) + protected branch (ask) -> ONE deny, both reasons
+guard_expect "$main_repo" 'git commit -m "x" -m "Co-Authored-By: Claude <noreply@anthropic.com>"' deny 'AI attribution|iron rule #1'
+
+# Silent cases: no matching check -> no output at all
+for case_cmd in 'git push origin feat-x' 'git commit -m "x"' 'git log --oneline'; do
+  out="$(run_guard "$feat_repo" "$case_cmd")"
+  if [ -z "$out" ]; then ok; else fail "guard: '$case_cmd' on feature branch must be silent, got: $out"; fi
+done
+out="$(run_guard "$main_repo" 'git log --oneline')"
+if [ -z "$out" ]; then ok; else fail "guard: innocent command on main must be silent"; fi
+
+# Overrides pass through the dispatcher unchanged
+out="$(cd "$feat_repo" && payload 'git reset --hard HEAD~1' | ORC_ALLOW_DESTRUCTIVE_GIT=1 bash "$guard")"
+if [ -z "$out" ]; then ok; else fail "guard: ORC_ALLOW_DESTRUCTIVE_GIT=1 must be silent through dispatcher"; fi
+
 if [ "$status" -eq 0 ]; then
   echo "verify-guard-hooks: OK ($pass_count cases)"
 fi
