@@ -74,53 +74,7 @@ If verification (Phase 2) flagged untested branches — dispatch **`orc-test-aut
 
 ### Phase 4 (web mode only) — Browser QA
 
-0. **Provision or attach the environment** (skip when `--web <url>` or `--no-env`). Check `orc-docker-env is-ready $(orc-docker-env state-path "$ORC_STATE_DIR" <sanitized-branch>)`:
-   - `ready` → attach; echo the reuse line (project, appUrl, "reused").
-   - otherwise → dispatch **`orc-env-provisioner`** via `Task` (repoPath = the worktree; workspace mode adds `repos[]`, `webSurfaceRepo`, plan path). On `fallback`: re-print the agent's ⚠️ callout and continue. On `failed`: re-print the 🛑 callout and `AskUserQuestion` — retry / retry `--fresh` / continue with `--no-env` legacy boot / abort QA.
-
-   The environment **stays up after QA** — the "QA partial → fix → re-run" loop attaches in seconds. Teardown belongs to `/orc:cleanup`.
-1. Init `${ORC_STATE_DIR}/<sanitized-branch>/files/qa/` directory. In workspace mode, the cross-repo QA evidence (e.g. ui+api integration walks) goes here; per-repo QA stays at `<repoPath>/.orc/<branch>/files/qa/`.
-
-#### Phase 4.1 — Choose the browser driver
-
-If `--driver` was passed, use it silently. Otherwise print the Gate headline, then `AskUserQuestion`:
-
-```markdown
-> **⛔ Gate — browser driver**
->
-> Web QA is ready to run against <appUrl>. Pick how to drive the browser.
-```
-
-- **agent-browser CLI (headless)** — richest evidence: annotated screenshots, network HAR, request mocking for failure-state testing; runs isolated from your browsing. Best for thorough pre-PR gates and CI-like rigor.
-- **Claude-in-Chrome extension (watch live)** — the test runs in YOUR Chrome; you see every click as it happens, with your real sessions, cookies, and extensions. Best when you want to visually follow the flow or the app needs an already-logged-in state.
-
-Remember the choice for this session's re-runs (the "QA partial → fix → re-run" loop keeps the same driver unless the user asks to switch).
-
-#### Driver A — agent-browser (dispatch the validator)
-
-2. Dispatch the `orc-qa-validator` subagent via `Task`. Pass:
-   - The feature description.
-   - **`appUrl` + `serviceEndpoints` + `envStatePath`** from `docker-env-state.json` (the validator NEVER boots infra when env state exists — it attaches). Only when step 0 was skipped: the `--web` URL, or legacy boot instructions under `--no-env`.
-   - The artifact directory.
-   - **Workspace mode only**: `repo` (the web-surface repo from Phase 0), `repoPath`, `siblingRepos` (already running via the provisioned environment — verify their traffic through `serviceEndpoints` in the HAR; the agent does NOT touch them), and `crossRepoContract` (when present in the plan — the agent walks an integration golden path that exercises the contract end-to-end).
-3. When the session has a `slices.json` ledger, also pass the relevant slices' **`acceptance` lists** — the agent scores each criterion against observed behavior (evidence-cited), instead of narrating vibes.
-4. The agent walks the golden path + edge cases, captures screenshots/video/console.log, writes `steps.md`, and returns its verdict + **manifest** (artifact list, curated visual-proof selection, per-acceptance results, 3-line summary).
-5. Consume the returned manifest — do NOT re-read `steps.md`; the manifest is the summary. If `pass`, proceed. If `fail` or `partial`, surface the failure with the screenshot link from the manifest. Phase 6 hands the same manifest to `orc:evidence-publish` as its pre-curated payload.
-
-#### Driver B — Claude-in-Chrome (run inline; the user is watching)
-
-Do NOT dispatch `orc-qa-validator` — the extension binds to the user's browser through THIS session. Run the QA yourself, narrating each step in one short line as you go (the user is following along in their browser):
-
-2. Load the extension tools in ONE `ToolSearch` call: `tabs_context_mcp`, `navigate`, `computer`, `read_page`, `tabs_create_mcp`, `read_console_messages`, `read_network_requests`, `gif_creator` (+ `form_input` when the flow has forms). Call `tabs_context_mcp` first; if the extension is not connected, surface it and fall back to Driver A (note the switch — never silently).
-3. **Create a NEW tab** for the appUrl — never drive the user's existing tabs unless they explicitly asked. Start a GIF recording via `gif_creator` (name it `qa-<sanitized-branch>.gif`, capture extra frames around each action). Avoid any element that triggers JS `alert`/`confirm` dialogs — they freeze the extension; test those paths under Driver A instead.
-4. Walk the **same golden path + edge cases** the `orc-qa-validator` protocol prescribes (validation errors, empty state, failure state where reachable without request mocking, auth states). One-line narration per step.
-5. Capture the chrome-mode evidence packet into `<qa-dir>` via `Write`:
-   - `qa-<branch>.gif` — the recording (this replaces per-step screenshot files; in-conversation screenshots are referenced by step number in `steps.md`)
-   - `snapshot-final.txt` — final `read_page` output
-   - `console.log` — `read_console_messages` output (filter noise with `pattern` but state the filter used)
-   - `network-summary.md` — distilled `read_network_requests` output: method, endpoint, status per request + notable request/response bodies (replaces `network.har`)
-   - `steps.md` — same template and verdict rules as the validator's
-6. Same verdict handling: `pass` → proceed; `fail`/`partial` → surface with the failing step + console/network line.
+Invoke **`orc:browser-qa`** and execute its protocol end-to-end: env attach/provision (step 0), the driver gate (step 1 — `--driver` or a settled `driver` decision skips it), then Driver A (validator dispatch with the acceptance lists and manifest return) or Driver B (Claude-in-Chrome inline with the chrome-mode evidence packet). This command adds nothing to the protocol — the skill is the single source of truth shared with `/orc:flow` Phase 6.
 
 ### Phase 5 — Write the verdict
 

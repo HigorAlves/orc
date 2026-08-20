@@ -9,7 +9,7 @@
     {
       "name": "orc",
       "source": "./orc",
-      "description": "77 curated skills (incl. workspace-mode for cross-repo flows), 30 composite slash commands, 14 specialist subagents with per-agent model + reasoning-effort tuning, and 8 hook scripts that quietly enforce discipline (confirm-to-commit on protected branches, destructive-git gating, no AI-attribution trailers in commits/PRs, dependency pre-flight, iron rules injected at session start). Covers the whole SDLC — including post-PR: CI diagnosis, releases, dependency audits, live incident response. Drives the senior-IC loop end-to-end via /orc:flow — workspace-aware: from a parent dir with multiple sibling repos, one flow spans them all with N linked PRs."
+      "description": "79 curated skills (incl. workspace-mode for cross-repo flows), 30 composite slash commands, 14 specialist subagents with per-agent model + reasoning-effort tuning, and 8 hook scripts that quietly enforce discipline (confirm-to-commit on protected branches, destructive-git gating, no AI-attribution trailers in commits/PRs, dependency pre-flight, iron rules injected at session start). Covers the whole SDLC — including post-PR: CI diagnosis, releases, dependency audits, live incident response. Drives the senior-IC loop end-to-end via /orc:flow — workspace-aware: from a parent dir with multiple sibling repos, one flow spans them all with N linked PRs."
     }
   ]
 }
