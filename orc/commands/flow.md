@@ -326,9 +326,7 @@ Always invoke `orc:caveman-review` (self-review of diff) — that's a different 
 
 When the diff touches security-sensitive paths (auth, sessions, raw SQL, deserialization, file upload, network egress, dependency surface) — dispatch `orc-security-reviewer` in parallel with the self-review. Merge findings before surfacing.
 
-For web changes, **provision or attach the environment first** (same step as `/orc:qa` Phase 4.0): `orc-docker-env is-ready <state-file>` → attach when `ready`, else dispatch `orc-env-provisioner` (worktree path; workspace mode adds `repos[]` + `webSurfaceRepo` from the plan's "Repo touchpoints" + the plan path for dependency order). `fallback` → re-print the ⚠️ callout and continue; `failed` → 🛑 callout + gate. The environment **stays up across the QA-partial → fix → re-run loop** — re-runs attach in seconds; teardown happens in Phase 9.
-
-Then run the **browser-driver gate** from `/orc:qa` Phase 4.1 (`AskUserQuestion`: agent-browser headless vs Claude-in-Chrome watch-live; a `--driver` pass-through skips it). **Driver A** dispatches `orc-qa-validator` (drives `agent-browser`, captures evidence to `.orc/<branch>/files/qa/`) with `appUrl` + `serviceEndpoints` + `envStatePath` from `docker-env-state.json` — the validator attaches, never boots. **Driver B** runs inline in this session per `/orc:qa` Phase 4 Driver B (the user watches live in their Chrome; chrome-mode evidence packet). In workspace mode, the web-surface repo comes from the plan's "Repo touchpoints" section (`repoPath = <workspaceRoot>/<that repo>`); cross-repo integration evidence (e.g. ui+api walks) lands at the workspace-level `<workspaceRoot>/.orc/<branch>/files/qa/`, repo-local QA stays per-repo.
+For web changes, invoke **`orc:browser-qa`** and execute its protocol end-to-end — env attach/provision, the driver gate (`--driver` or a settled `driver` decision skips it), Driver A validator dispatch (with acceptance lists + manifest return) or Driver B inline. The skill is the single source of truth shared with `/orc:qa` Phase 4; flow adds only the workspace note: the web-surface repo comes from the plan's "Repo touchpoints" (`repoPath = <workspaceRoot>/<that repo>`), cross-repo integration evidence lands at the workspace-level `qa/` dir, repo-local QA stays per-repo. The environment stays up across the QA-partial → fix → re-run loop; teardown happens in Phase 9.
 
 If verification flags untested branches, dispatch `orc-test-author` to fill them in before continuing.
 
@@ -371,7 +369,7 @@ AskUserQuestion (after PR composed):
 **Post-open CI gate.** Once the PR(s) are open, watch CI before advancing: `gh pr checks <pr> --watch` (fallback: `gh run watch` on the head branch's newest run). In workspace mode, watch every PR in `linkedPRs`.
 
 - **Green** → record `ci: green` in `checkpoint.md` and advance to Phase 8.
-- **Red** → run the `/orc:ci` routing inline: dispatch `orc-ci-investigator` via `Task` with the PR ref + head SHA, save its report to `${ORC_STATE_DIR}/<branch>/files/ci-diagnosis.md`, then route on the verdict exactly as `/orc:ci` Phase 3 does — `fixable`: 📋 preview the fix list, ⛔ gate via `AskUserQuestion`, dispatch `orc-code-fixer`, commit per `orc:git-commit`, push, re-watch; `flake`: offer `gh run rerun <id> --failed` with the evidence shown; `infra`: surface the recommendation; `needs-debug`: offer a `/orc:debug` hand-off seeded with the diagnosis. Loop until green or the user explicitly advances with red CI (logged to checkpoint).
+- **Red** → dispatch `orc-ci-investigator` via `Task` with the PR ref + head SHA, save its report verbatim to `${ORC_STATE_DIR}/<branch>/files/ci-diagnosis.md` (Write, never echoed), then invoke **`orc:ci-routing`** and execute its protocol — the single source of truth shared with `/orc:ci` Phase 3. Loop until green or the user explicitly advances with red CI (logged to the digest).
 
 ### Phase 8 — Address (loop, optional)
 
