@@ -45,45 +45,37 @@ If the chosen registry is missing or has no `in_progress` sessions, tell the use
 
 ### Phase 2 — Choose a session (if not specified)
 
-If a session ID/branch wasn't passed, render the active list via `AskUserQuestion`:
+If a session ID/branch wasn't passed: `orc-state sessions --status in_progress` renders one line per session — show the list via `AskUserQuestion`. If only one is active, skip the picker and use it.
 
-```
-Active orc sessions:
-1. plan       feat-142-notifs        phase 3/5  (started 2h ago)
-2. debug      fix-cache-stale        phase 2/7  (started yesterday)
-3. fan-out    refactor-billing       phase 4/6  (started 3 days ago)
-```
+### Phase 3 — Restore context (the startup sequence — never a wholesale replay)
 
-If only one is active, skip the picker and use it.
+Run the **session-startup sequence** from `orc:state-protocol`, in order:
 
-### Phase 3 — Restore context
+1. The context banner is already injected above.
+2. The chosen session's entry (`orc-state get <sessionId>`).
+3. Read `checkpoint.md` — bounded by construction (frontmatter + digest, ≤4 KB).
+4. `git log --oneline -10` + `git status --porcelain` in the session's worktree — cross-check the digest's `Suite:`/commit claims against reality; a dirty tree or sha mismatch is surfaced before acting.
+5. If `slices.json` exists: `orc-state slice list` → the exact re-entry slice.
+6. Read **only** the artifact the digest's `Next:` names (`plan.md` for implement, `diagnosis.md` for a fix, `ci-diagnosis.md` for a CI route). Never enumerate `files/`; `progress.md` is history and stays unread unless the user asks.
+7. `orc-state verify <sessionId>` — a registry/checkpoint mismatch is surfaced, not silently repaired.
 
-Read the chosen session's artifacts. Paths depend on the session's `scope`:
+Workspace sessions (`scope: "workspace"`): the shared checkpoint lives at `<workspaceRoot>/.orc/<branch>/files/`; per-repo slice cursors at `<workspaceRoot>/<repo>/.orc/<branch>/files/`. With `--repo <name>`, run steps 3–7 against that repo's slice only; otherwise default to cwd's repo when inside a workspace child, else `AskUserQuestion` which repo to drill into. Confirm the per-repo `workspace-link.json` back-pointer resolves to the workspace root the registry came from.
 
-- `scope: "repo"` (or no scope) — single-repo session. Artifacts at `<repoRoot>/.orc/<branch>/files/`.
-- `scope: "workspace"` — workspace session. The shared plan/checkpoint/progress live at `<workspaceRoot>/.orc/<branch>/files/`. Per-repo artifacts (`progress.md`, `checkpoint.md` for the slice cursor) live at `<workspaceRoot>/<repo>/.orc/<branch>/files/` for each repo in `perRepoState`. When `--repo <name>` is set, restore only that repo's per-repo artifacts; otherwise default to "the cwd's repo" if cwd is inside one of the workspace's children, else `AskUserQuestion` for which repo to drill into.
+If the branch doesn't match `git branch --show-current` (workspace mode: against the chosen `repoPath`), ask whether to switch first. If the session is `status: completed`, ask whether to re-open it.
 
-Invoke `orc:executing-plans` for discipline around resumption (it has a "restore before you act" rule).
+### Phase 4 — Jump
 
-### Phase 4 — Validate
-
-- Confirm the branch in `checkpoint.md` matches the current `git branch --show-current` (in workspace mode, run this `git` against the chosen `repoPath`). If not, ask whether to switch branches first.
-- Confirm `.orc/<branch>/files/` is consistent (checkpoint phase ≤ artifacts present). For workspace sessions, also confirm the per-repo `workspace-link.json` back-pointer is intact and resolves to the workspace root we read from.
-- If the session is `status: completed`, ask the user whether they want to re-open it (rare, but valid for "I want to revisit step 4").
-
-### Phase 5 — Jump
-
-Determine the next pending phase from the checkpoint. Re-invoke the corresponding command (`/orc:plan`, `/orc:debug`, `/orc:fan-out`, etc.) with a `--from-checkpoint` semantic. Pass the existing artifacts as context so it doesn't redo Phase 1's setup.
+Determine the next pending phase from the checkpoint frontmatter. Re-invoke the corresponding command (`/orc:plan`, `/orc:debug`, `/orc:fan-out`, etc.) with a `--from-checkpoint` semantic — pass **the digest and the one `Next:` artifact**, nothing more; the command must not redo its Phase 1 setup or re-read the artifact tree.
 
 If `--phase <n>` was given, jump there directly.
 
-### Phase 6 — Update the checkpoint
+### Phase 5 — Update the checkpoint
 
-After the resumed work completes (or is paused again), update `checkpoint.md` and `.orc/orc.json` with the new state.
+After the resumed work completes (or pauses again): `orc-state phase set <n>` + `orc-state digest write -` (per `orc:state-protocol`).
 
 ## Iron rule
 
-`/orc:resume` is the **only** command allowed to read `.orc/orc.json` to make routing decisions. All other commands write to it; only `/orc:resume` and `/orc:status` route from it.
+**Route-from-state** (enumerating sessions to decide what to run — `orc-state sessions`) belongs only to `/orc:resume`, `/orc:status`, `/orc:cleanup`, and `/orc:flow`'s self-resume scoped to its own session. Any command may **read-for-data** (`orc-state get [--field]` on its already-known session). Definitions: `orc:state-protocol`.
 
 In workspace mode, this rule extends to both registries: the workspace `<workspaceRoot>/.orc/orc.json` *and* any per-repo `<repo>/.orc/orc.json`. `/orc:resume` and `/orc:status` are the only commands that walk `workspace-link.json` back-pointers to route between them.
 
