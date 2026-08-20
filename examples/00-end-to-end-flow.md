@@ -40,28 +40,16 @@ flowchart TD
 You: /orc:flow --jira JRA-123 "add CSV export to reports page"
 
 orc: ⚙ Phase 1 — Triage
-     Linked Jira: JRA-123 (--jira flag passed; link prompt skipped).
+     Linked Jira: JRA-123 (--jira flag passed; its question dropped from the bundle).
 
-     What kind of work?
-     ┌───────────────────────────────────────────────────┐
-     │ ◉ feature                                          │
-     │ ○ bug                                              │
-     │ ○ refactor                                         │
-     │ ○ docs                                             │
-     │ ○ something else / let me describe                 │
+     One bundled call — everything still undecided, asked together:
+     ┌─ What kind of work? ──────────────────────────────┐
+     │ ◉ feature   ○ bug   ○ refactor   ○ docs            │
+     ├─ Scope? ──────────────────────────────────────────┤
+     │ ○ < 1 day   ◉ 1–5 days   ○ 1–4 weeks   ○ multi-qtr │
      └───────────────────────────────────────────────────┘
 
-You: feature
-
-orc: Scope?
-     ┌───────────────────────────────────────────────────┐
-     │ ○ < 1 day                                          │
-     │ ◉ 1–5 days                                         │
-     │ ○ 1–4 weeks (recommend --rfc)                      │
-     │ ○ multi-quarter (too big — break down first)       │
-     └───────────────────────────────────────────────────┘
-
-You: 1–5 days
+You: feature · 1–5 days   (one turn — with --type too, Phase 1 asks nothing)
 
 orc: ⚙ Phase 1 done. Initialized .orc/feat-csv-export/files/.
      jiraTicket: JRA-123 written to .orc/orc.json + checkpoint.md.
@@ -88,19 +76,11 @@ orc: ⚙ Phase 4 — Start
      [runs the test → fails with "Cannot find module '../export/csv'"]
      [commits the failing test on branch feat/csv-export]
 
-     Failing test ready. Test:
-       src/reports/__tests__/export.test.ts:14 — "exports report rows to CSV"
-       Failure: ENOENT — module './export/csv' not found.
+     red verified: src/reports/__tests__/export.test.ts:14 — ENOENT, module './export/csv' not found
 
-     Continue?
-     ┌───────────────────────────────────────────────────┐
-     │ ◉ Test fails as expected — ready to implement      │
-     │ ○ Failure isn't right — iterate                    │
-     │ ○ Skip TDD (with rationale)                        │
-     │ ○ Abort                                            │
-     └───────────────────────────────────────────────────┘
-
-You: Test fails as expected
+     (Machine-verified red — no confirm; the implementer re-verifies red
+      before green anyway. A mismatched failure message would gate, and
+      --pause-at-implement keeps the old confirm.)
 
 orc: ⚙ Phase 5 — Implementation
      [dispatching orc-implementer (sonnet) with plan, failing test, branch context]
@@ -154,14 +134,14 @@ orc: 📍 Resuming flow for feat-csv-export · [JRA-123] from .orc/orc.json
      Next: Phase 6 — QA
 
      Diff scan: 3 .tsx files changed → web mode auto-detected.
-     Continue?
+
+     Browser driver?   (skipped when you pass --driver)
      ┌───────────────────────────────────────────────────┐
-     │ ◉ Yes — run full QA (tests + lint + types + browser)│
-     │ ○ Code-only mode (skip browser — only if no UI)    │
-     │ ○ Pause flow (come back later)                     │
+     │ ◉ agent-browser (headless, full evidence packet)   │
+     │ ○ Claude-in-Chrome (watch it live in your browser) │
      └───────────────────────────────────────────────────┘
 
-You: Yes
+You: agent-browser
 
 orc: ⚙ Phase 6 — QA
      [tests] 47 pass, 0 fail.
@@ -171,7 +151,7 @@ orc: ⚙ Phase 6 — QA
      [orc-qa-validator dispatched, drives agent-browser at localhost:3000]
      [walks golden path + 3 edge cases, captures evidence]
 
-     QA verdict: PASS
+     QA verdict: PASS — packet complete, advancing to ship.
      Artifacts: .orc/feat-csv-export/files/qa/
        - 7 screenshots (annotated)
        - snapshot-final.txt
@@ -179,19 +159,13 @@ orc: ⚙ Phase 6 — QA
        - network.har
        - steps.md
 
-     Proceed to ship?
-     ┌───────────────────────────────────────────────────┐
-     │ ◉ Yes — ship it                                    │
-     │ ○ I want to address something first (back to phase 5)│
-     │ ○ Pause flow                                       │
-     └───────────────────────────────────────────────────┘
-
-You: Yes
+     (A clean pass auto-advances — the verdict is computed from the
+      evidence packet. partial / fail / incomplete evidence still gates.)
 
 orc: ⚙ Phase 7 — Ship
      [orc:requesting-code-review → no gaps vs plan]
-     [orc:finishing-a-development-branch → option: open PR]
-     [composes PR via caveman-pr (the default terse body)]
+     [composes PR via caveman-pr (the default terse body); flow skips the
+      branch-completion question — the flow's premise IS "open a PR"]
 
      PR title: feat(reports): add CSV export
      PR body:
@@ -227,14 +201,13 @@ orc: ⚙ git push -u origin feat/csv-export
        until green.)
 
      ⚙ Phase 8 — Address
-     PR is open. Waiting for reviewer comments?
-     ┌───────────────────────────────────────────────────┐
-     │ ○ Wait — orc keeps the flow open                   │
-     │ ◉ I'll come back later with /orc:flow              │
-     │ ○ Done for this PR (skip cleanup readiness)        │
-     └───────────────────────────────────────────────────┘
 
-You: I'll come back later
+     ➡️ Next: PR open. When reviewer comments arrive, re-run /orc:flow
+     (or /orc:address) and flow routes to the address loop. After merge,
+     re-run /orc:flow for cleanup.
+
+     (Flow exits here — nothing to decide until reviewers comment; the
+      checkpoint already routes the next invocation.)
 ```
 
 ### Day 2 — afternoon
@@ -262,24 +235,21 @@ orc: ⚙ Phase 8 (loop) — Address
      [...you confirm or re-categorize...]
 
      [dispatches orc-code-fixer + orc-reply-drafter in parallel]
-     [shows you the diff + drafted replies]
+     [shows you the diff + the numbered drafted replies]
 
-     Looks good?
-     ┌───────────────────────────────────────────────────┐
-     │ ◉ Commit, push, post replies                       │
-     │ ○ Edit replies                                     │
-     │ ○ Edit fix                                         │
+     One bundled call:
+     ┌─ Fixes + replies? ────────────────────────────────┐
+     │ ◉ Looks good — commit, push, post replies          │
+     │ ○ Edit fix first   ○ Abort                         │
+     ├─ Drop or rewrite any replies? (multi-select) ─────┤
+     │ ◉ keep all   ○ 1  ○ 2  ○ 3  ○ 4                    │
      └───────────────────────────────────────────────────┘
 
-You: Commit, push, post replies
+You: Looks good · keep all
 
 orc: ✓ Pushed fix abc1234, posted 4 replies, re-requested review.
 
-     Wait for the next review round?
-     ┌───────────────────────────────────────────────────┐
-     │ ○ Wait                                             │
-     │ ◉ I'll come back when it's merged                  │
-     └───────────────────────────────────────────────────┘
+     ➡️ Next: re-run /orc:flow when the next review round (or the merge) lands.
 ```
 
 ### Day 3 — afternoon (PR merged)
@@ -321,7 +291,7 @@ orc: ✓ Worktree removed.
 
 ## What you noticed
 
-- **Every phase asks before advancing.** No silent transitions. The select-from-list comes from `AskUserQuestion`.
+- **Decisions gate; machine-verified outcomes advance with evidence.** Real choices (plan approval, driver, PR compose) come as `AskUserQuestion` select-from-lists — related questions bundled into one call. Outcomes the machine already verified (a clean failing-test run, a QA pass with a complete packet) print their evidence and advance; anomalies re-open the gate. The whole happy path above is **7 user turns**.
 - **The implementation phase is autonomous by default.** `orc-implementer` (sonnet) drives the slice-by-slice loop — read spec, confirm/write failing test, implement, run suite, commit, next slice. The agent obeys the same iron rules you would (no commits to main, test-first, verify, root-cause). Pass `--pause-at-implement` if you want orc to stop at Phase 4's failing test and let you write the code yourself instead.
 - **Ship doesn't end at PR-open.** Phase 7 watches CI (`gh pr checks --watch`) before advancing. A red run dispatches `orc-ci-investigator` and routes its verdict — fixable (gated `orc-code-fixer` dispatch), flake (re-run), infra, or needs-debug — until the checks are green.
 - **Resume is automatic.** You don't pass any args on the second/third invocation — orc reads `.orc/orc.json`, finds the in-progress flow, jumps to the next pending phase.
@@ -341,7 +311,7 @@ orc: ✓ Worktree removed.
 
 ## Iron rules in play
 
-- **Every gate is a real gate.** `/orc:flow` never silently advances.
+- **Every gate is a real gate.** A gate that fires is never silently advanced past; machine-verified phases print their evidence, and the gate returns the moment the evidence is anomalous.
 - **Phase state is durable.** Crash mid-flow, resume tomorrow.
 - **Per-phase rules still apply** — web QA evidence, blameless framing, no AI attribution, no commits to main. `/orc:flow` doesn't bypass them; it composes them.
 - **Implementation is autonomous by default but escalates honestly.** `orc-implementer` runs the whole loop without your involvement — UNTIL it hits an escalation condition (test stuck after 3 attempts, ambiguous spec, new dependency, scope creep, broken pre-existing test, security concern, plan-is-wrong). When it escalates, it surfaces a `[!CAUTION]` `🛑 Escalation` callout with concrete options and a recommended path. You stay out of the loop until the agent genuinely needs you.
