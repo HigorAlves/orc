@@ -32,7 +32,7 @@ Use the `Skill` tool — never `Read` a skill file. Every skill's description is
 3. **No claim without verification** — run it, read the output, then claim the result. → `orc:verification-before-completion`
 4. **No fix without root cause** — find why it's broken before changing code. → `orc:systematic-debugging`
 5. **No AI attribution** — never reference Claude/AI/automation, and never add `Co-Authored-By` trailers, in code, commits, or PRs. The PreToolUse hook blocks it.
-6. **No multi-phase work without `.orc/` state** — checkpoint to `.orc/<branch>/files/checkpoint.md` and register in `.orc/orc.json` after every phase, so `/orc:resume` survives interruption.
+6. **No multi-phase work without `.orc/` state** — register and checkpoint via `orc-state` after every phase (schema + rules: `orc:state-protocol`), so `/orc:resume` survives interruption.
 7. **No silent broadcast in workspace mode** — when the SessionStart banner says `workspace[…]`, repo-touching commands need an explicit `--repos` / `--repo` / `--all-repos` / `--this-repo` or a confirming `AskUserQuestion`. → `orc:workspace-mode`
 8. **No PR over the size budget without a recorded choice** — default **300 LOC** (additions+deletions, post-exclusion); over budget → stack / open-big with a `Size-budget-override:` trailer / abort. → `orc:pr-size-budget`. A web change → browser QA with `.orc/<branch>/files/qa/` artifacts, no exceptions. → `orc:qa` (drives `orc:agent-browser`)
 

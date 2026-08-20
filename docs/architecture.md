@@ -10,7 +10,7 @@
 orc/
 ├── .claude-plugin/plugin.json     # manifest — what Claude Code reads to discover the plugin
 ├── .orc/                          # gitignored, ephemeral workspace state (per-session)
-├── skills/                        # 75 skills, namespaced /orc:<name>
+├── skills/                        # 76 skills, namespaced /orc:<name>
 ├── commands/                      # 30 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
 ├── agents/                        # 14 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) + WorktreeCreate/Remove hooks
@@ -45,7 +45,7 @@ orc/
 
 ## `.orc/` workspace state
 
-Multi-phase commands (`/orc:plan`, `/orc:start`, `/orc:debug`, `/orc:fan-out`, web-mode `/orc:qa`) checkpoint after every phase. State lives in `.orc/<sanitized-branch>/files/`:
+Multi-phase commands (`/orc:plan`, `/orc:start`, `/orc:debug`, `/orc:fan-out`, web-mode `/orc:qa`) checkpoint after every phase. **The normative schema lives in the `orc:state-protocol` skill, and `bin/orc-state` is the single writer** — registry entries and checkpoint frontmatter are written by the same verb, so they cannot drift. State lives in `.orc/<sanitized-branch>/files/`:
 
 ```
 .orc/
@@ -53,11 +53,11 @@ Multi-phase commands (`/orc:plan`, `/orc:start`, `/orc:debug`, `/orc:fan-out`, w
 ├── .worktrees/                              # pinned git worktrees (never $HOME) — <repo>/<branch>
 └── feat-142-notification-prefs/
     └── files/
-        ├── checkpoint.md                    # phase + status — the resume entry point
-        ├── orc.json                         # per-session metadata
+        ├── checkpoint.md                    # frontmatter mirror + resume digest — the resume entry point (≤4 KB)
+        ├── slices.json                      # slice ledger (status machine; written via orc-state)
         ├── plan.md                          # if /orc:plan ran
         ├── diagnosis.md                     # if /orc:debug ran
-        ├── progress.md                      # phase-by-phase log
+        ├── progress.md                      # append-only history (never read by resume by default)
         ├── qa/                              # if web-mode /orc:qa ran
         │   ├── screenshot-NN-step.png
         │   ├── snapshot-final.txt
@@ -73,9 +73,9 @@ Multi-phase commands (`/orc:plan`, `/orc:start`, `/orc:debug`, `/orc:fan-out`, w
 
 ### Lifecycle
 
-1. **Init** — first invocation creates the directory, writes `checkpoint.md` (phase=1, status=in_progress), and registers in `.orc/orc.json`.
-2. **Update** — every phase writes its artifact and bumps `checkpoint.md`.
-3. **Resume** — `/orc:resume` reads `orc.json`, picks a session, jumps to next phase.
+1. **Init** — `orc-state init` creates the directory, the registry entry, and the checkpoint skeleton in one call.
+2. **Update** — every phase writes its artifact, then `orc-state phase set <n>` + `orc-state digest write -` (registry + checkpoint mirror bumped together).
+3. **Resume** — `/orc:resume` runs the startup sequence from `orc:state-protocol`: session entry → bounded checkpoint → git cross-check → the one artifact the digest's `Next:` names.
 4. **Status** — `/orc:status` reads `orc.json` (read-only); never modifies.
 5. **Cleanup** — done sessions stay until manually `rm -rf .orc/<branch>/`.
 
