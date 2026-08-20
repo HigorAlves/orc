@@ -137,7 +137,7 @@ Finish: write all created keys back into `jira-breakdown.json`, mark the session
 
 - **No child without an active parent Epic.** Verified in Phase 1, enforced again at creation.
 - **The three-section template on every child, without exception.** Contract check blocks the batch.
-- **Preview gate is mandatory.** No flag bypasses it; `--dry-run` is the only shortcut and it creates nothing.
+- **Preview gate is mandatory.** No flag bypasses it — including `--auto`/`interaction_policy` (hard-outward per `orc:using-orc`); `--dry-run` is the only shortcut and it creates nothing.
 - **Read the failure, don't retry blind.** acli errors name the real constraint (issue types, required fields) — adapt per `orc:jira-cli`, then continue the batch.
 
 ## Related

@@ -1,6 +1,6 @@
 ---
 description: Plan a feature or refactor — produces a TDD-shaped plan, optionally design-grilled, and decomposes it into independently shippable issues. --jira <KEY> links a ticket. Workspace-aware.
-argument-hint: "[--grill] [--issues] [--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
+argument-hint: "[--auto[=guided|full]] [--grill] [--issues] [--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 effort: high
 allowed-tools:
   - Bash(orc-state:*)
@@ -24,6 +24,8 @@ allowed-tools:
 Turn a feature or refactor request into a written, TDD-shaped implementation plan. Persist it to `.orc/<branch>/files/plan.md` so the work can pause and resume.
 
 ## Arguments
+
+- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`; taxonomy in `orc:using-orc`). Soft-inward gates consult the resolved policy — `guided` auto-advances mechanical confirms with a printed one-liner; `full` pre-approves them from settled decisions (`orc:state-protocol`), stopping only on escalation-only conditions. Hard-outward gates are unaffected at every level.
 
 - `--grill` — after drafting the plan, invoke `orc:grill-me` to stress-test the design before committing.
 - `--issues` — after the plan is approved, run `orc:to-issues` to break it into independently grabbable issues.
@@ -123,6 +125,8 @@ Defer to `orc:pr-size-budget` for the budget resolution order and exclusion list
 Invoke `orc:grill-me`. The skill drives an interview that exposes hidden assumptions. Update `plan.md` with answers. Bump `checkpoint.md`.
 
 ### Phase 4 — Confirm with user + install the slice ledger
+
+(This gate asks at **every** autopilot level when `/orc:plan` runs standalone — the plan is the command's deliverable. Inside `/orc:flow` at `full`, the flow's contract gate IS the approval.)
 
 Print the Gate headline (`**⛔ Gate — plan review**`), then `AskUserQuestion` with two options: `Looks good — proceed` / `Iterate — revise plan`. If iterate, return to Phase 2.
 

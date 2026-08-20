@@ -1,6 +1,6 @@
 ---
 description: Pre-PR quality gate — browser-driven QA for web changes with a mandatory evidence packet against a provisioned environment. No QA-passed claim without artifacts. Workspace-aware. For a quick behavioral check without the evidence packet, prefer the bundled /verify or /run.
-argument-hint: "[--web <url>] [--no-web] [--no-env] [--driver agent-browser|chrome] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
+argument-hint: "[--auto[=guided|full]] [--web <url>] [--no-web] [--no-env] [--driver agent-browser|chrome] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 allowed-tools:
   - Bash(orc-state:*)
   - Read
@@ -37,6 +37,8 @@ Run a quality gate before opening a PR. Two modes:
 - **Web change** — same as above PLUS browser-driven QA, with a **driver chosen per run** (Phase 4.1): the `agent-browser` CLI via the `orc-qa-validator` agent (headless, richest evidence), or the **Claude-in-Chrome extension** run inline in this session (the user watches the test live in their own browser). Evidence is saved to `.orc/<branch>/files/qa/` either way.
 
 ## Arguments
+
+- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`; taxonomy in `orc:using-orc`). Soft-inward gates consult the resolved policy — `guided` auto-advances mechanical confirms with a printed one-liner; `full` pre-approves them from settled decisions (`orc:state-protocol`), stopping only on escalation-only conditions. Hard-outward gates are unaffected at every level.
 
 - `--web <url>` — explicit URL of a running app (skips env provisioning AND the validator's boot path — you're saying it's already up).
 - `--no-web` — force code-only mode even if web files were touched.

@@ -1,6 +1,6 @@
 ---
 description: Start a feature — set up an isolated worktree, draft the plan, and write the first failing test before any production code. --jira <KEY> links a ticket and informs the branch name. Workspace-aware.
-argument-hint: "[--worktree <path>] [--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
+argument-hint: "[--auto[=guided|full]] [--worktree <path>] [--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 allowed-tools:
   - Bash(orc-state:*)
   - Read
@@ -27,6 +27,8 @@ allowed-tools:
 Kick off a new feature with isolation, a written plan, and the first failing test — all before production code is touched. The TDD red light is the entry gate.
 
 ## Arguments
+
+- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`; taxonomy in `orc:using-orc`). Soft-inward gates consult the resolved policy — `guided` auto-advances mechanical confirms with a printed one-liner; `full` pre-approves them from settled decisions (`orc:state-protocol`), stopping only on escalation-only conditions. Hard-outward gates are unaffected at every level.
 
 - `--worktree <path>` — optional explicit worktree directory. If omitted, the worktree skill picks one safely.
 - `--jira <KEY>` — optional. Link a Jira ticket key (e.g. `JRA-123`) to this session. Two effects: (1) Phase 1 fetches the ticket summary via `acli jira workitem view <KEY> --fields "summary" --json`, slugifies it, and offers `feat/<KEY>-<slug>` as the suggested branch name to `orc:using-git-worktrees`; (2) the flag is forwarded to `/orc:plan` in Phase 2, suppressing the Phase 1 link prompt and writing `jiraTicket: <KEY>` into the session's `.orc/` state. Validate against `^[A-Z][A-Z0-9_]*-\d+$`.
