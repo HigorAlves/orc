@@ -45,12 +45,12 @@ In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. Th
 
 ### Phase 1 — Load tasks
 
-If `--from-plan`: read the plan file at `${ORC_STATE_DIR}/<branch>/files/plan.md`, extract tasks marked as parallel-safe (the `orc:writing-plans` skill marks these explicitly). In workspace mode, also read each slice's `repo:` tag and use it as the dispatch's `repo` parameter.
+If `--from-plan`: read the slice ledger (`orc-state slice list`, or `${ORC_STATE_DIR}/<branch>/files/slices.json` directly) and group slices by `parallelGroup` — slices sharing a group are parallel-safe by construction (`orc:writing-plans` annotates `parallel_group`/`touchpoints`/`depends_on`; `/orc:plan` Phase 4 installs the ledger). Fall back to parsing plan.md headers when no ledger exists. Take each slice's `touchpoints` as its file-ownership boundary and, in workspace mode, its `repo:` tag as the dispatch's `repo` parameter.
 Otherwise: parse the user's argument list. In workspace mode, if the task list doesn't already carry repo annotations (e.g. `(repo=api) write health endpoint`), apply `targetRepos` as the cartesian axis: each task spawns one dispatch per target repo, unless the task explicitly names one.
 
 ### Phase 2 — Verify independence
 
-Invoke `orc:dispatching-parallel-agents`. The skill enforces that no two tasks share state, file ownership, or sequential dependencies. If it flags a violation, surface it via `AskUserQuestion` and ask the user to either (a) merge dependent tasks into one, (b) sequence them, or (c) confirm override.
+When tasks came from the slice ledger, independence is **declared, not re-derived**: validate that same-group slices have pairwise-disjoint `touchpoints` and no `depends_on` edges (a grep-level check) — a violation means the plan annotations are wrong; surface it. Only for annotation-less tasks (ad-hoc lists, no ledger) invoke `orc:dispatching-parallel-agents` for the full independence analysis. Either way, a flagged violation goes to `AskUserQuestion`: (a) merge dependent tasks into one, (b) sequence them, or (c) confirm override.
 
 ### Phase 3 — Init workspace
 
