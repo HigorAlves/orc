@@ -23,4 +23,12 @@ Each round the user answers reshapes the tree — settled decisions push the fro
 
 Finding _facts_ is your job, never the user's. When a frontier question needs a fact from the environment (filesystem, tools, etc.), dispatch a sub-agent to find it — don't ask the user for anything you could look up yourself. Don't block on it: a running exploration is an unsettled prerequisite, so only the questions downstream of it wait for the sub-agent to report — ask the rest of the frontier now. The _decisions_ are the user's — put each to them and wait.
 
+## When the frontier goes quiet
+
+Sometimes the round comes back thin — answers that are plausible, agreeable, and carry no new information — while the design still clearly has unexamined corners. That is not an empty frontier; it is the default round hitting its limit.
+
+At that point offer a **named technique** from [references/TECHNIQUES.md](references/TECHNIQUES.md): pre-mortem, inversion, first principles, red team / blue team, Socratic, constraint removal, stakeholder mapping. One technique, one decision, then straight back into the normal round structure with whatever it surfaced.
+
+Two techniques per session is the ceiling. Past that they reliably manufacture problems rather than find them — and every technique in that file is instructed to find problems, so filtering what comes back is part of the round, never optional.
+
 The session is done when the frontier is empty: every branch of the design tree visited, nothing left silently assumed. Do not act on it until the user confirms you have reached a shared understanding.

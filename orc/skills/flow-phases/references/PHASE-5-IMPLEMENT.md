@@ -3,6 +3,20 @@
 _Loaded on demand via orc:flow-phases. Do not run this phase from memory — this file is the phase._
 
 
+## Readiness gate (runs first, always)
+
+Before any dispatch: `orc-state slice verify`. It writes `readiness.json` and returns a mechanical `PASS` / `CONCERNS` / `FAIL` — every check is decidable from the ledger plus the filesystem, so no model judgment enters the verdict (checks listed in `orc:state-protocol` `references/schema.md`).
+
+| Verdict | `quick` track | `standard` / `deep` |
+|---|---|---|
+| `PASS` | advance | advance |
+| `CONCERNS` | print the failing checks, advance | print `> **⛔ Gate — readiness**`, then ask: fix now / waive and proceed / abort |
+| `FAIL` | print, advance | **blocks.** Route to `/orc:correct-course` (re-slice) or back to Phase 3 |
+
+A waived `CONCERNS` stays recorded in `readiness.json` — `orc:retrospective` checks later whether waiving it cost anything.
+
+This gate is cheap and catches exactly the class of defect that is expensive later: a slice with one acceptance criterion, a parallel group whose members collide, a `dependsOn` cycle, a ledger that has drifted from its plan.
+
 Two modes, picked by the `--pause-at-implement` flag:
 
 #### Default: dispatch `orc-implementer` (autonomous)
@@ -29,6 +43,8 @@ Each implementer instance gets:
 - Its assigned slice list (1 slice in parallel mode, N in sequential).
 - The file-ownership boundary for those slices.
 - The failing test from Phase 4 (if slice 1 is in the list).
+- **Its slices' `context` packs** from the ledger — `files`, `symbols`, `docs`, `fixtures`. Pass them verbatim; the implementer reads the pack instead of re-deriving the blast radius.
+- **The project-context path**, when the repo has one (resolved per `orc:tracker-config`). Absent → omit the input silently.
 - Project test/lint/type-check commands (auto-detected from `package.json`, `Makefile`, etc.).
 - Mode flag: `mode: sequential` (default) or `mode: parallel` (for parallel-batch members).
 - **Workspace mode only**: `repo`, `repoPath`, `siblingRepos`, optional `crossRepoContract`. The slice list is pre-filtered to slices tagged `repo: <name>`.
@@ -43,6 +59,7 @@ The agent runs without further user gates UNLESS one of the **escalation conditi
 - The slice requires touching files outside its declared scope.
 - A pre-existing test breaks unexpectedly.
 - A security/architecture concern surfaces mid-implementation.
+- A slice cannot be built without violating a **Critical rule** in the project context.
 - The plan is wrong (the slice as written would produce incorrect behavior).
 
 When the agent escalates, re-print BOTH blocks it emitted verbatim — the `[!CAUTION]` **🛑 Escalation** callout AND its context fence (file:line evidence + the option definitions; see `agents/orc-implementer.md`) — then `AskUserQuestion`:

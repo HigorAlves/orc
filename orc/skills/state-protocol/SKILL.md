@@ -87,6 +87,11 @@ updatedAt: 2026-08-20T18:11:00Z
 
 `slices.json` (shape in [schema.md](references/schema.md)) is the `passes: false`-style ledger: status machine `pending → red → green → committed` (+`escalated`/`skipped`), updated via `orc-state slice set`. "All slices done" is a query, not a claim: `orc-state slice list --status pending,red,escalated` exits 0 only when nothing matches.
 
+Two companions to the ledger, both in [schema.md](references/schema.md):
+
+- **Context packs** — each slice carries an optional `context` object (`files`/`symbols`/`docs`/`fixtures`) assembled at the plan→implement boundary. `orc-implementer` reads the pack instead of rediscovering the same files every slice.
+- **Readiness** — `orc-state slice verify` runs the mechanical implement-readiness checks and writes `readiness.json` with a `PASS`/`CONCERNS`/`FAIL` verdict. It exits 1 on `FAIL`, so the implement gate is an exit code, not a judgment. Blocking on the `standard`/`deep` tracks, advisory on `quick` (`orc:scale-tracks`).
+
 **Persistence rule:** structured agent output that gates a decision (review findings, stack plans, breakdown JSON, parallel diffs, QA verdicts) is written to `files/` **before** the gate is shown, stamped with `headSha` + `generatedAt` — matching HEAD on re-entry means reuse, not re-dispatch.
 
 ## Settled decisions (`decisions.json`)

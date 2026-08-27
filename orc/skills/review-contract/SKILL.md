@@ -27,7 +27,8 @@ preamble):
       "title": "Null deref when token absent",
       "body": "When `req.headers.authorization` is missing, `parseToken()` returns null and the next line dereferences `.userId` unconditionally — 500 to client, no log. Guard with an early return.",
       "suggestion_code": "const token = parseToken(req);\nif (!token) return res.status(401).end();",
-      "confidence": 0.92
+      "confidence": 0.92,
+      "adversarial": false
     }
   ]
 }
@@ -46,6 +47,26 @@ the posting layer computes APPROVE from the empty list.
 - **`title`** — ≤ 80 chars, one line.
 - **`body`** — `orc:caveman-review` tone: terse, actionable, signal-only.
 - **`confidence`** — 0–1. **Drop the finding entirely if < 0.8.** A noisy review burns the author's time; false positives erode trust faster than misses.
+- **`adversarial`** — `true` when the finding came from an adversarial pass (see below). Defaults to `false`. Never affects the event mapping; it exists so the posting layer can hold low-confidence adversarial output back from GitHub.
+
+## Adversarial mode (opt-in, `--adversarial`)
+
+A normal review asks *"is anything wrong here?"* and a reviewer that finds nothing has answered honestly. An adversarial pass asks *"what is wrong here?"* and **requires** findings — which reliably surfaces the absences a normal pass glides over: the missing error branch, the unhandled empty state, the edge case nobody wrote a test for.
+
+It also reliably invents problems. That is not a flaw to be tuned away; it is the cost of the technique.
+
+**The rule that makes it safe:**
+
+> Adversarial findings are marked `adversarial: true` and are still subject to `confidence ≥ 0.8`. A sub-threshold adversarial finding is surfaced **in conversation only** and never posted to GitHub.
+
+So the pass buys extra scrutiny for the reviewer without spending the author's trust. The mechanical filter that already exists does the work — nothing new needs to be believed about the model's calibration.
+
+Further rules:
+
+- **One adversarial pass.** Two on genuinely critical code. Past that the ratio of invented to real inverts.
+- **`nit` and `suggestion` findings from an adversarial pass are dropped, not posted.** The mode exists to find defects; a mandate to find *something* turns straight into style commentary otherwise.
+- **The verdict is computed from posted findings only.** An adversarial pass cannot turn an APPROVE into a REQUEST_CHANGES via findings that were themselves filtered out.
+- Say the mode ran, and say how many findings it filtered. `3 posted, 4 filtered (below confidence)` is the honest summary and tells the author how much to trust the pass.
 
 ### `suggestion_code` gate
 

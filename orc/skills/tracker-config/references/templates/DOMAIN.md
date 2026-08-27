@@ -22,6 +22,16 @@ If any of these don't exist, **proceed silently** — don't flag their absence o
 
 When output names a domain concept (issue title, hypothesis, test name), use the term as `CONTEXT.md` defines it — don't drift to synonyms the glossary avoids. A missing concept is a signal: either reconsider the invented language, or note the gap for `orc:domain-modeling`.
 
+## Project context
+
+`location: [committed | local | none]`
+
+- **committed** — `docs/agents/project-context.md` and `docs/agents/knowledge/`; both are repo files, reviewed like any other.
+- **local** — `.orc/project-context.md` and `.orc/knowledge/`; gitignored, per-repo, never removed by `/orc:cleanup`.
+- **none** — no context layer. Consumers proceed silently; do not flag its absence.
+
+Owned by `/orc:context` (the directive layer) and `/orc:onboard` (the knowledge files). Executor agents read the directive layer once at dispatch and treat its **Critical rules** as binding — a slice that requires violating one is an escalation, not a judgment call. Contract: `orc:project-context`.
+
 ## Flag ADR conflicts
 
 If output contradicts an existing ADR, surface it explicitly rather than silently overriding:

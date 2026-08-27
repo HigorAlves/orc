@@ -1,6 +1,6 @@
 ---
 description: Author a system-design RFC — proposes a non-trivial change BEFORE implementation, surfaces alternatives, and invites critique. Differs from /orc:plan (design settled) and /orc:adr (decision recorded).
-argument-hint: "[--grill] [--review <path>] [<title>]"
+argument-hint: "[--grill] [--review <path>] [--adversarial] [<title>]"
 effort: high
 allowed-tools:
   - Bash(orc-state:*)
@@ -25,6 +25,7 @@ Author a Request for Comments (RFC) before committing to an implementation.
 - `<title>` — optional. One-line problem statement (will be polished into a noun phrase). Prompts if omitted.
 - `--grill` — after drafting, invoke `orc:grill-me` to stress-test the design.
 - `--review <path>` — review an existing RFC instead of authoring a new one. Walks the doc with critique focused on missing alternatives, undefined success criteria, hidden assumptions.
+- `--adversarial` — with `--review`: add one must-find-issues pass (`orc:review-contract`). Surfaces what the doc leaves *out*, which is the usual failure mode of an RFC. Findings print in conversation only — nothing is posted, and each carries your read of whether it is real.
 
 ## Workflow
 
@@ -84,7 +85,8 @@ If invoked with `--review <path>`:
 1. Read the existing RFC.
 2. Critique with focus on: are alternatives genuinely considered (or strawmanned)? Are success criteria measurable? Are non-goals explicit? Are open questions surfaced or papered over? Are risks honest?
 3. Return a finding list using `orc:caveman-review` discipline (one line per finding, file:line format).
-4. Do NOT edit the document — leave that to the author.
+4. With `--adversarial`, run one further pass under the mandate to find problems, per `orc:review-contract`'s adversarial rules. RFCs fail by omission more than by error, and a mandate to find something is what surfaces omissions. Mark those findings and **state the filter count** — `4 real, 3 filtered as invented` is the honest report. One pass; two on a genuinely load-bearing design.
+5. Do NOT edit the document — leave that to the author.
 
 ## Iron rule
 

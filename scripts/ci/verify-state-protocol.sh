@@ -81,6 +81,55 @@ if run slice list --status pending,red,escalated --branch feat/x >/dev/null; the
 run slice set 2 --status committed --commit def5678 --branch feat/x >/dev/null
 if run slice list --status pending,red,escalated --branch feat/x >/dev/null; then ok; else fail "slice list: must exit 0 when the filter matches nothing"; fi
 
+# --- slice verify (mechanical readiness gate) ------------------------------
+# Checks are decidable from ledger + filesystem; the verdict must never depend
+# on model judgment. Three fixtures pin PASS / CONCERNS / FAIL.
+rv="$ORC_STATE_DIR/feat-x/files/readiness.json"
+mkdir -p "$tmp/src" "$tmp/test"
+: > "$tmp/src/export.ts"
+: > "$tmp/test/export.test.ts"
+
+verify_in() { # <fixture json> — install then verify from inside a repo-shaped cwd
+  cat > "$tmp/rv-in.json"
+  run slice init "$tmp/rv-in.json" --branch feat/x >/dev/null
+  ( cd "$tmp" && bash "$orc_state" slice verify --branch feat/x --quiet )
+}
+
+# PASS — every check clean.
+if verify_in <<'EOF'
+{"schema":1,"planPath":"plan.md","slices":[
+ {"id":1,"title":"endpoint","estLoc":100,"parallelGroup":1,"dependsOn":[],
+  "touchpoints":["src/export.ts","test/export.test.ts"],
+  "acceptance":["POST returns 202","sets Location"],"status":"pending"}]}
+EOF
+then ok; else fail "slice verify: clean ledger must exit 0"; fi
+if jq -e '.verdict == "PASS"' "$rv" >/dev/null; then ok; else fail "slice verify: expected PASS verdict"; fi
+if jq -e '.schema == 1 and (.generatedAt | test("^\\d{4}-")) and (.headSha | length > 0)' "$rv" >/dev/null; then ok; else fail "slice verify: readiness.json missing schema/generatedAt/headSha"; fi
+
+# CONCERNS — only test-named + est-loc-present fail; must still exit 0.
+if verify_in <<'EOF'
+{"schema":1,"planPath":"plan.md","slices":[
+ {"id":1,"title":"big","estLoc":900,"shipsAsStack":false,"parallelGroup":1,"dependsOn":[],
+  "touchpoints":["src/export.ts"],"acceptance":["a","b"],"status":"pending"}]}
+EOF
+then ok; else fail "slice verify: CONCERNS must exit 0 (advisory, not blocking)"; fi
+if jq -e '.verdict == "CONCERNS"' "$rv" >/dev/null; then ok; else fail "slice verify: expected CONCERNS verdict"; fi
+
+# FAIL — blocking checks trip: <2 criteria, self-dep, unknown dep, parallel overlap.
+if verify_in <<'EOF'
+{"schema":1,"planPath":"plan.md","slices":[
+ {"id":1,"title":"a","estLoc":50,"parallelGroup":1,"dependsOn":[1],
+  "touchpoints":["src/export.ts","test/a.test.ts"],"acceptance":["only one"],"status":"pending"},
+ {"id":2,"title":"b","estLoc":50,"parallelGroup":1,"dependsOn":[9],
+  "touchpoints":["src/export.ts","test/b.test.ts"],"acceptance":["x","y"],"status":"pending"}]}
+EOF
+then fail "slice verify: FAIL verdict must exit 1"; else ok; fi
+if jq -e '.verdict == "FAIL"' "$rv" >/dev/null; then ok; else fail "slice verify: expected FAIL verdict"; fi
+for check in acceptance-count depends-on-dag parallel-disjoint; do
+  if jq -e --arg c "$check" '[.checks[] | select(.id == $c and .status == "fail")] | length > 0' "$rv" >/dev/null
+  then ok; else fail "slice verify: expected a failing '$check' check"; fi
+done
+
 # --- decisions (settled-decision store) ------------------------------------
 run decision set driver agent-browser --provenance asked --branch feat/x >/dev/null
 if jq -e '.decisions.driver.value == "agent-browser" and .decisions.driver.provenance == "asked"' \

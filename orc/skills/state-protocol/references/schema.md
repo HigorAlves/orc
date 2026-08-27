@@ -50,6 +50,7 @@ Digest bullets, fixed order:
     "parallelGroup": 2, "dependsOn": [1],
     "touchpoints": ["src/routes/export.ts", "test/export.test.ts"],
     "acceptance": ["POST /export returns 202 + Location header"],
+    "context": { "files": [], "symbols": [], "docs": [], "fixtures": [] },
     "status": "pending", "commit": null, "actualLoc": null, "note": null
 }]}
 ```
@@ -59,6 +60,34 @@ Digest bullets, fixed order:
 - `touchpoints` = files the slice owns (evidence-based); two slices share a `parallelGroup` iff no `dependsOn` edge connects them AND touchpoints are pairwise disjoint; groups execute in ascending order. Same vocabulary `orc-jira-architect` emits for Jira tasks.
 - `acceptance` = 2–5 testable criteria per slice (a command to run or an observable behavior — never "works correctly"). Copied from the plan; QA scores against them.
 - Completion query: `orc-state slice list --status pending,red,escalated` prints matches and exits 0 **only when nothing matches** — gate "all slices done" on its exit code, never on narrative.
+- `context` = the slice's **context pack**, assembled at the plan→implement boundary and read by `orc-implementer` *instead of* rediscovering. Optional (`{}` when discovery was unavailable); never a substitute for reading the files it names.
+  - `files` — paths the implementer should read first, blast-radius ordered (`graphify affected` when a graph exists, else touchpoints + their direct importers).
+  - `symbols` — `name@path:line` entries the slice must extend or respect.
+  - `docs` — pointers into the context layer, `CONTEXT.md`, and ADRs relevant to this slice. Pointers, not excerpts — the files are read, not inlined.
+  - `fixtures` — existing test fixtures/factories to reuse rather than re-create.
+
+## Readiness report: `.orc/<sessionId>/files/readiness.json`
+
+Written by `orc-state slice verify` at the plan→implement boundary. Mechanical — every check is decidable from the ledger and the filesystem, so no model judgment enters the verdict.
+
+```json
+{ "schema": 1, "generatedAt": "…", "headSha": "…", "verdict": "PASS",
+  "checks": [{ "id": "acceptance-count", "status": "pass", "sliceId": null, "detail": "" }] }
+```
+
+| Check | Fails when |
+|---|---|
+| `acceptance-count` | a slice has fewer than 2 acceptance criteria |
+| `touchpoints-resolve` | a touchpoint path is neither an existing file nor declared new by the plan |
+| `est-loc-present` | `estLoc` missing, or over budget without `shipsAsStack: true` |
+| `depends-on-dag` | `dependsOn` contains a cycle or names a nonexistent slice |
+| `parallel-disjoint` | two slices share a `parallelGroup` but overlap in `touchpoints` |
+| `test-named` | no touchpoint of a code slice looks like a test file |
+| `plan-sha-current` | `planSha256` does not match the plan artifact on disk |
+
+- `verdict` is `PASS` (no failures), `CONCERNS` (only `test-named` / `est-loc-present` failures), or `FAIL` (anything else).
+- `FAIL` **blocks** the implement phase on the `standard` and `deep` tracks; `CONCERNS` prints and gates; on `quick` the whole report is advisory. See `orc:scale-tracks`.
+- A waived `CONCERNS` is recorded in the report so `orc:retrospective` can check later whether it bit.
 
 ## Persisted gate inputs: `.orc/<sessionId>/files/`
 
@@ -68,6 +97,7 @@ Digest bullets, fixed order:
 | `stack-plan.json` | `/orc:stack-pr --smart` on agent return | stack preview |
 | `jira-breakdown.json` | `/orc:jira-breakdown` on agent return | creation preview |
 | `slices/slice-NN.diff` + `slice-NN-report.md` | `/orc:flow` Phase 5 parallel collection | apply/commit step |
+| `readiness.json` | `orc-state slice verify` at plan→implement | implement gate |
 | `qa-verdict.json` | `/orc:qa` Phase 5 | ship gate |
 | `files/qa/qa-manifest.json` | the browser driver, on QA completion | verdict + evidence-publish |
 

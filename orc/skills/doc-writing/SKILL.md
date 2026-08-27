@@ -35,6 +35,27 @@ A typical lineage: **PRD → TRD → (RFC if alternatives exist) → plan → AD
 
 When the choice is genuinely borderline, surface the call to the user (e.g. "this could be a small RFC or just a plan — which do you want?") rather than guessing.
 
+## The chain — one doc feeds the next
+
+Each doc type answers a different question, and the answers stack. Finishing one is the natural moment to offer the next, seeded from what you just wrote:
+
+```
+idea → PRD (what & why) → TRD (the contract) → plan (the work) → slices → code
+              ↘ RFC (when alternatives are open) → ADR (what got decided)
+```
+
+| Finishing | Offer next | Seeded with |
+|---|---|---|
+| PRD | `/orc:trd --from-prd NNNN` | Goals, constraints, success metrics |
+| PRD (design still open) | `/orc:rfc` | Problem statement, non-goals |
+| TRD | `/orc:plan` | Interfaces and failure modes become slice acceptance criteria |
+| RFC (approved) | `/orc:adr` per durable decision, then `/orc:plan` | The decision and its trade-offs |
+| plan | `orc:to-issues`, or straight into `/orc:start` | The slice list |
+
+**Offer, never chain automatically.** The next doc is a real decision — plenty of PRDs correctly stop at the PRD, and a TRD nobody needed is worse than no TRD. One `AskUserQuestion` at the end of each doc, with "done for now" always among the options.
+
+The seeding is what makes the chain worth having: a TRD that starts from its PRD's goals does not re-litigate them, and a plan whose acceptance criteria come from a TRD's failure modes is testing the right things.
+
 ## Where docs live — numbering & publication
 
 Numbered docs follow one convention across the project:

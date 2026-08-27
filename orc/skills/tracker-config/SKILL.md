@@ -24,6 +24,20 @@ One read-protocol and ONE missing-config gate, shared by every tracker-aware sur
 - **Continue with defaults** — GitHub Issues when `gh` is authenticated, else local markdown. Record it: `orc-state decision set trackerDefaults <choice> --provenance asked` — no tracker-aware command asks again this session.
 - **Abort.**
 
+## The project-context answer
+
+Where the **agent-directive layer** lives is read here too, never asked: `docs/agents/domain.md`'s `## Project context` section carries `location: committed | local | none`.
+
+| `location` | Directive layer | Knowledge files |
+|---|---|---|
+| `committed` | `docs/agents/project-context.md` | `docs/agents/knowledge/` |
+| `local` | `${ORC_STATE_DIR}/project-context.md` | `${ORC_STATE_DIR}/knowledge/` |
+| `none`, or no section at all | — | — |
+
+Both `.orc/` paths are **per-repo, not per-branch** — they sit beside `orc.json` and `/orc:cleanup` never touches them.
+
+**A missing layer is never a gate.** Consumers proceed silently; `/orc:setup` Section D is the only place the question is asked. Contract and size cap: `orc:project-context`.
+
 ## The Jira-enabled answer
 
 "Does this repo use Jira?" is read, never asked: the tracker layer declares it (`issue-tracker.md` names Jira as the tracker, or a Jira project key is recorded). **When the layer says no Jira, Jira-link prompts are dropped silently** and the session records `orc-state decision set jiraTicket none --provenance inferred` — asking about an unconfigured tracker is noise.

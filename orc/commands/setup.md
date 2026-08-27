@@ -68,13 +68,25 @@ The GitHub template carries a "PRs as a request surface" flag defaulted **off** 
 
 **Section C — Domain docs.** Default to **single-context** — one `CONTEXT.md` + `docs/adr/` at the repo root — and write it **without asking**; this fits almost every repo. Only when Phase 1 found monorepo signals, ask single- vs multi-context (`CONTEXT-MAP.md` pointing at per-context `CONTEXT.md` files, per `orc:domain-modeling`).
 
+**Section D — Project context.** Where this repo's **agent-directive layer** lives — the lean conventions file every executor agent loads before writing code (`orc:project-context`). One question, recommendation first:
+
+- **Commit it — `docs/agents/project-context.md`** (recommended) — shared with the team and with every agent that clones the repo. Conventions settled once benefit everyone; it reviews like any other doc.
+- **Keep it local — `.orc/project-context.md`** — gitignored, personal, per-repo. Choose this for a repo you don't own, or where the team hasn't agreed to an agent-directives file.
+- **Skip** — no context layer. Agents fall back to discovery on every task.
+
+Record the answer as `location: committed|local|none` in `docs/agents/domain.md`'s `## Project context` section — `orc:tracker-config` reads it, and it is the same answer that places `/orc:onboard`'s knowledge files.
+
+> **💡 Insight**
+>
+> This is the one orc artifact that is deliberately durable. `.orc/` is per-branch and dies at cleanup; the context layer is the only thing that carries a repo's conventions from branch #1 to branch #40. Skipping it is a valid answer, not a wrong one — but it means every session re-derives the same facts.
+
 ### Phase 3 — Preview and confirm
 
 Print `**📋 Preview — tracker layer**` (per `orc:callouts`) followed by drafts of:
 
 1. `docs/agents/issue-tracker.md` (from the matching seed template below)
 2. `docs/agents/triage-labels.md`
-3. `docs/agents/domain.md`
+3. `docs/agents/domain.md` (including its `## Project context` section from Section D)
 4. The `## Agent skills` block for `CLAUDE.md` / `AGENTS.md`
 
 Then `AskUserQuestion`: **Write them** / **Edit first — tell me what to change** / **Cancel**.
@@ -98,9 +110,14 @@ Then `AskUserQuestion`: **Write them** / **Edit first — tell me what to change
    ### Domain docs
 
    [one line — "single-context" or "multi-context"]. See `docs/agents/domain.md`.
+
+   ### Project context
+
+   [one line — committed / local / none]. See `docs/agents/project-context.md`.
    ```
 
-3. Close with `**➡️ Next**`: name the surfaces now unlocked (`/orc:triage`, `/orc:wayfinder`, `orc:to-issues`, `orc:to-prd`) and note that `docs/agents/*.md` can be edited directly later.
+3. When Section D chose `committed` or `local`, close by offering the generation run — `AskUserQuestion`: **Run `/orc:context generate` now** (recommended — the repo is already explored) / **Later**. Setup itself never writes `project-context.md`; `/orc:context` owns that file and its size cap.
+4. Close with `**➡️ Next**`: name the surfaces now unlocked (`/orc:triage`, `/orc:wayfinder`, `orc:to-issues`, `orc:to-prd`, plus `/orc:onboard` and `/orc:context` when a context layer was chosen) and note that `docs/agents/*.md` can be edited directly later.
 
 ## Seed templates
 
@@ -114,6 +131,6 @@ The seed templates live in `orc:tracker-config` (`references/templates/{GITHUB,J
 
 ## Output
 
-- `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md`, `docs/agents/domain.md`
+- `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md`, `docs/agents/domain.md` (with its `## Project context` section)
 - An `## Agent skills` block in `CLAUDE.md` or `AGENTS.md`
 - No `.orc/` session state — this is run-once repo configuration with nothing to resume; the written files ARE the durable state.

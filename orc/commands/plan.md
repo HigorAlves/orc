@@ -1,6 +1,6 @@
 ---
 description: Plan a feature or refactor — produces a TDD-shaped plan, optionally design-grilled, and decomposes it into independently shippable issues. --jira <KEY> links a ticket. Workspace-aware.
-argument-hint: "[--auto[=guided|full]] [--grill] [--issues] [--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
+argument-hint: "[--auto[=guided|full]] [--track quick|standard|deep] [--grill] [--issues] [--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 effort: high
 allowed-tools:
   - Bash(orc-state:*)
@@ -27,6 +27,7 @@ Turn a feature or refactor request into a written, TDD-shaped implementation pla
 
 - `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`; taxonomy in `orc:using-orc`). Soft-inward gates consult the resolved policy — `guided` auto-advances mechanical confirms with a printed one-liner; `full` pre-approves them from settled decisions (`orc:state-protocol`), stopping only on escalation-only conditions. Hard-outward gates are unaffected at every level.
 
+- `--track=quick|standard|deep` — set the scale track (`orc:scale-tracks`). Decides the planning artifact (`tech-spec.md` vs `plan.md`), the slice ceiling, and whether the readiness gate blocks. Unset → inferred from the request's shape and recorded as `inferred`.
 - `--grill` — after drafting the plan, invoke `orc:grill-me` to stress-test the design before committing.
 - `--issues` — after the plan is approved, run `orc:to-issues` to break it into independently grabbable issues.
 - `--jira <KEY>` — link a Jira ticket key (e.g. `PROJ-123`) to this session silently. Suppresses the Phase 1 link prompt. Validate against `^[A-Z][A-Z0-9_]*-\d+$`.
@@ -81,11 +82,13 @@ Follow `orc:code-discovery`: if `graphify` is installed, ensure a fresh code gra
 
 ### Phase 2 — Draft the plan
 
-Invoke `orc:writing-plans`. Follow that skill exactly. Write the output to `${ORC_STATE_DIR}/<branch>/files/plan.md`. Update `checkpoint.md` (phase=2, last_artifact=plan.md).
+Resolve the **track** first (`orc:scale-tracks`): `--track` > settled decision > inferred from the request. Record it (`orc-state decision set track <level>`). On `quick` the artifact is `tech-spec.md` with at most 3 slices; on `standard`/`deep` it is `plan.md`. Downstream consumers read the ledger, so they cannot tell which one produced it.
+
+Invoke `orc:writing-plans`. Follow that skill exactly. Write the output to `${ORC_STATE_DIR}/<branch>/files/plan.md` (or `tech-spec.md`). Update `checkpoint.md` (phase=2, last_artifact=<the artifact>).
 
 **Per-slice LOC budget contract (all modes)** — every slice MUST carry an `est_loc: <int>` field as part of its header. The estimate is the implementer's **contract**, not a precise prediction:
 
-- Heuristic for the planner: `est_loc ≈ (new_files * 80) + (modified_files * 30) + boilerplate_test_lines`. Adjust for known-large files. When a Graphify graph exists (primed in Phase 1b), sharpen `modified_files` with `graphify affected "<symbol>"` blast-radius per `orc:writing-plans`, and flag high-fan-in changes as `ships_as_stack: true` before implementation.
+- Heuristic for the planner: `est_loc ≈ (new_files * 80) + (modified_files * 30) + boilerplate_test_lines`. Adjust for known-large files. When `planning-calibration.json` exists (written by `/orc:retro` — see `orc:retrospective`), multiply by its `locFactor`, clamped to `[0.5, 2.5]`; a factor outside that range means something other than estimation is wrong and gets surfaced rather than applied. When a Graphify graph exists (primed in Phase 1b), sharpen `modified_files` with `graphify affected "<symbol>"` blast-radius per `orc:writing-plans`, and flag high-fan-in changes as `ships_as_stack: true` before implementation.
 - If a slice's estimate exceeds `${ORC_PR_LOC_BUDGET:-300}`, **split the slice further** OR mark it `ships_as_stack: true` to signal the implementer should expect to invoke `/orc:stack-pr` at ship time.
 - During Phase 5 (implement), if a slice's actual diff exceeds `est_loc * 1.5`, the implementer **escalates** rather than balloons the slice silently. This is enforced by `orc-implementer`'s escalation conditions.
 
@@ -130,7 +133,9 @@ Invoke `orc:grill-me`. The skill drives an interview that exposes hidden assumpt
 
 Print the Gate headline (`**⛔ Gate — plan review**`), then `AskUserQuestion` with two options: `Looks good — proceed` / `Iterate — revise plan`. If iterate, return to Phase 2.
 
-On approval, **generate the slice ledger**: parse the approved plan's slice headers (`est_loc`, `repo`, `ships_as_stack`, `touchpoints`, `parallel_group`, `depends_on`, `acceptance` — per `orc:writing-plans`) into a `slices.json` (shape per `orc:state-protocol` `references/schema.md`, every slice `status: "pending"`, `planSha256` = sha of plan.md) and install it: `orc-state slice init <file>`. Consumers (`/orc:flow` Phase 5, `/orc:fan-out`, `orc-implementer`) read the ledger, not the prose; "all slices done" becomes `orc-state slice list --status pending,red,escalated` exiting clean. On plan re-approval after iteration, regenerate — statuses of slices whose `title` still matches are preserved.
+On approval, re-check the track against the slice count (`orc:scale-tracks` escalate/de-escalate rules) — over the ceiling offers escalation, well under offers collapse, and the existing artifact always carries forward as the seed rather than being discarded.
+
+Then **generate the slice ledger**: parse the approved plan's slice headers (`est_loc`, `repo`, `ships_as_stack`, `touchpoints`, `parallel_group`, `depends_on`, `acceptance` — per `orc:writing-plans`) into a `slices.json` (shape per `orc:state-protocol` `references/schema.md`, every slice `status: "pending"`, `planSha256` = sha of the plan artifact), populate each slice's **`context` pack** (`files`/`symbols`/`docs`/`fixtures`, blast-radius ordered via `graphify affected` when a graph exists), and install it: `orc-state slice init <file>`. Finish with `orc-state slice verify` and print the verdict — a `FAIL` here is cheaper to fix now than at the implement gate. Consumers (`/orc:flow` Phase 5, `/orc:fan-out`, `orc-implementer`) read the ledger, not the prose; "all slices done" becomes `orc-state slice list --status pending,red,escalated` exiting clean. On plan re-approval after iteration, regenerate — statuses of slices whose `title` still matches are preserved.
 
 ### Phase 5 (optional, with `--issues`) — Decompose
 
@@ -138,7 +143,9 @@ Invoke `orc:to-issues` to break the approved plan into vertical-slice issues on 
 
 ## Output
 
-- `.orc/<branch>/files/plan.md` — the approved plan
+- `.orc/<branch>/files/plan.md` (or `tech-spec.md` on the `quick` track) — the approved plan
+- `.orc/<branch>/files/slices.json` — the ledger, with per-slice context packs
+- `.orc/<branch>/files/readiness.json` — the mechanical readiness verdict
 - `.orc/<branch>/files/checkpoint.md` — current phase + status
 - (with `--issues`) `.orc/<branch>/files/issues.md`
 - Updated `.orc/orc.json` registry entry

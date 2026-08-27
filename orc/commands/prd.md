@@ -89,7 +89,15 @@ Surface a hint to the user:
 
 - "Link this PRD from any tracking ticket: `acli jira workitem edit ... --description 'See docs/prds/NNNN-<slug>.md'` (or do it in the Jira UI)."
 - If a Jira ticket was bound to the current orc session (`/orc:jira bind`), surface: "Want to link this PRD to bound ticket `<KEY>`? Use `/orc:jira link --in <KEY> --type 'Implements'`."
-- If a TRD will follow: "Next step is usually `/orc:trd '<title>' --from-prd NNNN` to pin down the technical contract."
+
+Then close with the chain gate from `orc:doc-writing` — one `AskUserQuestion`, seeded from what was just written:
+
+- **`/orc:trd --from-prd NNNN`** — recommended when the *what* is settled and the technical contract is not. Carries Goals, Constraints, and success metrics across.
+- **`/orc:rfc`** — when the design space is still genuinely open and there are real alternatives to weigh.
+- **`/orc:plan`** — when the shape is obvious enough that a TRD would be ceremony.
+- **Done for now** — a PRD that stops at the PRD is a common and correct outcome.
+
+Never chain automatically. The follow-on is a real decision, and a TRD nobody needed costs more than no TRD.
 
 ## Output
 
