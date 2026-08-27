@@ -43,7 +43,7 @@
 
 ---
 
-`orc` is a full-SDLC workflow plugin for Claude Code: **80 curated skills, 30 composite slash commands, 14 specialist subagents, and 9 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers, destructive git commands gated, a dependency pre-flight, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged", with the `orc-implementer` agent writing the code slice-by-slice in between — and the lifecycle no longer stops at PR-open: `/orc:ci`, `/orc:release`, `/orc:deps`, and `/orc:incident` cover what happens after.
+`orc` is a full-SDLC workflow plugin for Claude Code: **83 curated skills, 34 composite slash commands, 14 specialist subagents, and 9 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers, destructive git commands gated, a dependency pre-flight, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged", with the `orc-implementer` agent writing the code slice-by-slice in between — and the lifecycle no longer stops at PR-open: `/orc:ci`, `/orc:release`, `/orc:deps`, and `/orc:incident` cover what happens after.
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
@@ -73,8 +73,19 @@ Or skip the per-phase invocations and use **`/orc:flow`** to drive the whole loo
 - **Operate** — `/orc:env`, `/orc:incident`, `/orc:deps`, `/orc:release`, `/orc:ci`
 - **Track** — `/orc:jira`, `/orc:jira-breakdown`, `/orc:evidence`, `/orc:setup`, `/orc:triage`, `/orc:wayfinder`
 - **Sessions** — `/orc:resume`, `/orc:status`, `/orc:cleanup` — multi-phase work checkpoints to `.orc/` and survives interruption
+- **Memory** — `/orc:context`, `/orc:onboard`, `/orc:retro`, `/orc:correct-course` — what the repo knows, and how it learns
 
-The full command table, the 14 agents behind it, and the 80-skill library live in [docs/commands.md](./docs/commands.md). Prefer learning by scenario? [docs/examples](./docs/examples/README.md) walks 18 real situations end-to-end.
+### What survives the branch
+
+`.orc/` is per-branch and gitignored — it dies at cleanup, by design. But a repo's *conventions* are not per-branch, and re-deriving them every session is waste. So orc keeps an opt-in **context layer** (`/orc:setup` decides committed vs local):
+
+- **`/orc:onboard`** documents an existing codebase — overview, source-tree map, per-area deep dives — over the Graphify code graph.
+- **`/orc:context`** distills that into `project-context.md`: the binding conventions, capped at 150 lines because it loads into every implementation task. Its Critical rules are binding — a slice that needs to break one escalates rather than deciding alone.
+- **`/orc:retro`** closes the loop. orc already measures every session — estimates against actuals, QA scores per acceptance criterion, review findings, CI classifications — and until now never read any of it back. The retro does, and turns what *repeats* into rules, ADR candidates, and estimate calibration. One occurrence is an incident; two is a pattern; only patterns become rules. It is also the only surface that deletes stale ones.
+
+Scope adapts too: the triage answer resolves to a **track** (`quick` / `standard` / `deep`) that mechanically decides which phases run, so a two-hour change never acquires an RFC. A mechanical readiness gate (`orc-state slice verify`) checks the plan before implementation starts — acceptance criteria, dependency cycles, colliding parallel groups — with no model judgment in the verdict.
+
+The full command table, the 14 agents behind it, and the 83-skill library live in [docs/commands.md](./docs/commands.md). Prefer learning by scenario? [docs/examples](./docs/examples/README.md) walks 18 real situations end-to-end.
 
 ## Install
 

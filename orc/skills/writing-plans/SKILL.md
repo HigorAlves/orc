@@ -67,6 +67,26 @@ When a task's natural decomposition would exceed **1.5× the budget** (~450 LOC)
 
 The estimate is a **budget contract**, not a precision prediction — the implementer escalates when actual exceeds `est_loc * 1.5` rather than ballooning silently.
 
+### Calibrate against past misses
+
+If `planning-calibration.json` exists in the repo's knowledge layer (written by `/orc:retro`; see `orc:retrospective`), multiply the heuristic by its `locFactor` — and by `byKind[<type>]` when the plan's type has its own factor. Clamp to `[0.5, 2.5]`.
+
+A factor outside that clamp is not an estimation problem; it means slicing or scoping is broken. **Surface it instead of applying it.**
+
+Absent file → use the raw heuristic and say nothing. Calibration needs ≥5 sampled slices before it means anything.
+
+## Track sets the granularity
+
+The scale track (`orc:scale-tracks`) is resolved before drafting and caps the slice count:
+
+| Track | Slice ceiling | Granularity bias |
+|---|---|---|
+| `quick` | 3 | Prefer one fat slice over three thin ones. Ceremony costs more than the work. |
+| `standard` | 12 | The default — one reviewable diff per slice. |
+| `deep` | none | Split past the LOC budget freely and mark `ships_as_stack: true`. |
+
+Exceeding the ceiling is not a hard error — it is the **escalation signal** the dispatching command acts on at the plan gate.
+
 ## Per-slice concurrency + acceptance annotations (mandatory)
 
 Every slice header also carries — same vocabulary `orc-jira-architect` emits for Jira tasks, so one contract covers both surfaces:
@@ -89,6 +109,16 @@ Every slice header also carries — same vocabulary `orc-jira-architect` emits f
 - **`acceptance`** — 2–5 **testable** criteria: each names a command to run or an observable behavior, never "works correctly". They are the slice's contract for the implementer and the scoring rubric for QA.
 
 On plan approval, the dispatching command copies these annotations into the `slices.json` ledger (`orc-state slice init`; shape per `orc:state-protocol`) — consumers read the ledger, not the prose.
+
+### Context packs
+
+The same step assembles each slice's **`context` pack** — the files, symbols, docs, and fixtures the implementer needs, so it reads instead of rediscovering. Packs are built by the dispatching command, not written by hand into the plan; the plan's job is to make them derivable:
+
+- **`touchpoints` must be real.** The pack's `files` list is seeded from them and widened by blast radius.
+- **Name the symbols** a slice extends or must respect in its prose — they become the pack's `symbols`.
+- **Cite the ADR or context rule** a slice depends on rather than restating it. The pack carries pointers, never excerpts.
+
+A plan whose slices have vague touchpoints produces empty packs, and every implementer dispatch pays full discovery cost again.
 
 ## Plan Document Header
 

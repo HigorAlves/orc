@@ -18,6 +18,8 @@ The phase bodies of `/orc:flow`, disclosed progressively — the command's entry
 | 6 — QA | [PHASE-6-QA.md](references/PHASE-6-QA.md) |
 | 7 — Ship | [PHASE-7-SHIP.md](references/PHASE-7-SHIP.md) |
 | 8 — Address | [PHASE-8-ADDRESS.md](references/PHASE-8-ADDRESS.md) |
-| 9 — Cleanup | [PHASE-9-CLEANUP.md](references/PHASE-9-CLEANUP.md) |
+| 9 — Retro (offered) + cleanup | [PHASE-9-CLEANUP.md](references/PHASE-9-CLEANUP.md) |
 
 Phases 0–1 (context detection, triage, the sprint contract) live in the command itself — they run on every invocation.
+
+**Which phases run at all is the track's call.** `orc:scale-tracks` resolves the Phase 1 scope answer to `quick` / `standard` / `deep`; on `quick`, Phases 2–3 collapse into a single `tech-spec.md` and the flow enters Phase 4 directly. Read the track's decision before deciding which file to load, and announce every skipped phase in one line — a silently dropped phase is indistinguishable from a bug.

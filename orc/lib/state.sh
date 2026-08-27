@@ -471,6 +471,144 @@ orc_state_slice_list() { # [--status a,b,c] [--branch B]
   return 0
 }
 
+orc_state__readiness_path() { # $1 = sid
+  printf '%s/%s/files/readiness.json\n' "$(orc_state__dir)" "$1"
+}
+
+# Mechanical implement-readiness gate. Every check is decidable from the ledger
+# plus the filesystem — no model judgment enters the verdict. Writes
+# readiness.json and exits 0 for PASS/CONCERNS, 1 for FAIL, so callers can gate
+# on the exit code. Doctrine: orc:state-protocol references/schema.md.
+orc_state_slice_verify() { # [--branch B] [--budget N] [--quiet]
+  local branch="" budget="${ORC_PR_LOC_BUDGET:-300}" quiet=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --branch) branch="${2:-}"; shift 2 ;;
+      --budget) budget="${2:-}"; shift 2 ;;
+      --quiet)  quiet=1; shift ;;
+      *) echo "orc-state slice verify: unknown argument $1" >&2; return 2 ;;
+    esac
+  done
+
+  local sid ledger dest plan_path plan_abs plan_sha_disk root
+  sid="$(orc_state__sid "$branch")" || return 1
+  ledger="$(orc_state__slices_path "$sid")"
+  [ -f "$ledger" ] || { echo "orc-state slice verify: no slices.json for $sid" >&2; return 1; }
+  dest="$(orc_state__readiness_path "$sid")"
+
+  # plan-sha-current: hash the plan artifact on disk and compare to planSha256.
+  root="$(dirname "$(dirname "$ledger")")/files"
+  plan_path="$(jq -r '.planPath // "plan.md"' "$ledger")"
+  plan_abs="${root}/${plan_path}"
+  plan_sha_disk=""
+  [ -f "$plan_abs" ] && plan_sha_disk="$(shasum -a 256 "$plan_abs" 2>/dev/null | awk '{print $1}')"
+
+  # touchpoints-resolve runs against the repo working tree; a path that does not
+  # exist is only a failure when the plan did not declare it new. The ledger
+  # carries no "new file" flag, so a touchpoint under a directory that exists is
+  # treated as declared-new (the implementer is about to create it) and anything
+  # whose parent directory is also absent is a genuine miss.
+  local repo_root
+  repo_root="$(git rev-parse --show-toplevel 2>/dev/null || printf '.')"
+
+  local checks
+  checks="$(
+    jq -n --slurpfile L "$ledger" \
+          --arg budget "$budget" \
+          --arg plansha "$plan_sha_disk" \
+          --arg reporoot "$repo_root" '
+      ($L[0]) as $l
+      | ($budget | tonumber) as $b
+      | ($l.slices // []) as $sl
+      | ($sl | map(.id)) as $ids
+      | [
+          ( $sl | map(select(((.acceptance // []) | length) < 2))
+            | map({ id: "acceptance-count", status: "fail", sliceId: .id,
+                    detail: "\((.acceptance // []) | length) acceptance criteria (need >= 2)" }) ),
+
+          ( $sl | map(select((.estLoc // null) == null))
+            | map({ id: "est-loc-present", status: "fail", sliceId: .id,
+                    detail: "estLoc missing" }) ),
+
+          ( $sl | map(select((.estLoc // 0) > $b and (.shipsAsStack // false) == false))
+            | map({ id: "est-loc-present", status: "fail", sliceId: .id,
+                    detail: "estLoc \(.estLoc) over budget \($b) without shipsAsStack" }) ),
+
+          ( $sl | map(select(((.dependsOn // []) - $ids) | length > 0))
+            | map({ id: "depends-on-dag", status: "fail", sliceId: .id,
+                    detail: "dependsOn names unknown slice(s) \(((.dependsOn // []) - $ids) | tostring)" }) ),
+
+          ( $sl | map(select(.id as $i | (.dependsOn // []) | index($i)))
+            | map({ id: "depends-on-dag", status: "fail", sliceId: .id,
+                    detail: "slice depends on itself" }) ),
+
+          ( [ $sl[] as $a | $sl[] as $c
+              | select($a.id < $c.id)
+              | select(($a.parallelGroup // -1) == ($c.parallelGroup // -2))
+              | select((($a.touchpoints // []) - (($a.touchpoints // []) - ($c.touchpoints // []))) | length > 0)
+              | { id: "parallel-disjoint", status: "fail", sliceId: $a.id,
+                  detail: "shares touchpoints with slice \($c.id) in parallelGroup \($a.parallelGroup)" } ] ),
+
+          ( $sl | map(select([ (.touchpoints // [])[] | select(test("(^|/)(test|spec|__tests__)|[._-](test|spec)\\.") ) ] | length == 0))
+            | map({ id: "test-named", status: "fail", sliceId: .id,
+                    detail: "no touchpoint looks like a test file" }) ),
+
+          ( if ($plansha == "" or $plansha == ($l.planSha256 // ""))
+            then [] else
+              [{ id: "plan-sha-current", status: "fail", sliceId: null,
+                 detail: "planSha256 does not match \($l.planPath // "plan.md") on disk" }]
+            end ),
+
+          ( [ $sl[] | (.touchpoints // [])[] as $t
+              | { id: "touchpoints-resolve", status: "probe", sliceId: .id, detail: $t } ] )
+        ] | add'
+  )" || { echo "orc-state slice verify: could not evaluate ledger" >&2; return 2; }
+
+  # Resolve the touchpoint probes against the filesystem (jq cannot stat).
+  local resolved="[]" probe path parent
+  while IFS=$'\t' read -r probe path; do
+    [ -n "$probe" ] || continue
+    parent="$(dirname "${repo_root}/${path}")"
+    if [ -e "${repo_root}/${path}" ] || [ -d "$parent" ]; then
+      continue
+    fi
+    resolved="$(jq -c --arg sid "$probe" --arg p "$path" \
+      '. + [{ id: "touchpoints-resolve", status: "fail", sliceId: ($sid | tonumber),
+              detail: ("\($p) does not exist and its parent directory is missing") }]' \
+      <<<"$resolved")"
+  done < <(jq -r '.[] | select(.id == "touchpoints-resolve" and .status == "probe")
+                 | "\(.sliceId)\t\(.detail)"' <<<"$checks")
+
+  checks="$(jq -c --argjson extra "$resolved" \
+    '[ .[] | select(.status != "probe") ] + $extra' <<<"$checks")"
+
+  # CONCERNS-only checks vs blocking ones.
+  local verdict
+  verdict="$(jq -r '
+    ([ .[] | select(.status == "fail") ]) as $f
+    | if ($f | length) == 0 then "PASS"
+      elif ([ $f[] | select(.id != "test-named" and .id != "est-loc-present") ] | length) == 0
+      then "CONCERNS"
+      else "FAIL" end' <<<"$checks")"
+
+  mkdir -p "$(dirname "$dest")"
+  jq -n --argjson checks "$checks" --arg v "$verdict" \
+        --arg now "$(orc_state__now)" \
+        --arg head "$(git rev-parse HEAD 2>/dev/null || printf 'unknown')" \
+        '{ schema: 1, generatedAt: $now, headSha: $head, verdict: $v, checks: $checks }' \
+    > "$dest.tmp" && mv "$dest.tmp" "$dest"
+
+  if [ "$quiet" -eq 0 ]; then
+    printf '%s\n' "$verdict"
+    jq -r '.[] | select(.status == "fail")
+           | "  \(.id)\(if .sliceId then " (slice \(.sliceId))" else "" end): \(.detail)"' \
+      <<<"$checks"
+  fi
+
+  [ "$verdict" = "FAIL" ] && return 1
+  return 0
+}
+
 orc_state_verify() { # [branch]
   local branch="${1:-}" sid entry f errs=0
   sid="$(orc_state__sid "$branch")" || return 1

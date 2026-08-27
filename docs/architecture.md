@@ -9,8 +9,8 @@
 ```
 orc/                               # the plugin
 ├── .claude-plugin/plugin.json     # manifest — what Claude Code reads to discover the plugin
-├── skills/                        # 80 skills, namespaced /orc:<name>
-├── commands/                      # 30 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
+├── skills/                        # 83 skills, namespaced /orc:<name>
+├── commands/                      # 34 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
 ├── agents/                        # 14 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) + PostToolUse + WorktreeCreate/Remove
 ├── bin/                           # deterministic CLIs, on PATH while enabled (orc-state, orc-statusline, …)
@@ -61,12 +61,18 @@ Multi-phase commands (`/orc:plan`, `/orc:start`, `/orc:debug`, `/orc:fan-out`, w
 ```
 .orc/
 ├── orc.json                                 # central registry of active sessions
+├── project-context.md                       # per-repo, NOT per-branch — survives cleanup (local mode)
+├── knowledge/                               # per-repo /orc:onboard output (local mode)
+├── planning-calibration.json                # per-repo est_loc calibration from /orc:retro
 ├── .worktrees/                              # pinned git worktrees (never $HOME) — <repo>/<branch>
 └── feat-142-notification-prefs/
     └── files/
         ├── checkpoint.md                    # frontmatter mirror + resume digest — the resume entry point (≤4 KB)
         ├── slices.json                      # slice ledger (status machine; written via orc-state)
-        ├── plan.md                          # if /orc:plan ran
+        ├── plan.md                          # if /orc:plan ran (tech-spec.md on the quick track)
+        ├── readiness.json                   # orc-state slice verify — PASS/CONCERNS/FAIL
+        ├── retro.md                          # if /orc:retro ran
+        ├── course-change-NN.md              # if /orc:correct-course ran
         ├── diagnosis.md                     # if /orc:debug ran
         ├── progress.md                      # append-only history (never read by resume by default)
         ├── qa/                              # if web-mode /orc:qa ran
@@ -88,7 +94,7 @@ Multi-phase commands (`/orc:plan`, `/orc:start`, `/orc:debug`, `/orc:fan-out`, w
 2. **Update** — every phase writes its artifact, then `orc-state phase set <n>` + `orc-state digest write -` (registry + checkpoint mirror bumped together).
 3. **Resume** — `/orc:resume` runs the startup sequence from `orc:state-protocol`: session entry → bounded checkpoint → git cross-check → the one artifact the digest's `Next:` names.
 4. **Status** — `/orc:status` reads `orc.json` (read-only); never modifies.
-5. **Cleanup** — done sessions stay until manually `rm -rf .orc/<branch>/`.
+5. **Cleanup** — done sessions stay until manually `rm -rf .orc/<branch>/`. Scoped to the branch dir: the per-repo files above the branch dirs (`project-context.md`, `knowledge/`, `planning-calibration.json`) are never removed by cleanup.
 
 ### Optional `jiraTicket` field
 
@@ -99,6 +105,37 @@ Every session entry in `.orc/orc.json` and every `checkpoint.md` frontmatter acc
 - **Validated as** `^[A-Z][A-Z0-9_]*-\d+$` before any file write — typo'd keys are refused at the prompt.
 
 The field is purely additive: pre-existing `.orc/` state without `jiraTicket` continues to work unchanged. `/orc:jira bind`/`unbind` refuse to run when no in-progress session exists for the current branch.
+
+## The context layer (durable, opt-in)
+
+`.orc/` is per-branch and gitignored on purpose — personal, ephemeral, deleted at cleanup. **This is the one place orc deliberately breaches that**, because a repo's conventions are not per-branch and re-deriving them every session is pure waste.
+
+Two artifacts, both placed by a single `/orc:setup` Section D answer recorded in `docs/agents/domain.md` (`location: committed | local | none`) and read through `orc:tracker-config`:
+
+| | Committed | Local (default) |
+|---|---|---|
+| Directives | `docs/agents/project-context.md` | `.orc/project-context.md` |
+| Knowledge | `docs/agents/knowledge/` | `.orc/knowledge/` |
+
+Both `.orc/` paths sit **beside `orc.json`, not inside `<branch>/files/`** — they are per-repo, and `/orc:cleanup` is explicitly forbidden from touching them.
+
+- **`project-context.md`** (`orc:project-context`, written by `/orc:context`) — agent *directives*, not documentation: the conventions a model would otherwise guess wrong. Six sections, **capped at 150 lines / 6 KB** and enforced by `scripts/ci/verify-project-context.sh`, because it is preloaded into `orc-implementer`, `orc-test-author`, `orc-code-fixer`, and `orc-qa-validator` — paid for on every implementation task, forever. Its **Critical rules** are binding: a slice that needs to violate one is an implementer escalation, not a judgment call.
+- **`knowledge/`** (written by `/orc:onboard`) — `project-overview.md`, `source-tree.md`, `deep-dive-<area>.md`, `index.md`, plus a resumable `scan-report.json`. Built over the Graphify graph (below), which already does the expensive half.
+
+### The loop that keeps it honest
+
+A context layer that is only ever appended to becomes a 400-line file nobody reads. `/orc:retro` (`orc:retrospective`) is the counterweight: after a session ships it reads what orc already measured — `slices.json` estimates against actuals, `qa-verdict.json`, `review-findings.json`, `readiness.json`, CI classifications — and converts what *repeats* into deltas: new context rules, ADR candidates, an `est_loc` calibration factor in `planning-calibration.json`, rejections appended to `docs/agents/out-of-scope.md`. It is also the only surface that **removes** rules.
+
+The threshold is deliberate: one occurrence is an incident, two is a pattern, and only patterns become rules. `/orc:flow` Phase 9 offers the retro **before** cleanup, since cleanup destroys its inputs.
+
+## Scale tracks + the readiness gate
+
+Two mechanical switches sit between planning and implementation:
+
+- **Track** (`orc:scale-tracks`) — the Phase 1 scope answer resolves to `quick` / `standard` / `deep`, recorded as a settled decision, and the track *decides which phases run*: `quick` collapses RFC+plan into one `tech-spec.md` with ≤3 slices; `deep` makes the RFC mandatory. Escalation and de-escalation are offered at the plan gate and always carry the prior artifact forward as the seed. A track rewrite is the one documented exception to write-once decisions.
+- **Readiness** (`orc-state slice verify` → `readiness.json`) — seven checks decidable from the ledger plus the filesystem: ≥2 acceptance criteria per slice, touchpoints that resolve, `estLoc` within budget or `shipsAsStack`, a `dependsOn` DAG, parallel groups with disjoint touchpoints, a named test file, and a `planSha256` that matches the plan on disk. `FAIL` exits 1 and blocks the implement phase on `standard`/`deep`; `CONCERNS` gates; on `quick` it is advisory. No model judgment enters the verdict — that is the point.
+
+The ledger also gains per-slice **context packs** (`files`/`symbols`/`docs`/`fixtures`), assembled at the plan→implement boundary from Graphify blast-radius plus the context layer. `orc-implementer` reads the pack instead of re-deriving the same discovery on every slice.
 
 ## Code discovery (optional token optimization)
 
@@ -132,7 +169,7 @@ Plus the doc-authoring family for senior/architect practice: `adr-writing` (Arch
 
 orc borrows compozy's session-state idea, hook layout, and YAML-frontmatter conventions. It diverges in two places:
 1. Workspace state is **hidden + gitignored** (`.orc/`) instead of committed (`compozy/`). orc is a personal plugin; nothing needs sharing.
-2. Command surface covers the full SDLC (30 commands, all composing the same plan → debug → verify → ship spine, now extended past PR-open with ci/release/deps/incident), with explicit web-QA evidence as a first-class concern — including the environment it runs against: `/orc:qa` and `/orc:flow` provision a Docker dev environment via `orc-env-provisioner` before browser QA (`orc:env-provisioning` skill; `/orc:env` standalone).
+2. Command surface covers the full SDLC (34 commands, all composing the same plan → debug → verify → ship spine, now extended past PR-open with ci/release/deps/incident), with explicit web-QA evidence as a first-class concern — including the environment it runs against: `/orc:qa` and `/orc:flow` provision a Docker dev environment via `orc-env-provisioner` before browser QA (`orc:env-provisioning` skill; `/orc:env` standalone).
 
 ## See also
 

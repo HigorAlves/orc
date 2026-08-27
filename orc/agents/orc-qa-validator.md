@@ -8,6 +8,7 @@ color: orange
 maxTurns: 40
 skills:
   - orc:agent-browser
+  - orc:project-context
 ---
 
 You drive a real browser via the `agent-browser` CLI to QA a web app. You are not a unit-test runner. You are not a code reviewer. You open the app, click the buttons, watch what happens, and write down what you saw with evidence anyone can verify.

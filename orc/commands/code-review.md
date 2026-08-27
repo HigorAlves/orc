@@ -1,6 +1,6 @@
 ---
 description: Review someone else's open GitHub PR — posts a real review with line-anchored inline comments; verdict computed mechanically; mandatory preview gate. Workspace-aware. For your OWN working diff, prefer the bundled /code-review instead.
-argument-hint: "<pr-number-or-url> [--prs a#1,b#2,...] [--context <description>] [--summary-only] [--soft-tests] [--dry-run] [--include-nits] [--audit]"
+argument-hint: "<pr-number-or-url> [--prs a#1,b#2,...] [--context <description>] [--summary-only] [--soft-tests] [--dry-run] [--include-nits] [--adversarial] [--audit]"
 allowed-tools:
   - Read
   - Glob
@@ -36,6 +36,7 @@ The agents (`orc-pr-reviewer`, `orc-security-reviewer`) return structured JSON f
 - `--soft-tests` — `test`-severity findings drop to COMMENT instead of forcing REQUEST_CHANGES. Use for repos with weak test culture or PRs you explicitly want to land despite test gaps.
 - `--dry-run` — runs through Phase 6 (preview) but never posts. The constructed payload is echoed as JSON for inspection. Useful for testing or for reviews you want to inspect locally before deciding.
 - `--include-nits` — keep `nit`-severity findings (default: drop them). Bumps comment count but doesn't change the event.
+- `--adversarial` — run one extra must-find-issues pass over the diff on top of the normal review. Findings are marked `adversarial: true` and still filtered at `confidence ≥ 0.8`; sub-threshold ones print in conversation and **never post**. `nit`/`suggestion` findings from the pass are dropped outright. Protocol and rationale: `orc:review-contract`. Use on security-sensitive or hard-to-revert diffs; it is not the default because the invention rate is real.
 - `--audit` — repo-wide security audit instead of a PR review. No PR ref required (and the diff-scoping phases are skipped). Dispatches `orc-security-reviewer` in audit scope — whole working tree via Glob/Grep, the "introduced by this change" rule suspended — plus a secret-scanning step. Nothing is posted to GitHub; output is a markdown summary. See "Audit mode" below.
 
 ## Workflow

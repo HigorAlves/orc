@@ -41,6 +41,10 @@ well-described feature; prefer the step commands when you want to steer.
 | Cut a release (user project) | `/orc:release` |
 | New package/service/app shell | `/orc:scaffold` |
 | Interrupted mid-anything | `/orc:resume` (see `/orc:status` for what's live) |
+| Landed in an unfamiliar codebase | `/orc:onboard` (brownfield knowledge; `/orc:scaffold` is the greenfield twin) |
+| Requirements changed mid-implementation | `/orc:correct-course` |
+| Just shipped — what did it teach? | `/orc:retro` |
+| Agents keep guessing this repo's conventions wrong | `/orc:context` |
 
 ## Sharpening (before committing to build)
 
@@ -50,6 +54,28 @@ well-described feature; prefer the step commands when you want to steer.
 - `orc:research` — primary-source investigation captured into the repo
 - `orc:to-questionnaire` — decision belongs to someone else? Package it for them
 - Docs: `/orc:prd` `/orc:trd` `/orc:rfc` `/orc:adr` (settled decisions → `orc:adr-writing`)
+
+## Memory (what survives the branch)
+
+`.orc/` is per-branch and dies at cleanup. These are what carry forward:
+
+| Layer | Surface | What it holds |
+|---|---|---|
+| Directives | `/orc:context` → `project-context.md` | Binding conventions every executor agent loads before writing code (`orc:project-context`) |
+| Knowledge | `/orc:onboard` → `knowledge/` | Overview, source tree, per-area deep dives — orientation for humans and agents |
+| Vocabulary | `orc:domain-modeling` → `CONTEXT.md` | The ubiquitous-language glossary |
+| Decisions | `/orc:adr` → `docs/adr/` | What was decided and what it cost |
+| Learning | `/orc:retro` | Reads a finished session's evidence and writes deltas back into the layers above |
+
+Committed or local is a `/orc:setup` answer, not a default. The loop closes at
+`/orc:retro`: without it these layers are written once and only ever grow.
+
+## Scale (how much process this deserves)
+
+`orc:scale-tracks` maps the scope answer to a track that mechanically decides
+which phases run: **quick** (tech-spec, ≤3 slices, no RFC) · **standard** (plan
++ ledger) · **deep** (RFC first, expect a PR stack). Escalation and
+de-escalation are offered at the plan gate and never discard prior work.
 
 ## Vocabulary underneath (model-invoked, loaded when relevant)
 
@@ -78,5 +104,7 @@ Finished a phase (plan approved, slice green, QA passed)?
 
 ## Setup (once per repo)
 
-`/orc:setup` — tracker choice + triage labels + domain doc layout. `/orc:env` —
-containerized dev environment. `orc doctor` (CLI) — dependency health.
+`/orc:setup` — tracker choice + triage labels + domain doc layout + where the
+project-context layer lives. `/orc:onboard` then `/orc:context generate` fill
+that layer for an existing codebase. `/orc:env` — containerized dev
+environment. `orc doctor` (CLI) — dependency health.

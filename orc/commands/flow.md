@@ -43,6 +43,7 @@ Interactivity follows the gate taxonomy (`orc:using-orc`) and the resolved `inte
 - `<task description>` — required. One sentence describing the work.
 - `--auto[=guided|full]` — autopilot level for this run (bare `--auto` = full). Overrides the configured `interaction_policy`. See "Autopilot" below.
 - `--type=feature|bug|refactor|docs` — optional; pre-answers the triage type question. The type changes which phases run.
+- `--track=quick|standard|deep` — pre-answers the scope question with a **track** (`orc:scale-tracks`). The track mechanically decides which phases run, what the planning artifact is, and whether the readiness gate blocks.
 - `--rfc` — insert an RFC phase before planning (multi-week, multi-team, or genuine-alternatives work).
 - `--verbose` — pass through to `/orc:ship` (long-form PR body; terse `orc:caveman-pr` is the default).
 - `--driver agent-browser|chrome` — pre-answers Phase 6's browser-driver gate.
@@ -67,9 +68,11 @@ Every flag records its answer as a settled decision (`orc-state decision set …
 | 6 | QA — `orc:browser-qa` for web + qa-verdict.json | yes | type=docs runs lint only |
 | 7 | Ship — `/orc:ship` logic; ship owns the size gate | yes | — |
 | 8 | Address — reviewer-comment loop | optional | no comments → exit note |
-| 9 | Cleanup — post-merge | yes | — |
+| 9 | Cleanup — post-merge (offers `/orc:retro` first) | yes | — |
 
 For `--type=bug`, phases 2–3 collapse into a single `/orc:debug` invocation (diagnosis + regression test + plan in one).
+
+**The track is the other phase switch.** `orc:scale-tracks` maps the Phase 1 scope answer to `quick` / `standard` / `deep`, and the track decides which phases run at all: `quick` skips 2–3 in favour of a single `tech-spec.md` and goes straight to 4. Adjust `--total-phases` at `orc-state init` to match, and announce every skipped phase in one line — a silently dropped phase is indistinguishable from a bug.
 
 ### Phase 0 — Detect context
 
@@ -101,11 +104,13 @@ If the input is a short one-liner ("add CSV export"), skip the analyzer and proc
    - refactor — restructuring without changing behavior
    - docs — README, architecture, ADR/RFC, Diátaxis quadrants
    - (free-form via Other: "something else — let me describe")
-2. **Scope** (always asked):
-   - < 1 day — small; skip RFC, simple plan
-   - 1–5 days — medium; full plan, optional grill-me
-   - 1–4 weeks — big; suggest --rfc; offers /orc:rfc next
-   - multi-quarter — too big for /orc:flow; suggests breaking down with /orc:plan --issues first
+2. **Scope → track** (always asked; dropped when `--track=` passed). The answer resolves to a track per `orc:scale-tracks` and is recorded as `orc-state decision set track <level>`:
+   - < 1 day — **quick**: tech-spec instead of a plan, ≤3 slices, no RFC, readiness advisory
+   - 1–5 days — **standard**: full plan + slice ledger, optional grill-me, readiness blocking
+   - 1–4 weeks — **deep**: RFC phase mandatory, then plan + ledger; expect stacked PRs
+   - multi-quarter — neither; route to `/orc:wayfinder`
+
+   Apply the `orc:scale-tracks` overrides before accepting a `quick` answer: an architectural decision, a multi-repo change, a public-contract change, or auth/payments/PII forces at least `standard`. **Say which override fired** — a silent upgrade reads as the command ignoring the answer.
 3. **Repo set** (workspace mode only; dropped when `--repos`/`--repo`/`--all-repos`/`--this-repo` passed): "This is a workspace with N repos: <list from $ORC_WORKSPACE_REPOS>. Scope this flow to which repos?"
    - All N detected repos
    - Pick a subset (multi-select follow-up)
@@ -139,14 +144,14 @@ The resolved policy (flag > settled decision > env > userConfig > `manual`) sets
 - **manual** — every soft-inward gate asks, exactly as the phase playbooks specify.
 - **guided** — mechanical confirms auto-advance with a printed one-liner: the driver defaults to `agent-browser` (recorded as a policy decision), a clean QA pass advances, Phase 9 auto-applies the standard cleanup plan. Plan approval, the size gate, and PR compose still ask.
 - **auto (full)** — Phases 1–3 collapse into **one contract gate**: infer type/scope from the description (recorded as inferred decisions; `orc-prd-analyzer` still runs for long briefs and P0 questions still stop the run), draft the plan, then a single `AskUserQuestion` call:
-  1. **Approve the contract** — the deliverable one-liner, the slice list, and the testable success criteria: suite + lint + type-check green, every `slices.json` acceptance criterion `pass` in `qa-verdict.json`, `orc-state slice list --status pending,red,escalated` clean, PR ≤ budget or stacked, CI green on the PR. Options: approve / iterate the plan / abort.
+  1. **Approve the contract** — the deliverable one-liner, the resolved **track**, the slice list, and the testable success criteria: `readiness.json` verdict not `FAIL`, suite + lint + type-check green, every `slices.json` acceptance criterion `pass` in `qa-verdict.json`, `orc-state slice list --status pending,red,escalated` clean, PR ≤ budget or stacked, CI green on the PR. Options: approve / iterate the plan / abort.
   2. **Repo set** (workspace mode only — asked at every level, never inferred; iron rule 7).
   3. **Jira link** (dropped when settled or the tracker layer has no Jira).
   4. **Run policy** — driver, PR mode (non-draft caveman body), size-over handling (auto-stack from slices — auto NEVER selects the size-budget override; that attestation stays human, iron rule 8), cleanup (standard plan).
 
-  On approval the contract is recorded in `decisions.json` and **Phases 4–9 run without inward gates**, stopping only for escalation-only conditions (implementer escalations, env `failed`, CI `needs-debug`/`infra`, QA `fail`/`partial`) or a criteria miss — either re-opens exactly that one decision with the evidence.
+  On approval the contract is recorded in `decisions.json` and **Phases 4–9 run without inward gates**, stopping only for escalation-only conditions (implementer escalations, readiness `FAIL`, env `failed`, CI `needs-debug`/`infra`, QA `fail`/`partial`) or a criteria miss — either re-opens exactly that one decision with the evidence.
 
-**Hard-outward gates ask at every level** — evidence publish to a tracker, posting PR reviews, tracker writes. `--auto` has no effect on them.
+**Hard-outward gates ask at every level** — evidence publish to a tracker, posting PR reviews, tracker writes. `--auto` has no effect on them. The **retro-delta gate** at Phase 9 joins them: its output rewrites the project-context layer for every future session in the repo, so it stays human regardless of policy.
 
 ## Resume
 

@@ -2,7 +2,7 @@
 
 The full catalog: every slash command, the specialist agents behind them, the skill library underneath, and the CLI that installs it all. Not sure where to start? The [examples index](examples/README.md) maps 18 real scenarios to the command that handles each.
 
-## Commands (30)
+## Commands (34)
 
 | Command | Purpose |
 |---------|---------|
@@ -34,14 +34,31 @@ The full catalog: every slash command, the specialist agents behind them, the sk
 | `/orc:triage` | Herd issues + external PRs through triage roles into agent-ready briefs |
 | `/orc:wayfinder` | Plan multi-session work as decision tickets on the tracker |
 | `/orc:cleanup` | Remove `.orc/` state, worktree, and (if merged) branch for completed sessions |
+| `/orc:context` | Generate/refresh the repo's `project-context.md` — the lean directives every executor agent loads before writing code |
+| `/orc:onboard` | Document an existing codebase — overview, source-tree map, per-area deep dives; the brownfield twin of `/orc:scaffold` |
+| `/orc:retro` | Read a finished session's evidence and turn what repeats into context rules, ADR candidates, and planning calibration |
+| `/orc:correct-course` | Handle a mid-flight change — classify the blast radius and re-slice without discarding work already green |
+
+## What survives the branch
+
+`.orc/` is per-branch and gitignored — it dies at cleanup, by design. Four layers outlive it, and `/orc:setup` decides whether they are committed (`docs/agents/`) or local (`.orc/`, per-repo):
+
+| Layer | Written by | Read by |
+|---|---|---|
+| `project-context.md` — binding conventions, capped at 150 lines | `/orc:context` | `orc-implementer`, `orc-test-author`, `orc-code-fixer`, `orc-qa-validator`, on every task |
+| `knowledge/` — overview, source tree, deep dives | `/orc:onboard` | humans, and any agent orienting in an unfamiliar area |
+| `planning-calibration.json` — how far estimates actually miss | `/orc:retro` | `orc:writing-plans`, when sizing slices |
+| `docs/adr/`, `CONTEXT.md` — decisions and vocabulary | `/orc:adr`, `orc:domain-modeling` | planning and refactor surfaces |
+
+`/orc:retro` is what closes the loop: it reads the evidence a shipped session left behind — estimates against actuals, QA scores, review findings, CI classifications — and writes deltas back into those layers. Without it they are written once and only ever grow.
 
 ## Specialist agents (14)
 
 `orc-implementer` (writes code slice-by-slice), `orc-debug-investigator`, `orc-test-author`, `orc-code-fixer`, `orc-pr-reviewer`, `orc-security-reviewer`, `orc-ci-investigator`, `orc-qa-validator`, `orc-env-provisioner`, `orc-prd-analyzer`, `orc-refactor-architect`, `orc-jira-architect`, `orc-reply-drafter`, `orc-stack-analyzer` — each a read-only investigator or a scoped executor, dispatched by the commands above. Every agent pins both a `model` (haiku for mechanical work, sonnet for senior-dev execution, opus for deep investigation) and a reasoning `effort` matched to its task shape.
 
-## Skills (80)
+## Skills (83)
 
-Under the commands and agents sit 80 curated skills — reusable, progressively-disclosed playbooks the model pulls in on demand: process doctrine (`tdd`, `systematic-debugging`, `verification-before-completion`, `grilling`, `codebase-design`, `domain-modeling`), stack packs (Next.js, NestJS, PostgreSQL, SwiftUI, Tailwind, Turborepo, …), authoring guides (PRD/TRD/ADR/RFC/postmortem), and the `orc:map` router when you're not sure which to reach for. Fifteen are vendored or merged from [mattpocock/skills](https://github.com/mattpocock/skills) and other MIT sources with full provenance ([THIRD-PARTY-LICENSES.md](../THIRD-PARTY-LICENSES.md)); their descriptions are deliberately differentiated so co-installing the originals doesn't double-trigger. Each skill is a thin index that loads its detail only when invoked, so they cost almost nothing until used. **Total: 80 skills.**
+Under the commands and agents sit 83 curated skills — reusable, progressively-disclosed playbooks the model pulls in on demand: process doctrine (`tdd`, `systematic-debugging`, `verification-before-completion`, `grilling`, `codebase-design`, `domain-modeling`), stack packs (Next.js, NestJS, PostgreSQL, SwiftUI, Tailwind, Turborepo, …), authoring guides (PRD/TRD/ADR/RFC/postmortem), and the `orc:map` router when you're not sure which to reach for. Fifteen are vendored or merged from [mattpocock/skills](https://github.com/mattpocock/skills) and other MIT sources with full provenance ([THIRD-PARTY-LICENSES.md](../THIRD-PARTY-LICENSES.md)); their descriptions are deliberately differentiated so co-installing the originals doesn't double-trigger. Each skill is a thin index that loads its detail only when invoked, so they cost almost nothing until used. **Total: 83 skills.**
 
 ## The orc CLI
 

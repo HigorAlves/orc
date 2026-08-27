@@ -78,6 +78,9 @@ jobs:
       - name: statusline render fixtures
         run: bash scripts/ci/verify-statusline.sh
 
+      - name: Project-context layer (size cap + preloads)
+        run: bash scripts/ci/verify-project-context.sh
+
       - name: Router map covers every command
         run: |
           missing=""

@@ -202,6 +202,12 @@ For each session:
 
 0. **Docker environment** — BEFORE state removal (the state file holds the teardown command; delete it first and the environment is orphaned): execute the state file's `teardownCommand` (append `-v` only with `--down-volumes`); kill recorded `hostProcesses[]` PIDs after verifying via `ps` that the PID still runs the recorded command — a reused PID is surfaced, never killed. Then proceed.
 1. **Workspace state** — `rm -rf .orc/<sanitized-branch>/`. Update `.orc/orc.json` to remove the entry (use Read + Write to preserve the JSON).
+
+   > **🛑 Never remove `.orc/project-context.md`, `.orc/knowledge/`, or `.orc/planning-calibration.json`.**
+   >
+   > Those are **per-repo**, not per-branch — they sit beside `orc.json` rather than inside `<branch>/files/`, and they are the only orc state that survives a branch. Deleting them silently throws away every convention and calibration the repo has accumulated. Scope the removal to `.orc/<sanitized-branch>/` exactly; never `rm -rf .orc/*`.
+
+   Run `/orc:retro` **before** this step when the session is worth learning from — `.orc/<branch>/files/` is its entire input, and this step destroys it. `/orc:flow` Phase 9 offers this automatically.
 2. **Worktree** — `git worktree remove <path>` ONLY if clean. If dirty, skip and surface a `**⚠️ Skipped — dirty worktree**` `[!WARNING]` callout. Never use `--force` automatically; require an explicit `--force-dirty` flag in a future iteration if needed.
 3. **Branch** — `git branch -d <branch>` ONLY if merged into main. If unmerged, skip and surface a `**⚠️ Skipped — unmerged branch**` `[!WARNING]` callout. Never use `-D` automatically.
 4. **Worktree prune** — after removals: `git worktree prune` to clean up any stale references.
