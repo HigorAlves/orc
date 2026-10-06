@@ -1,6 +1,6 @@
 # Examples — pick your scenario
 
-Eighteen scenario walk-throughs, each mapping a real day-to-day situation to the orc command that handles it.
+Nineteen scenario walk-throughs, each mapping a real day-to-day situation to the orc command that handles it.
 
 | You have ... | Read |
 |--------------|------|
@@ -22,5 +22,6 @@ Eighteen scenario walk-throughs, each mapping a real day-to-day situation to the
 | Dependency hygiene day (vulns, outdated packages) | [15 — Dependency audit and upgrade](./15-dependency-audit.md) |
 | A release to cut | [16 — Cutting a release](./16-cutting-a-release.md) |
 | A repo joining orc, then daily issue triage | [17 — Tracker setup and triage](./17-tracker-setup-and-triage.md) |
+| A web change to QA against staging, with a narrated walkthrough | [18 — Playwright QA and the explainer](./18-playwright-qa-and-explainer.md) |
 
 Each example follows the same shape — *Scenario → Flow → Walk-through → Artifacts → Done when → Variants → Iron rules in play* — so you can scan to the relevant section.

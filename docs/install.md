@@ -125,13 +125,23 @@ orc's SessionStart pre-flight (`session-start-tool-check.sh`) verifies these CLI
 | `git` | required | every command |
 | `jq` | required | hook scripts (parse Bash tool input) |
 | `gh` | recommended | `/orc:code-review`, `/orc:address`, `/orc:ship`, `/orc:postmortem` |
-| `agent-browser` | recommended | `/orc:qa` (web mode — browser-driven QA evidence) |
+| `agent-browser` | recommended | `/orc:qa` fallback driver when Node/Playwright is unavailable; `/orc:evidence` |
 | `acli` | recommended | `/orc:jira`, Jira ticket linking, PRD/TRD `--from-jira` seeding |
 | `docker` | recommended | `/orc:env`, `/orc:qa` / `/orc:flow` env provisioning (host-mode fallback applies without it) |
 | `graphify` | recommended | `/orc:plan`, `/orc:start`, `/orc:flow`, `/orc:debug` — code discovery via a code graph instead of grep |
 | `osv-scanner` | recommended | `/orc:deps` — ecosystem-agnostic vulnerability audit (per-ecosystem scanners as fallback) |
 | `gitleaks` | recommended | `/orc:code-review --audit` — secret scanning (regex fallback without it) |
 | `sentry-cli` | recommended | `/orc:incident` — pull Sentry issues/events into live triage |
-| `ffmpeg` | recommended | `/orc:qa`, `/orc:evidence` — motion evidence; agent-browser's `record` wraps ffmpeg, so headless QA captures stills only without it |
+| `ffmpeg` | recommended | `/orc:qa` (stitched QA video), `/orc:explain` (explainer render), agent-browser `record`; title cards and captions need a build with libfreetype (`brew install ffmpeg` has it; minimal builds don't) |
+
+### Playwright QA
+
+`/orc:qa` runs Playwright first and `/orc:explain` builds on it. What that needs:
+
+- **Node >= 18** for the Playwright driver. Without it, `/orc:qa` announces and falls back to `agent-browser`.
+- **`e2e/` deps are per-repo.** The first-run setup gate installs them and downloads Chromium into the repo's Playwright cache.
+- **ffmpeg with libfreetype** for title cards and captions. `brew install ffmpeg` has it; minimal builds don't, and `orc-qa-video` / `orc-explain` then degrade to cards without text (chapter titles stay in `chapters.json`).
+- **animate plugin (optional)** for explainer graphics: `/plugin install animate@animate`. The pinned commit lives in `orc/lib/explain/animate.lock`; graphic scenes are authored per its notes and rendered with `ORC_ANIMATE_RENDER=1`. Without it, graphic segments fall back to cards.
+- **kokoro model (~90 MB)** downloads on first narration, then runs locally.
 
 Suppress the check where missing tools are intentional: `export ORC_SKIP_TOOL_CHECK=1`.

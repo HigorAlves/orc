@@ -16,6 +16,8 @@ Prompted at plugin enable time (re-run via `/plugin`); exported to hooks and lib
 | `statusline_context_reserve` | `0` | 0–50. When >0, the context percentage is normalized against this reserved slice (e.g. your auto-compact reserve) and rendered with a `~` prefix. `0` shows the raw payload percentage. |
 | `mod_enabled` | `true` | Load the orc mod (`hooks/mod/`, Claude Code 2.1.287+): in-process event hooks and UI layered on the bash hooks. `false` keeps orc on its bash hooks only — the guardrails are identical either way. |
 | `model_profile` | `balanced` | Which model orc agents run on when a dispatch names none (needs the orc mod): `balanced` (each agent's frontmatter), `quality` (investigator on `best` — Fable where available, else Opus — reviewers on Opus), `economy` (Opus-tier agents on Sonnet). An explicit per-dispatch model always wins; the `/orc` cockpit's Model profile select settles a per-branch override (`modelProfile` decision) that wins over this value. |
+| `explainer_style` | `isometric` | animate motion-graphics style for `/orc:explain` segments: cut-paper, crosshatch, riso, sketchbook, math, pixel, isometric. |
+| `explainer_voice` | `af_heart` | kokoro-js voice id for `/orc:explain` narration (local TTS, no key). `af_heart` = English; `pf_dora` / `pm_alex` = Brazilian Portuguese. |
 | `alerts_sound` | `false` | A short chime when the orc mod's CI watcher sees a linked PR turn red or green. |
 
 ## Environment variables
@@ -25,6 +27,12 @@ Prompted at plugin enable time (re-run via `/plugin`); exported to hooks and lib
 | `ORC_SKIP_TOOL_CHECK=1` | Suppress the SessionStart tool-check callout when a recommended dependency is intentionally missing. |
 | `ORC_ALLOW_AI_ATTRIBUTION=1` | Allow AI-attribution trailers in commits/PR bodies. The PreToolUse hook refuses them by default (iron rule #5). Set only with explicit user consent. |
 | `ORC_ALLOW_DESTRUCTIVE_GIT=1` | Skip the confirm prompt on `git reset --hard`, `git clean -f`, `git branch -D`, `git push --force`. |
+| `ORC_TARGETS_OP_BIN` | 1Password CLI binary used by `orc-targets resolve` for `op://` credential references. Defaults to `op`. |
+| `ORC_QA_USER` | Which named target user the Playwright `setup` project logs in as. |
+| `ORC_PW_OUTPUT_DIR` | Playwright output directory; the `playwright-qa` skill sets it to `<qa-dir>/pw`. |
+| `ORC_EXPLAIN_VOICE` | kokoro-js voice id for `orc-explain narrate`; overrides the `explainer_voice` setting. |
+| `ORC_ANIMATE_ROOT` | Path to the installed animate plugin used by `orc-explain graphics`. |
+| `ORC_ANIMATE_RENDER` | `1` builds/exports authored animate pieces; unset renders fallback title cards. |
 | `ORC_JIRA_PR_KEYWORD` | PR-body trailer keyword used by `/orc:ship` when the session has a bound Jira ticket. Defaults to `Resolves`. |
 
 The `orc config` CLI edits these tunables (`pr_size_budget`, `protected_branches`, `skip_tool_check`, `allow_ai_attribution`, `jira_pr_keyword`) as `ORC_*` variables in `settings.json`.
