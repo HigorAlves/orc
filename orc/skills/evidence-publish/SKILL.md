@@ -26,7 +26,9 @@ Two capability tiers, checked and degraded **independently**:
 - **comment** available iff `command -v acli` **and** `acli jira auth status` exits 0.
 - **attach** available iff comment is available **and** `command -v curl` **and** a token env is set (`JIRA_API_TOKEN` or `ATLASSIAN_API_TOKEN`). Site + email are read from `acli jira auth status`; acli deliberately never exposes its stored token, so REST upload needs the user's own.
 
-Resolve the ticket: explicit `ticketKey`, else the active session's `jiraTicket` in `.orc/orc.json` (sanitized-branch match, `status == in_progress`) — the same resolution `/orc:jira bind` uses. **No ticket, or comment unavailable ⇒ local-only** (skip to step 5, no gate).
+Resolve the ticket: explicit `ticketKey`, else the active session's `jiraTicket` in `.orc/orc.json` (sanitized-branch match, `status == in_progress`) — the same resolution `/orc:jira bind` uses. **No ticket, or comment unavailable ⇒ no tracker target** (the gate still runs when the Artifact target below is available; otherwise skip to step 5).
+
+**Report + Artifact target** (independent of the tracker): for a session packet, always render the report — `orc-report html` writes `qaDir/report.html` (criteria, notes, screenshots, recording; missing files flagged) and prints its path. The **Artifact** target is available iff the host exposes the `Artifact` tool.
 
 Exact commands: `references/jira-adapter.md`. The tracker-agnostic interface (to add GitHub/Linear later): `references/adapter-contract.md`.
 
@@ -57,10 +59,14 @@ Payload to show: the target ticket + URL, the curated file list (mark comment-on
 
 If a prior `## Evidence delivery` block in `steps.md` already reads "uploaded", say so in the gate and make **Keep local only** the safe default — this is the double-upload guard.
 
+Artifact target available ⇒ the same `AskUserQuestion` call carries a second question (header `Publish`): **Publish the QA report as a private Artifact?** — `Keep local (Recommended)` / `Publish privately` (preview: the report's criteria list + the files it would upload). With no tracker target it is the only question. A prior `Report: artifact <url>` line in `steps.md` ⇒ offer `Update that artifact` instead of a second URL.
+
 ### 4. Deliver — on Upload
 
 - **Attach** each curated file over REST (acli has no upload verb — `references/jira-adapter.md`). A per-file failure ⇒ surface it and continue; partial delivery beats none.
 - **Comment**: post the plain-text summary via `acli jira workitem comment create`. **Plain text only** — Jira stores rich text as ADF, so markdown renders literally; reference attachments by filename, never embed.
+
+- **Artifact** (on Publish): publish `qaDir/report.html` with the `Artifact` tool (new artifact: `icon: checklist`; update: pass the recorded `url`). Upload every image/video the report references and that exists — `orc-report json | jq -r '[.artifacts[].file, .acceptance[].evidence[]] - .missing | map(sub("#.*"; "")) | unique | .[]'` — as `files`, each published at its bare filename so the report's relative paths resolve. Never include `console.log` / `network.har`. It stays private; linking it from a PR or ticket is a separate, asked step.
 
 ### 5. Record — provenance + idempotency
 
@@ -72,13 +78,14 @@ Append to `steps.md`:
 - Ticket: <KEY> (<url>)
 - Attached: <file list | none (comment-only — set JIRA_API_TOKEN to attach) | none (local)>
 - Comment: posted | n/a
+- Report: <qaDir>/report.html | artifact <url>
 ```
 
 Echo a one-line `✓` on upload, or a plain note otherwise. Local-only and cancel stay plain — no callout.
 
 ## Iron rules
 
-- **Always ask before uploading.** No flag bypasses the preview gate.
+- **Always ask before uploading.** No flag bypasses the preview gate — an Artifact publish included (hard-outward per `orc:using-orc`).
 - **Never block on a missing tracker.** No acli / no auth / no ticket ⇒ local-only, one line, never an error.
 - **Plain-text comments only.** Markdown/ADF pitfalls are documented in `references/jira-adapter.md`.
 - **Record every outcome in `steps.md`** — provenance and the double-upload guard both live there.
