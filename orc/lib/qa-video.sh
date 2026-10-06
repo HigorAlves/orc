@@ -22,7 +22,10 @@ orc_qv_plan() { # --results R → JSON array [{id,title,file,outcome,video,conso
           video:   ([$r.attachments[]? | select(.name == "video")       | .path] | first),
           console: ([$r.attachments[]? | select(.name == "console.log") | .path] | first),
           trace:   ([$r.attachments[]? | select(.name == "trace")       | .path] | first) } ]' "$results" \
-  | jq -c 'map(. + {id: (.title | ascii_downcase | gsub("[^a-z0-9]+"; "-") | gsub("^-+|-+$"; ""))})'
+  | jq -c 'reduce .[] as $s ({seen: {}, out: []};
+      ($s.title | ascii_downcase | gsub("[^a-z0-9]+"; "-") | gsub("^-+|-+$"; "")) as $base
+      | (.seen[$base] // 0) as $k | .seen[$base] = $k + 1
+      | .out += [$s + {id: (if $k == 0 then $base else "\($base)-\($k + 1)" end)}]) | .out'
 }
 
 orc_qv_collect() { # --results R --qa-dir D → copies console-<id>.log, trace-<id>.zip

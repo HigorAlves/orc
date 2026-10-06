@@ -111,6 +111,7 @@ orc_targets__resolve_value() { # $1 = reference → value on stdout; exit 3 when
       "$op" read "$v" 2>/dev/null || { echo "orc-targets: '$op read $v' failed — run: op signin" >&2; return 3; } ;;
     env:*)
       local n="${v#env:}"
+      printf '%s' "$n" | grep -Eq '^[A-Za-z_][A-Za-z0-9_]*$' || { echo "orc-targets: invalid env reference '$v' (expected env:VAR_NAME)" >&2; return 3; }
       [ -n "${!n:-}" ] || { echo "orc-targets: env var $n is empty — referenced by a target credential" >&2; return 3; }
       printf '%s' "${!n}" ;;
     *) printf '%s' "$v" ;;

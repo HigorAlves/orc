@@ -12,7 +12,9 @@ const file = path.join(outDir, '.auth', 'user.json');
 setup('authenticate', async ({ page }) => {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const users = target.users ?? {};
-  const user = users[process.env.ORC_QA_USER ?? ''] ?? Object.values(users)[0];
+  const wanted = process.env.ORC_QA_USER;
+  if (wanted && !users[wanted]) throw new Error(`ORC_QA_USER=${wanted} is not a user on target ${target.name ?? '?'}`);
+  const user = wanted ? users[wanted] : Object.values(users)[0];
   if (!user || !target.login) { await page.context().storageState({ path: file }); return; }
   const l = target.login;
   await page.goto(l.path);

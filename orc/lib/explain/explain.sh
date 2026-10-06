@@ -20,7 +20,8 @@ orc_ex_validate() { # --segments S
   bad="$(jq -r '
     (if .schema != 1 then "schema must be 1" else empty end),
     (.segments // [] | to_entries[] | .value as $g |
-      (if ($g.id // "") == "" then "segment \(.key): missing id" else empty end),
+      (if ($g.id // "") == "" then "segment \(.key): missing id"
+       elif ($g.id | test("^[a-z0-9][a-z0-9-]*$") | not) then "segment \(.key): id must be a slug [a-z0-9-]" else empty end),
       (if ($g.narration // "") == "" then "segment \($g.id): missing narration" else empty end),
       (if ($g.kind != "graphic" and $g.kind != "clip") then "segment \($g.id): kind must be graphic|clip" else empty end),
       (if $g.kind == "clip" and ($g.source // "") == "" then "segment \($g.id): clip needs source" else empty end),
@@ -64,7 +65,11 @@ orc_ex_graphics() { # --segments S --work W
   [ -n "$root" ] || { echo "orc-explain: animate not installed — fallback cards will be used for graphic segments"; return 0; }
   mkdir -p "$w/graphics"
   local pieces line id dir out
-  if [ "${ORC_ANIMATE_RENDER:-0}" = "1" ] && [ -d "$w/pieces" ]; then
+  if [ "${ORC_ANIMATE_RENDER:-0}" = "1" ] && [ ! -d "$w/pieces" ]; then
+    echo "orc-explain: ORC_ANIMATE_RENDER=1 but no authored pieces at $w/pieces — run graphics once without it, author src/scenes.js per brief.md, then re-run" >&2
+    return 1
+  fi
+  if [ "${ORC_ANIMATE_RENDER:-0}" = "1" ]; then
     # render pass: reuse the authored pieces — animate-piece.mjs re-copies the example and would wipe src/scenes.js
     pieces="$(jq -c --arg w "$w" '.segments[] | select(.kind == "graphic") | {id, pieceDir: "\($w)/pieces/\(.id)"}' "$s")"
   else
@@ -94,12 +99,12 @@ orc_ex__card() { # <out.mp4> <title> <lines-joined-by-\n> <seconds>
   mkdir -p "$(dirname "$out")"
   if ! orc_ex__has_drawtext; then # no text rendering available — plain card, narration still carries the content
     echo "orc-explain: ffmpeg lacks drawtext — title card rendered without text" >&2
-    ffmpeg -v error -y -f lavfi -i "color=c=0x1d1d1b:s=1920x1080:d=$secs" -r 30 -c:v libx264 -pix_fmt yuv420p -an "$out"
+    ffmpeg -nostdin -v error -y -f lavfi -i "color=c=0x1d1d1b:s=1920x1080:d=$secs" -r 30 -c:v libx264 -pix_fmt yuv420p -an "$out"
     return 0
   fi
   font="$(orc_ex__font)"; [ -n "$font" ] && ff="fontfile=$font:"
   t1="$(mktemp)"; t2="$(mktemp)"; printf '%s' "$title" > "$t1"; printf '%b' "$lines" > "$t2"
-  ffmpeg -v error -y -f lavfi -i "color=c=0x1d1d1b:s=1920x1080:d=$secs" \
+  ffmpeg -nostdin -v error -y -f lavfi -i "color=c=0x1d1d1b:s=1920x1080:d=$secs" \
     -vf "drawtext=${ff}textfile=$t1:fontcolor=white:fontsize=72:x=(w-text_w)/2:y=h/2-160,drawtext=${ff}textfile=$t2:fontcolor=0xa29f98:fontsize=40:line_spacing=18:x=(w-text_w)/2:y=h/2-20" \
     -r 30 -c:v libx264 -pix_fmt yuv420p -an "$out"
   rm -f "$t1" "$t2"
@@ -116,9 +121,9 @@ orc_ex__segment() { # <video-in> <wav|""> <caption|""> <out.mp4> → renders vid
     vf="$vf,drawtext=${ff}textfile=$tf:fontcolor=white:fontsize=38:box=1:boxcolor=0x00000099:boxborderw=18:x=(w-text_w)/2:y=h-120"
   fi
   if [ -n "$wav" ] && [ -f "$wav" ]; then
-    ffmpeg -v error -y -i "$vin" -i "$wav" -vf "$vf" -af "apad" -t "$target" -c:v libx264 -pix_fmt yuv420p -c:a aac -b:a 128k -ar 48000 -ac 2 "$out"
+    ffmpeg -nostdin -v error -y -i "$vin" -i "$wav" -vf "$vf" -af "apad" -t "$target" -c:v libx264 -pix_fmt yuv420p -c:a aac -b:a 128k -ar 48000 -ac 2 "$out"
   else
-    ffmpeg -v error -y -i "$vin" -f lavfi -i anullsrc=r=48000:cl=stereo -vf "$vf" -t "$target" -c:v libx264 -pix_fmt yuv420p -c:a aac -b:a 128k -shortest "$out"
+    ffmpeg -nostdin -v error -y -i "$vin" -f lavfi -i anullsrc=r=48000:cl=stereo -vf "$vf" -t "$target" -c:v libx264 -pix_fmt yuv420p -c:a aac -b:a 128k -shortest "$out"
   fi
   [ -n "${tf:-}" ] && rm -f "$tf"
   return 0
@@ -146,7 +151,7 @@ orc_ex_assemble() { # --segments S --work W --qa-dir Q --out O
     orc_ex__segment "$vin" "$wav" "$cap" "$w/segments/seg-$id.mp4"
     printf "file '%s'\n" "$w/segments/seg-$id.mp4" >> "$list"
   done < <(jq -r '.segments[] | [.id, .kind, (.title // ""), ((.lines // []) | join("\\n")), (.source // ""), (.caption // "")] | join("\u001f")' "$s")
-  ffmpeg -v error -y -f concat -safe 0 -i "$list" -c copy "$o"
+  ffmpeg -nostdin -v error -y -f concat -safe 0 -i "$list" -c copy "$o"
   printf '%s\n' "$o"
 }
 

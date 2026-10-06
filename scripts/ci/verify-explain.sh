@@ -24,6 +24,11 @@ jq '.segments[0] |= del(.narration)' "$tmp/good.json" > "$tmp/bad2.json"
 set +e; err="$(bash "$cli" validate --segments "$tmp/bad2.json" 2>&1)"; rc=$?; set -e
 [ "$rc" -eq 2 ] && printf '%s' "$err" | grep -q 's01' && ok || fail "missing narration must exit 2 naming s01"
 
+jq '.segments[0].id = "../x"' "$tmp/good.json" > "$tmp/bad3.json"
+set +e; err="$(bash "$cli" validate --segments "$tmp/bad3.json" 2>&1)"; rc=$?; set -e
+[ "$rc" -eq 2 ] && printf '%s' "$err" | grep -q 'must be a slug' && ok || fail "non-slug id must exit 2 (path traversal guard)"
+set +e; err="$(ORC_ANIMATE_ROOT=/nonexistent ORC_ANIMATE_RENDER=1 bash "$cli" graphics --segments "$tmp/good.json" --work "$tmp/nopieces" 2>&1)"; rc=$?; set -e
+[ "$rc" -eq 0 ] && ok || fail "render flag without animate must still be a no-op (rc=$rc)"
 bash "$cli" setup >/dev/null
 [ -f "$XDG_CACHE_HOME/orc/explain/narrate.mjs" ] && [ -f "$XDG_CACHE_HOME/orc/explain/package.json" ] && ok || fail "setup must stage narrate.mjs + package.json"
 [ -f "$XDG_CACHE_HOME/orc/explain/animate-piece.mjs" ] && [ -f "$XDG_CACHE_HOME/orc/explain/animate.lock" ] && ok || fail "setup must stage animate-piece.mjs + animate.lock"

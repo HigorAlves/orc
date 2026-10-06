@@ -26,11 +26,14 @@ cat > "$tmp/results.json" <<EOF
       { "title": "Export empty state", "file": "export/empty.spec.ts",
         "tests": [ { "projectName": "qa", "results": [ { "status": "failed", "duration": 800, "attachments": [
           { "name": "video", "path": "$tmp/tr/b/video.webm", "contentType": "video/webm" },
-          { "name": "console.log", "path": "$tmp/tr/b/console.log", "contentType": "text/plain" } ] } ] } ] } ] } ] } ] }
+          { "name": "console.log", "path": "$tmp/tr/b/console.log", "contentType": "text/plain" } ] } ] } ] },
+      { "title": "Export empty state", "file": "export/empty-mobile.spec.ts",
+        "tests": [ { "projectName": "qa", "results": [ { "status": "passed", "duration": 10, "attachments": [] } ] } ] } ] } ] } ] }
 EOF
 
 plan="$(bash "$cli" plan --results "$tmp/results.json")"
-[ "$(printf '%s' "$plan" | jq 'length')" = "2" ] && ok || fail "plan must skip the setup project (got $(printf '%s' "$plan" | jq -c .))"
+[ "$(printf '%s' "$plan" | jq 'length')" = "3" ] && ok || fail "plan must skip the setup project (got $(printf '%s' "$plan" | jq -c .))"
+[ "$(printf '%s' "$plan" | jq -r '.[2].id')" = "export-empty-state-2" ] && ok || fail "duplicate titles must get distinct ids"
 [ "$(printf '%s' "$plan" | jq -r '.[0].id')" = "export-golden-path-golden" ] && ok || fail "plan id slug"
 [ "$(printf '%s' "$plan" | jq -r '.[1].outcome')" = "failed" ] && ok || fail "plan outcome"
 [ "$(printf '%s' "$plan" | jq -r '.[0].video')" = "$tmp/tr/a/video.webm" ] && ok || fail "plan video path"

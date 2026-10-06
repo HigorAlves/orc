@@ -52,6 +52,11 @@ set +e; err="$(ORC_TARGETS_OP_BIN="$tmp/op" bash "$cli" resolve staging 2>&1 >/d
 # missing op binary → exit 3
 set +e; err="$(T_USER=a ORC_TARGETS_OP_BIN="$tmp/missing-op" bash "$cli" resolve staging 2>&1 >/dev/null)"; rc=$?; set -e
 [ "$rc" -eq 3 ] && printf '%s' "$err" | grep -qi '1password' && ok || fail "missing op must exit 3 (rc=$rc)"
+# malformed env reference → exit 3 before any indirect expansion
+bash "$cli" user staging evil --username 'env:x[$(id)]' --password literal >/dev/null
+set +e; err="$(T_USER=a ORC_TARGETS_OP_BIN="$tmp/op" bash "$cli" resolve staging 2>&1 >/dev/null)"; rc=$?; set -e
+[ "$rc" -eq 3 ] && printf '%s' "$err" | grep -q 'invalid env reference' && ok || fail "malformed env ref must exit 3 (rc=$rc: $err)"
+bash "$cli" get staging | jq 'del(.users.evil) | del(.name)' > "$tmp/t.json" && jq --slurpfile t "$tmp/t.json" '.targets.staging = $t[0]' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
 # --base-url override (ad-hoc --web)
 [ "$(bash "$cli" resolve local --base-url http://127.0.0.1:4000 | jq -r .baseUrl)" = "http://127.0.0.1:4000" ] && ok || fail "base-url override"
 
