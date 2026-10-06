@@ -26,6 +26,8 @@ usage: orc-state <verb> [args]   (state root: $ORC_STATE_DIR, else <git root>/.o
   link-pr --repo R --url U [--number N] [--stack-id S --stack-position P --stacked-on U2]
   digest write -                    stdin -> replaces '## Resume digest' (30-line/2KB cap)
   checkpoint --auto [--trigger T]   mechanical '## Auto-checkpoint' (PreCompact hook); digest untouched
+  usage add --agent A [--model M] [--in N] [--out N] [--ms N]   append a subagent run to files/usage.jsonl
+  usage summary                     per-agent totals (runs, in, out, ms), costliest first
   slice init <slices.json>          install the slice ledger
   slice set <id> --status S [--commit SHA] [--actual-loc N] [--note S]
   slice list [--status a,b]         with filter: prints matches, exit 0 ONLY when none match
@@ -60,6 +62,7 @@ case "$sub" in
     ;;
   link-pr)  orc_state_link_pr "$@" ;;
   checkpoint) orc_state_checkpoint_auto "$@" ;;
+  usage)    orc_state_usage "$@" ;;
   digest)
     verb="${1:-}"; shift || true
     [ "$verb" = "write" ] || { echo "orc-state digest: only 'write' is supported" >&2; exit 2; }

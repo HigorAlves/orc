@@ -69,6 +69,7 @@ Digest bullets, fixed order:
 | `jira-breakdown.json` | `/orc:jira-breakdown` on agent return | creation preview |
 | `slices/slice-NN.diff` + `slice-NN-report.md` | `/orc:flow` Phase 5 parallel collection | apply/commit step |
 | `qa-verdict.json` | `/orc:qa` Phase 5 | ship gate |
+| `usage.jsonl` | the orc mod on each finished orc subagent run (`orc-state usage add`) | none — read by the cockpit's Agents tab and routing re-tunes (`orc-state usage summary`) |
 | `files/qa/qa-manifest.json` | the browser driver, on QA completion | verdict + evidence-publish |
 
 Each carries `headSha` + `generatedAt`. Re-entry with matching HEAD → reuse without re-dispatch; mismatch → offer reuse vs re-dispatch.

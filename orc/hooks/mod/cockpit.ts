@@ -11,10 +11,22 @@ export type Session = {
   phaseLabel?: string | null
   totalPhases: number
   jiraTicket?: string | null
+  linkedPRs?: { url?: string; number?: number; repo?: string }[]
 }
 export type Slice = { id: string; status: string; title: string; commit: string | null }
 export type Decision = { key: string; value: string; provenance: string }
-export type Snapshot = { session: Session | null; slices: Slice[]; decisions: Decision[] }
+export type Criterion = { criterion: string; result: string; note: string; sliceId: number | string }
+export type QaReport = { verdict: string; acceptance: Criterion[]; missing: string[] }
+export type AgentUsage = { agent: string; runs: number; in: number; out: number; ms: number }
+export type Size = { loc: number; budget: number }
+export type Snapshot = {
+  session: Session | null
+  slices: Slice[]
+  decisions: Decision[]
+  qa?: QaReport | null
+  size?: Size | null
+  usage?: AgentUsage[]
+}
 
 export const POLICIES = ['manual', 'guided', 'auto'] as const
 export const EMPTY: Snapshot = { session: null, slices: [], decisions: [] }
@@ -75,3 +87,43 @@ export const sliceLine = (s: Slice) => `#${s.id} ${s.status.padEnd(9)} ${s.title
 export function summaryText(snap: Snapshot): string {
   return [headline(snap), ...snap.slices.map(sliceLine)].join('\n')
 }
+
+// --- QA / PR / Agents tabs ---------------------------------------------------
+
+export function parseReport(json: string): QaReport | null {
+  try {
+    const r = JSON.parse(json)
+    return Array.isArray(r.acceptance) ? { verdict: String(r.verdict ?? ''), acceptance: r.acceptance, missing: r.missing ?? [] } : null
+  } catch {
+    return null
+  }
+}
+
+const MARK: Record<string, string> = { pass: '✓', fail: '✗', skipped: '–' }
+export const criterionLine = (c: Criterion) =>
+  `${MARK[c.result] ?? '?'} ${c.criterion}  (slice ${c.sliceId})${c.note ? ' — ' + c.note : ''}`
+
+export function parseSize(loc: string, budget: string): Size | null {
+  const l = Number(loc.trim()), b = Number(budget.trim())
+  return Number.isFinite(l) && Number.isFinite(b) && b > 0 && loc.trim() !== '' ? { loc: l, budget: b } : null
+}
+
+// A 20-cell bar: filled share of the budget, then the numbers.
+export function sizeLine(s: Size): string {
+  const filled = Math.min(20, Math.round((s.loc / s.budget) * 20))
+  const over = s.loc - s.budget
+  return `${'█'.repeat(filled)}${'░'.repeat(20 - filled)} ${s.loc}/${s.budget} LOC${over > 0 ? ` — over by ${over}` : ''}`
+}
+
+export function parseUsage(json: string): AgentUsage[] {
+  try {
+    const rows = JSON.parse(json)
+    return Array.isArray(rows) ? rows : []
+  } catch {
+    return []
+  }
+}
+
+const k = (n: number) => (n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n))
+export const usageLine = (u: AgentUsage) =>
+  `${u.agent.replace(/^orc:/, '').padEnd(24)} ${String(u.runs).padStart(3)} run${u.runs === 1 ? ' ' : 's'}  ${k(u.in)} in / ${k(u.out)} out  ${Math.round(u.ms / 1000)}s`

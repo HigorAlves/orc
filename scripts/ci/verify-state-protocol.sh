@@ -229,6 +229,21 @@ if grep -q 'trigger: auto' "$ckpt"; then ok; else fail "pre-compact hook: main-s
 out="$(cd "$tmp" && printf '{}' | ORC_STATE_DIR="$tmp/none" CLAUDE_PLUGIN_ROOT="$repo_root/orc" bash "$hook" 2>&1; echo "rc=$?")"
 if [ "$out" = "rc=0" ]; then ok; else fail "pre-compact hook: no session must exit 0 silently, got: $out"; fi
 
+# --- usage ledger: per-agent token/time rows, summarized per agent type ----
+export ORC_STATE_DIR="$tmp/.orc-usage"
+run init --command flow --total-phases 9 --branch feat/x >/dev/null
+run usage add --agent orc-implementer --model sonnet --in 1000 --out 200 --ms 5000 --branch feat/x
+run usage add --agent orc-implementer --model sonnet --in 500 --out 100 --ms 2000 --branch feat/x
+run usage add --agent orc-pr-reviewer --model opus --in 3000 --out 400 --ms 9000 --branch feat/x
+ledger="$ORC_STATE_DIR/feat-x/files/usage.jsonl"
+if [ "$(wc -l < "$ledger" | tr -d ' ')" = "3" ]; then ok; else fail "usage add: one JSON line per call"; fi
+if jq -e -s '.[0] | .agent == "orc-implementer" and .in == 1000 and (.at | test("^\\d{4}-"))' "$ledger" >/dev/null; then ok; else fail "usage add: row shape"; fi
+summary="$(run usage summary --branch feat/x)"
+if printf '%s' "$summary" | jq -e '.[] | select(.agent == "orc-implementer") | .runs == 2 and .in == 1500 and .out == 300 and .ms == 7000' >/dev/null; then ok; else fail "usage summary: per-agent totals, got $summary"; fi
+if printf '%s' "$summary" | jq -e '.[0].agent == "orc-pr-reviewer"' >/dev/null; then ok; else fail "usage summary: costliest (input+output) first"; fi
+if run usage add --agent x --in nope --branch feat/x >/dev/null 2>&1; then fail "usage add: non-numeric tokens must be rejected"; else ok; fi
+if [ "$(run usage summary --branch feat/none 2>/dev/null || echo '[]')" = "[]" ]; then ok; else fail "usage summary: no session -> []"; fi
+
 if [ "$status" -eq 0 ]; then
   echo "verify-state-protocol: OK ($pass_count cases)"
 fi

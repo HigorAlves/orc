@@ -9,7 +9,7 @@ Every orc gate is ONE `AskUserQuestion` call shaped by these rules. The gate cla
 
 ## 1. Header chip = gate class
 
-The `header` chip (≤12 chars) tells the user what kind of decision this is. Hard-outward and escalation gates use a **closed vocabulary**, so the class is readable at a glance (and machine-readable for future UI):
+The `header` chip (≤12 chars) tells the user what kind of decision this is. Hard-outward and escalation gates use a **closed vocabulary**, so the class is readable at a glance — and the orc mod reads it to draw a gate badge above the dialog:
 
 | Class | Chips | Rule |
 |---|---|---|
