@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QA Evidence Report</title>
+<style>
+  :root { --bg:#fbfaf8; --fg:#1d1d1b; --muted:#6b6862; --line:#e6e3dd; --card:#ffffff;
+          --pass:#1f7a4d; --fail:#b3261e; --skip:#8a6d1a; --chip:#f1efea; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+          --bg:#151514; --fg:#ecebe8; --muted:#a29f98; --line:#2c2b29; --card:#1d1c1b;
+          --pass:#5cc98f; --fail:#f2857c; --skip:#e0c46c; --chip:#262523; } }
+  :root[data-theme="dark"] { --bg:#151514; --fg:#ecebe8; --muted:#a29f98; --line:#2c2b29; --card:#1d1c1b;
+          --pass:#5cc98f; --fail:#f2857c; --skip:#e0c46c; --chip:#262523; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 ui-sans-serif, system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; } h2 { font-size: 16px; margin: 28px 0 10px; }
+  .meta { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+  .badge { display:inline-block; padding: 2px 10px; border-radius: 999px; font-weight: 600; font-size: 13px; background: var(--chip); }
+  .pass { color: var(--pass); } .fail, .partial { color: var(--fail); } .skipped { color: var(--skip); }
+  .row { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .row header { display:flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .note { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .shots { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 10px; }
+  .shots img, .shots video { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--chip); }
+  .missing { color: var(--fail); font-size: 13px; }
+  code { background: var(--chip); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script id="orc-report-data" type="application/json">
+__ORC_REPORT_DATA__
+</script>
+<script>
+(function () {
+  var r = JSON.parse(document.getElementById('orc-report-data').textContent);
+  var app = document.getElementById('app');
+  var missing = new Set(r.missing || []);
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function media(file) {
+    var src = file.split('#')[0];
+    if (missing.has(file)) return el('div', 'missing', 'missing: ' + file);
+    if (/\.(png|jpe?g|gif|webp)$/i.test(src)) { var i = el('img'); i.src = src; i.alt = file; i.loading = 'lazy'; return i; }
+    if (/\.(webm|mp4)$/i.test(src)) { var v = el('video'); v.src = src; v.controls = true; v.preload = 'metadata'; return v; }
+    var a = el('a', null, file); a.href = src; return a;
+  }
+  app.appendChild(el('h1', null, 'QA evidence — ' + (r.branch || 'unknown branch')));
+  var meta = el('p', 'meta');
+  var badge = el('span', 'badge ' + (r.verdict || ''), (r.verdict || 'no verdict').toUpperCase());
+  meta.appendChild(badge);
+  meta.appendChild(document.createTextNode('  ' + [r.driver && ('driver ' + r.driver), r.head && ('HEAD ' + r.head),
+    r.jiraTicket, r.generatedAt && ('generated ' + r.generatedAt)].filter(Boolean).join(' · ')));
+  app.appendChild(meta);
+  if (r.summary) app.appendChild(el('p', null, r.summary));
+
+  if ((r.checks || []).length) {
+    app.appendChild(el('h2', null, 'Checks'));
+    r.checks.forEach(function (c) {
+      var row = el('div', 'row'), h = el('header');
+      h.appendChild(el('span', 'badge ' + c.result, c.result)); h.appendChild(el('strong', null, c.id));
+      if (c.evidence) h.appendChild(el('span', 'meta', String(c.evidence)));
+      row.appendChild(h); app.appendChild(row);
+    });
+  }
+
+  app.appendChild(el('h2', null, 'Acceptance criteria (' + (r.acceptance || []).length + ')'));
+  (r.acceptance || []).forEach(function (a) {
+    var row = el('div', 'row'), h = el('header');
+    h.appendChild(el('span', 'badge ' + a.result, a.result));
+    h.appendChild(el('strong', null, a.criterion));
+    h.appendChild(el('span', 'meta', 'slice ' + a.sliceId + ' · ' + a.id));
+    row.appendChild(h);
+    if (a.note) row.appendChild(el('div', 'note', a.note));
+    if ((a.evidence || []).length) { var s = el('div', 'shots'); a.evidence.forEach(function (f) { s.appendChild(media(f)); }); row.appendChild(s); }
+    app.appendChild(row);
+  });
+
+  var rest = (r.artifacts || []).filter(function (x) { return x.kind !== 'file'; });
+  if (rest.length) {
+    app.appendChild(el('h2', null, 'Recording and screenshots'));
+    var g = el('div', 'shots');
+    rest.forEach(function (x) { var f = el('figure'); f.style.margin = '0'; f.appendChild(media(x.file));
+      f.appendChild(el('figcaption', 'meta', x.role || x.file)); g.appendChild(f); });
+    app.appendChild(g);
+  }
+})();
+</script>
+</body>
+</html>

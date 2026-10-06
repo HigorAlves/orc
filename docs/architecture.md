@@ -13,7 +13,7 @@ orc/                               # the plugin
 ├── commands/                      # 30 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
 ├── agents/                        # 14 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) + PostToolUse + PreCompact + WorktreeCreate/Remove
-├── bin/                           # deterministic CLIs, on PATH while enabled (orc-state, orc-statusline, …)
+├── bin/                           # deterministic CLIs, on PATH while enabled (orc-state, orc-report, orc-statusline, …)
 ├── lib/                           # shared bash libraries behind bin/ + hooks (state.sh, statusline.sh, workspace-detect.sh, …)
 └── settings.json                  # plugin-shipped defaults (statusLine; user-level settings always win)
 cli/                               # the orc installer CLI (Go / Bubble Tea)
@@ -74,6 +74,8 @@ Multi-phase commands (`/orc:plan`, `/orc:start`, `/orc:debug`, `/orc:fan-out`, w
         │   ├── snapshot-final.txt
         │   ├── network.har
         │   ├── steps.md
+        │   ├── qa-manifest.json             # machine-readable packet (criteria, curated payload)
+        │   ├── report.html                  # orc-report html — self-contained, publishable as a private Artifact
         │   └── console.log
         └── fan-out/                         # if /orc:fan-out ran
             ├── task-NN-slug/result.md
