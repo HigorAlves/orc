@@ -67,6 +67,12 @@ Multi-phase commands pause at gates, and gates are classified: **hard-outward** 
 | Gate badges | `ui.render` AskUserQuestion | outward (`Publish`/`Post`/`Tracker`) and `Escalation` header chips (`orc:gates`) get a badge above the engine's own dialog |
 | CI watcher | `$.clock.every` + `$.store` lease | interactive sessions poll linked PRs' checks (one poller per PR across sessions); red/green → status line, toast, optional chime (`alerts_sound`), a dim `/orc:ci <n>` suggestion, and a red-CI band above the prompt with Diagnose / Dismiss. It never pushes, posts, or starts a turn. |
 
+The `/orc` cockpit, docked beside the transcript (Claude Code 2.1.291, 132 columns):
+
+![orc cockpit — overview](images/orc-cockpit-overview.png)
+
+![orc cockpit — PR, Decisions, Digest and Diff sections open](images/orc-cockpit-sections.png)
+
 `/orc:status` remains the full markdown report. Tests: `claude plugin test orc` (`hooks/mod/tests/*.test.ts`, headless). `claude plugin validate ./orc` lists the events it hooks and every API call it makes.
 
 **Model routing.** Agent frontmatter is the `balanced` default and stays put until the usage ledger and the eval suite justify a change; the `quality`/`economy` profiles carry the current hypotheses (investigator → Fable, code-fixer Haiku → Sonnet, …) so they can be measured per repo before they become defaults.
