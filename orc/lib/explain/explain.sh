@@ -43,6 +43,7 @@ orc_ex_narrate() { # --segments S --work W
   local s="" w=""
   while [ $# -gt 0 ]; do case "$1" in --segments) s="$2"; shift 2 ;; --work) w="$2"; shift 2 ;; *) return 2 ;; esac; done
   local home; home="$(orc_ex__home)"
+  export ORC_EXPLAIN_VOICE="${ORC_EXPLAIN_VOICE:-${CLAUDE_PLUGIN_OPTION_EXPLAINER_VOICE:-af_heart}}"
   [ -d "$home/node_modules/kokoro-js" ] || { echo "orc-explain: kokoro-js not installed — run: orc-explain setup" >&2; return 3; }
   node "$home/narrate.mjs" "$s" "$w/narration"
 }
@@ -58,11 +59,17 @@ orc_ex__animate_root() {
 orc_ex_graphics() { # --segments S --work W
   local s="" w=""
   while [ $# -gt 0 ]; do case "$1" in --segments) s="$2"; shift 2 ;; --work) w="$2"; shift 2 ;; *) return 2 ;; esac; done
+  local style; style="$(jq -r '.style // empty' "$s")"; style="${style:-${CLAUDE_PLUGIN_OPTION_EXPLAINER_STYLE:-isometric}}"
   local root; root="$(orc_ex__animate_root || true)"
   [ -n "$root" ] || { echo "orc-explain: animate not installed — fallback cards will be used for graphic segments"; return 0; }
   mkdir -p "$w/graphics"
   local pieces line id dir out
-  pieces="$(node "$(orc_ex__home)/animate-piece.mjs" "$s" "$w" "$root")" || return 1
+  if [ "${ORC_ANIMATE_RENDER:-0}" = "1" ] && [ -d "$w/pieces" ]; then
+    # render pass: reuse the authored pieces — animate-piece.mjs re-copies the example and would wipe src/scenes.js
+    pieces="$(jq -c --arg w "$w" '.segments[] | select(.kind == "graphic") | {id, pieceDir: "\($w)/pieces/\(.id)"}' "$s")"
+  else
+    pieces="$(node "$(orc_ex__home)/animate-piece.mjs" "$s" "$w" "$root" "$style")" || return 1
+  fi
   if [ "${ORC_ANIMATE_RENDER:-0}" != "1" ]; then
     echo "orc-explain: animate pieces written to $w/pieces (scenes need authoring; set ORC_ANIMATE_RENDER=1 to render) — fallback cards will be used"
     return 0

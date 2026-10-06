@@ -17,6 +17,8 @@ If verification flags untested branches, dispatch `orc-test-author` to fill them
 
 **No gate on a clean pass.** The verdict is computed from the evidence packet, not vibes — when the verdict is `pass` AND the packet is complete, print the verdict line + artifact list and advance to Phase 7. **Completeness is driver-shaped, read from the packet's `qa-manifest.json`** — every file its `artifacts` names exists on disk, and every `acceptance` row is `pass` or a `skipped` carrying a reason. (a playwright packet has a stitched video + traces, no PNGs) (Do not check for screenshots and a HAR by name: a chrome-driver packet has neither, and hard-coding Driver A's shape here made a clean chrome pass unreachable.) Code mode is unchanged: suite + lint + type-check green.
 
+**Explainer (opt-in, soft-inward, header `Explainer`).** After a clean web-mode pass print `➡️ Explainer available` and `AskUserQuestion`: **Skip (Recommended)** · **Build now** (invoke `orc:explainer` on the packet, then continue to Phase 7) · **Later** (note `/orc:explain` in the digest). `--explainer` pre-answers Build now; `guided`/`full` pick Skip unless `--explainer`.
+
 Gate only on anomaly (verdict `partial`/`fail`, incomplete evidence, or web QA about to be skipped):
 
 ```

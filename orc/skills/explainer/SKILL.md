@@ -27,6 +27,13 @@ Sources, in order: the plan's slice titles + acceptance (what was built), the ma
 preview = `segments.json` rendered as `id · kind · caption/title · narration`. Options: **Render (Recommended)** · **Edit script** (apply the user's wording changes, re-show) · **Cancel**.
 
 ## 5. Render
-`orc-explain narrate --segments S --work <qa-dir>/explain` → `orc-explain graphics …` → `orc-explain assemble --segments S --work <qa-dir>/explain --qa-dir <qa-dir> --out <qa-dir>/explainer-<branch>.mp4`. Then add to `qa-manifest.json`: `explainer: { file: "explainer-<branch>.mp4", segments: "explain/segments.json" }`, append the file to `artifacts[]` (role `explainer`) and `curated[]`; append `## Explainer — <ISO>` to `steps.md` (segments, duration, style, voice, animate used yes/no). Delivery is `orc:evidence-publish`'s job (same gates; the PR comment links it as `EXPLAINER_URL`).
+Authoring and rendering are render work, not a new gate: the Explainer gate above (script + segments + style) already covered them.
+
+1. `orc-explain narrate --segments S --work <qa-dir>/explain`.
+2. **Scene authoring** (only when animate is installed; otherwise skip, fallback cards apply). Run `orc-explain graphics --segments S --work <qa-dir>/explain` once to create `<work>/pieces/<id>/` (`piece.json`, `brief.md`, the example's `src/`). Then, for each graphic segment, author `src/scenes.js` (and the `TIMELINE` in `src/head.html`) from that piece's `brief.md`, following animate's `craft.md` and the chosen style's `STYLE.md` + `kit.js` under `<animate skill root>/styles/<style>/`. One card-like scene per piece: the headline, then the lines, 16:9, timed to the narration length (`ffprobe -v error -show_entries format=duration -of csv=p=0 <work>/narration/<id>.wav`).
+3. `ORC_ANIMATE_RENDER=1 orc-explain graphics --segments S --work <qa-dir>/explain` (render pass reuses the authored pieces, never regenerates them).
+4. `orc-explain assemble --segments S --work <qa-dir>/explain --qa-dir <qa-dir> --out <qa-dir>/explainer-<branch>.mp4`.
+
+Then add to `qa-manifest.json`: `explainer: { file: "explainer-<branch>.mp4", segments: "explain/segments.json" }`, append the file to `artifacts[]` (role `explainer`) and `curated[]`; append `## Explainer — <ISO>` to `steps.md` (segments, duration, style, voice, animate used yes/no). Delivery is `orc:evidence-publish`'s job (same gates; the PR comment links it as `EXPLAINER_URL`).
 
 `graphics` writes an animate piece per graphic segment under `<work>/pieces/` and uses fallback cards unless the scenes were authored and `ORC_ANIMATE_RENDER=1` (see `animate.lock` notes: animate pieces are hand-authored canvas scenes, not data-driven).

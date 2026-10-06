@@ -1,6 +1,6 @@
 ---
 description: End-to-end feature/bug/refactor pipeline (plan → start → implement → QA → ship → address → cleanup) with an interactive gate at every phase. Resumable via /orc:resume. --jira <KEY> links a ticket. Workspace-aware.
-argument-hint: "[--auto[=guided|full]] [--type=feature|bug|refactor|docs] [--rfc] [--verbose] [--pause-at-implement] [--jira <KEY>] [--max-loc <N>] [--no-size-gate] [--driver playwright|agent-browser|chrome] [--target <name>] [--repos a,b | --repo a | --all-repos | --this-repo] <one-line task description>"
+argument-hint: "[--auto[=guided|full]] [--type=feature|bug|refactor|docs] [--rfc] [--verbose] [--pause-at-implement] [--jira <KEY>] [--max-loc <N>] [--no-size-gate] [--driver playwright|agent-browser|chrome] [--target <name>] [--explainer] [--repos a,b | --repo a | --all-repos | --this-repo] <one-line task description>"
 allowed-tools:
   - Bash(orc-state:*)
   - Bash(orc-report:*)
@@ -48,6 +48,7 @@ Interactivity follows the gate taxonomy (`orc:using-orc`) and the resolved `inte
 - `--verbose` — pass through to `/orc:ship` (long-form PR body; terse `orc:caveman-pr` is the default).
 - `--driver playwright|agent-browser|chrome` — pre-answers Phase 6's browser-driver gate.
 - `--target <name>` — pre-answers Phase 6's Target gate (`orc:qa-targets`); recorded as a `target` decision.
+- `--explainer` — pre-answers Phase 6's post-QA explainer gate with "build now".
 - `--pause-at-implement` — Phase 5 pauses for the human to write the code (keeps Phase 4's red-confirm gate).
 - `--jira <KEY>` — link a Jira ticket silently (validate `^[A-Z][A-Z0-9_]*-\d+$`); lands as `Resolves <KEY>` in the PR body.
 - `--max-loc <N>` / `--no-size-gate` — pass-through to `/orc:ship`'s Phase 4.5 size gate (single owner; flow never pre-flights it).
