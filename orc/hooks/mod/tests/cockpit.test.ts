@@ -130,3 +130,22 @@ test('sections start collapsed, mark attention, and toggle', async ($, on) => {
   expect(await ui.find({ type: 'Text', text: /orc-implementer\s+3 runs\s+52\.0k in \/ 9\.1k out\s+184s/ })).toBeDefined()
   await ui.unmount()
 })
+
+test('the Decisions selects settle policy and profile through orc-state as asked decisions', async ($, on) => {
+  const calls: string[][] = []
+  on('process.run', orcState(calls))
+  surfaces(on, ['desktop'])
+  await $.command.run(RUN)
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'sec-decisions' })
+  await ui.select({ key: 'policy', value: 'auto' })
+  const policy = calls.find(a => a[1] === 'decision' && a[2] === 'set')
+  expect(policy?.slice(1)).toEqual(['decision', 'set', 'autopilotLevel', 'auto', '--provenance', 'asked', '--supersede'])
+  await ui.select({ key: 'profile', value: 'economy' })
+  const profile = calls.filter(a => a[1] === 'decision' && a[2] === 'set').at(-1)
+  expect(profile?.slice(3)).toEqual(['modelProfile', 'economy', '--provenance', 'asked', '--supersede'])
+  const before = calls.length
+  await ui.select({ key: 'policy', value: 'guided' }) // already current (DECISIONS fixture says guided)
+  expect(calls.length).toBe(before)
+  await ui.unmount()
+})

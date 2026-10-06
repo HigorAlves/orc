@@ -92,7 +92,8 @@ const agentTypes = new Map<string, string>()
 
 function register_agents(on: On, profile: Profile) {
   on('agent.spawn', async ($, e, next) => {
-    const model = e.model ? undefined : modelFor(profile, e.subagentType)
+    const snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
+    const model = e.model ? undefined : modelFor(profileOf(snap, profile), e.subagentType)
     const result = await next(model ? { ...e, model } : e)
     if (result.agentId && /^(orc:)?orc-/.test(e.subagentType)) agentTypes.set(result.agentId, e.subagentType.replace(/^orc:/, ''))
     return result
@@ -214,6 +215,11 @@ function register_cockpit(on: On, fallbackProfile: Profile) {
       toggle: (id: SectionId) => async () => {
         const current = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
         await $.state.set(SECTIONS_REF, { ...current, [id]: !current[id] })
+      },
+      // The user picked it in the pane, so it settles as an asked decision.
+      settle: async (key: string, value: string) => {
+        await orc_state($, ['decision', 'set', key, value, '--provenance', 'asked', '--supersede'])
+        await refresh($).catch(() => undefined)
       },
       renderReport: async () => {
         const path = await orc_report_html($)

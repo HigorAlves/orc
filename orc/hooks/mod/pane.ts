@@ -3,7 +3,7 @@
 // hands this module the element table, the data and the actions.
 import type { EngineInterface } from 'claude-code'
 import type { OrcSections } from '../../types'
-import { attention, criterionLine, headerCells, isDone, layoutFor, phaseRows, sectionLabel, sizeLine, sliceLine, usageLine, type SectionId, type Snapshot } from './cockpit'
+import { POLICIES, attention, criterionLine, headerCells, isDone, layoutFor, phaseRows, policyOf, sectionLabel, sizeLine, sliceLine, usageLine, type SectionId, type Snapshot } from './cockpit'
 import type { Profile } from './profiles'
 import type { CiAlert } from './state'
 
@@ -18,10 +18,14 @@ export type PaneModel = {
   sections: OrcSections
   ciAlert: CiAlert
 }
-export type PaneActions = { resume: () => void; toggle: (id: SectionId) => () => void; renderReport: () => void }
+export type PaneActions = { resume: () => void; toggle: (id: SectionId) => () => void; renderReport: () => void; settle: (key: string, value: string) => void }
+
+const PROFILES = ['balanced', 'quality', 'economy'] as const
 
 export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
   const { Box, Text, Button, Link } = els
+  // The mobile app draws no Select yet; the section then shows the decisions as text only.
+  const Select = 'Select' in els ? els.Select : null
   const { snap } = model
   const s = snap.session
   const line = (text: string, style: { bold?: boolean; dimColor?: boolean; color?: string } = {}) => Text({ ...style, children: [text] })
@@ -71,9 +75,14 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
     ? [line('agent                     runs   tokens            time', { dimColor: true }), ...snap.usage.map(u => line(usageLine(u)))]
     : [line('No subagent runs recorded yet.', { dimColor: true })])
 
-  const decisions = section('decisions', 'd', () => snap.decisions.length
-    ? snap.decisions.map(d => line(`${d.key} = ${d.value}  (${d.provenance})`))
-    : [line('No settled decisions yet.', { dimColor: true })])
+  const policy = policyOf(snap) ?? 'manual'
+  const decisions = section('decisions', 'd', () => [
+    ...(Select ? [Select({ key: 'policy', label: 'Autopilot', options: POLICIES.map(p => ({ value: p })), value: policy,
+      onSelect: (v: string) => { if (v !== policy) actions.settle('autopilotLevel', v) } })] : []),
+    ...(Select ? [Select({ key: 'profile', label: 'Model profile', options: PROFILES.map(p => ({ value: p })), value: model.profile,
+      onSelect: (v: string) => { if (v !== model.profile) actions.settle('modelProfile', v) } })] : []),
+    ...snap.decisions.map(d => line(`${d.key} = ${d.value}  (${d.provenance})`, { dimColor: true })),
+  ])
 
   const footer = Box({ flexDirection: 'row', columnGap: 2, children: [
     Button({ key: 'resume', variant: 'primary', label: s ? 'Resume (/orc:resume)' : 'New flow (/orc:flow)', hotkey: 'r', onPress: actions.resume }),
