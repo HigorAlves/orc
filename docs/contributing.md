@@ -106,8 +106,11 @@ claude --plugin-dir /Users/higoralves/Developer/system/orc
 
 ```bash
 cd orc && claude plugin eval . --case route-debug --runs 1 --ablation none   # one case, one run
-claude plugin eval . --ablation none --runs 2 --threshold 0.8                  # the suite
+claude plugin eval . --ablation none --runs 2 --threshold 0.8 \
+  --scaffold --allow-tools Bash Write Edit                                     # the suite
 ```
+
+Guardrail/state cases (`commit-no-attribution`, `branch-first-on-main`, `plan-registers-state`) build a git fixture via `scaffold.sh` and need the Bash grant. Bash-granting runs refuse to start on a machine whose `~/.docker` credential store contains a symlink — run those in CI (or fix the store layout).
 
 A routing case that drops to 0 after a description change means the skill stopped triggering on natural phrasing — fix the `description`, not the grader.
 
