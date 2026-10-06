@@ -441,6 +441,41 @@ $(jq -r '"- Slices: \([.slices[] | select(.status == "committed" or .status == "
   rmdir "$lock" 2>/dev/null || true
 }
 
+# Per-agent usage ledger (files/usage.jsonl, one JSON row per finished subagent
+# run) — written by the orc mod on turn.complete, summarized for the cockpit's
+# Agents tab and for evidence-based model routing (orc:using-orc Wave D).
+orc_state_usage() { # add --agent A [--model M] [--in N] [--out N] [--ms N] | summary   [--branch B]
+  local verb="${1:-}" branch="" agent="" model="" tin=0 tout=0 ms=0 sid f
+  shift || true
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --agent)  agent="${2:-}"; shift 2 ;;
+      --model)  model="${2:-}"; shift 2 ;;
+      --in)     tin="${2:-}"; shift 2 ;;
+      --out)    tout="${2:-}"; shift 2 ;;
+      --ms)     ms="${2:-}"; shift 2 ;;
+      --branch) branch="${2:-}"; shift 2 ;;
+      *) echo "orc-state usage: unknown arg $1" >&2; return 2 ;;
+    esac
+  done
+  sid="$(orc_state__sid "$branch")" || return 1
+  f="$(orc_state__dir)/$sid/files/usage.jsonl"
+  case "$verb" in
+    add)
+      [ -n "$agent" ] || { echo "orc-state usage add: --agent is required" >&2; return 2; }
+      case "$tin$tout$ms" in *[!0-9]*) echo "orc-state usage add: --in/--out/--ms must be integers" >&2; return 2 ;; esac
+      orc_state__entry "$sid" >/dev/null || return 1
+      mkdir -p "$(dirname "$f")"
+      jq -cn --arg a "$agent" --arg m "$model" --argjson i "$tin" --argjson o "$tout" --argjson t "$ms" --arg at "$(orc_state__now)" \
+        '{at: $at, agent: $a, model: (if $m == "" then null else $m end), in: $i, out: $o, ms: $t}' >> "$f" ;;
+    summary)
+      [ -f "$f" ] || { echo '[]'; return 0; }
+      jq -cs 'group_by(.agent) | map({agent: .[0].agent, runs: length, in: (map(.in) | add), out: (map(.out) | add), ms: (map(.ms) | add)})
+              | sort_by(-(.in + .out))' "$f" ;;
+    *) echo "orc-state usage: add | summary" >&2; return 2 ;;
+  esac
+}
+
 orc_state_slice_init() { # <slices.json path> [--branch B]
   local src="" branch=""
   while [ $# -gt 0 ]; do
