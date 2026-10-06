@@ -198,6 +198,37 @@ for v in $used_verbs; do
   fi
 done
 
+# --- checkpoint --auto: mechanical section; Resume digest untouched ---------
+export ORC_STATE_DIR="$tmp/.orc-ck"
+ckpt="$ORC_STATE_DIR/feat-x/files/checkpoint.md"
+run init --command flow --total-phases 9 --branch feat/x >/dev/null
+printf -- '- Done: phase 4\n- Next: phase 5\n' | run digest write - --branch feat/x >/dev/null
+ck_repo="$tmp/ck-repo"
+git init -q -b feat/x "$ck_repo"
+git -C "$ck_repo" -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -q --allow-empty -m "base commit"
+printf 'x\n' > "$ck_repo/dirty.txt"
+digest_of() { awk '/^## Resume digest$/{f=1; next} /^## /{f=0} f' "$ckpt"; }
+digest_before="$(digest_of)"
+(cd "$ck_repo" && run checkpoint --auto --trigger auto --branch feat/x >/dev/null)
+if grep -q '^## Auto-checkpoint$' "$ckpt"; then ok; else fail "checkpoint --auto: section missing"; fi
+if grep -q 'base commit' "$ckpt"; then ok; else fail "checkpoint --auto: HEAD subject missing"; fi
+if grep -q 'dirty.txt' "$ckpt"; then ok; else fail "checkpoint --auto: dirty paths missing"; fi
+if grep -q 'trigger: auto' "$ckpt"; then ok; else fail "checkpoint --auto: trigger missing"; fi
+(cd "$ck_repo" && run checkpoint --auto --trigger manual --branch feat/x >/dev/null)
+if [ "$(grep -c '^## Auto-checkpoint$' "$ckpt")" = "1" ]; then ok; else fail "checkpoint --auto: section must be replaced, not appended"; fi
+if [ "$(digest_of)" = "$digest_before" ]; then ok; else fail "checkpoint --auto: Resume digest must be untouched"; fi
+if grep -q '^schema: 1$' "$ckpt"; then ok; else fail "checkpoint --auto: frontmatter mirror lost"; fi
+
+# PreCompact hook: subagent compactions are a no-op; no session exits 0 silently
+hook="$repo_root/orc/hooks/scripts/pre-compact-checkpoint.sh"
+before="$(cat "$ckpt")"
+(cd "$ck_repo" && printf '{"trigger":"auto","agent_id":"a1"}' | CLAUDE_PLUGIN_ROOT="$repo_root/orc" bash "$hook")
+if [ "$(cat "$ckpt")" = "$before" ]; then ok; else fail "pre-compact hook: subagent compaction must not checkpoint"; fi
+(cd "$ck_repo" && printf '{"trigger":"auto"}' | CLAUDE_PLUGIN_ROOT="$repo_root/orc" bash "$hook")
+if grep -q 'trigger: auto' "$ckpt"; then ok; else fail "pre-compact hook: main-session compaction must checkpoint"; fi
+out="$(cd "$tmp" && printf '{}' | ORC_STATE_DIR="$tmp/none" CLAUDE_PLUGIN_ROOT="$repo_root/orc" bash "$hook" 2>&1; echo "rc=$?")"
+if [ "$out" = "rc=0" ]; then ok; else fail "pre-compact hook: no session must exit 0 silently, got: $out"; fi
+
 if [ "$status" -eq 0 ]; then
   echo "verify-state-protocol: OK ($pass_count cases)"
 fi

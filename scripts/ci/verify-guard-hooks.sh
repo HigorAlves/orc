@@ -34,7 +34,7 @@ trap 'rm -rf "$tmp"' EXIT
 make_repo() { # $1 = branch name
   local d="$tmp/repo-$1"
   git init -q -b "$1" "$d"
-  git -C "$d" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init
+  git -C "$d" -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -q --allow-empty -m init
   echo "$d"
 }
 main_repo="$(make_repo main)"
@@ -144,6 +144,33 @@ done
 # OVERRIDE: explicit opt-in disables the gate
 out="$(payload 'git reset --hard HEAD~1' | ORC_ALLOW_DESTRUCTIVE_GIT=1 bash "$destructive_check")"
 if [ -z "$out" ]; then ok; else fail "destructive: ORC_ALLOW_DESTRUCTIVE_GIT=1 must be silent"; fi
+
+# BLAST RADIUS: the ask reason says what would be lost, measured in the cwd
+reason_in() { # $1 = repo dir, $2 = command
+  (cd "$1" && payload "$2" | env -u ORC_ALLOW_DESTRUCTIVE_GIT bash "$destructive_check") \
+    | jq -r '.hookSpecificOutput.permissionDecisionReason // empty'
+}
+expect_reason() { # $1 = case, $2 = repo dir, $3 = command, $4 = substring
+  r="$(reason_in "$2" "$3")"
+  if printf '%s' "$r" | grep -qF -- "$4"; then ok; else fail "blast radius: $1 — want '$4' in: $r"; fi
+}
+blast="$tmp/blast"
+git init -q -b main "$blast"
+gitb() { git -C "$blast" -c user.email=t@t -c user.name=t -c commit.gpgsign=false "$@"; }
+printf 'a\n' > "$blast/a.txt"; printf 'b\n' > "$blast/b.txt"
+gitb add a.txt b.txt; gitb commit -q -m base
+expect_reason "clean tree" "$blast" 'git reset --hard' 'Nothing uncommitted'
+printf 'a2\n' > "$blast/a.txt"; printf 'b2\n' > "$blast/b.txt"
+expect_reason "dirty count" "$blast" 'git reset --hard' '2 uncommitted change(s)'
+expect_reason "dirty path" "$blast" 'git reset --hard' 'a.txt'
+printf 'junk\n' > "$blast/junk.log"
+expect_reason "clean targets" "$blast" 'git clean -fd' 'junk.log'
+gitb stash -q -u
+gitb switch -q -c doomed; printf 'c\n' > "$blast/c.txt"; gitb add c.txt; gitb commit -q -m only-here; gitb switch -q main
+expect_reason "unmerged commits" "$blast" 'git branch -D doomed' '1 commit(s) only on doomed'
+expect_reason "measured dir named" "$blast" 'git reset --hard' "measured in $blast"
+expect_reason "not a repo" "$tmp" 'git reset --hard' 'not a git work tree'
+expect_reason "retargeted command" "$blast" 'cd sub && git clean -fd' 'may target another directory'
 
 # --- pre-git-guard.sh (dispatcher) ----------------------------------------
 # One Bash command must produce AT MOST ONE permission prompt, even when it

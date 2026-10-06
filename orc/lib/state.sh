@@ -106,11 +106,11 @@ EOF
 
 # Regenerate checkpoint.md: frontmatter from the registry entry (the mirror),
 # body preserved (or the default skeleton on first write).
-orc_state__write_checkpoint() { # $1 = sid
+orc_state__write_checkpoint() { # $1 = sid [$2 = replacement body]
   local sid="$1" f body fm
   f="$(orc_state__checkpoint_path "$sid")"
   mkdir -p "$(dirname "$f")"
-  body="$(orc_state__checkpoint_body "$sid")"
+  body="${2:-$(orc_state__checkpoint_body "$sid")}"
   [ -n "$body" ] || body="$(orc_state__default_body)"
   fm="$(orc_state__entry "$sid" | jq -r '
     ["---",
@@ -384,6 +384,61 @@ orc_state_digest_write() { # - [--branch B]   (digest text on stdin)
     | .[]')"
   { printf '%s\n' "$fm"; cat "$tmp_body"; } > "$f"
   rm -f "$tmp_in" "$tmp_body"
+}
+
+# Mechanical '## Auto-checkpoint' section (phase, slices, HEAD, dirty files) —
+# written by the PreCompact hook so /orc:resume survives compaction. Never
+# touches the agent-written Resume digest; a mkdir lock serializes writers.
+orc_state_checkpoint_auto() { # --auto [--trigger T] [--branch B]
+  local branch="" trigger="auto" auto=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --auto)    auto=1; shift ;;
+      --trigger) trigger="${2:-auto}"; shift 2 ;;
+      --branch)  branch="${2:-}"; shift 2 ;;
+      *) echo "orc-state checkpoint: unknown arg $1" >&2; return 2 ;;
+    esac
+  done
+  [ "$auto" -eq 1 ] || { echo "orc-state checkpoint: only --auto is supported" >&2; return 2; }
+  local sid entry lock i section ledger head dirty n body tmp
+  sid="$(orc_state__sid "$branch")" || return 1
+  entry="$(orc_state__entry "$sid")" || return 1
+  lock="$(dirname "$(orc_state__checkpoint_path "$sid")")/.checkpoint.lock"
+  mkdir -p "$(dirname "$lock")"
+  for i in 1 2 3 4 5 6 7 8 9 10; do mkdir "$lock" 2>/dev/null && break; sleep 0.2; done
+  [ "$i" -lt 10 ] || [ -d "$lock" ] || { echo "orc-state checkpoint: lock busy, skipped" >&2; return 0; }
+  section="$(printf '%s' "$entry" | jq -r --arg t "$trigger" --arg now "$(orc_state__now)" '
+    "- At: \($now) (trigger: \($t))",
+    "- Phase: \(.phase)/\(.totalPhases)" + (if .phaseLabel then " \(.phaseLabel)" else "" end)')"
+  ledger="$(orc_state__slices_path "$sid")"
+  if [ -f "$ledger" ]; then
+    section="$section
+$(jq -r '"- Slices: \([.slices[] | select(.status == "committed" or .status == "skipped")] | length)/\(.slices | length) done; open: \([.slices[] | select(.status != "committed" and .status != "skipped") | .id] | map(tostring) | join(",") | if . == "" then "none" else . end)"' "$ledger")"
+  fi
+  if head="$(git log -1 --format='%h %s' 2>/dev/null)"; then
+    dirty="$(git status --porcelain 2>/dev/null | cut -c4-)"
+    n="$(printf '%s' "$dirty" | grep -c . || true)"
+    section="$section
+- HEAD: $head
+- Dirty: $n file(s)$( [ "$n" -gt 0 ] && printf ': %s' "$(printf '%s\n' "$dirty" | head -5 | paste -sd, - | sed 's/,/, /g')" )"
+  else
+    section="$section
+- HEAD: unknown (not a git work tree)"
+  fi
+  body="$(orc_state__checkpoint_body "$sid")"
+  [ -n "$body" ] || body="$(orc_state__default_body)"
+  tmp="$(mktemp)"
+  printf '%s\n' "$section" > "$tmp"
+  body="$(printf '%s\n' "$body" | awk -v sfile="$tmp" '
+    function emit() { print "## Auto-checkpoint"; while ((getline l < sfile) > 0) print l; close(sfile) }
+    /^## Auto-checkpoint$/ { emit(); done = 1; skipping = 1; next }
+    skipping && /^## / { skipping = 0 }
+    skipping { next }
+    { print }
+    END { if (!done) { print ""; emit() } }')"
+  rm -f "$tmp"
+  orc_state__write_checkpoint "$sid" "$body"
+  rmdir "$lock" 2>/dev/null || true
 }
 
 orc_state_slice_init() { # <slices.json path> [--branch B]

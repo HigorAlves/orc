@@ -43,7 +43,7 @@ Attach `.webm`/`.gif`/`.png` alike — the REST upload path in `references/jira-
 
 ### 3. Preview gate — always ask
 
-Emit the Preview callout, then the payload **outside** it (blockquotes break alignment), then `AskUserQuestion`. No flag bypasses this — the tracker is outward-facing (hard-outward per `orc:using-orc`; `--auto`/`interaction_policy` never skip it).
+Emit the Preview callout, then `AskUserQuestion` (header `Publish`) with the payload as the `preview` of **Upload to `<KEY>`** — never inside the callout (blockquotes break alignment); fence fallback when `AskUserQuestion` is unavailable (`orc:gates` §3). No flag bypasses this — the tracker is outward-facing (hard-outward per `orc:using-orc`; `--auto`/`interaction_policy` never skip it).
 
 ```
 > **📋 Preview — evidence for <KEY>**
