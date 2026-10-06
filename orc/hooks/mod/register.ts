@@ -3,13 +3,20 @@
 // mods can't load (Claude Code < 2.1.287, --safe-mode, disableAllHooks, an
 // org policy) or `mod_enabled` is false, orc behaves exactly as without it.
 import type { EngineInterface, On, PluginOptions } from 'claude-code'
-import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine, summarizeChecks, type CiRecord, type CiSummary } from './ci'
+import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine, summarizeChecks, type CiRecord } from './ci'
 import {
-  EMPTY, POLICIES, criterionLine, headline, isDone, parseDecisions, parseReport, parseSession, parseSize, parseSlices, parseUsage,
-  phaseRows, policyOf, sizeLine, sliceLine, summaryText, usageLine, type Session, type Snapshot,
+  EMPTY, cutDiff, diffSlice, digestOf, hintFor, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, plumbingLine, policyOf, profileOf, spinnerSuffix, summaryText, type SectionId, type Snapshot,
 } from './cockpit'
 import { gateBadge } from './gates'
+import { PANE, drawPane } from './pane'
 import { modelFor, parseProfile, type Profile } from './profiles'
+import { DETAILS_INITIAL, LIVE_INITIAL, SECTIONS_INITIAL, ciBox, isOrcStateWrite } from './state'
+
+// State refs: literals in this file, as the engine's scan requires.
+const SNAPSHOT_REF = { plugin: 'orc', key: 'snapshot' } as const
+const SECTIONS_REF = { plugin: 'orc', key: 'sections' } as const
+const LIVE_REF = { plugin: 'orc', key: 'live' } as const
+const DETAILS_REF = { plugin: 'orc', key: 'details' } as const
 
 let alertsSound = false
 
@@ -20,7 +27,10 @@ export function register(on: On, options: PluginOptions) {
   register_attribution(on)
   register_compaction(on)
   register_agents(on, parseProfile(options.model_profile))
-  register_cockpit(on)
+  register_refresh(on)
+  register_cockpit(on, parseProfile(options.model_profile))
+  register_surfaces(on)
+  register_toolrows(on)
   register_gates(on)
   register_ci_band(on)
 }
@@ -33,6 +43,7 @@ function register_session(on: On) {
     } catch {
       // name taken in this build: the markdown /orc:status stays the fallback
     }
+    void refresh($).catch(() => undefined)
     if (e.isInteractive) $.clock.every(POLL_MS, () => { void ci_tick($) })
     return next(e)
   })
@@ -65,6 +76,20 @@ function register_compaction(on: On) {
   })
 }
 
+// Every orc-state write the model runs through Bash re-reads .orc/ into state;
+// subscribed drawings redraw by themselves. (Main-loop turns refresh in the
+// turn.complete hook below — one registration per event without a matcher.)
+function register_refresh(on: On) {
+  on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
+    const result = await next(e)
+    // 2.1.291 types the Bash call flat (`e.command`); older builds nested it under `input`.
+    const call = e as { command?: string; input?: { command?: string } }
+    const command = call.command ?? call.input?.command ?? ''
+    if (isOrcStateWrite(command)) await refresh($).catch(() => undefined)
+    return result
+  })
+}
+
 // orc agents: model_profile picks the model when the Agent call named none
 // (never over an explicit one — an escalation step-up), and every finished orc
 // subagent run lands in the usage ledger (`orc-state usage add`) — the data the
@@ -72,22 +97,68 @@ function register_compaction(on: On) {
 const agentTypes = new Map<string, string>()
 
 function register_agents(on: On, profile: Profile) {
+  // Both hooks gate the engine (a dispatch, a turn's end): orc's bookkeeping
+  // never fails them, so every state call here is guarded.
   on('agent.spawn', async ($, e, next) => {
-    const model = e.model ? undefined : modelFor(profile, e.subagentType)
+    const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
+    const model = e.model ? undefined : modelFor(profileOf(snap, profile), e.subagentType)
     const result = await next(model ? { ...e, model } : e)
-    if (result.agentId && /^(orc:)?orc-/.test(e.subagentType)) agentTypes.set(result.agentId, e.subagentType.replace(/^orc:/, ''))
+    if (result.agentId && /^(orc:)?orc-/.test(e.subagentType)) {
+      agentTypes.set(result.agentId, e.subagentType.replace(/^orc:/, ''))
+      await $.state.set(LIVE_REF, { agent: e.subagentType.replace(/^orc:/, ''), since: await $.clock.now().catch(() => null) }).catch(() => undefined)
+    }
     return result
   })
 
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)
+    if (!e.agentId) await refresh($).catch(() => undefined)
     const agent = e.agentId ? agentTypes.get(e.agentId) : undefined
-    if (agent && e.usage) {
+    if (agent) {
+      // Cleared on every finish — an abort or API error carries no usage but the agent is gone.
       agentTypes.delete(e.agentId as string)
-      await orc_state($, ['usage', 'add', '--agent', agent, '--model', e.usage.model,
-        '--in', String(e.usage.input_tokens), '--out', String(e.usage.output_tokens), '--ms', String(e.durationMs)])
+      const remaining = [...agentTypes.values()].at(-1) ?? null
+      await $.state.set(LIVE_REF, remaining ? { agent: remaining, since: null } : LIVE_INITIAL).catch(() => undefined)
+      if (e.usage) {
+        await orc_state($, ['usage', 'add', '--agent', agent, '--model', e.usage.model,
+          '--in', String(e.usage.input_tokens), '--out', String(e.usage.output_tokens), '--ms', String(e.durationMs)])
+      }
     }
     return result
+  })
+}
+
+// orc outside the pane: the spinner's suffix, the idle prompt hint and the mode
+// footer. Each is a prop rewrite; the engine keeps drawing its own line.
+function register_surfaces(on: On) {
+  on('ui.render', { component: 'Spinner' }, async ($, e, next) => {
+    const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
+    const live = await $.state.get(LIVE_REF).then(r => r.value ?? LIVE_INITIAL, () => LIVE_INITIAL)
+    const suffix = spinnerSuffix(snap, live.agent)
+    return suffix ? next({ ...e, props: { ...e.props, suffix: e.props.suffix + suffix } }) : next(e)
+  })
+
+  on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
+    if (e.props.isWorking || e.props.isDraft) return next(e)
+    const hint = hintFor(await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY))
+    return hint ? next({ ...e, props: { ...e.props, hint } }) : next(e)
+  })
+
+  on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
+    const policy = policyOf(await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY))
+    return policy && policy !== 'manual' ? next({ ...e, props: { ...e.props, modes: [...e.props.modes, 'orc ' + policy] } }) : next(e)
+  })
+}
+
+// ToolUse rows for orc's own plumbing (orc-state, orc-pr-size, orc-report,
+// gh pr checks) collapse to one dim line; errors and everything else keep the engine row.
+function register_toolrows(on: On) {
+  on('ui.render', { component: 'ToolUse' }, async ($, e, next) => {
+    if (e.props.tool !== 'Bash' || e.props.isErrored || e.props.isInterrupted) return next(e)
+    const text = plumbingLine(e.props.input, e.props.isRunning)
+    if (!text) return next(e)
+    const { Text } = $.ui.resolve(e)
+    return Text({ dimColor: true, children: [text] })
   })
 }
 
@@ -104,7 +175,6 @@ function register_gates(on: On) {
 
 // --- CI watcher (one poller across sessions, via a $.store lease) ----------
 let ciBusy = false
-let ciAlert: { pr: number | string; summary: CiSummary } | null = null
 
 async function ci_tick($: EngineInterface): Promise<void> {
   if (ciBusy) return
@@ -133,12 +203,12 @@ async function ci_tick($: EngineInterface): Promise<void> {
       await $.store.set(key, { lease: { sid, until: now + LEASE_MS }, summary, checkedAt: now, notified: kind ? signature(summary) : fresh.notified })
       $.ui.status(statusLine(label, summary))
       if (kind === 'red') {
-        ciAlert = { pr: label, summary }
+        ciBox.alert = { pr: label, summary }
         $.ui.toast(`CI red on #${label}: ${summary.failing.join(', ')} — /orc:ci to diagnose`)
         await $.prompt.suggest({ text: '/orc:ci ' + label })
         if (alertsSound) await $.audio.play({ asset: 'hooks/mod/chime.wav' })
       } else if (kind === 'green') {
-        ciAlert = null
+        ciBox.alert = null
         $.ui.toast(`CI green on #${label}`)
         if (alertsSound) await $.audio.play({ asset: 'hooks/mod/chime.wav' })
       }
@@ -154,38 +224,30 @@ async function ci_tick($: EngineInterface): Promise<void> {
 // The band above the prompt carries the one actionable alert: red CI.
 function register_ci_band(on: On) {
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (!ciAlert) return next(e)
+    if (!ciBox.alert) return next(e)
     const { Box, Text, Button } = $.ui.resolve(e)
-    const alert = ciAlert
+    const alert = ciBox.alert
     return Box({ flexDirection: 'row', columnGap: 2, children: [
       Text({ color: 'red', children: [`⛔ CI red on #${alert.pr}: ${alert.summary.failing.join(', ')}`] }),
       Button({ key: 'ci-diagnose', label: 'Diagnose', onPress: () => { $.prompt.fill({ text: '/orc:ci ' + alert.pr }) } }),
-      Button({ key: 'ci-dismiss', label: 'Dismiss', onPress: () => { ciAlert = null; $.ui.invalidate('ui.render') } }),
+      Button({ key: 'ci-dismiss', label: 'Dismiss', onPress: () => { ciBox.alert = null; $.ui.invalidate('ui.render') } }),
       await next(e),
     ] })
   })
 }
 
 // --- /orc cockpit -----------------------------------------------------------
-// A pane with the flow's phase ladder, the slice ledger, the QA criteria, the
-// PR's size and CI, the agents' usage, and the settled decisions (autopilot
-// switchable), drawn without a model turn. Where nothing can draw (VS Code,
-// claude -p) it answers with a text summary.
-const PANE = 'orc-cockpit'
-type Tab = 'flow' | 'slices' | 'qa' | 'pr' | 'agents' | 'decisions'
-const TABS: [Tab, string, string][] = [
-  ['flow', 'Flow', '1'], ['slices', 'Slices', '2'], ['qa', 'QA', '3'], ['pr', 'PR', '4'], ['agents', 'Agents', '5'], ['decisions', 'Decisions', '6'],
-]
-let tab: Tab = 'flow'
-let snap: Snapshot = EMPTY
-
-function register_cockpit(on: On) {
+// A dashboard pane drawn from $.state, no model turn: header strip, phase
+// ladder beside the slice ledger. Where nothing can draw (VS Code, claude -p)
+// it answers with a text summary.
+function register_cockpit(on: On, fallbackProfile: Profile) {
   on('command.run', { command: 'orc' }, async ($) => {
-    snap = await load_snapshot($)
+    await refresh($).catch(() => undefined)
+    const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
     // A plain `claude -p` run has no surface (ui.open still reports "placed").
     if ((await $.session.surfaces()).length) {
       try {
-        if ((await $.ui.open({ id: PANE, title: 'orc', focus: true, closeOnEscape: true })).isPlaced) return {}
+        if ((await $.ui.open({ id: PANE, title: 'orc', focus: true, closeOnEscape: true, rows: 16, columns: 76 })).isPlaced) return {}
       } catch {
         // the pane was refused: fall through to the text answer
       }
@@ -195,79 +257,69 @@ function register_cockpit(on: On) {
 
   on('ui.render', { component: 'Pane' }, async ($, e, next) => {
     if (e.requestId !== PANE) return next(e)
-    const { Box, Text, Button } = $.ui.resolve(e)
-    const redraw = () => $.ui.invalidate('ui.render')
-    const line = (text: string, style: { bold?: boolean; dimColor?: boolean; color?: string } = {}) => Text({ ...style, children: [text] })
-    const s = snap.session
-    let body = [line('Start one with /orc:flow <what to build>.')]
-    if (s) {
-      if (tab === 'flow') {
-        body = [...(s.description ? [line(s.description, { dimColor: true })] : []), ...phaseRows(s).map(r => line(r, { bold: r.startsWith('▶') }))]
-      } else if (tab === 'slices') {
-        body = snap.slices.length
-          ? snap.slices.map(x => line(sliceLine(x), { color: isDone(x) ? 'green' : x.status === 'pending' ? undefined : 'red' }))
-          : [line('No slice ledger yet — /orc:plan writes one.', { dimColor: true })]
-      } else if (tab === 'qa') {
-        body = snap.qa
-          ? [line('Verdict: ' + snap.qa.verdict.toUpperCase(), { bold: true, color: snap.qa.verdict === 'pass' ? 'green' : 'red' }),
-              ...snap.qa.acceptance.map(c => line(criterionLine(c), { color: c.result === 'pass' ? 'green' : c.result === 'fail' ? 'red' : undefined })),
-              ...(snap.qa.missing.length ? [line('Missing evidence: ' + snap.qa.missing.join(', '), { color: 'red' })] : []),
-              Button({ key: 'qa-report', label: 'Render report', onPress: async () => {
-                const path = await orc_report_html($)
-                $.ui.toast(path ? 'QA report: ' + path : 'No QA packet to render')
-              } })]
-          : [line('No QA packet yet — /orc:qa writes one.', { dimColor: true })]
-      } else if (tab === 'pr') {
-        const prs = s.linkedPRs ?? []
-        body = [
-          ...(snap.size ? [line('Size  ' + sizeLine(snap.size), { color: snap.size.loc > snap.size.budget ? 'red' : undefined })] : []),
-          ...(prs.length ? prs.map(p => line(`#${p.number ?? '?'}  ${p.url ?? ''}`)) : [line('No PR linked yet — /orc:ship opens one.', { dimColor: true })]),
-          ...(ciAlert ? [line(`CI: ${ciAlert.summary.failing.length} failing (${ciAlert.summary.failing.join(', ')})`, { color: 'red' })] : []),
-        ]
-      } else if (tab === 'agents') {
-        body = snap.usage?.length
-          ? [line('agent                     runs   tokens            time', { dimColor: true }), ...snap.usage.map(u => line(usageLine(u)))]
-          : [line('No subagent runs recorded yet.', { dimColor: true })]
-      } else {
-        const current = policyOf(snap) ?? 'manual'
-        body = [Box({ flexDirection: 'row', columnGap: 2, children: [line('Autopilot:'),
-          ...POLICIES.map(p => Button({ key: 'policy-' + p, label: p, hotkey: p[0], plain: true, dimColor: p !== current,
-            onPress: async () => { await write_policy($, p); snap = await load_snapshot($); redraw() } }))] }),
-          ...snap.decisions.map(d => line(`${d.key} = ${d.value}  (${d.provenance})`))]
-      }
-    }
-    return Box({ flexDirection: 'column', children: [
-      line(headline(snap), { bold: true }),
-      Box({ flexDirection: 'row', columnGap: 3, children: TABS.map(([id, label, hotkey]) =>
-        Button({ key: 'tab-' + id, label, hotkey, plain: true, dimColor: tab !== id, onPress: () => { tab = id; redraw() } })) }),
-      line(' '),
-      ...body,
-      line(' '),
-      Box({ flexDirection: 'row', columnGap: 2, children: [
-        Button({ key: 'resume', label: s ? 'Resume (/orc:resume)' : 'New flow (/orc:flow)', hotkey: 'r',
-          onPress: () => { $.prompt.fill({ text: s ? '/orc:resume' : '/orc:flow ' }) } }),
-        Button({ key: 'refresh', label: 'Refresh', hotkey: 'f', onPress: async () => { snap = await load_snapshot($); redraw() } }),
-      ] }),
-    ] })
+    const snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
+    const sections = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
+    const details = (await $.state.get(DETAILS_REF)).value ?? DETAILS_INITIAL
+    const model = { snap, sections, details, ciAlert: ciBox.alert, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
+    return drawPane($.ui.resolve(e), model, {
+      resume: () => { $.prompt.fill({ text: snap.session ? '/orc:resume' : '/orc:flow ' }) },
+      toggle: (id: SectionId) => async () => {
+        try {
+          const current = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
+          await $.state.set(SECTIONS_REF, { ...current, [id]: !current[id] })
+          if (!current[id]) await load_details($, id)
+        } catch {
+          // a state or loader failure leaves the pane as drawn
+        }
+      },
+      // The user picked it in the pane, so it settles as an asked decision.
+      settle: async (key: string, value: string) => {
+        await orc_state($, ['decision', 'set', key, value, '--provenance', 'asked', '--supersede'])
+        await refresh($).catch(() => undefined)
+      },
+      renderReport: async () => {
+        const path = await orc_report_html($)
+        $.ui.toast(path ? 'QA report: ' + path : 'No QA packet to render')
+      },
+    })
   })
 }
 
+// --- Snapshot loader (the one writer of the `snapshot` atom) ----------------
+// Lives here, not in state.ts: the engine follows `$` only within this file.
 async function load_snapshot($: EngineInterface): Promise<Snapshot> {
   const root = $.plugin.root + '/bin/'
   const run = (argv: string[]) => $.process.run([root + argv[0], ...argv.slice(1)], { timeoutMs: 10000 }).then(r => (r.exitCode === 0 ? r.stdout : ''), () => '')
-  const [session, slices, decisions, qa, loc, budget, usage] = await Promise.all([
-    run(['orc-state', 'get']), run(['orc-state', 'slice', 'list']), run(['orc-state', 'decision', 'get']), run(['orc-report', 'json']),
+  const session = await run(['orc-state', 'get'])
+  if (!parseSession(session)) return EMPTY // no orc session on this branch: nothing else to read
+  const [slices, decisions, qa, loc, budget, usage, meter] = await Promise.all([
+    run(['orc-state', 'slice', 'list']), run(['orc-state', 'decision', 'get']), run(['orc-report', 'json']),
     run(['orc-pr-size', 'loc']), run(['orc-pr-size', 'budget']), run(['orc-state', 'usage', 'summary']),
+    $.session.usage().then(u => u, () => null),
   ])
   return {
-    session: parseSession(session) as Session | null, slices: parseSlices(slices), decisions: parseDecisions(decisions),
-    qa: parseReport(qa), size: parseSize(loc, budget), usage: parseUsage(usage),
+    session: parseSession(session), slices: parseSlices(slices), decisions: parseDecisions(decisions),
+    qa: parseReport(qa), size: parseSize(loc, budget), usage: parseUsage(usage), meter: parseMeter(meter),
   }
 }
 
-// The user picked it in the pane, so it settles as an asked decision.
-async function write_policy($: EngineInterface, value: string): Promise<void> {
-  await $.process.run([$.plugin.root + '/bin/orc-state', 'decision', 'set', 'autopilotLevel', value, '--provenance', 'asked', '--supersede'])
+// One loader at a time; a trigger during a load queues exactly one more.
+let inflight: Promise<void> | null = null
+let dirty = false
+function refresh($: EngineInterface): Promise<void> {
+  if (inflight) { dirty = true; return inflight }
+  inflight = (async () => {
+    do {
+      dirty = false
+      await $.state.set(SNAPSHOT_REF, await load_snapshot($))
+      // Open Digest/Diff sections reload against the new snapshot; closed ones start clean next time.
+      const open = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
+      if (!open.digest && !open.diff) await $.state.set(DETAILS_REF, DETAILS_INITIAL)
+      if (open.digest) await load_details($, 'digest')
+      if (open.diff) await load_details($, 'diff')
+    } while (dirty)
+  })().finally(() => { inflight = null })
+  return inflight
 }
 
 async function orc_report_html($: EngineInterface): Promise<string> {
@@ -277,6 +329,36 @@ async function orc_report_html($: EngineInterface): Promise<string> {
   } catch {
     return ''
   }
+}
+
+// Digest and diff load from the live snapshot when their section is open.
+async function load_details($: EngineInterface, id: SectionId): Promise<void> {
+  const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
+  if (id === 'digest') await load_digest($, snap)
+  if (id === 'diff') await load_diff($, snap)
+}
+
+// checkpoint.md's digest, read once per open; '' is drawn as "no digest".
+async function load_digest($: EngineInterface, snap: Snapshot): Promise<void> {
+  const branch = snap.session?.branch
+  if (!branch) return
+  // ORC_STATE_DIR is absolute when the SessionStart hook exported it; else orc-state's default, <git root>/.orc.
+  const env = await $.env.get('ORC_STATE_DIR').catch(() => undefined)
+  const top = env ? '' : await $.process.run(['git', 'rev-parse', '--show-toplevel'], { timeoutMs: 5000 }).then(r => (r.exitCode === 0 ? r.stdout.trim() : ''), () => '')
+  const root = env || (top ? top + '/.orc' : '.orc')
+  const text = await $.fs.read(`${root}/${branch}/files/checkpoint.md`).then(t => (typeof t === 'string' ? t : ''), () => '')
+  const d = (await $.state.get(DETAILS_REF)).value ?? DETAILS_INITIAL
+  await $.state.set(DETAILS_REF, { ...d, digest: digestOf(text) ?? '' })
+}
+
+// The current slice's diff: its commit when it has one, else the working tree.
+async function load_diff($: EngineInterface, snap: Snapshot): Promise<void> {
+  const cur = diffSlice(snap.slices)
+  const argv = cur?.commit ? ['git', 'show', '--no-color', '--format=', '-U1', cur.commit] : ['git', 'diff', '--no-color', '-U1']
+  const out = await $.process.run(argv, { timeoutMs: 10000 }).then(r => (r.exitCode === 0 ? r.stdout : ''), () => '')
+  const { source, truncated } = cutDiff(out)
+  const d = (await $.state.get(DETAILS_REF)).value ?? DETAILS_INITIAL
+  await $.state.set(DETAILS_REF, { ...d, diff: source, diffTruncated: truncated })
 }
 
 // One orc-state call; '' when it fails or there is no session.

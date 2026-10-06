@@ -26,5 +26,5 @@ test('main-loop turns and non-orc agents are not recorded', async ($, on) => {
   await $.agent.spawn({ ...spawnOf('Explore'), provider: ORIGIN })
   await $.turn.complete(done('x1'))
   await $.turn.complete(done())
-  expect(calls.filter(argv => argv[1] === 'usage')).toEqual([])
+  expect(calls.filter(argv => argv[1] === 'usage' && argv[2] === 'add')).toEqual([])
 })

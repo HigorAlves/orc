@@ -59,11 +59,19 @@ Multi-phase commands pause at gates, and gates are classified: **hard-outward** 
 |---|---|---|
 | Attribution at the source | `attribution.text` (commit/pr) | the model never drafts the trailer the bash guard would deny |
 | Compaction keeps orc's place | `session.compact` (manual/auto) | the live `orc-state line` goes to the summarizer; the PreCompact bash hook checkpoints the same facts |
-| `/orc` cockpit | `command.run` + `ui.render` Pane | tabs Flow · Slices · QA · PR · Agents · Decisions, no model turn; autopilot switch writes an `asked` decision via `orc-state`; text summary where nothing draws (`claude -p`, VS Code) |
+| `/orc` cockpit | `command.run` + `ui.render` Pane | a dashboard drawn from `$.state` (no model turn): header strip (phase, slices, policy, model profile, context %, cost), bordered phase ladder beside the slice ledger (stacked under 72 columns), collapsible QA · PR · Agents · Decisions · Digest · Diff sections (`!` marks attention), `Select`s for autopilot and model profile (settled through `orc-state decision set`), `Link`s to PRs, the resume digest as `Markdown`, the current slice's diff as `Code`. Redraws itself when the model runs an `orc-state` write or a main-loop turn ends. Text summary where nothing draws (`claude -p`, VS Code). |
+| orc outside the pane | `ui.render` Spinner · PromptHint · SessionMode · ToolUse | the spinner suffix carries `orc flow 5/9 implement · implementer`, the idle prompt hint names the flow, a non-manual policy shows in the mode footer, and orc's own CLI rows (`orc-state`, `orc-pr-size`, `orc-report`, `gh pr checks`) collapse to one dim line |
+| Plugin contract | `types/index.d.ts` (`plugin.json` → `types`) | the `PluginState.orc` keys the mod keeps in `$.state`: `snapshot`, `sections`, `live`, `details`. The engine follows `$` only inside `register.ts`, so every hook and loader lives there; `cockpit.ts`, `pane.ts` and `state.ts` are pure |
 | Model profiles | `agent.spawn` | `model_profile`: `balanced` (frontmatter), `quality` (investigator on `best` — Fable, else Opus; reviewers on Opus), `economy` (Opus-tier agents on Sonnet); an explicit per-dispatch model always wins |
-| Usage ledger | `agent.spawn` + `turn.complete` | every finished orc subagent run → `orc-state usage add` → `files/usage.jsonl`; the cockpit's Agents tab and model re-tuning read it |
+| Usage ledger | `agent.spawn` + `turn.complete` | every finished orc subagent run → `orc-state usage add` → `files/usage.jsonl`; the cockpit's Agents section and model re-tuning read it |
 | Gate badges | `ui.render` AskUserQuestion | outward (`Publish`/`Post`/`Tracker`) and `Escalation` header chips (`orc:gates`) get a badge above the engine's own dialog |
 | CI watcher | `$.clock.every` + `$.store` lease | interactive sessions poll linked PRs' checks (one poller per PR across sessions); red/green → status line, toast, optional chime (`alerts_sound`), a dim `/orc:ci <n>` suggestion, and a red-CI band above the prompt with Diagnose / Dismiss. It never pushes, posts, or starts a turn. |
+
+The `/orc` cockpit, docked beside the transcript (Claude Code 2.1.291, 132 columns):
+
+![orc cockpit — overview](images/orc-cockpit-overview.png)
+
+![orc cockpit — PR, Decisions, Digest and Diff sections open](images/orc-cockpit-sections.png)
 
 `/orc:status` remains the full markdown report. Tests: `claude plugin test orc` (`hooks/mod/tests/*.test.ts`, headless). `claude plugin validate ./orc` lists the events it hooks and every API call it makes.
 

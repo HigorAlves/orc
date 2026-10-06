@@ -2,31 +2,20 @@
 // output (`get`, `slice list`, `decision get`), so register.ts only binds `$`
 // calls and draws. orc-state stays the single writer of .orc/.
 
-export type Session = {
-  command: string
-  gitBranch: string
-  description?: string | null
-  status: string
-  phase: number | 'done'
-  phaseLabel?: string | null
-  totalPhases: number
-  jiraTicket?: string | null
-  linkedPRs?: { url?: string; number?: number; repo?: string }[]
-}
-export type Slice = { id: string; status: string; title: string; commit: string | null }
-export type Decision = { key: string; value: string; provenance: string }
-export type Criterion = { criterion: string; result: string; note: string; sliceId: number | string }
-export type QaReport = { verdict: string; acceptance: Criterion[]; missing: string[] }
-export type AgentUsage = { agent: string; runs: number; in: number; out: number; ms: number }
-export type Size = { loc: number; budget: number }
-export type Snapshot = {
-  session: Session | null
-  slices: Slice[]
-  decisions: Decision[]
-  qa?: QaReport | null
-  size?: Size | null
-  usage?: AgentUsage[]
-}
+import type {
+  OrcAgentUsage, OrcCriterion, OrcDecision, OrcMeter, OrcQaReport, OrcSession, OrcSize, OrcSlice, OrcSnapshot,
+} from '../../types'
+import type { Profile } from './profiles'
+
+export type Session = OrcSession
+export type Slice = OrcSlice
+export type Decision = OrcDecision
+export type Criterion = OrcCriterion
+export type QaReport = OrcQaReport
+export type AgentUsage = OrcAgentUsage
+export type Size = OrcSize
+export type Meter = OrcMeter
+export type Snapshot = OrcSnapshot
 
 export const POLICIES = ['manual', 'guided', 'auto'] as const
 export const EMPTY: Snapshot = { session: null, slices: [], decisions: [] }
@@ -127,3 +116,86 @@ export function parseUsage(json: string): AgentUsage[] {
 const k = (n: number) => (n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n))
 export const usageLine = (u: AgentUsage) =>
   `${u.agent.replace(/^orc:/, '').padEnd(24)} ${String(u.runs).padStart(3)} run${u.runs === 1 ? ' ' : 's'}  ${k(u.in)} in / ${k(u.out)} out  ${Math.round(u.ms / 1000)}s`
+
+// $.session.usage() → the header's context % and cost; null where the host has none.
+export function parseMeter(u: { context?: { percent?: number }; cost?: { usd: number } } | null | undefined): Meter | null {
+  if (!u) return null
+  const pct = u.context?.percent
+  return { contextPercent: typeof pct === 'number' ? Math.round(pct) : null, usd: u.cost ? Math.round(u.cost.usd * 100) / 100 : null }
+}
+
+export type Cell = { text: string; bold?: boolean; dim?: boolean; color?: string }
+
+// Model profile in force: the branch's settled decision, else the userConfig value.
+export const profileOf = (snap: Snapshot, fallback: Profile): Profile => {
+  const d = snap.decisions.find(d => d.key === 'modelProfile')?.value
+  return d === 'quality' || d === 'economy' || d === 'balanced' ? d : fallback
+}
+
+// The header strip: one cell per fact, wrapping as the width allows.
+export function headerCells(snap: Snapshot, profile: Profile): Cell[] {
+  const s = snap.session
+  if (!s) return [{ text: 'No orc session on this branch — /orc:flow or /orc:plan starts one.', dim: true }]
+  const phase = s.phase === 'done' ? 'done' : `${s.phase}/${s.totalPhases}${s.phaseLabel ? ' ' + s.phaseLabel : ''}`
+  const cells: Cell[] = [{ text: `${s.command} ${phase}`, bold: true }]
+  if (snap.slices.length) cells.push({ text: `slices ${snap.slices.filter(isDone).length}/${snap.slices.length}` })
+  cells.push({ text: `policy ${policyOf(snap) ?? 'manual'}` }, { text: `profile ${profile}` })
+  const m = snap.meter
+  if (m?.contextPercent != null) cells.push({ text: `ctx ${m.contextPercent}%`, color: m.contextPercent >= 85 ? 'red' : m.contextPercent >= 70 ? 'yellow' : undefined })
+  if (m?.usd != null) cells.push({ text: `$${m.usd.toFixed(2)}` })
+  if (s.jiraTicket) cells.push({ text: s.jiraTicket })
+  cells.push({ text: s.gitBranch, dim: true })
+  return cells
+}
+
+// Ladder beside ledger when there is room for both (28 + 2 + ~42 columns); else stacked.
+export const layoutFor = (placement: 'dock' | 'inline', bodyColumns: number): 'row' | 'column' =>
+  bodyColumns >= 72 || (placement === 'dock' && bodyColumns >= 64) ? 'row' : 'column'
+
+export type SectionId = 'qa' | 'pr' | 'agents' | 'decisions' | 'digest' | 'diff'
+
+// Which sections need a look: a failing QA verdict, an over-budget diff or red CI.
+export function attention(snap: Snapshot, ciRed: boolean): Set<SectionId> {
+  const out = new Set<SectionId>()
+  if (snap.qa && snap.qa.verdict !== 'pass') out.add('qa')
+  if ((snap.size && snap.size.loc > snap.size.budget) || ciRed) out.add('pr')
+  return out
+}
+
+export const sectionLabel = (id: SectionId, open: boolean, flagged: boolean) =>
+  `${open ? '▾' : '▸'} ${({ qa: 'QA', pr: 'PR', agents: 'Agents', decisions: 'Decisions', digest: 'Digest', diff: 'Diff' })[id]}${flagged ? ' !' : ''}`
+
+// The '## Resume digest' section of checkpoint.md, or null when there is none.
+export function digestOf(markdown: string): string | null {
+  const m = /^## Resume digest[^\S\n]*\n([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(markdown)
+  const text = m?.[1]?.trim() ?? ''
+  return text ? text : null
+}
+
+// A unified diff bounded for a Code leaf: cut at the last file boundary under max.
+export function cutDiff(text: string, max = 8000): { source: string; truncated: boolean } {
+  if (text.length <= max) return { source: text, truncated: false }
+  const at = text.lastIndexOf('\ndiff --git', max)
+  return { source: at > 0 ? text.slice(0, at + 1) : text.slice(0, text.indexOf('\n', max) + 1 || max), truncated: true }
+}
+
+export const currentSlice = (slices: Slice[]): Slice | null => slices.find(x => !isDone(x)) ?? null
+
+// What the Diff section shows: the slice in progress (its working tree), else the last committed one (its commit).
+export const diffSlice = (slices: Slice[]): Slice | null =>
+  currentSlice(slices) ?? [...slices].reverse().find(x => x.commit) ?? null
+
+export const phaseShort = (s: Session) =>
+  `${s.command} ${s.phase === 'done' ? 'done' : `${s.phase}/${s.totalPhases}`}${s.phaseLabel && s.phase !== 'done' ? ' ' + s.phaseLabel : ''}`
+export const spinnerSuffix = (snap: Snapshot, agent: string | null) =>
+  snap.session ? ` · orc ${phaseShort(snap.session)}${agent ? ' · ' + agent.replace(/^orc-/, '') : ''}` : ''
+export const hintFor = (snap: Snapshot) => (snap.session ? `orc ${phaseShort(snap.session)} · /orc cockpit · /orc:resume` : null)
+
+const PLUMBING = /^\s*(?:\S*\/)?(?:orc-state|orc-pr-size|orc-report|orc-docker-env|orc-workspace-detect)\b|^\s*gh pr checks\b/
+// One dim line for orc's own CLI calls; null for anything else (the engine draws it).
+export function plumbingLine(input: unknown, isRunning: boolean): string | null {
+  const command = (input as { command?: unknown })?.command
+  if (typeof command !== 'string' || !PLUMBING.test(command)) return null
+  const first = command.split('\n')[0]?.trim() ?? ''
+  return `○ orc · ${first.length > 100 ? first.slice(0, 99) + '…' : first}${isRunning ? ' …' : ''}`
+}
