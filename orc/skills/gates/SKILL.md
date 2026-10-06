@@ -52,6 +52,7 @@ Commands that take `--auto` point here instead of restating it. The flag overrid
 - `guided` — mechanical confirms auto-advance with a printed one-liner (`➡️ auto: <choice> — guided`); judgment calls still ask.
 - `full` (bare `--auto`) — soft-inward gates resolve from settled decisions; the run stops only on escalation-only conditions.
 - Hard-outward gates are unaffected at every level. Auto never picks an option that writes outward or overrides a budget (e.g. never "Open as one big PR").
+- An escalation-only stop during a `full` run is the moment an unattended user must hear about: send a `PushNotification` (when the tool is available) naming the phase and the blocker, then ask.
 
 ## 7. Batching
 

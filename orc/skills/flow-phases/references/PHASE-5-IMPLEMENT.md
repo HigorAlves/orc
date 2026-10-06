@@ -53,7 +53,9 @@ B. <option B from agent>
 C. Pause flow — I'll come back to /orc:flow
 ```
 
-User picks → re-dispatch the agent with the resolution, or pause the flow.
+Under `full` autopilot, alert first per `orc:gates` §6. User picks → **continue the same agent with `SendMessage`** carrying the resolution (its context — files read, attempts tried — survives); dispatch fresh only if the agent is gone. For a "can't make green after 3 attempts" escalation the user chose to retry, re-dispatch that slice with the Agent tool's `model: "opus"` override — a one-step escalation from the frontmatter default, never a downgrade. Or pause the flow.
+
+An implementer that stops at `maxTurns` returns a partial result: continue it with `SendMessage` ("continue slice <N> from where you stopped") rather than restarting the slice.
 
 When the agent reports all slices complete, advance to Phase 6 (QA) automatically — no extra gate needed (you can pre-approve advance via the agent's status echo, or the umbrella's Phase 6 will gate before running QA anyway).
 

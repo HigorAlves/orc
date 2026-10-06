@@ -74,7 +74,8 @@ The agent returns a written diagnosis: root cause, evidence, recommended fix sur
 
 Print the Gate headline (`**⛔ Gate — diagnosis**`, one line on the root cause, per `orc:callouts`), then `AskUserQuestion`:
 - "Diagnosis looks right — proceed with fix"
-- "Need more investigation — re-dispatch investigator with this hint: …"
+- "Need more investigation — re-dispatch investigator with this hint: …" (continue the same investigator via `SendMessage` when it's still addressable, so its evidence survives)
+- "Go deeper on Fable" — offered when the diagnosis is low-confidence or names no single root cause: re-dispatch `orc-debug-investigator` with the Agent tool's `model: "fable"` override (slower, costlier, investigates before acting) and the first diagnosis as a hint
 - "Diagnosis is wrong — abort"
 
 If the investigator's report carried a `## Graph nodes relied on` line, record the miss so the code graph stops recommending that path (best-effort; silent no-op when graphify is absent, no `graphify-out/graph.json` exists, or the `learn_from_outcomes` user config is `false`):
