@@ -14,6 +14,7 @@ Prompted at plugin enable time (re-run via `/plugin`); exported to hooks and lib
 | `statusline` | `true` | Render the orc statusline. `false` hides it even with the plugin-shipped default installed. |
 | `statusline_style` | `full` | `full` (two lines, width-aware) or `compact` (always a single dense line). |
 | `statusline_context_reserve` | `0` | 0–50. When >0, the context percentage is normalized against this reserved slice (e.g. your auto-compact reserve) and rendered with a `~` prefix. `0` shows the raw payload percentage. |
+| `mod_enabled` | `true` | Load the orc mod (`hooks/mod/`, Claude Code 2.1.287+): in-process event hooks and UI layered on the bash hooks. `false` keeps orc on its bash hooks only — the guardrails are identical either way. |
 
 ## Environment variables
 

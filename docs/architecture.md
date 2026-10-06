@@ -13,6 +13,7 @@ orc/                               # the plugin
 ├── commands/                      # 30 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
 ├── agents/                        # 14 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) + PostToolUse + PreCompact + WorktreeCreate/Remove
+│   └── mod/                       # the orc mod (register.ts + tests) — in-process hooks, Claude Code 2.1.287+
 ├── bin/                           # deterministic CLIs, on PATH while enabled (orc-state, orc-report, orc-statusline, …)
 ├── lib/                           # shared bash libraries behind bin/ + hooks (state.sh, statusline.sh, workspace-detect.sh, …)
 └── settings.json                  # plugin-shipped defaults (statusLine; user-level settings always win)
@@ -49,6 +50,10 @@ docs/                              # this directory (incl. examples/ — scenari
 ## Gates + interaction policy (autopilot)
 
 Multi-phase commands pause at gates, and gates are classified: **hard-outward** (tracker writes, PR review posting, evidence publish — always ask, at every autopilot level), **soft-inward** (plan approval, previews, mechanical confirms), and escalation-only stops. The `interaction_policy` userConfig — or `--auto[=guided|full]` per invocation — sets how soft-inward gates behave: `manual` asks at every gate, `guided` auto-advances mechanical confirms, `auto` runs phases autonomously against a sprint contract agreed at kickoff. Settled answers persist in `.orc/<branch>/files/decisions.json` (`orc-state decision set`, write-once per key with provenance `flag|asked|policy|inferred`), so a question answered once is never re-asked in the same session.
+
+## The orc mod (Claude Code 2.1.287+)
+
+`hooks/hooks.json` also names a hooks module, `hooks/mod/register.ts` — a [Claude Code mod](https://code.claude.com/docs/en/plugins/mods/overview): in-process event handlers that can rewrite events and draw UI. It is a layer on top of the bash hooks, never a replacement: every guardrail stays in the bash settings hooks, so with mods unavailable (older Claude Code, `--safe-mode`, `disableAllHooks`, an org policy) or `mod_enabled: false`, orc behaves identically. Today it blanks the commit/PR attribution text at the source (`attribution.text`), so the model never drafts the trailer the bash guard would deny, and it hands the live `orc-state line` to the summarizer on every main-session compaction (`session.compact`), so the post-compact transcript keeps the flow's phase and slice progress. Tests: `claude plugin test orc` (`hooks/mod/tests/*.test.ts`, headless). `claude plugin validate ./orc` lists the events it hooks and every API call it makes.
 
 ## Statusline
 

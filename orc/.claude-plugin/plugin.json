@@ -55,6 +55,12 @@
       "description": "full (two lines, width-aware) or compact (always a single dense line)",
       "default": "full"
     },
+    "mod_enabled": {
+      "type": "boolean",
+      "title": "orc mod",
+      "description": "Load the orc mod (in-process event hooks and UI, Claude Code 2.1.287+). false keeps orc on its bash hooks only — the guardrails are identical either way.",
+      "default": true
+    },
     "statusline_context_reserve": {
       "type": "number",
       "title": "Statusline context reserve (%)",
