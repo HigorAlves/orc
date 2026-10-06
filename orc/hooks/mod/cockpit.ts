@@ -186,3 +186,12 @@ export const phaseShort = (s: Session) =>
 export const spinnerSuffix = (snap: Snapshot, agent: string | null) =>
   snap.session ? ` · orc ${phaseShort(snap.session)}${agent ? ' · ' + agent.replace(/^orc-/, '') : ''}` : ''
 export const hintFor = (snap: Snapshot) => (snap.session ? `orc ${phaseShort(snap.session)} · /orc cockpit · /orc:resume` : null)
+
+const PLUMBING = /^\s*(?:\S*\/)?(?:orc-state|orc-pr-size|orc-report|orc-docker-env|orc-workspace-detect)\b|^\s*gh pr checks\b/
+// One dim line for orc's own CLI calls; null for anything else (the engine draws it).
+export function plumbingLine(input: unknown, isRunning: boolean): string | null {
+  const command = (input as { command?: unknown })?.command
+  if (typeof command !== 'string' || !PLUMBING.test(command)) return null
+  const first = command.split('\n')[0]?.trim() ?? ''
+  return `○ orc · ${first.length > 100 ? first.slice(0, 99) + '…' : first}${isRunning ? ' …' : ''}`
+}

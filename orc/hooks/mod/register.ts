@@ -5,7 +5,7 @@
 import type { EngineInterface, On, PluginOptions } from 'claude-code'
 import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine, summarizeChecks, type CiRecord } from './ci'
 import {
-  EMPTY, currentSlice, cutDiff, digestOf, hintFor, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, policyOf, profileOf, spinnerSuffix, summaryText, type SectionId, type Snapshot,
+  EMPTY, currentSlice, cutDiff, digestOf, hintFor, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, plumbingLine, policyOf, profileOf, spinnerSuffix, summaryText, type SectionId, type Snapshot,
 } from './cockpit'
 import { PANE, drawPane } from './pane'
 import { DETAILS_INITIAL, LIVE_INITIAL, SECTIONS_INITIAL, ciBox, isOrcStateWrite } from './state'
@@ -30,6 +30,7 @@ export function register(on: On, options: PluginOptions) {
   register_refresh(on)
   register_cockpit(on, parseProfile(options.model_profile))
   register_surfaces(on)
+  register_toolrows(on)
   register_gates(on)
   register_ci_band(on)
 }
@@ -138,6 +139,18 @@ function register_surfaces(on: On) {
   on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
     const policy = policyOf((await $.state.get(SNAPSHOT_REF)).value ?? EMPTY)
     return policy && policy !== 'manual' ? next({ ...e, props: { ...e.props, modes: [...e.props.modes, 'orc ' + policy] } }) : next(e)
+  })
+}
+
+// ToolUse rows for orc's own plumbing (orc-state, orc-pr-size, orc-report,
+// gh pr checks) collapse to one dim line; errors and everything else keep the engine row.
+function register_toolrows(on: On) {
+  on('ui.render', { component: 'ToolUse' }, async ($, e, next) => {
+    if (e.props.tool !== 'Bash' || e.props.isErrored || e.props.isInterrupted) return next(e)
+    const text = plumbingLine(e.props.input, e.props.isRunning)
+    if (!text) return next(e)
+    const { Text } = $.ui.resolve(e)
+    return Text({ dimColor: true, children: [text] })
   })
 }
 

@@ -65,3 +65,20 @@ test('with no session every surface passes through', async ($, on) => {
   await (await $.ui.mount(MODE)).unmount()
   expect(seen.map(p => p.suffix ?? p.hint ?? p.modes)).toEqual(['', '? for shortcuts', ['focus']])
 })
+
+const TOOL = (command: string, extra: Partial<{ isRunning: boolean; isErrored: boolean }> = {}) => ({
+  plugin: 'orc', surface: 'terminal' as const, component: 'ToolUse' as const, requestId: 't1',
+  props: { tool_use_id: 't1', tool: 'Bash', input: { command }, isRunning: false, isErrored: false, isInterrupted: false, ...extra },
+})
+
+test('orc plumbing rows collapse to one dim line; errors and other commands keep the engine row', async ($, on) => {
+  world(on)
+  const row = async (m: ReturnType<typeof TOOL>) => { const ui = await $.ui.mount(m); const t = await ui.find({ type: 'Text' }); const d = await ui.drawn(); await ui.unmount(); return { t, d } }
+  expect((await row(TOOL('orc-state slice set 3 --status committed --commit abc1234'))).t?.text).toBe('○ orc · orc-state slice set 3 --status committed --commit abc1234')
+  expect((await row(TOOL('gh pr checks 12 --json name,bucket', { isRunning: true }))).t?.text).toBe('○ orc · gh pr checks 12 --json name,bucket …')
+  expect((await row(TOOL('/x/bin/orc-state get'))).t?.text).toBe('○ orc · /x/bin/orc-state get')
+  expect((await row(TOOL('orc-pr-size loc'))).t?.text).toBe('○ orc · orc-pr-size loc')
+  expect((await row(TOOL('orc-report json'))).t?.text).toBe('○ orc · orc-report json')
+  expect((await row(TOOL('orc-state get', { isErrored: true }))).d).toEqual({ type: 'engine', ref: 0 })
+  expect((await row(TOOL('ls -la'))).d).toEqual({ type: 'engine', ref: 0 })
+})
