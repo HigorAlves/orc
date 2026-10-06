@@ -3,12 +3,12 @@
 // mods can't load (Claude Code < 2.1.287, --safe-mode, disableAllHooks, an
 // org policy) or `mod_enabled` is false, orc behaves exactly as without it.
 import type { EngineInterface, On, PluginOptions } from 'claude-code'
-import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine, summarizeChecks, type CiRecord, type CiSummary } from './ci'
+import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine, summarizeChecks, type CiRecord } from './ci'
 import {
-  EMPTY, POLICIES, criterionLine, headline, isDone, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage,
-  phaseRows, policyOf, sizeLine, sliceLine, summaryText, usageLine, type Session, type Snapshot,
+  EMPTY, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, profileOf, summaryText, type Snapshot,
 } from './cockpit'
-import { isOrcStateWrite } from './state'
+import { PANE, drawPane } from './pane'
+import { ciBox, isOrcStateWrite } from './state'
 
 // State refs: literals in this file, as the engine's scan requires.
 const SNAPSHOT_REF = { plugin: 'orc', key: 'snapshot' } as const
@@ -25,7 +25,7 @@ export function register(on: On, options: PluginOptions) {
   register_compaction(on)
   register_agents(on, parseProfile(options.model_profile))
   register_refresh(on)
-  register_cockpit(on)
+  register_cockpit(on, parseProfile(options.model_profile))
   register_gates(on)
   register_ci_band(on)
 }
@@ -123,7 +123,6 @@ function register_gates(on: On) {
 
 // --- CI watcher (one poller across sessions, via a $.store lease) ----------
 let ciBusy = false
-let ciAlert: { pr: number | string; summary: CiSummary } | null = null
 
 async function ci_tick($: EngineInterface): Promise<void> {
   if (ciBusy) return
@@ -152,12 +151,12 @@ async function ci_tick($: EngineInterface): Promise<void> {
       await $.store.set(key, { lease: { sid, until: now + LEASE_MS }, summary, checkedAt: now, notified: kind ? signature(summary) : fresh.notified })
       $.ui.status(statusLine(label, summary))
       if (kind === 'red') {
-        ciAlert = { pr: label, summary }
+        ciBox.alert = { pr: label, summary }
         $.ui.toast(`CI red on #${label}: ${summary.failing.join(', ')} — /orc:ci to diagnose`)
         await $.prompt.suggest({ text: '/orc:ci ' + label })
         if (alertsSound) await $.audio.play({ asset: 'hooks/mod/chime.wav' })
       } else if (kind === 'green') {
-        ciAlert = null
+        ciBox.alert = null
         $.ui.toast(`CI green on #${label}`)
         if (alertsSound) await $.audio.play({ asset: 'hooks/mod/chime.wav' })
       }
@@ -173,39 +172,30 @@ async function ci_tick($: EngineInterface): Promise<void> {
 // The band above the prompt carries the one actionable alert: red CI.
 function register_ci_band(on: On) {
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (!ciAlert) return next(e)
+    if (!ciBox.alert) return next(e)
     const { Box, Text, Button } = $.ui.resolve(e)
-    const alert = ciAlert
+    const alert = ciBox.alert
     return Box({ flexDirection: 'row', columnGap: 2, children: [
       Text({ color: 'red', children: [`⛔ CI red on #${alert.pr}: ${alert.summary.failing.join(', ')}`] }),
       Button({ key: 'ci-diagnose', label: 'Diagnose', onPress: () => { $.prompt.fill({ text: '/orc:ci ' + alert.pr }) } }),
-      Button({ key: 'ci-dismiss', label: 'Dismiss', onPress: () => { ciAlert = null; $.ui.invalidate('ui.render') } }),
+      Button({ key: 'ci-dismiss', label: 'Dismiss', onPress: () => { ciBox.alert = null; $.ui.invalidate('ui.render') } }),
       await next(e),
     ] })
   })
 }
 
 // --- /orc cockpit -----------------------------------------------------------
-// A pane with the flow's phase ladder, the slice ledger, the QA criteria, the
-// PR's size and CI, the agents' usage, and the settled decisions (autopilot
-// switchable), drawn without a model turn. Where nothing can draw (VS Code,
-// claude -p) it answers with a text summary.
-const PANE = 'orc-cockpit'
-type Tab = 'flow' | 'slices' | 'qa' | 'pr' | 'agents' | 'decisions'
-const TABS: [Tab, string, string][] = [
-  ['flow', 'Flow', '1'], ['slices', 'Slices', '2'], ['qa', 'QA', '3'], ['pr', 'PR', '4'], ['agents', 'Agents', '5'], ['decisions', 'Decisions', '6'],
-]
-let tab: Tab = 'flow'
-let snap: Snapshot = EMPTY
-
-function register_cockpit(on: On) {
+// A dashboard pane drawn from $.state, no model turn: header strip, phase
+// ladder beside the slice ledger. Where nothing can draw (VS Code, claude -p)
+// it answers with a text summary.
+function register_cockpit(on: On, fallbackProfile: Profile) {
   on('command.run', { command: 'orc' }, async ($) => {
     await refresh($)
-    snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
+    const snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
     // A plain `claude -p` run has no surface (ui.open still reports "placed").
     if ((await $.session.surfaces()).length) {
       try {
-        if ((await $.ui.open({ id: PANE, title: 'orc', focus: true, closeOnEscape: true })).isPlaced) return {}
+        if ((await $.ui.open({ id: PANE, title: 'orc', focus: true, closeOnEscape: true, rows: 16, columns: 76 })).isPlaced) return {}
       } catch {
         // the pane was refused: fall through to the text answer
       }
@@ -215,76 +205,12 @@ function register_cockpit(on: On) {
 
   on('ui.render', { component: 'Pane' }, async ($, e, next) => {
     if (e.requestId !== PANE) return next(e)
-    const { Box, Text, Button } = $.ui.resolve(e)
-    snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
-    const redraw = () => $.ui.invalidate('ui.render')
-    const line = (text: string, style: { bold?: boolean; dimColor?: boolean; color?: string } = {}) => Text({ ...style, children: [text] })
-    const s = snap.session
-    let body = [line('Start one with /orc:flow <what to build>.')]
-    if (s) {
-      if (tab === 'flow') {
-        body = [...(s.description ? [line(s.description, { dimColor: true })] : []), ...phaseRows(s).map(r => line(r, { bold: r.startsWith('▶') }))]
-      } else if (tab === 'slices') {
-        body = snap.slices.length
-          ? snap.slices.map(x => line(sliceLine(x), { color: isDone(x) ? 'green' : x.status === 'pending' ? undefined : 'red' }))
-          : [line('No slice ledger yet — /orc:plan writes one.', { dimColor: true })]
-      } else if (tab === 'qa') {
-        body = snap.qa
-          ? [line('Verdict: ' + snap.qa.verdict.toUpperCase(), { bold: true, color: snap.qa.verdict === 'pass' ? 'green' : 'red' }),
-              ...snap.qa.acceptance.map(c => line(criterionLine(c), { color: c.result === 'pass' ? 'green' : c.result === 'fail' ? 'red' : undefined })),
-              ...(snap.qa.missing.length ? [line('Missing evidence: ' + snap.qa.missing.join(', '), { color: 'red' })] : []),
-              Button({ key: 'qa-report', label: 'Render report', onPress: async () => {
-                const path = await orc_report_html($)
-                $.ui.toast(path ? 'QA report: ' + path : 'No QA packet to render')
-              } })]
-          : [line('No QA packet yet — /orc:qa writes one.', { dimColor: true })]
-      } else if (tab === 'pr') {
-        const prs = s.linkedPRs ?? []
-        body = [
-          ...(snap.size ? [line('Size  ' + sizeLine(snap.size), { color: snap.size.loc > snap.size.budget ? 'red' : undefined })] : []),
-          ...(prs.length ? prs.map(p => line(`#${p.number ?? '?'}  ${p.url ?? ''}`)) : [line('No PR linked yet — /orc:ship opens one.', { dimColor: true })]),
-          ...(ciAlert ? [line(`CI: ${ciAlert.summary.failing.length} failing (${ciAlert.summary.failing.join(', ')})`, { color: 'red' })] : []),
-        ]
-      } else if (tab === 'agents') {
-        body = snap.usage?.length
-          ? [line('agent                     runs   tokens            time', { dimColor: true }), ...snap.usage.map(u => line(usageLine(u)))]
-          : [line('No subagent runs recorded yet.', { dimColor: true })]
-      } else {
-        const current = policyOf(snap) ?? 'manual'
-        body = [Box({ flexDirection: 'row', columnGap: 2, children: [line('Autopilot:'),
-          ...POLICIES.map(p => Button({ key: 'policy-' + p, label: p, hotkey: p[0], plain: true, dimColor: p !== current,
-            onPress: async () => { await write_policy($, p); await refresh($) } }))] }),
-          ...snap.decisions.map(d => line(`${d.key} = ${d.value}  (${d.provenance})`))]
-      }
-    }
-    return Box({ flexDirection: 'column', children: [
-      line(headline(snap), { bold: true }),
-      Box({ flexDirection: 'row', columnGap: 3, children: TABS.map(([id, label, hotkey]) =>
-        Button({ key: 'tab-' + id, label, hotkey, plain: true, dimColor: tab !== id, onPress: () => { tab = id; redraw() } })) }),
-      line(' '),
-      ...body,
-      line(' '),
-      Box({ flexDirection: 'row', columnGap: 2, children: [
-        Button({ key: 'resume', label: s ? 'Resume (/orc:resume)' : 'New flow (/orc:flow)', hotkey: 'r',
-          onPress: () => { $.prompt.fill({ text: s ? '/orc:resume' : '/orc:flow ' }) } }),
-        Button({ key: 'refresh', label: 'Refresh', hotkey: 'f', onPress: async () => { await refresh($) } }),
-      ] }),
-    ] })
+    const snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
+    const model = { snap, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
+    return drawPane($.ui.resolve(e), model, {
+      resume: () => { $.prompt.fill({ text: snap.session ? '/orc:resume' : '/orc:flow ' }) },
+    })
   })
-}
-
-// The user picked it in the pane, so it settles as an asked decision.
-async function write_policy($: EngineInterface, value: string): Promise<void> {
-  await $.process.run([$.plugin.root + '/bin/orc-state', 'decision', 'set', 'autopilotLevel', value, '--provenance', 'asked', '--supersede'])
-}
-
-async function orc_report_html($: EngineInterface): Promise<string> {
-  try {
-    const r = await $.process.run([$.plugin.root + '/bin/orc-report', 'html'], { timeoutMs: 10000 })
-    return r.exitCode === 0 ? r.stdout.trim() : ''
-  } catch {
-    return ''
-  }
 }
 
 // --- Snapshot loader (the one writer of the `snapshot` atom) ----------------

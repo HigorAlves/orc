@@ -5,6 +5,7 @@
 import type {
   OrcAgentUsage, OrcCriterion, OrcDecision, OrcMeter, OrcQaReport, OrcSession, OrcSize, OrcSlice, OrcSnapshot,
 } from '../../types'
+import type { Profile } from './profiles'
 
 export type Session = OrcSession
 export type Slice = OrcSlice
@@ -122,3 +123,31 @@ export function parseMeter(u: { context?: { percent?: number }; cost?: { usd: nu
   const pct = u.context?.percent
   return { contextPercent: typeof pct === 'number' ? Math.round(pct) : null, usd: u.cost ? Math.round(u.cost.usd * 100) / 100 : null }
 }
+
+export type Cell = { text: string; bold?: boolean; dim?: boolean; color?: string }
+
+// Model profile in force: the branch's settled decision, else the userConfig value.
+export const profileOf = (snap: Snapshot, fallback: Profile): Profile => {
+  const d = snap.decisions.find(d => d.key === 'modelProfile')?.value
+  return d === 'quality' || d === 'economy' || d === 'balanced' ? d : fallback
+}
+
+// The header strip: one cell per fact, wrapping as the width allows.
+export function headerCells(snap: Snapshot, profile: Profile): Cell[] {
+  const s = snap.session
+  if (!s) return [{ text: 'No orc session on this branch — /orc:flow or /orc:plan starts one.', dim: true }]
+  const phase = s.phase === 'done' ? 'done' : `${s.phase}/${s.totalPhases}${s.phaseLabel ? ' ' + s.phaseLabel : ''}`
+  const cells: Cell[] = [{ text: `${s.command} ${phase}`, bold: true }]
+  if (snap.slices.length) cells.push({ text: `slices ${snap.slices.filter(isDone).length}/${snap.slices.length}` })
+  cells.push({ text: `policy ${policyOf(snap) ?? 'manual'}` }, { text: `profile ${profile}` })
+  const m = snap.meter
+  if (m?.contextPercent != null) cells.push({ text: `ctx ${m.contextPercent}%`, color: m.contextPercent >= 85 ? 'red' : m.contextPercent >= 70 ? 'yellow' : undefined })
+  if (m?.usd != null) cells.push({ text: `$${m.usd.toFixed(2)}` })
+  if (s.jiraTicket) cells.push({ text: s.jiraTicket })
+  cells.push({ text: s.gitBranch, dim: true })
+  return cells
+}
+
+// Ladder beside ledger when there is room for both (28 + 2 + ~42 columns); else stacked.
+export const layoutFor = (placement: 'dock' | 'inline', bodyColumns: number): 'row' | 'column' =>
+  bodyColumns >= 72 || (placement === 'dock' && bodyColumns >= 64) ? 'row' : 'column'
