@@ -160,7 +160,7 @@ AskUserQuestion: "20 findings exceed the 15-comment cap. Pick which to drop:"
 
 ### Phase 6 — Preview gate (mandatory)
 
-Show the user the constructed payload before posting. No `--no-confirm` flag bypasses this, and neither do `--auto`/`interaction_policy` — hard-outward per `orc:using-orc`. Open with the preview callout, then the payload in a fence (aligned comment list never goes inside the callout), then any verdict-override warnings as a separate **⚠️ Caution** callout after the fence:
+Show the user the constructed payload before posting. No `--no-confirm` flag bypasses this, and neither do `--auto`/`interaction_policy` — hard-outward per `orc:using-orc`. Open with the preview callout and any verdict-override warnings as a separate **⚠️ Caution** callout, then ask with the payload (below) as the `preview` of **Post the review as shown** — header `Post`, per `orc:gates` §3 (aligned comment list never goes inside a callout; fence fallback when `AskUserQuestion` is unavailable):
 
 ```markdown
 > **📋 Preview — review for #<PR>: <title>**
@@ -188,7 +188,7 @@ Comments (<count>):
 Then `AskUserQuestion`:
 
 - `Post the review as shown`
-- `Edit / drop specific comments` — batched, never one-question-per-comment: number the comments in the preview, then ask ONE `AskUserQuestion` call with up to 4 `multiSelect` questions, each covering a chunk of 4 ("Drop which of comments 1–4?" / "5–8?" / "9–12?" / "13–15?"; default = keep all). Rewrites ride each question's free-text Other as `<n>: <new text>`. More than 16 comments never happens (Phase 5 cap). Then loop back to Phase 6 once with the trimmed list — worst case 2 extra turns total, not 15.
+- `Edit / drop specific comments` — batched, never one-question-per-comment: number the comments in the preview, then ask ONE `AskUserQuestion` call with up to 4 `multiSelect` questions, each covering a chunk of 4 ("Drop which of comments 1–4?" / "5–8?" / "9–12?" / "13–15?"; default = keep all). Rewrites ride each question's notes as `<n>: <new text>` (`orc:gates` §5; free-text Other accepted as fallback). More than 16 comments never happens (Phase 5 cap). Then loop back to Phase 6 once with the trimmed list — worst case 2 extra turns total, not 15.
 - `Switch to summary-only mode` — fall through to Phase 8 (legacy text-block) and don't post inline
 - `Cancel` — exit cleanly; echo the constructed payload as JSON for the user to copy
 

@@ -89,13 +89,13 @@ Then two `Task` calls in the same response:
 
 (Hard-outward per `orc:using-orc` — this gate posts replies to reviewers' threads; `--auto`/`interaction_policy` never skip it. Iron rule 1 below stands at every level.)
 
-Show the diff + the drafted replies (numbered) — then ONE `AskUserQuestion` call:
+Show the diff, then ONE `AskUserQuestion` call (header `Post`) with the numbered drafted replies as the `preview` of option 1 (`orc:gates` §3):
 
 1. **Fixes + replies?**
    - "Looks good — commit, push, post replies"
    - "Edit fix first" → return to Phase 3 with adjusted fix list
    - "Abort"
-2. **Drop or rewrite any replies?** (`multiSelect`; chunks of 4 replies per question when more than 4 exist, up to 3 chunks in the same call) — default keep all; select numbers to drop; rewrites via the free-text Other as `<n>: <new text>`. Edited replies re-render in a final preview with the same question 1 before anything posts.
+2. **Drop or rewrite any replies?** (`multiSelect`; chunks of 4 replies per question when more than 4 exist, up to 3 chunks in the same call) — default keep all; select numbers to drop; rewrites ride the notes as `<n>: <new text>` (`orc:gates` §5; free-text Other accepted as fallback). Edited replies re-render in a final preview with the same question 1 before anything posts.
 
 ### Phase 5 — Commit + push + post
 
