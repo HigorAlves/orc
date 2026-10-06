@@ -23,7 +23,7 @@ function world(on: On) {
   return gets
 }
 
-const bash = (command: string) => ({ tool: 'Bash' as const, input: { command } })
+const bash = (command: string) => ({ tool: 'Bash' as const, command })
 const done = (agentId?: string) => ({
   turnId: 't1', answer: '', durationMs: 10, isAborted: false, reason: 'answer' as const, text: '',
   usage: { model: 'claude-sonnet-5-5', input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },

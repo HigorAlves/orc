@@ -82,7 +82,9 @@ function register_compaction(on: On) {
 function register_refresh(on: On) {
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
     const result = await next(e)
-    const command = (e.input as { command?: string }).command ?? ''
+    // 2.1.291 types the Bash call flat (`e.command`); older builds nested it under `input`.
+    const call = e as { command?: string; input?: { command?: string } }
+    const command = call.command ?? call.input?.command ?? ''
     if (isOrcStateWrite(command)) await refresh($).catch(() => undefined)
     return result
   })
