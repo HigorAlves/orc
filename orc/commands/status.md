@@ -99,7 +99,7 @@ In workspace mode add to the same callout body: `Pass --repo <name> to /orc:resu
 
 ## Iron rule
 
-This command is read-only. It does NOT modify `.orc/orc.json` or any workspace artifact. If anything looks stale (e.g. a session marked in_progress but the branch is long-deleted), surface it as a `[!WARNING]` **⚠️ Caution** callout naming the dangling session — but don't auto-clean.
+This command is read-only. It does NOT modify `.orc/orc.json` or any workspace artifact. If anything looks stale (e.g. a session marked in_progress but the branch is long-deleted), surface it as a **⚠️ Caution** callout naming the dangling session — but don't auto-clean.
 
 ## Output
 

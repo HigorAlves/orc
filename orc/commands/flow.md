@@ -103,7 +103,7 @@ If the input is a short one-liner ("add CSV export"), skip the analyzer and proc
    - (free-form via Other: "something else — let me describe")
 2. **Scope** (always asked):
    - < 1 day — small; skip RFC, simple plan
-   - 1–5 days — medium; full plan, optional grill-me
+   - 1–5 days — medium; full plan, optional grilling (`orc:grilling`)
    - 1–4 weeks — big; suggest --rfc; offers /orc:rfc next
    - multi-quarter — too big for /orc:flow; suggests breaking down with /orc:plan --issues first
 3. **Repo set** (workspace mode only; dropped when `--repos`/`--repo`/`--all-repos`/`--this-repo` passed): "This is a workspace with N repos: <list from $ORC_WORKSPACE_REPOS>. Scope this flow to which repos?"

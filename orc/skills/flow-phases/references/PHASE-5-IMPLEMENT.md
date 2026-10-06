@@ -45,7 +45,7 @@ The agent runs without further user gates UNLESS one of the **escalation conditi
 - A security/architecture concern surfaces mid-implementation.
 - The plan is wrong (the slice as written would produce incorrect behavior).
 
-When the agent escalates, re-print BOTH blocks it emitted verbatim — the `[!CAUTION]` **🛑 Escalation** callout AND its context fence (file:line evidence + the option definitions; see `agents/orc-implementer.md`) — then `AskUserQuestion`:
+When the agent escalates, re-print BOTH blocks it emitted verbatim — the **🛑 Escalation** callout AND its context fence (file:line evidence + the option definitions; see `agents/orc-implementer.md`) — then `AskUserQuestion`:
 
 ```
 A. <option A from agent>
@@ -66,7 +66,7 @@ checkpoint.md → phase=5, status=ready-for-implementation, last_artifact=<test-
 progress.md → "Implementation phase started. Run /orc:flow again (or /orc:resume) when ready for QA."
 ```
 
-Echo to the user — the handoff callout (a `[!TIP]`, not a Gate: flow exits here, no question follows), then the details in a fence:
+Echo to the user — the handoff callout (a **➡️ Next**, not a Gate: flow exits here, no question follows), then the details in a fence:
 
 ```markdown
 > **➡️ Next**

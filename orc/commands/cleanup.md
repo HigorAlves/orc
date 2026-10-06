@@ -202,8 +202,8 @@ For each session:
 
 0. **Docker environment** — BEFORE state removal (the state file holds the teardown command; delete it first and the environment is orphaned): execute the state file's `teardownCommand` (append `-v` only with `--down-volumes`); kill recorded `hostProcesses[]` PIDs after verifying via `ps` that the PID still runs the recorded command — a reused PID is surfaced, never killed. Then proceed.
 1. **Workspace state** — `rm -rf .orc/<sanitized-branch>/`. Update `.orc/orc.json` to remove the entry (use Read + Write to preserve the JSON).
-2. **Worktree** — `git worktree remove <path>` ONLY if clean. If dirty, skip and surface a `**⚠️ Skipped — dirty worktree**` `[!WARNING]` callout. Never use `--force` automatically; require an explicit `--force-dirty` flag in a future iteration if needed.
-3. **Branch** — `git branch -d <branch>` ONLY if merged into main. If unmerged, skip and surface a `**⚠️ Skipped — unmerged branch**` `[!WARNING]` callout. Never use `-D` automatically.
+2. **Worktree** — `git worktree remove <path>` ONLY if clean. If dirty, skip and surface a `**⚠️ Skipped — dirty worktree**` callout. Never use `--force` automatically; require an explicit `--force-dirty` flag in a future iteration if needed.
+3. **Branch** — `git branch -d <branch>` ONLY if merged into main. If unmerged, skip and surface a `**⚠️ Skipped — unmerged branch**` callout. Never use `-D` automatically.
 4. **Worktree prune** — after removals: `git worktree prune` to clean up any stale references.
 
 For sessions with **stack members**, branch deletion (step 3) iterates the stack **bottom-up** and refuses to delete any branch whose parent (position N-1) is still `OPEN`:

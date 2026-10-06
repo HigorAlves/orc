@@ -82,7 +82,7 @@ When `loc > budget`, the calling command MUST surface this `AskUserQuestion` sha
 >
 > 3. **Abort** — Go back to the implementation, resize, then re-run.
 
-Before the prompt, **always** print the Gate callout (per the `orc:callouts` palette — `[!WARNING]` because the gate fired on a problem), then the breakdown in a fence (never inside the callout — blockquotes reflow and break alignment):
+Before the prompt, **always** print the Gate callout (per the `orc:callouts` terminal palette — **⛔ Gate — PR size**, no `[!TYPE]` tag), then the breakdown in a fence (never inside the callout — blockquotes reflow and break alignment):
 
 ```markdown
 > **⛔ Gate — PR size**
@@ -130,7 +130,7 @@ base=$(git symbolic-ref refs/remotes/origin/HEAD --short | sed 's@^origin/@@')
 orc-pr-size gate --base "origin/$base" ${ARG_MAX_LOC:+--max-loc "$ARG_MAX_LOC"}
 # → base:/loc:/budget:/verdict: lines, then the top-10 breakdown table,
 #   then the excluded-files one-liner.
-# verdict: over → render the [!WARNING] "⛔ Gate — PR size" callout from
+# verdict: over → render the "⛔ Gate — PR size" callout from
 # "The gate prompt" section above, then AskUserQuestion as above.
 ```
 

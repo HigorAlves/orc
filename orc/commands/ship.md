@@ -103,7 +103,7 @@ orc-pr-size gate --base "origin/$base" ${ARG_MAX_LOC:+--max-loc "$ARG_MAX_LOC"}
 
 One call returns `loc:`, `budget:`, `verdict:`, the top-contributors table, and the excluded-files line. If `verdict: under`, fall through to Phase 5.
 
-If `verdict: over`, render the gate exactly as `orc:pr-size-budget` specifies (the `[!WARNING]` **⛔ Gate — PR size** callout, then the breakdown + exclusions from the gate output above) and surface `AskUserQuestion`:
+If `verdict: over`, render the gate exactly as `orc:pr-size-budget` specifies (the **⛔ Gate — PR size** callout, then the breakdown + exclusions from the gate output above) and surface `AskUserQuestion`:
 
 1. **Stack from plan slices (Recommended when shown)** — shown only when the session's `slices.json` ledger exists and every slice is `committed` with a distinct recorded `commit` sha (`orc-state slice list` — no heuristics; the ledger IS the commit↔slice map. Pre-ledger fallback: `n_commits_on_branch == n_slices_in_plan` with best-effort subject match). Uses those per-slice commits as the stack scaffold: load `orc:stack-pr` inline with the commit-based strategy pinned, one PR per slice batch. Records the resulting `linkedPRs[]` entries and **short-circuits Phase 5** for this repo.
 2. **Stack it** — invoke `/orc:stack-pr` **inline as a skill** (load `stack-pr` skill in this session, run its phases; `--smart` reshape available). Same short-circuit as option 1, but doesn't rely on commit/slice alignment. Recommended when option 1 is hidden.

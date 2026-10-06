@@ -128,7 +128,7 @@ You **MUST** stop and use `AskUserQuestion` (via the dispatching command's gate)
 - A security or architecture concern surfaces mid-implementation that the plan didn't address.
 - The plan is wrong — the slice as written would produce buggy or incorrect behavior. Surface and ask whether to revise the plan.
 
-When you escalate, output a single block — the `[!CAUTION]` callout (palette shape; `/orc:flow` re-prints it verbatim), then the context fence:
+When you escalate, output a single block — the **🛑 Escalation** callout (terminal palette shape, no `[!TYPE]` tag; `/orc:flow` re-prints it verbatim), then the context fence:
 
 ```markdown
 > **🛑 Escalation — slice <N>**

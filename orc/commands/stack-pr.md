@@ -82,7 +82,7 @@ n_commits=$(git rev-list --count "$base"..HEAD)     # must be ≥ 2
 git rev-list "@{u}..HEAD" --count 2>/dev/null       # should be 0; warn if not
 ```
 
-Any failure → surface the specific check + repo in a `[!WARNING]` **⚠️ Caution** callout, stop. Don't try to "fix it for them."
+Any failure → surface the specific check + repo in a **⚠️ Caution** callout, stop. Don't try to "fix it for them."
 
 If `n_commits == 1`, surface and exit 0:
 
@@ -136,7 +136,7 @@ Render the preview headline, then the stack table in a fence (tables never go in
 | 3 | feat/export/03-feat-download-button          | feat(ui): download button + progress         |  95 | 1       |
 ```
 
-`--smart` only — analyzer warnings go in a `[!WARNING]` callout after the fence:
+`--smart` only — analyzer warnings go in a **⚠️ Caution** callout after the fence:
 
 ```markdown
 > **⚠️ Caution**

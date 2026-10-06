@@ -27,7 +27,7 @@ Turn a feature or refactor request into a written, TDD-shaped implementation pla
 
 - `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`; taxonomy in `orc:using-orc`). Soft-inward gates consult the resolved policy — `guided` auto-advances mechanical confirms with a printed one-liner; `full` pre-approves them from settled decisions (`orc:state-protocol`), stopping only on escalation-only conditions. Hard-outward gates are unaffected at every level.
 
-- `--grill` — after drafting the plan, invoke `orc:grill-me` to stress-test the design before committing.
+- `--grill` — after drafting the plan, invoke `orc:grilling` to stress-test the design before committing.
 - `--issues` — after the plan is approved, run `orc:to-issues` to break it into independently grabbable issues.
 - `--jira <KEY>` — link a Jira ticket key (e.g. `PROJ-123`) to this session silently. Suppresses the Phase 1 link prompt. Validate against `^[A-Z][A-Z0-9_]*-\d+$`.
 - `--repos <list>`, `--repo <name>`, `--all-repos`, `--this-repo` — workspace-mode repo selection. See `orc:workspace-mode` for precedence.
@@ -122,7 +122,7 @@ Defer to `orc:pr-size-budget` for the budget resolution order and exclusion list
 
 ### Phase 3 (optional, with `--grill`) — Stress-test the design
 
-Invoke `orc:grill-me`. The skill drives an interview that exposes hidden assumptions. Update `plan.md` with answers. Bump `checkpoint.md`.
+Invoke `orc:grilling`. The skill drives an interview that exposes hidden assumptions. Update `plan.md` with answers. Bump `checkpoint.md`.
 
 ### Phase 4 — Confirm with user + install the slice ledger
 

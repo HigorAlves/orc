@@ -23,7 +23,7 @@ A stack is N chained PRs where each branch's base is the previous branch (not `m
 4. **At least 2 commits** on `base..HEAD`. A single commit isn't a stack — use `/orc:ship`.
 5. **Branch is pushed-clean** — local matches `origin` (no unpushed work that the user might lose to the rebase).
 
-If any precondition fails, surface a `[!WARNING]` **⚠️ Caution** callout naming the failed precondition and **stop**. Don't try to "fix it for them" — these are user decisions.
+If any precondition fails, surface a **⚠️ Caution** callout naming the failed precondition and **stop**. Don't try to "fix it for them" — these are user decisions.
 
 ## Strategy A — commit-based (default)
 
@@ -152,7 +152,7 @@ Use when commits are messy (multiple WIP commits, fixups, no clean Conventional 
 git branch "${original_branch}-pre-stack-backup"
 ```
 
-The skill MUST refuse to proceed without this branch existing. On any error, surface the recovery command in a `[!CAUTION]` callout (see "Recovery" below).
+The skill MUST refuse to proceed without this branch existing. On any error, surface the recovery command in a **🛑** danger callout (see "Recovery" below).
 
 ### Dispatch the analyzer
 
@@ -199,7 +199,7 @@ Expected JSON output (analyzer never runs anything destructive):
 
 ### Preview & confirm
 
-Render the preview headline, then the slice table + rebase plan in a fence (never inside the callout), then any analyzer warnings as a separate `[!WARNING]` callout after the fence:
+Render the preview headline, then the slice table + rebase plan in a fence (never inside the callout), then any analyzer warnings as a separate **⚠️ Caution** callout after the fence:
 
 ```markdown
 > **📋 Preview — stack plan**
