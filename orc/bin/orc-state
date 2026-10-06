@@ -25,6 +25,7 @@ usage: orc-state <verb> [args]   (state root: $ORC_STATE_DIR, else <git root>/.o
   status set <status>               in_progress | paused | completed | abandoned
   link-pr --repo R --url U [--number N] [--stack-id S --stack-position P --stacked-on U2]
   digest write -                    stdin -> replaces '## Resume digest' (30-line/2KB cap)
+  checkpoint --auto [--trigger T]   mechanical '## Auto-checkpoint' (PreCompact hook); digest untouched
   slice init <slices.json>          install the slice ledger
   slice set <id> --status S [--commit SHA] [--actual-loc N] [--note S]
   slice list [--status a,b]         with filter: prints matches, exit 0 ONLY when none match
@@ -58,6 +59,7 @@ case "$sub" in
     orc_state_status_set "$@"
     ;;
   link-pr)  orc_state_link_pr "$@" ;;
+  checkpoint) orc_state_checkpoint_auto "$@" ;;
   digest)
     verb="${1:-}"; shift || true
     [ "$verb" = "write" ] || { echo "orc-state digest: only 'write' is supported" >&2; exit 2; }

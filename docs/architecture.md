@@ -12,7 +12,7 @@ orc/                               # the plugin
 ├── skills/                        # 81 skills, namespaced /orc:<name>
 ├── commands/                      # 30 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
 ├── agents/                        # 14 specialist subagents (orc-<role>)
-├── hooks/                         # SessionStart + PreToolUse(Bash) + PostToolUse + WorktreeCreate/Remove
+├── hooks/                         # SessionStart + PreToolUse(Bash) + PostToolUse + PreCompact + WorktreeCreate/Remove
 ├── bin/                           # deterministic CLIs, on PATH while enabled (orc-state, orc-statusline, …)
 ├── lib/                           # shared bash libraries behind bin/ + hooks (state.sh, statusline.sh, workspace-detect.sh, …)
 └── settings.json                  # plugin-shipped defaults (statusLine; user-level settings always win)

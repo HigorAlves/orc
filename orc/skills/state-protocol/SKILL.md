@@ -9,7 +9,7 @@ One schema, one writer, one startup sequence — defined here and only here. Com
 
 ## The one-writer rule
 
-Never hand-write `.orc/orc.json` or a checkpoint's frontmatter — every mutation goes through `orc-state` (atomic jq writes; registry entry + checkpoint mirror updated by the same verb). The checkpoint **body** below the frontmatter is yours to write freely, except the `## Resume digest` section, which only `orc-state digest write -` touches (it enforces the cap).
+Never hand-write `.orc/orc.json` or a checkpoint's frontmatter — every mutation goes through `orc-state` (atomic jq writes; registry entry + checkpoint mirror updated by the same verb). The checkpoint **body** below the frontmatter is yours to write freely, except the `## Resume digest` section, which only `orc-state digest write -` touches (it enforces the cap), and `## Auto-checkpoint`, which only the PreCompact hook writes (`orc-state checkpoint --auto` — phase, slices, HEAD, dirty files; mechanical, so trust it over a stale digest for git state).
 
 Register a session (the 2-line pattern every multi-phase command uses):
 
