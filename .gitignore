@@ -15,3 +15,6 @@ graphify-out/
 # Machine-local Claude Code settings (per-user permissions/paths). Portable
 # guard so contributors without a global rule don't commit their own.
 .claude/settings.local.json
+
+# claude plugin eval run output
+orc/evals/results/

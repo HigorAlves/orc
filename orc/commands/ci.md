@@ -47,7 +47,7 @@ In workspace mode, read `${ORC_STATE_DIR}/orc.json` for the in-progress session'
 ### Phase 1 — Resolve the ref + run
 
 1. Resolution order: `--run <id>` wins; else the explicit `<pr-number>`/`<branch>` argument; else the current branch (`git branch --show-current`) and its PR via `gh pr list --head <branch>`.
-2. `--watch`: run `gh run watch <id>` for the newest run on the ref (or `gh pr checks <pr> --watch` when the ref is a PR) and wait for the conclusion. Success → echo the green summary and stop. Failure → continue with that run pinned.
+2. `--watch`: start `gh run watch <id> --exit-status` for the newest run on the ref (or `gh pr checks <pr> --watch` when the ref is a PR) **in the background** — Bash with `run_in_background: true`, or the `Monitor` tool when available — so the session stays responsive; say so in one line and end the turn. You're re-invoked when it exits. Success → echo the green summary and stop. Failure → continue with that run pinned.
 3. Without `--watch`: `gh run list --branch <branch> --limit 5` / `gh pr checks <pr>` for a quick read. Everything green → say so and stop — never manufacture work.
 4. Register state: `orc-state init --command ci --total-phases 4`, then record the resolved ref + run ID via `orc-state digest write -`. Defer to `orc:state-protocol` for schema and rules. (If an in-progress session already exists for this branch — e.g. a flow — do NOT re-init as `ci`; append a `ci_status` line to that session's checkpoint body instead.)
 
