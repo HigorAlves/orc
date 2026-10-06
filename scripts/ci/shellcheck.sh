@@ -10,6 +10,7 @@ cd "$repo_root"
 shellcheck \
   orc/hooks/scripts/*.sh \
   orc/lib/*.sh \
+  orc/lib/explain/*.sh \
   orc/bin/* \
   scripts/ci/*.sh
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2016
+# shellcheck disable=SC2015,SC2016
 # qa-video.sh — turns a Playwright run into QA evidence: an ordered scenario
 # plan from results.json, per-test console/trace collection into the packet,
 # and the single stitched qa-<branch>.webm (title card + clip per scenario)

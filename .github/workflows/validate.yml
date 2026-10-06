@@ -78,6 +78,18 @@ jobs:
       - name: QA report fixtures (orc-report json/html)
         run: bash scripts/ci/verify-report.sh
 
+      - name: Target registry fixtures (orc-targets)
+        run: bash scripts/ci/verify-targets.sh
+
+      - name: Playwright scaffold fixtures (orc-playwright)
+        run: bash scripts/ci/verify-playwright-env.sh
+
+      - name: QA video fixtures (orc-qa-video)
+        run: bash scripts/ci/verify-qa-video.sh
+
+      - name: Explainer toolchain fixtures (orc-explain)
+        run: bash scripts/ci/verify-explain.sh
+
       - name: statusline render fixtures
         run: bash scripts/ci/verify-statusline.sh
 

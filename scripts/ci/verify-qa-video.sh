@@ -2,6 +2,7 @@
 # Fixture tests for bin/orc-qa-video — Playwright results.json → ordered scenario
 # plan, console/trace collection, and (ffmpeg present) the stitched QA video +
 # chapters.json. Run from the repo root.
+# shellcheck disable=SC2015  # `A && ok || fail` is the fixture idiom; ok never fails
 set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cli="$repo_root/orc/bin/orc-qa-video"
