@@ -4,13 +4,21 @@
   "displayName": "orc",
   "description": "Full-SDLC Claude Code plugin — plan → implement → QA → ship → CI → release, with root-cause debugging, incident response, and dependency care. Hook-enforced guardrails, curated skills, model/effort-tuned agents.",
   "version": "0.23.0",
+  "types": "./types/index.d.ts",
   "author": {
     "name": "Higor Alves",
     "email": "me@higoralves.dev"
   },
   "homepage": "https://github.com/HigorAlves/orc",
   "repository": "https://github.com/HigorAlves/orc",
-  "keywords": ["workflow", "tdd", "code-review", "git", "pr", "orchestration"],
+  "keywords": [
+    "workflow",
+    "tdd",
+    "code-review",
+    "git",
+    "pr",
+    "orchestration"
+  ],
   "license": "MIT",
   "userConfig": {
     "pr_size_budget": {

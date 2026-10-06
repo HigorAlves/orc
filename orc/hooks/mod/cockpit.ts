@@ -2,31 +2,19 @@
 // output (`get`, `slice list`, `decision get`), so register.ts only binds `$`
 // calls and draws. orc-state stays the single writer of .orc/.
 
-export type Session = {
-  command: string
-  gitBranch: string
-  description?: string | null
-  status: string
-  phase: number | 'done'
-  phaseLabel?: string | null
-  totalPhases: number
-  jiraTicket?: string | null
-  linkedPRs?: { url?: string; number?: number; repo?: string }[]
-}
-export type Slice = { id: string; status: string; title: string; commit: string | null }
-export type Decision = { key: string; value: string; provenance: string }
-export type Criterion = { criterion: string; result: string; note: string; sliceId: number | string }
-export type QaReport = { verdict: string; acceptance: Criterion[]; missing: string[] }
-export type AgentUsage = { agent: string; runs: number; in: number; out: number; ms: number }
-export type Size = { loc: number; budget: number }
-export type Snapshot = {
-  session: Session | null
-  slices: Slice[]
-  decisions: Decision[]
-  qa?: QaReport | null
-  size?: Size | null
-  usage?: AgentUsage[]
-}
+import type {
+  OrcAgentUsage, OrcCriterion, OrcDecision, OrcMeter, OrcQaReport, OrcSession, OrcSize, OrcSlice, OrcSnapshot,
+} from '../../types'
+
+export type Session = OrcSession
+export type Slice = OrcSlice
+export type Decision = OrcDecision
+export type Criterion = OrcCriterion
+export type QaReport = OrcQaReport
+export type AgentUsage = OrcAgentUsage
+export type Size = OrcSize
+export type Meter = OrcMeter
+export type Snapshot = OrcSnapshot
 
 export const POLICIES = ['manual', 'guided', 'auto'] as const
 export const EMPTY: Snapshot = { session: null, slices: [], decisions: [] }
@@ -127,3 +115,10 @@ export function parseUsage(json: string): AgentUsage[] {
 const k = (n: number) => (n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n))
 export const usageLine = (u: AgentUsage) =>
   `${u.agent.replace(/^orc:/, '').padEnd(24)} ${String(u.runs).padStart(3)} run${u.runs === 1 ? ' ' : 's'}  ${k(u.in)} in / ${k(u.out)} out  ${Math.round(u.ms / 1000)}s`
+
+// $.session.usage() → the header's context % and cost; null where the host has none.
+export function parseMeter(u: { context?: { percent?: number }; cost?: { usd: number } } | null | undefined): Meter | null {
+  if (!u) return null
+  const pct = u.context?.percent
+  return { contextPercent: typeof pct === 'number' ? Math.round(pct) : null, usd: u.cost ? Math.round(u.cost.usd * 100) / 100 : null }
+}

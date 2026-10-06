@@ -5,9 +5,13 @@
 import type { EngineInterface, On, PluginOptions } from 'claude-code'
 import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine, summarizeChecks, type CiRecord, type CiSummary } from './ci'
 import {
-  EMPTY, POLICIES, criterionLine, headline, isDone, parseDecisions, parseReport, parseSession, parseSize, parseSlices, parseUsage,
+  EMPTY, POLICIES, criterionLine, headline, isDone, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage,
   phaseRows, policyOf, sizeLine, sliceLine, summaryText, usageLine, type Session, type Snapshot,
 } from './cockpit'
+import { isOrcStateWrite } from './state'
+
+// State refs: literals in this file, as the engine's scan requires.
+const SNAPSHOT_REF = { plugin: 'orc', key: 'snapshot' } as const
 import { gateBadge } from './gates'
 import { modelFor, parseProfile, type Profile } from './profiles'
 
@@ -20,6 +24,7 @@ export function register(on: On, options: PluginOptions) {
   register_attribution(on)
   register_compaction(on)
   register_agents(on, parseProfile(options.model_profile))
+  register_refresh(on)
   register_cockpit(on)
   register_gates(on)
   register_ci_band(on)
@@ -33,6 +38,7 @@ function register_session(on: On) {
     } catch {
       // name taken in this build: the markdown /orc:status stays the fallback
     }
+    void refresh($)
     if (e.isInteractive) $.clock.every(POLL_MS, () => { void ci_tick($) })
     return next(e)
   })
@@ -65,6 +71,18 @@ function register_compaction(on: On) {
   })
 }
 
+// Every orc-state write the model runs through Bash re-reads .orc/ into state;
+// subscribed drawings redraw by themselves. (Main-loop turns refresh in the
+// turn.complete hook below — one registration per event without a matcher.)
+function register_refresh(on: On) {
+  on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
+    const result = await next(e)
+    const command = (e.input as { command?: string }).command ?? ''
+    if (isOrcStateWrite(command)) await refresh($).catch(() => undefined)
+    return result
+  })
+}
+
 // orc agents: model_profile picks the model when the Agent call named none
 // (never over an explicit one — an escalation step-up), and every finished orc
 // subagent run lands in the usage ledger (`orc-state usage add`) — the data the
@@ -81,6 +99,7 @@ function register_agents(on: On, profile: Profile) {
 
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)
+    if (!e.agentId) await refresh($)
     const agent = e.agentId ? agentTypes.get(e.agentId) : undefined
     if (agent && e.usage) {
       agentTypes.delete(e.agentId as string)
@@ -181,7 +200,8 @@ let snap: Snapshot = EMPTY
 
 function register_cockpit(on: On) {
   on('command.run', { command: 'orc' }, async ($) => {
-    snap = await load_snapshot($)
+    await refresh($)
+    snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
     // A plain `claude -p` run has no surface (ui.open still reports "placed").
     if ((await $.session.surfaces()).length) {
       try {
@@ -196,6 +216,7 @@ function register_cockpit(on: On) {
   on('ui.render', { component: 'Pane' }, async ($, e, next) => {
     if (e.requestId !== PANE) return next(e)
     const { Box, Text, Button } = $.ui.resolve(e)
+    snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
     const redraw = () => $.ui.invalidate('ui.render')
     const line = (text: string, style: { bold?: boolean; dimColor?: boolean; color?: string } = {}) => Text({ ...style, children: [text] })
     const s = snap.session
@@ -232,7 +253,7 @@ function register_cockpit(on: On) {
         const current = policyOf(snap) ?? 'manual'
         body = [Box({ flexDirection: 'row', columnGap: 2, children: [line('Autopilot:'),
           ...POLICIES.map(p => Button({ key: 'policy-' + p, label: p, hotkey: p[0], plain: true, dimColor: p !== current,
-            onPress: async () => { await write_policy($, p); snap = await load_snapshot($); redraw() } }))] }),
+            onPress: async () => { await write_policy($, p); await refresh($) } }))] }),
           ...snap.decisions.map(d => line(`${d.key} = ${d.value}  (${d.provenance})`))]
       }
     }
@@ -246,23 +267,10 @@ function register_cockpit(on: On) {
       Box({ flexDirection: 'row', columnGap: 2, children: [
         Button({ key: 'resume', label: s ? 'Resume (/orc:resume)' : 'New flow (/orc:flow)', hotkey: 'r',
           onPress: () => { $.prompt.fill({ text: s ? '/orc:resume' : '/orc:flow ' }) } }),
-        Button({ key: 'refresh', label: 'Refresh', hotkey: 'f', onPress: async () => { snap = await load_snapshot($); redraw() } }),
+        Button({ key: 'refresh', label: 'Refresh', hotkey: 'f', onPress: async () => { await refresh($) } }),
       ] }),
     ] })
   })
-}
-
-async function load_snapshot($: EngineInterface): Promise<Snapshot> {
-  const root = $.plugin.root + '/bin/'
-  const run = (argv: string[]) => $.process.run([root + argv[0], ...argv.slice(1)], { timeoutMs: 10000 }).then(r => (r.exitCode === 0 ? r.stdout : ''), () => '')
-  const [session, slices, decisions, qa, loc, budget, usage] = await Promise.all([
-    run(['orc-state', 'get']), run(['orc-state', 'slice', 'list']), run(['orc-state', 'decision', 'get']), run(['orc-report', 'json']),
-    run(['orc-pr-size', 'loc']), run(['orc-pr-size', 'budget']), run(['orc-state', 'usage', 'summary']),
-  ])
-  return {
-    session: parseSession(session) as Session | null, slices: parseSlices(slices), decisions: parseDecisions(decisions),
-    qa: parseReport(qa), size: parseSize(loc, budget), usage: parseUsage(usage),
-  }
 }
 
 // The user picked it in the pane, so it settles as an asked decision.
@@ -277,6 +285,33 @@ async function orc_report_html($: EngineInterface): Promise<string> {
   } catch {
     return ''
   }
+}
+
+// --- Snapshot loader (the one writer of the `snapshot` atom) ----------------
+// Lives here, not in state.ts: the engine follows `$` only within this file.
+async function load_snapshot($: EngineInterface): Promise<Snapshot> {
+  const root = $.plugin.root + '/bin/'
+  const run = (argv: string[]) => $.process.run([root + argv[0], ...argv.slice(1)], { timeoutMs: 10000 }).then(r => (r.exitCode === 0 ? r.stdout : ''), () => '')
+  const [session, slices, decisions, qa, loc, budget, usage, meter] = await Promise.all([
+    run(['orc-state', 'get']), run(['orc-state', 'slice', 'list']), run(['orc-state', 'decision', 'get']), run(['orc-report', 'json']),
+    run(['orc-pr-size', 'loc']), run(['orc-pr-size', 'budget']), run(['orc-state', 'usage', 'summary']),
+    $.session.usage().then(u => u, () => null),
+  ])
+  return {
+    session: parseSession(session), slices: parseSlices(slices), decisions: parseDecisions(decisions),
+    qa: parseReport(qa), size: parseSize(loc, budget), usage: parseUsage(usage), meter: parseMeter(meter),
+  }
+}
+
+// One loader at a time; a trigger during a load queues exactly one more.
+let inflight: Promise<void> | null = null
+let dirty = false
+function refresh($: EngineInterface): Promise<void> {
+  if (inflight) { dirty = true; return inflight }
+  inflight = (async () => {
+    do { dirty = false; await $.state.set(SNAPSHOT_REF, await load_snapshot($)) } while (dirty)
+  })().finally(() => { inflight = null })
+  return inflight
 }
 
 // One orc-state call; '' when it fails or there is no session.
