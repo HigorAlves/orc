@@ -9,7 +9,7 @@
 ```
 orc/                               # the plugin
 ├── .claude-plugin/plugin.json     # manifest — what Claude Code reads to discover the plugin
-├── skills/                        # 80 skills, namespaced /orc:<name>
+├── skills/                        # 81 skills, namespaced /orc:<name>
 ├── commands/                      # 30 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
 ├── agents/                        # 14 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) + PostToolUse + WorktreeCreate/Remove

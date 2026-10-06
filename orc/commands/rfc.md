@@ -23,7 +23,7 @@ Author a Request for Comments (RFC) before committing to an implementation.
 ## Arguments
 
 - `<title>` — optional. One-line problem statement (will be polished into a noun phrase). Prompts if omitted.
-- `--grill` — after drafting, invoke `orc:grill-me` to stress-test the design.
+- `--grill` — after drafting, invoke `orc:grilling` to stress-test the design.
 - `--review <path>` — review an existing RFC instead of authoring a new one. Walks the doc with critique focused on missing alternatives, undefined success criteria, hidden assumptions.
 
 ## Workflow
@@ -65,7 +65,7 @@ Save to the workspace draft. Bump checkpoint to phase=4.
 
 ### Phase 5 (optional, with `--grill`) — Stress-test
 
-Invoke `orc:grill-me` against the draft. Update the document with answers to questions exposed. Bump checkpoint.
+Invoke `orc:grilling` against the draft. Update the document with answers to questions exposed. Bump checkpoint.
 
 ### Phase 6 — Place + commit
 

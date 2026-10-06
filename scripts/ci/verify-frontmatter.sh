@@ -3,11 +3,13 @@
 #   skills:   name == dir name, kebab-case, <=64 chars; description present, <=1024 chars.
 #   agents:   name present and orc- prefixed; description present.
 #   commands: description present.
-# Run from the repo root.
+#   all three: model/effort, when set, are values Claude Code accepts.
+# Run from the repo root. An optional first argument lints another tree
+# (used by verify-frontmatter-fixtures.sh).
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$repo_root"
+cd "${1:-$repo_root}"
 
 status=0
 
@@ -23,6 +25,24 @@ fm_value() {
     }
   ' "$file"
 }
+
+# model: an alias, inherit, or a full claude-* ID. effort: a level the Claude 5
+# lineup accepts (ultracode is a session setting, not an effort level).
+check_model_effort() {
+  local file="$1" model effort
+  model="$(fm_value "$file" model)"
+  effort="$(fm_value "$file" effort)"
+  if [ -n "$model" ] && ! printf '%s' "$model" | grep -qE '^(inherit|haiku|sonnet|opus|fable|best|claude-[a-z0-9-]+)$'; then
+    echo "verify-frontmatter: $file model '$model' is not an alias (haiku|sonnet|opus|fable|best), inherit, or a claude-* ID"; status=1
+  fi
+  if [ -n "$effort" ] && ! printf '%s' "$effort" | grep -qE '^(low|medium|high|xhigh|max)$'; then
+    echo "verify-frontmatter: $file effort '$effort' is not one of low|medium|high|xhigh|max"; status=1
+  fi
+}
+
+for f in orc/skills/*/SKILL.md orc/agents/*.md orc/commands/*.md; do
+  [ -f "$f" ] && check_model_effort "$f"
+done
 
 # Skills
 for skill_md in orc/skills/*/SKILL.md; do
@@ -75,6 +95,6 @@ for cmd in orc/commands/*.md; do
 done
 
 if [ "$status" -eq 0 ]; then
-  echo "verify-frontmatter: OK (skill names, agent prefixes, descriptions all conform)"
+  echo "verify-frontmatter: OK (skill names, agent prefixes, descriptions, model/effort all conform)"
 fi
 exit "$status"

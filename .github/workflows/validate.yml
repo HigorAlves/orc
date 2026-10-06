@@ -93,6 +93,9 @@ jobs:
       - name: Frontmatter conventions
         run: bash scripts/ci/verify-frontmatter.sh
 
+      - name: Frontmatter model/effort fixtures
+        run: bash scripts/ci/verify-frontmatter-fixtures.sh
+
       - name: Count + marketplace/architecture consistency
         run: bash scripts/ci/verify-counts.sh
 
@@ -112,7 +115,8 @@ jobs:
           node-version: 22
       - name: Install Claude Code CLI
         # Pinned for reproducibility; bumped via dependabot/PR, not floating latest.
-        run: npm install -g @anthropic-ai/claude-code@2.1.220
+        # >= 2.1.289: validates the Claude 5 aliases/effort levels and mod modules.
+        run: npm install -g @anthropic-ai/claude-code@2.1.290
       - name: Validate plugin manifest (strict)
         run: claude plugin validate ./orc --strict
 
@@ -161,4 +165,5 @@ jobs:
           go tool cover -func=coverage.out | tail -1
 
       - name: govulncheck
-        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+        # Pinned: govulncheck >= v1.8.0 requires go 1.26; cli/go.mod is 1.25 (GOTOOLCHAIN=local).
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...

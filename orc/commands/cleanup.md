@@ -31,7 +31,7 @@ Close the loop on finished orc work — remove the workspace state, the worktree
 
 ## Arguments
 
-- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`; taxonomy in `orc:using-orc`). Soft-inward gates consult the resolved policy — `guided` auto-advances mechanical confirms with a printed one-liner; `full` pre-approves them from settled decisions (`orc:state-protocol`), stopping only on escalation-only conditions. Hard-outward gates are unaffected at every level.
+- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`); ladder and hard-outward exemption in `orc:gates` §6.
 
 - `<session-id-or-branch>` — optional. Clean up exactly one session. Accepts the `sessionId` from `.orc/orc.json` (list via `orc-state sessions`; schema per `orc:state-protocol`) or a (sanitized or raw) branch name.
 
@@ -202,8 +202,8 @@ For each session:
 
 0. **Docker environment** — BEFORE state removal (the state file holds the teardown command; delete it first and the environment is orphaned): execute the state file's `teardownCommand` (append `-v` only with `--down-volumes`); kill recorded `hostProcesses[]` PIDs after verifying via `ps` that the PID still runs the recorded command — a reused PID is surfaced, never killed. Then proceed.
 1. **Workspace state** — `rm -rf .orc/<sanitized-branch>/`. Update `.orc/orc.json` to remove the entry (use Read + Write to preserve the JSON).
-2. **Worktree** — `git worktree remove <path>` ONLY if clean. If dirty, skip and surface a `**⚠️ Skipped — dirty worktree**` `[!WARNING]` callout. Never use `--force` automatically; require an explicit `--force-dirty` flag in a future iteration if needed.
-3. **Branch** — `git branch -d <branch>` ONLY if merged into main. If unmerged, skip and surface a `**⚠️ Skipped — unmerged branch**` `[!WARNING]` callout. Never use `-D` automatically.
+2. **Worktree** — `git worktree remove <path>` ONLY if clean. If dirty, skip and surface a `**⚠️ Skipped — dirty worktree**` callout. Never use `--force` automatically; require an explicit `--force-dirty` flag in a future iteration if needed.
+3. **Branch** — `git branch -d <branch>` ONLY if merged into main. If unmerged, skip and surface a `**⚠️ Skipped — unmerged branch**` callout. Never use `-D` automatically.
 4. **Worktree prune** — after removals: `git worktree prune` to clean up any stale references.
 
 For sessions with **stack members**, branch deletion (step 3) iterates the stack **bottom-up** and refuses to delete any branch whose parent (position N-1) is still `OPEN`:

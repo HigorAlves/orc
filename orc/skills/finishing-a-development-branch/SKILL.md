@@ -72,12 +72,12 @@ Which option?
 
 ### Caller-supplied preview mode (one gate instead of two)
 
-When the calling command has **already composed the PR title + body** (e.g. `/orc:ship`, which composes before gating), it passes them in and Steps 3–4's two questions collapse into ONE. Print the Gate headline (`**⛔ Gate — ship**`, one line: tests green, N commits on `<branch>`), render the composed title + body in a fence, then `AskUserQuestion`:
+When the calling command has **already composed the PR title + body** (e.g. `/orc:ship`, which composes before gating), it passes them in and Steps 3–4's two questions collapse into ONE. Print the Gate headline (`**⛔ Gate — ship**`, one line: tests green, N commits on `<branch>`), then `AskUserQuestion` (header `Ship`) with the composed title + body as the `preview` of options 1 and 2 — the payload renders beside the choice instead of in a fence above it (`orc:gates` §3; over ~60 lines or no `AskUserQuestion` → fence fallback):
 
 ```
-1. Open PR as previewed (Recommended)
-2. Open as draft
-3. Edit title/body first — collect edits, re-render the preview, re-ask
+1. Open PR as previewed (Recommended)      preview: # <title>\n\n<body>
+2. Open as draft                           preview: same payload, "Draft" first line
+3. Edit title/body first — edits ride the notes field; re-render the preview, re-ask
 4. Another completion path — merge back locally / keep as-is / discard
 ```
 

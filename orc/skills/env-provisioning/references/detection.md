@@ -43,7 +43,7 @@ Version pinning: honor an explicit version in the env value or README ("Postgres
 
 Sources, in trust order:
 
-1. **`.env.example`** — the variable list is authoritative for what the app needs. Copy to `env.orc`, fill dev-safe values (`localhost` hosts, generated service ports). Secrets (`*_SECRET`, `*_KEY`, `*_TOKEN`): keep the placeholder, surface a `[!WARNING]` listing what the user must fill — never invent values.
+1. **`.env.example`** — the variable list is authoritative for what the app needs. Copy to `env.orc`, fill dev-safe values (`localhost` hosts, generated service ports). Secrets (`*_SECRET`, `*_KEY`, `*_TOKEN`): keep the placeholder, surface a **⚠️ Caution** callout listing what the user must fill — never invent values.
 2. **README / CONTRIBUTING setup sections** — headings matching `Getting started|Setup|Development|Running locally`. Extract fenced commands: `docker compose …` (confirms rung 1 usage + flags), `make <target>`, migrate/seed commands (`prisma migrate dev`, `rails db:setup`, `npm run db:migrate`). Migrate/seed run as one-shots after services are healthy; anything that looks destructive (`reset`, `drop`, `force`) gates via `AskUserQuestion` first.
 3. **Makefile** — targets named `dev`, `up`, `start`, `db`, `services`: read their recipes for the same signals.
 4. **package.json scripts** (or equivalent) — `dev` script is the host-mode app command; `engines.node` / `.nvmrc` pins the node image for `--containerize-app`.
