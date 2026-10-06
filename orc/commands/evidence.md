@@ -25,13 +25,16 @@ allowed-tools:
   - Bash(npx playwright:*)
   - Bash(orc-playwright:*)
   - Bash(orc-qa-video:*)
+  - Bash(gh pr comment:*)
+  - Bash(gh pr view:*)
+  - Bash(gh auth status:*)
 ---
 
 # /orc:evidence
 
 Collect browser evidence that a ticket's behavior works — navigate, screenshot, record — then deliver it to the ticket or keep it local. Unlike `/orc:qa` (a pre-PR gate scoped to your **diff** that also runs tests/lint), this is scoped to a **ticket** (or a flow you describe) and does only the evidence loop. Use it to attach proof to a ticket, demo a flow, or QA a ticket you didn't necessarily write the code for.
 
-Collection **reuses `/orc:qa`'s browser drivers verbatim**; delivery reuses the `orc:evidence-publish` skill. This command is only the ticket-first orchestrator — it invents no new browser or upload logic.
+Collection **reuses `orc:browser-qa` (Driver P/A/B)**; delivery reuses the `orc:evidence-publish` skill. This command is only the ticket-first orchestrator — it invents no new browser or upload logic.
 
 ## Arguments
 
@@ -39,7 +42,7 @@ Collection **reuses `/orc:qa`'s browser drivers verbatim**; delivery reuses the 
 - `--context "<what to test>"` — describe the flow to exercise, instead of (or on top of) pulling it from the ticket.
 - `--target <name>` — a named QA target from `.orc/targets.json` (`orc:qa-targets`): `local` provisions the Docker env; a remote target is probed and used as-is. Omitted ⇒ the Target gate asks.
 - `--web <url>` — app already running at this URL; skip env provisioning.
-- `--driver chrome|agent-browser` — browser driver; default is the same Phase 4.1 gate as `/orc:qa`. `chrome` = Claude-in-Chrome, watch live in your browser; `agent-browser` = headless CLI validator.
+- `--driver playwright|agent-browser|chrome` — browser driver; default is the `orc:browser-qa` driver gate. `playwright` = Playwright Test with a stitched step-tagged video; `chrome` = Claude-in-Chrome, watch live in your browser; `agent-browser` = headless CLI validator.
 - `--no-env` — skip Docker provisioning; use `--web` or a legacy boot.
 - Workspace flags (`--repos`/`--repo`/`--this-repo`) — as in `/orc:qa`.
 
@@ -64,13 +67,14 @@ Distill the summary + acceptance criteria into a short list of expected behavior
 
 ### Phase 2 — Environment
 
-Same as `/orc:qa` Phase 4.0 (do **not** duplicate the logic): `orc-docker-env is-ready $(orc-docker-env state-path "$ORC_STATE_DIR" <sanitized-branch>)` → `ready` attaches (echo the reuse line); otherwise dispatch **`orc-env-provisioner`** via `Task`. Skip on `--web` / `--no-env`. Record `appUrl`. The environment stays up after the run (teardown is `/orc:cleanup`).
+Same as `orc:browser-qa` Step 0–1 (do **not** duplicate the logic): `orc-docker-env is-ready $(orc-docker-env state-path "$ORC_STATE_DIR" <sanitized-branch>)` → `ready` attaches (echo the reuse line); otherwise dispatch **`orc-env-provisioner`** via `Task`. Skip on `--web` / `--no-env`. Record `appUrl`. The environment stays up after the run (teardown is `/orc:cleanup`).
 
 ### Phase 3 — Collect
 
 Pick the packet directory: an active branch session → `${ORC_STATE_DIR}/<sanitized-branch>/files/qa/`; no session → `.orc/evidence/<sanitized-KEY>/` (context-only → `.orc/evidence/adhoc-<sanitized-context>/`). Then run the driver:
 
-- Choose it from `--driver`, else the **Phase 4.1 driver gate from `/orc:qa`** (`⛔ Gate — browser driver`).
+- Choose it from `--driver`, else the `orc:browser-qa` driver gate (`⛔ Gate — browser driver`).
+- **Driver `playwright`** — invoke `orc:playwright-qa` with the ticket criteria as the acceptance list (ids `ticket-<n>`).
 - **Driver `chrome`** — follow `/orc:qa` **Driver B** verbatim: load the Claude-in-Chrome tools via one `ToolSearch`, call `tabs_context_mcp` first (if the extension isn't connected, say so and fall back to `agent-browser` — never silently), open a **new** tab, start a `gif_creator` recording named `qa-<sanitized-branch>.gif`, narrate each step under a numbered `### Step <N>` heading, avoid `alert`/`confirm` elements. Score the Phase 1 expected-behavior list into `qa-manifest.json` exactly as `/orc:qa` requires — the ticket's acceptance criteria are the rubric here, standing in for `slices.json`.
 - **Driver `agent-browser`** — dispatch **`orc-qa-validator`** (Driver A) with the Phase 1 scope as the feature description + `appUrl` + the packet dir.
 
