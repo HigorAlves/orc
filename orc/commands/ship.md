@@ -129,6 +129,8 @@ gh pr create --title "<title>" --body "<body>" [--draft] [--base <base>]
 
 Echo the PR URL.
 
+When `${ORC_STATE_DIR}/<sanitized-branch>/files/qa/qa-manifest.json` exists, invoke `orc:evidence-publish` with `qaDir`, the packet's `verdict`, and the new PR — its PR-comment question (hard-outward, header `Post`) offers the verdict table + links on the PR just opened. Keep-local is the default; nothing posts without the answer.
+
 In workspace mode, this becomes a **two-pass loop**:
 
 **Pass 1 — push + create per repo** (sequential, since `gh pr create` should observe a clean push). Skip any repo whose Phase 4.5 already produced a stack (its `linkedPRs[]` entries are populated and `gh pr create` would create a duplicate):

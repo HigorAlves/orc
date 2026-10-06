@@ -12,6 +12,7 @@ Flow-specific deltas from standalone `/orc:ship`:
 - `orc:git-commit` (if uncommitted)
 - PR composition: `orc:caveman-pr` by default; the long-form template only if `--verbose` was passed
 - `gh pr create` — UNLESS this repo stacked in the size gate, in which case `/orc:stack-pr` already opened the PRs and Phase 7 only records the stack metadata in `linkedPRs`.
+- When `${ORC_STATE_DIR}/<sanitized-branch>/files/qa/qa-manifest.json` exists, invoke `orc:evidence-publish` with `qaDir`, the packet's `verdict`, and the new PR — its PR-comment question (hard-outward, header `Post`) offers the verdict table + links on the PR just opened. Keep-local is the default; nothing posts without the answer.
 
 Per-repo size-gate decisions are independent: in workspace mode, repo `api` can stack while `ui` opens single with an override. Record each decision in `checkpoint.md` (so `/orc:resume` knows we already gated this repo).
 
