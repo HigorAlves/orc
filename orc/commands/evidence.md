@@ -4,6 +4,7 @@ argument-hint: "[<TICKET-KEY>] [--web <url>] [--driver chrome|agent-browser] [--
 arguments: [ticket]
 allowed-tools:
   - Bash(orc-state:*)
+  - Bash(orc-report:*)
   - Read
   - Write
   - Edit

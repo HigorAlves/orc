@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# orc-report — QA evidence report CLI (plugin bin/, on PATH while orc is
+# enabled). Wraps lib/report.sh: `json` normalizes the QA packet, `html`
+# renders it to files/qa/report.html for local viewing or Artifact publish.
+set -euo pipefail
+
+dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+# shellcheck disable=SC1091
+. "${dir}/../lib/state.sh"
+# shellcheck disable=SC1091
+. "${dir}/../lib/report.sh"
+
+usage() {
+  cat <<'USAGE'
+usage: orc-report <json|html> [--branch <raw-or-sanitized>]
+
+  json   normalized report JSON (packet + qa-verdict + session) on stdout
+  html   write <state>/<session>/files/qa/report.html; print its path
+USAGE
+}
+
+sub="${1:-}"
+[ -n "$sub" ] || { usage >&2; exit 2; }
+shift
+case "$sub" in
+  json) orc_report_json "$@" ;;
+  html) orc_report_html "$@" ;;
+  -h|--help) usage ;;
+  *) usage >&2; exit 2 ;;
+esac

@@ -3,6 +3,7 @@ description: End-to-end feature/bug/refactor pipeline (plan → start → implem
 argument-hint: "[--auto[=guided|full]] [--type=feature|bug|refactor|docs] [--rfc] [--verbose] [--pause-at-implement] [--jira <KEY>] [--max-loc <N>] [--no-size-gate] [--driver agent-browser|chrome] [--repos a,b | --repo a | --all-repos | --this-repo] <one-line task description>"
 allowed-tools:
   - Bash(orc-state:*)
+  - Bash(orc-report:*)
   - Read
   - Write
   - Edit

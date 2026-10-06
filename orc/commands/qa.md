@@ -3,6 +3,7 @@ description: Pre-PR quality gate — browser-driven QA for web changes with a ma
 argument-hint: "[--auto[=guided|full]] [--web <url>] [--no-web] [--no-env] [--driver agent-browser|chrome] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 allowed-tools:
   - Bash(orc-state:*)
+  - Bash(orc-report:*)
   - Read
   - Write
   - Edit
