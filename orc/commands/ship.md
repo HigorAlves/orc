@@ -10,6 +10,9 @@ allowed-tools:
   - AskUserQuestion
   - Bash(git:*)
   - Bash(gh pr create:*)
+  - Bash(gh pr comment:*)
+  - Bash(gh pr view:*)
+  - Bash(gh auth status:*)
   - Bash(gh pr view:*)
   - Bash(gh pr list:*)
   - Bash(gh pr edit:*)
