@@ -5,14 +5,15 @@
 import type { EngineInterface, On, PluginOptions } from 'claude-code'
 import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine, summarizeChecks, type CiRecord } from './ci'
 import {
-  EMPTY, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, profileOf, summaryText, type SectionId, type Snapshot,
+  EMPTY, currentSlice, cutDiff, digestOf, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, profileOf, summaryText, type SectionId, type Snapshot,
 } from './cockpit'
 import { PANE, drawPane } from './pane'
-import { SECTIONS_INITIAL, ciBox, isOrcStateWrite } from './state'
+import { DETAILS_INITIAL, SECTIONS_INITIAL, ciBox, isOrcStateWrite } from './state'
 
 // State refs: literals in this file, as the engine's scan requires.
 const SNAPSHOT_REF = { plugin: 'orc', key: 'snapshot' } as const
 const SECTIONS_REF = { plugin: 'orc', key: 'sections' } as const
+const DETAILS_REF = { plugin: 'orc', key: 'details' } as const
 import { gateBadge } from './gates'
 import { modelFor, parseProfile, type Profile } from './profiles'
 
@@ -209,12 +210,16 @@ function register_cockpit(on: On, fallbackProfile: Profile) {
     if (e.requestId !== PANE) return next(e)
     const snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
     const sections = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
-    const model = { snap, sections, ciAlert: ciBox.alert, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
+    const details = (await $.state.get(DETAILS_REF)).value ?? DETAILS_INITIAL
+    const model = { snap, sections, details, ciAlert: ciBox.alert, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
     return drawPane($.ui.resolve(e), model, {
       resume: () => { $.prompt.fill({ text: snap.session ? '/orc:resume' : '/orc:flow ' }) },
       toggle: (id: SectionId) => async () => {
         const current = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
         await $.state.set(SECTIONS_REF, { ...current, [id]: !current[id] })
+        if (current[id]) return
+        if (id === 'digest') await load_digest($, snap)
+        if (id === 'diff') await load_diff($, snap)
       },
       // The user picked it in the pane, so it settles as an asked decision.
       settle: async (key: string, value: string) => {
@@ -251,7 +256,13 @@ let dirty = false
 function refresh($: EngineInterface): Promise<void> {
   if (inflight) { dirty = true; return inflight }
   inflight = (async () => {
-    do { dirty = false; await $.state.set(SNAPSHOT_REF, await load_snapshot($)) } while (dirty)
+    do {
+      dirty = false
+      const snap = await load_snapshot($)
+      // Stale digests and diffs are worse than a reload: open sections reload on the next toggle.
+      await $.state.set(DETAILS_REF, DETAILS_INITIAL)
+      await $.state.set(SNAPSHOT_REF, snap)
+    } while (dirty)
   })().finally(() => { inflight = null })
   return inflight
 }
@@ -263,6 +274,26 @@ async function orc_report_html($: EngineInterface): Promise<string> {
   } catch {
     return ''
   }
+}
+
+// checkpoint.md's digest, read once per open; '' is drawn as "no digest".
+async function load_digest($: EngineInterface, snap: Snapshot): Promise<void> {
+  const branch = snap.session?.branch
+  if (!branch) return
+  const root = (await $.env.get('ORC_STATE_DIR').catch(() => undefined)) || '.orc'
+  const text = await $.fs.read(`${root}/${branch}/files/checkpoint.md`).then(t => (typeof t === 'string' ? t : ''), () => '')
+  const d = (await $.state.get(DETAILS_REF)).value ?? DETAILS_INITIAL
+  await $.state.set(DETAILS_REF, { ...d, digest: digestOf(text) ?? '' })
+}
+
+// The current slice's diff: its commit when it has one, else the working tree.
+async function load_diff($: EngineInterface, snap: Snapshot): Promise<void> {
+  const cur = currentSlice(snap.slices)
+  const argv = cur?.commit ? ['git', 'show', '--no-color', '--format=', '-U1', cur.commit] : ['git', 'diff', '--no-color', '-U1']
+  const out = await $.process.run(argv, { timeoutMs: 10000 }).then(r => (r.exitCode === 0 ? r.stdout : ''), () => '')
+  const { source, truncated } = cutDiff(out)
+  const d = (await $.state.get(DETAILS_REF)).value ?? DETAILS_INITIAL
+  await $.state.set(DETAILS_REF, { ...d, diff: source, diffTruncated: truncated })
 }
 
 // One orc-state call; '' when it fails or there is no session.

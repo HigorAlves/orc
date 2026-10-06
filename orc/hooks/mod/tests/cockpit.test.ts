@@ -1,8 +1,9 @@
 import type { On } from 'claude-code'
 import { expect, test } from 'claude-code/testing'
+import { ran } from './helpers'
 
 const SESSION = JSON.stringify({
-  command: 'flow', gitBranch: 'feat/export', description: 'CSV export', status: 'in_progress',
+  command: 'flow', branch: 'feat-export', gitBranch: 'feat/export', description: 'CSV export', status: 'in_progress',
   phase: 5, phaseLabel: 'implement', totalPhases: 9, jiraTicket: null,
   linkedPRs: [{ url: 'https://github.com/acme/app/pull/12', number: 12 }],
 })
@@ -147,5 +148,28 @@ test('the Decisions selects settle policy and profile through orc-state as asked
   const before = calls.length
   await ui.select({ key: 'policy', value: 'guided' }) // already current (DECISIONS fixture says guided)
   expect(calls.length).toBe(before)
+  await ui.unmount()
+})
+
+test('digest and diff sections load on open', async ($, on) => {
+  const calls: string[][] = []
+  const reads: string[] = []
+  on('process.run', ($, e) => {
+    if (e.argv[0] === 'git') { calls.push([...e.argv]); return ran('diff --git a/x b/x\n--- a/x\n+++ b/x\n@@ -1 +1 @@\n-a\n+b\n') }
+    return orcState(calls)($, e)
+  })
+  on('fs.read', ($, e) => { reads.push(e.path); return { value: '# x\n\n## Resume digest\nPhase 5.\n' } })
+  on('env.get', () => ({ value: undefined }))
+  surfaces(on, ['terminal'])
+  await $.command.run(RUN)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await ui.press({ key: 'sec-digest' })
+  expect(reads.length).toBe(1)
+  expect(reads[0]).toMatch(/\/\.orc\/feat-export\/files\/checkpoint\.md$/)
+  expect(await ui.find({ type: 'Markdown' })).toMatchObject({ props: { text: 'Phase 5.' } })
+  await ui.press({ key: 'sec-diff' })
+  // SLICES fixture: #1 committed, #2 pending, so the current slice is #2, uncommitted.
+  expect(calls.find(a => a[0] === 'git')).toEqual(['git', 'diff', '--no-color', '-U1'])
+  expect(await ui.find({ type: 'Code' })).toMatchObject({ props: { format: 'diff' } })
   await ui.unmount()
 })

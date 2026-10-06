@@ -164,3 +164,19 @@ export function attention(snap: Snapshot, ciRed: boolean): Set<SectionId> {
 
 export const sectionLabel = (id: SectionId, open: boolean, flagged: boolean) =>
   `${open ? '▾' : '▸'} ${({ qa: 'QA', pr: 'PR', agents: 'Agents', decisions: 'Decisions', digest: 'Digest', diff: 'Diff' })[id]}${flagged ? ' !' : ''}`
+
+// The '## Resume digest' section of checkpoint.md, or null when there is none.
+export function digestOf(markdown: string): string | null {
+  const m = /^## Resume digest[^\S\n]*\n([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(markdown)
+  const text = m?.[1]?.trim() ?? ''
+  return text ? text : null
+}
+
+// A unified diff bounded for a Code leaf: cut at the last file boundary under max.
+export function cutDiff(text: string, max = 8000): { source: string; truncated: boolean } {
+  if (text.length <= max) return { source: text, truncated: false }
+  const at = text.lastIndexOf('\ndiff --git', max)
+  return { source: at > 0 ? text.slice(0, at + 1) : text.slice(0, text.indexOf('\n', max) + 1 || max), truncated: true }
+}
+
+export const currentSlice = (slices: Slice[]): Slice | null => slices.find(x => !isDone(x)) ?? null

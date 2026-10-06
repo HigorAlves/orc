@@ -2,8 +2,8 @@
 // engine's scan follows `$` only inside that file), builds the callbacks, and
 // hands this module the element table, the data and the actions.
 import type { EngineInterface } from 'claude-code'
-import type { OrcSections } from '../../types'
-import { POLICIES, attention, criterionLine, headerCells, isDone, layoutFor, phaseRows, policyOf, sectionLabel, sizeLine, sliceLine, usageLine, type SectionId, type Snapshot } from './cockpit'
+import type { OrcDetails, OrcSections } from '../../types'
+import { POLICIES, attention, criterionLine, currentSlice, headerCells, isDone, layoutFor, phaseRows, policyOf, sectionLabel, sizeLine, sliceLine, usageLine, type SectionId, type Snapshot } from './cockpit'
 import type { Profile } from './profiles'
 import type { CiAlert } from './state'
 
@@ -17,6 +17,7 @@ export type PaneModel = {
   bodyColumns: number
   sections: OrcSections
   ciAlert: CiAlert
+  details: OrcDetails
 }
 export type PaneActions = { resume: () => void; toggle: (id: SectionId) => () => void; renderReport: () => void; settle: (key: string, value: string) => void }
 
@@ -26,6 +27,8 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
   const { Box, Text, Button, Link } = els
   // The mobile app draws no Select yet; the section then shows the decisions as text only.
   const Select = 'Select' in els ? els.Select : null
+  const Markdown = 'Markdown' in els ? els.Markdown : null
+  const Code = 'Code' in els ? els.Code : null
   const { snap } = model
   const s = snap.session
   const line = (text: string, style: { bold?: boolean; dimColor?: boolean; color?: string } = {}) => Text({ ...style, children: [text] })
@@ -84,9 +87,22 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
     ...snap.decisions.map(d => line(`${d.key} = ${d.value}  (${d.provenance})`, { dimColor: true })),
   ])
 
+  const { details } = model
+  const loading = [line('Loading…', { dimColor: true })]
+  const digest = section('digest', 'c', () => details.digest === null
+    ? loading
+    : details.digest ? [Markdown ? Markdown({ text: details.digest }) : line(details.digest)] : [line('No resume digest yet.', { dimColor: true })])
+
+  const cur = currentSlice(snap.slices)
+  const diff = section('diff', 'x', () => details.diff === null
+    ? loading
+    : [line(cur ? `Slice #${cur.id} ${cur.title}${cur.commit ? ' · ' + cur.commit : ' · working tree'}` : 'Working tree', { bold: true }),
+       ...(details.diff ? [Code ? Code({ source: details.diff, format: 'diff', wrap: 'truncate-end' }) : line(details.diff)] : [line('No changes.', { dimColor: true })]),
+       ...(details.diffTruncated ? [line('truncated — open the file for the rest', { dimColor: true })] : [])])
+
   const footer = Box({ flexDirection: 'row', columnGap: 2, children: [
     Button({ key: 'resume', variant: 'primary', label: s ? 'Resume (/orc:resume)' : 'New flow (/orc:flow)', hotkey: 'r', onPress: actions.resume }),
   ] })
 
-  return Box({ flexDirection: 'column', rowGap: 1, children: [header, body, qa, pr, agents, decisions, footer] })
+  return Box({ flexDirection: 'column', rowGap: 1, children: [header, body, qa, pr, agents, decisions, digest, diff, footer] })
 }
