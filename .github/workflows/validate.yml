@@ -93,6 +93,9 @@ jobs:
       - name: Frontmatter conventions
         run: bash scripts/ci/verify-frontmatter.sh
 
+      - name: Frontmatter model/effort fixtures
+        run: bash scripts/ci/verify-frontmatter-fixtures.sh
+
       - name: Count + marketplace/architecture consistency
         run: bash scripts/ci/verify-counts.sh
 
@@ -112,7 +115,8 @@ jobs:
           node-version: 22
       - name: Install Claude Code CLI
         # Pinned for reproducibility; bumped via dependabot/PR, not floating latest.
-        run: npm install -g @anthropic-ai/claude-code@2.1.220
+        # >= 2.1.289: validates the Claude 5 aliases/effort levels and mod modules.
+        run: npm install -g @anthropic-ai/claude-code@2.1.290
       - name: Validate plugin manifest (strict)
         run: claude plugin validate ./orc --strict
 
