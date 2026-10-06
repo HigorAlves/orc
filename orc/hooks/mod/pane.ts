@@ -3,7 +3,7 @@
 // hands this module the element table, the data and the actions.
 import type { EngineInterface } from 'claude-code'
 import type { OrcDetails, OrcSections } from '../../types'
-import { POLICIES, attention, criterionLine, currentSlice, headerCells, isDone, layoutFor, phaseRows, policyOf, sectionLabel, sizeLine, sliceLine, usageLine, type SectionId, type Snapshot } from './cockpit'
+import { POLICIES, attention, criterionLine, diffSlice, headerCells, isDone, layoutFor, phaseRows, policyOf, sectionLabel, sizeLine, sliceLine, usageLine, type SectionId, type Snapshot } from './cockpit'
 import type { Profile } from './profiles'
 import type { CiAlert } from './state'
 
@@ -93,7 +93,7 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
     ? loading
     : details.digest ? [Markdown ? Markdown({ text: details.digest }) : line(details.digest)] : [line('No resume digest yet.', { dimColor: true })])
 
-  const cur = currentSlice(snap.slices)
+  const cur = diffSlice(snap.slices)
   const diff = section('diff', 'x', () => details.diff === null
     ? loading
     : [line(cur ? `Slice #${cur.id} ${cur.title}${cur.commit ? ' · ' + cur.commit : ' · working tree'}` : 'Working tree', { bold: true }),

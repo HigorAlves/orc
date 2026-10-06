@@ -169,7 +169,35 @@ test('digest and diff sections load on open', async ($, on) => {
   expect(await ui.find({ type: 'Markdown' })).toMatchObject({ props: { text: 'Phase 5.' } })
   await ui.press({ key: 'sec-diff' })
   // SLICES fixture: #1 committed, #2 pending, so the current slice is #2, uncommitted.
-  expect(calls.find(a => a[0] === 'git')).toEqual(['git', 'diff', '--no-color', '-U1'])
+  expect(calls.find(a => a[0] === 'git' && a[1] !== 'rev-parse')).toEqual(['git', 'diff', '--no-color', '-U1'])
   expect(await ui.find({ type: 'Code' })).toMatchObject({ props: { format: 'diff' } })
+  await ui.unmount()
+})
+
+test('an open digest section survives a refresh, and the diff shows the last commit once all slices are done', async ($, on) => {
+  const calls: string[][] = []
+  let reads = 0
+  const ALL_DONE = '1\tcommitted\tstream rows\tabc1234\n2\tcommitted\texport job\tdef5678\n'
+  on('process.run', ($, e) => {
+    if (e.argv[0] === 'git') { calls.push([...e.argv]); return e.argv[1] === 'rev-parse' ? ran('/repo') : ran('diff --git a/x b/x\n--- a/x\n+++ b/x\n@@ -1 +1 @@\n-a\n+b\n') }
+    if (e.argv[1] === 'slice') return ran(ALL_DONE)
+    return orcState(calls)($, e)
+  })
+  on('fs.read', ($, e) => { reads += 1; return { value: e.path === '/repo/.orc/feat-export/files/checkpoint.md' ? '## Resume digest\nPhase 5.\n' : '' } })
+  on('env.get', () => ({ value: undefined }))
+  on('turn.complete', () => ({ text: '' }))
+  surfaces(on, ['terminal'])
+  await $.command.run(RUN)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await ui.press({ key: 'sec-digest' })
+  expect(await ui.find({ type: 'Markdown' })).toMatchObject({ props: { text: 'Phase 5.' } })
+  // A main-loop turn ends: the snapshot refreshes and the open section reloads instead of sticking on "Loading…".
+  await $.turn.complete({ turnId: 't1', answer: '', durationMs: 1, isAborted: false, reason: 'answer' as const,
+    usage: { model: 'm', input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } })
+  expect(reads).toBe(2)
+  expect(await ui.find({ type: 'Markdown' })).toMatchObject({ props: { text: 'Phase 5.' } })
+  await ui.press({ key: 'sec-diff' })
+  expect(calls.find(a => a[0] === 'git' && a[1] === 'show')).toEqual(['git', 'show', '--no-color', '--format=', '-U1', 'def5678'])
+  expect(await ui.find({ type: 'Text', text: /Slice #2 export job · def5678/ })).toBeDefined()
   await ui.unmount()
 })

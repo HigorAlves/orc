@@ -15,5 +15,5 @@ export type CiAlert = { pr: number | string; summary: CiSummary } | null
 export const ciBox: { alert: CiAlert } = { alert: null }
 
 // orc-state verbs that change what the cockpit shows. Reads (get, list, line…) never refresh.
-const WRITE = /(^|[\s;&|/])orc-state\s+(init|phase|status|link-pr|digest|checkpoint|usage\s+add|slice\s+(init|set)|jira|decision\s+set|migrate)\b/
+const WRITE = /(^|[\s;&|/])orc-state["']?\s+(init|phase|status|link-pr|digest|checkpoint|usage\s+add|slice\s+(init|set)|jira|decision\s+set|migrate)\b/
 export const isOrcStateWrite = (command: string) => WRITE.test(command)

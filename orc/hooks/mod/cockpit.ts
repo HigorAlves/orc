@@ -181,6 +181,10 @@ export function cutDiff(text: string, max = 8000): { source: string; truncated: 
 
 export const currentSlice = (slices: Slice[]): Slice | null => slices.find(x => !isDone(x)) ?? null
 
+// What the Diff section shows: the slice in progress (its working tree), else the last committed one (its commit).
+export const diffSlice = (slices: Slice[]): Slice | null =>
+  currentSlice(slices) ?? [...slices].reverse().find(x => x.commit) ?? null
+
 export const phaseShort = (s: Session) =>
   `${s.command} ${s.phase === 'done' ? 'done' : `${s.phase}/${s.totalPhases}`}${s.phaseLabel && s.phase !== 'done' ? ' ' + s.phaseLabel : ''}`
 export const spinnerSuffix = (snap: Snapshot, agent: string | null) =>

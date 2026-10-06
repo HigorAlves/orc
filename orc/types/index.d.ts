@@ -1,5 +1,5 @@
 // orc's plugin contract: the shapes the mod keeps in `$.state`, declared so
-// `atom({ plugin: 'orc', key })` type-checks. No imports here (contract rule).
+// `$.state.get/set({ plugin: 'orc', key })` type-check. No imports here (contract rule).
 
 export type OrcSession = {
   command: string

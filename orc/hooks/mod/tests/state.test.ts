@@ -37,7 +37,7 @@ test('/orc loads the snapshot into state, with the session meter', async ($, on)
   on('state.set', ($, e) => { writes.push(e.value); return { value: { isSet: true, version: writes.length } } })
   await $.command.run(RUN)
   expect(gets.length).toBe(1)
-  const value = writes.at(-1) as { session?: { phase?: number }; meter?: unknown } | undefined
+  const value = [...writes].reverse().find(w => w !== null && typeof w === 'object' && 'session' in w) as { session?: { phase?: number }; meter?: unknown } | undefined
   expect(value?.session?.phase).toBe(5)
   expect(value?.meter).toEqual({ contextPercent: 42, usd: 0.42 })
 })

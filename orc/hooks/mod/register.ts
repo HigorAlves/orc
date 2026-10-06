@@ -5,7 +5,7 @@
 import type { EngineInterface, On, PluginOptions } from 'claude-code'
 import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine, summarizeChecks, type CiRecord } from './ci'
 import {
-  EMPTY, currentSlice, cutDiff, digestOf, hintFor, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, plumbingLine, policyOf, profileOf, spinnerSuffix, summaryText, type SectionId, type Snapshot,
+  EMPTY, cutDiff, diffSlice, digestOf, hintFor, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, plumbingLine, policyOf, profileOf, spinnerSuffix, summaryText, type SectionId, type Snapshot,
 } from './cockpit'
 import { gateBadge } from './gates'
 import { PANE, drawPane } from './pane'
@@ -43,7 +43,7 @@ function register_session(on: On) {
     } catch {
       // name taken in this build: the markdown /orc:status stays the fallback
     }
-    void refresh($)
+    void refresh($).catch(() => undefined)
     if (e.isInteractive) $.clock.every(POLL_MS, () => { void ci_tick($) })
     return next(e)
   })
@@ -105,7 +105,7 @@ function register_agents(on: On, profile: Profile) {
     const result = await next(model ? { ...e, model } : e)
     if (result.agentId && /^(orc:)?orc-/.test(e.subagentType)) {
       agentTypes.set(result.agentId, e.subagentType.replace(/^orc:/, ''))
-      await $.state.set(LIVE_REF, { agent: e.subagentType.replace(/^orc:/, ''), since: await $.clock.now() }).catch(() => undefined)
+      await $.state.set(LIVE_REF, { agent: e.subagentType.replace(/^orc:/, ''), since: await $.clock.now().catch(() => null) }).catch(() => undefined)
     }
     return result
   })
@@ -114,11 +114,15 @@ function register_agents(on: On, profile: Profile) {
     const result = await next(e)
     if (!e.agentId) await refresh($).catch(() => undefined)
     const agent = e.agentId ? agentTypes.get(e.agentId) : undefined
-    if (agent && e.usage) {
+    if (agent) {
+      // Cleared on every finish — an abort or API error carries no usage but the agent is gone.
       agentTypes.delete(e.agentId as string)
-      await $.state.set(LIVE_REF, LIVE_INITIAL).catch(() => undefined)
-      await orc_state($, ['usage', 'add', '--agent', agent, '--model', e.usage.model,
-        '--in', String(e.usage.input_tokens), '--out', String(e.usage.output_tokens), '--ms', String(e.durationMs)])
+      const remaining = [...agentTypes.values()].at(-1) ?? null
+      await $.state.set(LIVE_REF, remaining ? { agent: remaining, since: null } : LIVE_INITIAL).catch(() => undefined)
+      if (e.usage) {
+        await orc_state($, ['usage', 'add', '--agent', agent, '--model', e.usage.model,
+          '--in', String(e.usage.input_tokens), '--out', String(e.usage.output_tokens), '--ms', String(e.durationMs)])
+      }
     }
     return result
   })
@@ -128,20 +132,20 @@ function register_agents(on: On, profile: Profile) {
 // footer. Each is a prop rewrite; the engine keeps drawing its own line.
 function register_surfaces(on: On) {
   on('ui.render', { component: 'Spinner' }, async ($, e, next) => {
-    const snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
-    const live = (await $.state.get(LIVE_REF)).value ?? LIVE_INITIAL
+    const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
+    const live = await $.state.get(LIVE_REF).then(r => r.value ?? LIVE_INITIAL, () => LIVE_INITIAL)
     const suffix = spinnerSuffix(snap, live.agent)
     return suffix ? next({ ...e, props: { ...e.props, suffix: e.props.suffix + suffix } }) : next(e)
   })
 
   on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
     if (e.props.isWorking || e.props.isDraft) return next(e)
-    const hint = hintFor((await $.state.get(SNAPSHOT_REF)).value ?? EMPTY)
+    const hint = hintFor(await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY))
     return hint ? next({ ...e, props: { ...e.props, hint } }) : next(e)
   })
 
   on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
-    const policy = policyOf((await $.state.get(SNAPSHOT_REF)).value ?? EMPTY)
+    const policy = policyOf(await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY))
     return policy && policy !== 'manual' ? next({ ...e, props: { ...e.props, modes: [...e.props.modes, 'orc ' + policy] } }) : next(e)
   })
 }
@@ -238,8 +242,8 @@ function register_ci_band(on: On) {
 // it answers with a text summary.
 function register_cockpit(on: On, fallbackProfile: Profile) {
   on('command.run', { command: 'orc' }, async ($) => {
-    await refresh($)
-    const snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
+    await refresh($).catch(() => undefined)
+    const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
     // A plain `claude -p` run has no surface (ui.open still reports "placed").
     if ((await $.session.surfaces()).length) {
       try {
@@ -260,11 +264,13 @@ function register_cockpit(on: On, fallbackProfile: Profile) {
     return drawPane($.ui.resolve(e), model, {
       resume: () => { $.prompt.fill({ text: snap.session ? '/orc:resume' : '/orc:flow ' }) },
       toggle: (id: SectionId) => async () => {
-        const current = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
-        await $.state.set(SECTIONS_REF, { ...current, [id]: !current[id] })
-        if (current[id]) return
-        if (id === 'digest') await load_digest($, snap)
-        if (id === 'diff') await load_diff($, snap)
+        try {
+          const current = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
+          await $.state.set(SECTIONS_REF, { ...current, [id]: !current[id] })
+          if (!current[id]) await load_details($, id)
+        } catch {
+          // a state or loader failure leaves the pane as drawn
+        }
       },
       // The user picked it in the pane, so it settles as an asked decision.
       settle: async (key: string, value: string) => {
@@ -284,8 +290,10 @@ function register_cockpit(on: On, fallbackProfile: Profile) {
 async function load_snapshot($: EngineInterface): Promise<Snapshot> {
   const root = $.plugin.root + '/bin/'
   const run = (argv: string[]) => $.process.run([root + argv[0], ...argv.slice(1)], { timeoutMs: 10000 }).then(r => (r.exitCode === 0 ? r.stdout : ''), () => '')
-  const [session, slices, decisions, qa, loc, budget, usage, meter] = await Promise.all([
-    run(['orc-state', 'get']), run(['orc-state', 'slice', 'list']), run(['orc-state', 'decision', 'get']), run(['orc-report', 'json']),
+  const session = await run(['orc-state', 'get'])
+  if (!parseSession(session)) return EMPTY // no orc session on this branch: nothing else to read
+  const [slices, decisions, qa, loc, budget, usage, meter] = await Promise.all([
+    run(['orc-state', 'slice', 'list']), run(['orc-state', 'decision', 'get']), run(['orc-report', 'json']),
     run(['orc-pr-size', 'loc']), run(['orc-pr-size', 'budget']), run(['orc-state', 'usage', 'summary']),
     $.session.usage().then(u => u, () => null),
   ])
@@ -303,10 +311,12 @@ function refresh($: EngineInterface): Promise<void> {
   inflight = (async () => {
     do {
       dirty = false
-      const snap = await load_snapshot($)
-      // Stale digests and diffs are worse than a reload: open sections reload on the next toggle.
-      await $.state.set(DETAILS_REF, DETAILS_INITIAL)
-      await $.state.set(SNAPSHOT_REF, snap)
+      await $.state.set(SNAPSHOT_REF, await load_snapshot($))
+      // Open Digest/Diff sections reload against the new snapshot; closed ones start clean next time.
+      const open = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
+      if (!open.digest && !open.diff) await $.state.set(DETAILS_REF, DETAILS_INITIAL)
+      if (open.digest) await load_details($, 'digest')
+      if (open.diff) await load_details($, 'diff')
     } while (dirty)
   })().finally(() => { inflight = null })
   return inflight
@@ -321,11 +331,21 @@ async function orc_report_html($: EngineInterface): Promise<string> {
   }
 }
 
+// Digest and diff load from the live snapshot when their section is open.
+async function load_details($: EngineInterface, id: SectionId): Promise<void> {
+  const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
+  if (id === 'digest') await load_digest($, snap)
+  if (id === 'diff') await load_diff($, snap)
+}
+
 // checkpoint.md's digest, read once per open; '' is drawn as "no digest".
 async function load_digest($: EngineInterface, snap: Snapshot): Promise<void> {
   const branch = snap.session?.branch
   if (!branch) return
-  const root = (await $.env.get('ORC_STATE_DIR').catch(() => undefined)) || '.orc'
+  // ORC_STATE_DIR is absolute when the SessionStart hook exported it; else orc-state's default, <git root>/.orc.
+  const env = await $.env.get('ORC_STATE_DIR').catch(() => undefined)
+  const top = env ? '' : await $.process.run(['git', 'rev-parse', '--show-toplevel'], { timeoutMs: 5000 }).then(r => (r.exitCode === 0 ? r.stdout.trim() : ''), () => '')
+  const root = env || (top ? top + '/.orc' : '.orc')
   const text = await $.fs.read(`${root}/${branch}/files/checkpoint.md`).then(t => (typeof t === 'string' ? t : ''), () => '')
   const d = (await $.state.get(DETAILS_REF)).value ?? DETAILS_INITIAL
   await $.state.set(DETAILS_REF, { ...d, digest: digestOf(text) ?? '' })
@@ -333,7 +353,7 @@ async function load_digest($: EngineInterface, snap: Snapshot): Promise<void> {
 
 // The current slice's diff: its commit when it has one, else the working tree.
 async function load_diff($: EngineInterface, snap: Snapshot): Promise<void> {
-  const cur = currentSlice(snap.slices)
+  const cur = diffSlice(snap.slices)
   const argv = cur?.commit ? ['git', 'show', '--no-color', '--format=', '-U1', cur.commit] : ['git', 'diff', '--no-color', '-U1']
   const out = await $.process.run(argv, { timeoutMs: 10000 }).then(r => (r.exitCode === 0 ? r.stdout : ''), () => '')
   const { source, truncated } = cutDiff(out)

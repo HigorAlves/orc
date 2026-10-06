@@ -40,9 +40,10 @@ test('non-orc agents are never touched', { options: { model_profile: 'quality' }
 test('a settled modelProfile decision wins over the userConfig profile', async ($, on) => {
   let dispatched: string | undefined
   on('agent.spawn', ($, e) => { dispatched = e.model; return { model: e.model ?? 'frontmatter', agentId: 'a1' } })
+  // Decisions are per branch: they only load alongside a live session.
   on('process.run', ($, e) => e.argv[1] === 'decision' && e.argv[2] === 'get'
     ? ran(JSON.stringify({ schema: 1, decisions: { modelProfile: { value: 'quality', provenance: 'asked' } } }))
-    : ran(''))
+    : e.argv[1] === 'get' ? ran(JSON.stringify({ command: 'flow', branch: 'b', gitBranch: 'b', status: 'in_progress', phase: 1, totalPhases: 9 })) : ran(''))
   on('session.usage', () => ({ value: { startedAt: 0, context: { window: 200000 }, rateLimits: [] } }))
   on('session.surfaces', () => ({ value: [] }))
   await $.command.run({ command: 'orc', args: '', origin: { kind: 'composer' as const }, presentation: { isFullscreen: false, columns: 80 } })

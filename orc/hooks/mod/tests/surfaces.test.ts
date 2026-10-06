@@ -23,7 +23,7 @@ function world(on: On, opts: { session?: string; decisions?: string } = {}) {
   return seen
 }
 
-const SPINNER = { plugin: 'orc', surface: 'terminal' as const, component: 'Spinner' as const, props: { word: 'Thinking', message: null, suffix: '', mode: 'thinking' as const } }
+const SPINNER = { plugin: 'orc', surface: 'terminal' as const, component: 'Spinner' as const, props: { word: 'Thinking', message: null, suffix: '…', mode: 'thinking' as const } }
 const HINT = { plugin: 'orc', surface: 'terminal' as const, component: 'PromptHint' as const, props: { isDraft: false, isWorking: false, hint: '? for shortcuts' } }
 const MODE = { plugin: 'orc', surface: 'terminal' as const, component: 'SessionMode' as const, props: { modes: ['focus'] } }
 const done = { turnId: 't1', answer: '', durationMs: 10, isAborted: false, reason: 'answer' as const, text: '', usage: { model: 'm', input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } }
@@ -32,13 +32,13 @@ test('the spinner carries the phase, and the running orc agent while one runs', 
   const seen = world(on)
   await $.command.run(RUN)
   await (await $.ui.mount(SPINNER)).unmount()
-  expect(seen.at(-1)?.suffix).toBe(' · orc flow 5/9 implement')
+  expect(seen.at(-1)?.suffix).toBe('… · orc flow 5/9 implement')
   await $.agent.spawn(spawnOf('orc:orc-implementer'))
   await (await $.ui.mount(SPINNER)).unmount()
-  expect(seen.at(-1)?.suffix).toBe(' · orc flow 5/9 implement · implementer')
+  expect(seen.at(-1)?.suffix).toBe('… · orc flow 5/9 implement · implementer')
   await $.turn.complete({ ...done, agentId: 'a1' })
   await (await $.ui.mount(SPINNER)).unmount()
-  expect(seen.at(-1)?.suffix).toBe(' · orc flow 5/9 implement')
+  expect(seen.at(-1)?.suffix).toBe('… · orc flow 5/9 implement')
 })
 
 test('the prompt hint names the flow when idle and is untouched while working', async ($, on) => {
@@ -63,7 +63,7 @@ test('with no session every surface passes through', async ($, on) => {
   await (await $.ui.mount(SPINNER)).unmount()
   await (await $.ui.mount(HINT)).unmount()
   await (await $.ui.mount(MODE)).unmount()
-  expect(seen.map(p => p.suffix ?? p.hint ?? p.modes)).toEqual(['', '? for shortcuts', ['focus']])
+  expect(seen.map(p => p.suffix ?? p.hint ?? p.modes)).toEqual(['…', '? for shortcuts', ['focus']])
 })
 
 const TOOL = (command: string, extra: Partial<{ isRunning: boolean; isErrored: boolean }> = {}) => ({
@@ -81,4 +81,13 @@ test('orc plumbing rows collapse to one dim line; errors and other commands keep
   expect((await row(TOOL('orc-report json'))).t?.text).toBe('○ orc · orc-report json')
   expect((await row(TOOL('orc-state get', { isErrored: true }))).d).toEqual({ type: 'engine', ref: 0 })
   expect((await row(TOOL('ls -la'))).d).toEqual({ type: 'engine', ref: 0 })
+})
+
+test('an aborted orc agent (no usage) still leaves the spinner', async ($, on) => {
+  const seen = world(on)
+  await $.command.run(RUN)
+  await $.agent.spawn(spawnOf('orc:orc-implementer'))
+  await $.turn.complete({ turnId: 't1', answer: '', durationMs: 10, isAborted: true, reason: 'aborted' as const, agentId: 'a1' })
+  await (await $.ui.mount(SPINNER)).unmount()
+  expect(seen.at(-1)?.suffix).toBe('… · orc flow 5/9 implement')
 })
