@@ -55,7 +55,7 @@ well-described feature; prefer the step commands when you want to steer.
 
 `orc:tdd` · `orc:systematic-debugging` · `orc:verification-before-completion` ·
 `orc:codebase-design` · `orc:domain-modeling` · `orc:review-contract` ·
-`orc:pr-size-budget` · `orc:callouts` · `orc:writing-for-agents` — doctrine the
+`orc:pr-size-budget` · `orc:callouts` · `orc:gates` · `orc:writing-for-agents` — doctrine the
 commands and agents already preload; invoke directly only when working outside
 the commands.
 

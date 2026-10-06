@@ -28,7 +28,7 @@ CI is red and you want to know why — and, when it's the code's fault, get it f
 
 ## Arguments
 
-- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`; taxonomy in `orc:using-orc`). Soft-inward gates consult the resolved policy — `guided` auto-advances mechanical confirms with a printed one-liner; `full` pre-approves them from settled decisions (`orc:state-protocol`), stopping only on escalation-only conditions. Hard-outward gates are unaffected at every level.
+- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`); ladder and hard-outward exemption in `orc:gates` §6.
 
 - `<pr-number>` or `<branch>` — optional ref. Omitted → the current branch (and its PR, if one exists).
 - `--run <id>` — pin the investigation to an explicit run ID instead of resolving the newest run for the ref.

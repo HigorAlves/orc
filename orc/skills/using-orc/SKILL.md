@@ -38,7 +38,7 @@ Use the `Skill` tool — never `Read` a skill file. Every skill's description is
 
 ## Gate taxonomy (interaction policy)
 
-Gates come in three classes. **Hard-outward** — anything writing to a tracker, posting a PR review, or publishing evidence: always asks; no flag or policy skips it. **Soft-inward** — decisions about the user's own working tree (plan approval, driver choice, PR compose): convertible to pre-approved defaults by the `interaction_policy` autopilot ladder (`manual` | `guided` | `auto`, via userConfig or `--auto`; banner shows the resolved level). **Escalation-only** — never asked proactively; always stop the run when triggered (implementer escalations, env failures, criteria misses), at every policy level.
+Gates come in three classes. **Hard-outward** — anything writing to a tracker, posting a PR review, or publishing evidence: always asks; no flag or policy skips it. **Soft-inward** — decisions about the user's own working tree (plan approval, driver choice, PR compose): convertible to pre-approved defaults by the `interaction_policy` autopilot ladder (`manual` | `guided` | `auto`, via userConfig or `--auto`; banner shows the resolved level). **Escalation-only** — never asked proactively; always stop the run when triggered (implementer escalations, env failures, criteria misses), at every policy level. How every gate is rendered (header chips, Recommended-first, `preview`, multiSelect chunking): → `orc:gates`
 
 ## Skill routing
 

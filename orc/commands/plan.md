@@ -25,7 +25,7 @@ Turn a feature or refactor request into a written, TDD-shaped implementation pla
 
 ## Arguments
 
-- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`; taxonomy in `orc:using-orc`). Soft-inward gates consult the resolved policy — `guided` auto-advances mechanical confirms with a printed one-liner; `full` pre-approves them from settled decisions (`orc:state-protocol`), stopping only on escalation-only conditions. Hard-outward gates are unaffected at every level.
+- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`); ladder and hard-outward exemption in `orc:gates` §6.
 
 - `--grill` — after drafting the plan, invoke `orc:grilling` to stress-test the design before committing.
 - `--issues` — after the plan is approved, run `orc:to-issues` to break it into independently grabbable issues.

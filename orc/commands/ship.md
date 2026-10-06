@@ -28,7 +28,7 @@ You're done implementing. Time to integrate. This command runs the structured br
 
 ## Arguments
 
-- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`; taxonomy in `orc:using-orc`). Soft-inward gates consult the resolved policy — `guided` auto-advances mechanical confirms with a printed one-liner; `full` pre-approves them from settled decisions (`orc:state-protocol`), stopping only on escalation-only conditions. Hard-outward gates are unaffected at every level.
+- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`); ladder and hard-outward exemption in `orc:gates` §6.
 
 - `--draft` — open the PR as a draft.
 - `--base <branch>` — target a non-default base (e.g. `develop`, `release/v2`).
