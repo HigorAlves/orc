@@ -9,7 +9,7 @@ The single source of truth for driving browser QA — `/orc:qa` and `/orc:flow` 
 
 ## Step 0 — Resolve the target
 
-Invoke `orc:qa-targets`: `--target` / `--web` / settled decision / the Target gate. Result: a target name, `guard`, and `ORC_TARGET_JSON` ready to export. Remote target ⇒ probe; unreachable ⇒ `🛑 Escalation — target unreachable`, stop.
+Invoke `orc:qa-targets`: `--target` / `--web` / settled decision / the Target gate. Result: a target **name** (plus a `--base-url` override when one applies) and `guard`. The resolved JSON is never produced here — the engine resolves it inline in the command that consumes it (`orc:qa-targets` iron rule). Remote target ⇒ probe; unreachable ⇒ `🛑 Escalation — target unreachable`, stop.
 
 ## Step 1 — Provision or attach the environment (local target only)
 
@@ -18,7 +18,7 @@ Skip for remote targets and under `--no-env`. Check `orc-docker-env is-ready $(o
 - `ready` → attach; echo the reuse line (project, appUrl, "reused").
 - otherwise → dispatch **`orc-env-provisioner`** via `Task` (repoPath = the worktree; workspace mode adds `repos[]`, `webSurfaceRepo`, plan path). On `fallback`: re-print the agent's ⚠️ callout and continue. On `failed`: re-print the 🛑 callout and `AskUserQuestion` — retry / retry `--fresh` / continue with `--no-env` legacy boot / abort QA.
 
-Then `ORC_TARGET_JSON="$(orc-targets resolve local --base-url <appUrl>)"`. The environment **stays up after QA** — the "QA partial → fix → re-run" loop attaches in seconds. Teardown belongs to `/orc:cleanup`. Init `${ORC_STATE_DIR}/<sanitized-branch>/files/qa/`; in workspace mode, cross-repo integration evidence goes there while per-repo QA stays at `<repoPath>/.orc/<branch>/files/qa/`.
+Record `<appUrl>` as the `--base-url` override for the `local` target (the engine resolves inline). The environment **stays up after QA** — the "QA partial → fix → re-run" loop attaches in seconds. Teardown belongs to `/orc:cleanup`. Init `${ORC_STATE_DIR}/<sanitized-branch>/files/qa/`; in workspace mode, cross-repo integration evidence goes there while per-repo QA stays at `<repoPath>/.orc/<branch>/files/qa/`.
 
 ## Step 1b — Choose the driver
 
@@ -44,7 +44,7 @@ No ledger (ad-hoc QA, `/orc:evidence` against a ticket) ⇒ distil the criteria 
 
 ## Driver P — Playwright (delegate)
 
-Invoke `orc:playwright-qa` with the inputs listed in its header (feature description, `<qa-dir>`, the step-2 acceptance lists, target name + `guard`, `ORC_TARGET_JSON`, `isVisual`; workspace mode adds the web-surface `repoPath`). It returns `pass|fail|partial` with `qa-manifest.json` written, or `fallback` (Node missing, setup declined, MCP not connected) — on `fallback` print the reason and run **Driver A** below with the same inputs; never silently.
+Invoke `orc:playwright-qa` with the inputs listed in its header (feature description, `<qa-dir>`, the step-2 acceptance lists, target name + optional `--base-url` override + `guard` (never the resolved JSON), `isVisual`; workspace mode adds the web-surface `repoPath`). It returns `pass|fail|partial` with `qa-manifest.json` written, or `fallback` (Node missing, setup declined, MCP not connected) — on `fallback` print the reason and run **Driver A** below with the same inputs; never silently.
 
 ## Driver A — agent-browser (dispatch the validator)
 

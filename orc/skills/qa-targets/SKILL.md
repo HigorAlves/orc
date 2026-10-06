@@ -45,9 +45,12 @@ Run `orc-targets init && orc-targets list`, then:
 
 ## After the gate
 
-- `kind: local` → continue to `orc:browser-qa` Step 0 (env attach/provision). `appUrl` from `docker-env-state.json` becomes `baseUrl` for the run (`orc-targets resolve local --base-url <appUrl>`).
+- `kind: local` → continue to `orc:browser-qa` Step 1 (env attach/provision). `appUrl` from `docker-env-state.json` becomes the `--base-url` override the engine passes to `orc-targets resolve local` inline.
+- `--web <url>` / **New remote URL** without a saved name → an **unauthenticated** ad-hoc run: `resolve local --base-url <url>` drops `users` and `login` whenever the URL leaves localhost, so local credentials never reach an arbitrary origin. Authenticated remote QA requires a named target.
 - `kind: remote` → `orc-targets probe <name>`; failure is an **environment escalation** (`🛑 Escalation — target unreachable`: name, URL, curl exit) — stop, never fall back to local silently.
-- Export for the engine: `ORC_TARGET_JSON="$(orc-targets resolve <name> [--base-url …])"`. Pass the **name** and `guard` to the validator/planner prompts; pass the JSON only through the environment of the `npx playwright test` call.
+- Hand the engine the **target name** (plus the `--base-url` override when one applies) and `guard` — never the resolved JSON. Resolution happens **inline, inside the same shell command that consumes it**: `ORC_TARGET_JSON="$(orc-targets resolve <name> [--base-url …])" npx playwright test …`. Every tool call is a fresh shell, so an exported variable from an earlier call is gone; and a standalone `orc-targets resolve` prints plaintext passwords into the conversation transcript, which is written to disk.
+
+**Iron rule — never run `orc-targets resolve` as its own command.** It is only ever the `$(…)` inside the command that needs the JSON. If a step seems to need the resolved values to reason about (which user, which URL), use `orc-targets get <name>` — it returns the references, not the secrets.
 
 ## Redaction rules (iron)
 

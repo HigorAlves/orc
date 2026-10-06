@@ -7,13 +7,13 @@ description: "Build the narrated what-was-made walkthrough for a QA packet: scri
 
 **Announce at start:** "I'm using the explainer skill to build the narrated walkthrough."
 
-Inputs: `<qa-dir>` with `qa-manifest.json`, the session's `plan.md` (optional), `ORC_TARGET_JSON` (for the demo pass; resolve the target per `orc:qa-targets`), settings `explainer_style` (`CLAUDE_PLUGIN_OPTION_EXPLAINER_STYLE`, default `isometric`) and `explainer_voice` (`CLAUDE_PLUGIN_OPTION_EXPLAINER_VOICE`, default `af_heart`).
+Inputs: `<qa-dir>` with `qa-manifest.json`, the session's `plan.md` (optional), the target **name** + optional `--base-url` override for the demo pass (resolved inline per `orc:qa-targets`; never the resolved JSON), settings `explainer_style` (`CLAUDE_PLUGIN_OPTION_EXPLAINER_STYLE`, default `isometric`) and `explainer_voice` (`CLAUDE_PLUGIN_OPTION_EXPLAINER_VOICE`, default `af_heart`).
 
 ## 1. Toolchain
 `orc-explain setup` (first run: npm install kokoro-js into the user cache; model downloads on first narration). `command -v ffmpeg` missing ⇒ stop with one line, no explainer. animate missing ⇒ say `graphic segments will be plain title cards` and continue.
 
 ## 2. Demo footage
-If `<qa-dir>/demo/` lacks a `.webm` per `@golden` scenario: `( cd <repo>/<dir> && ORC_TARGET_JSON=… ORC_PW_OUTPUT_DIR=<qa-dir>/pw-demo npx playwright test --project=demo )`, then `orc-qa-video plan --results <qa-dir>/pw-demo/results.json` and copy each `video` to `<qa-dir>/demo/<id>.webm`.
+If `<qa-dir>/demo/` lacks a `.webm` per `@golden` scenario: `( cd <repo>/<dir> && ORC_TARGET_JSON="$(orc-targets resolve <name> [--base-url <override>])" ORC_PW_OUTPUT_DIR=<qa-dir>/pw-demo npx playwright test --project=demo )` (resolve stays inline — `orc:qa-targets` iron rule), then `orc-qa-video plan --results <qa-dir>/pw-demo/results.json` and copy each `video` to `<qa-dir>/demo/<id>.webm`.
 
 ## 3. Script → `segments.json` (schema: `references/segments-schema.md`)
 Sources, in order: the plan's slice titles + acceptance (what was built), the manifest's acceptance rows (what was proven), `git log --format=%s <base>..HEAD` (what changed). **Never the raw diff** — the script describes behaviour, not code. Shape: `s01` graphic (feature title + 2–3 lines), one clip segment per golden scenario (caption = the first `AC` title that scenario proves; narration = one sentence of what the viewer sees), `sNN` graphic outcome (criteria passed/total, notable skips). Narration lines ≤ 25 words, present tense, no file names. Total target ≤ 90 seconds. `style` from setting, `voice` from setting.

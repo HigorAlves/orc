@@ -44,7 +44,7 @@ Turn a QA packet into a short narrated walkthrough of what was built and proven:
 Resolve the packet dir (above). `qa-manifest.json` missing ⇒ stop: `🛑 No QA packet — run /orc:qa first`.
 
 ### Phase 1 — Build
-Invoke `orc:explainer` with the packet dir, the plan path when the session has one, the resolved target JSON (only if the demo pass is needed), style, voice. It runs the demo pass if needed, writes `explain/segments.json`, runs the **Explainer gate**, narrates, authors the animate scenes (when animate is installed), renders `explainer-<branch>.mp4`, and updates the manifest + `steps.md`.
+Invoke `orc:explainer` with the packet dir, the plan path when the session has one, the target name + override (only if the demo pass is needed; the skill resolves credentials inline, never as a standalone command), style, voice. It runs the demo pass if needed, writes `explain/segments.json`, runs the **Explainer gate**, narrates, authors the animate scenes (when animate is installed), renders `explainer-<branch>.mp4`, and updates the manifest + `steps.md`.
 
 ### Phase 2 — Deliver
 Invoke `orc:evidence-publish` with `qaDir`, the manifest verdict, and `explainerFile`. Its questions (Jira upload / private Artifact / PR comment) are hard-outward — always asked. Keep-local is the default.

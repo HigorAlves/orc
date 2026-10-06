@@ -43,7 +43,7 @@ No manifest (a hand-built packet) ⇒ fall back to the driver's packet shape:
 - **Driver B (Chrome)** → `qa-<branch>.gif` + `steps.md`.
 - **Driver A (agent-browser)** → the `ac-*.png` criterion shots + `qa-<branch>.webm` (or its `.gif`) + any failing-step shots + `steps.md`.
 
-Attach `.webm`/`.gif`/`.png` alike — the REST upload path in `references/jira-adapter.md` is content-type agnostic. Never attach `console.log` / `network.har` / `network-summary.md` / `snapshot-final.txt` — noise on a ticket; they stay local. When **attach** is unavailable (comment tier only), the payload is comment-only — note it in the preview.
+Attach `.webm`/`.gif`/`.png` alike — the REST upload path in `references/jira-adapter.md` is content-type agnostic. Never attach `console.log` / `console-*.log` / `network.har` / `network-summary.md` / `snapshot-final.txt` / `trace-*.zip` / anything under `pw/` — noise on a ticket, and Playwright traces carry the live session cookie and full response bodies; they stay local. When **attach** is unavailable (comment tier only), the payload is comment-only — note it in the preview.
 
 ### 3. Preview gate — always ask
 
@@ -70,7 +70,7 @@ Artifact target available ⇒ the same `AskUserQuestion` call carries a second q
 - **Attach** each curated file over REST (acli has no upload verb — `references/jira-adapter.md`). A per-file failure ⇒ surface it and continue; partial delivery beats none.
 - **Comment**: post the plain-text summary via `acli jira workitem comment create`. **Plain text only** — Jira stores rich text as ADF, so markdown renders literally; reference attachments by filename, never embed.
 
-- **Artifact** (on Publish): publish `qaDir/report.html` with the `Artifact` tool (new artifact: `icon: checklist`; update: pass the recorded `url`). Upload every image/video the report references and that exists — `orc-report json | jq -r '[.artifacts[].file, .acceptance[].evidence[]] - .missing | map(sub("#.*"; "")) | unique | .[]'` — as `files`, each published at its bare filename so the report's relative paths resolve. Never include `console.log` / `network.har`. It stays private; linking it from a PR or ticket is a separate, asked step.
+- **Artifact** (on Publish): publish `qaDir/report.html` with the `Artifact` tool (new artifact: `icon: checklist`; update: pass the recorded `url`). Upload only the **image/video** files the report references and that exist — `orc-report json | jq -r '[.artifacts[].file, .acceptance[].evidence[]] - .missing | map(sub("#.*"; "")) | unique | .[] | select(test("\\.(png|jpe?g|gif|webp|webm|mp4)$"; "i"))'` — as `files`, each published at its bare filename so the report's relative paths resolve. Never include `*.log`, `*.har`, `*.zip`, `*.txt`, `*.json`, or anything under `pw/` — a Playwright `trace-*.zip` holds the session cookie and response bodies, and the Artifact link travels with the PR comment. It stays private; linking it from a PR or ticket is a separate, asked step.
 
 - **PR comment** (on Post): run `comment()` from `references/github-pr-adapter.md`. Markdown is fine on GitHub; links only, no media upload.
 
