@@ -125,7 +125,12 @@ orc_targets_resolve() { # <name> [--base-url U] → resolved JSON on stdout (nev
     case "$1" in --base-url) override="$2"; shift 2 ;; *) echo "orc-targets: unknown argument $1" >&2; return 2 ;; esac
   done
   local json; json="$(orc_targets_get "$name")" || return 1
-  [ -n "$override" ] && json="$(printf '%s' "$json" | jq --arg b "$override" '.baseUrl = $b | .kind = (if .kind == "local" and ($b | test("localhost|127\\.0\\.0\\.1") | not) then "remote" else .kind end)')"
+  # An ad-hoc URL that leaves localhost is an UNAUTHENTICATED remote run: the local target's users/login never
+  # travel to an arbitrary origin. Authenticated remote QA needs a named target (orc-targets set/user/login).
+  [ -n "$override" ] && json="$(printf '%s' "$json" | jq --arg b "$override" '
+    ($b | test("^https?://(localhost|127\\.0\\.0\\.1)(:|/|$)")) as $isLocal
+    | .baseUrl = $b
+    | if .kind == "local" and ($isLocal | not) then .kind = "remote" | .users = {} | .login = null | .adhoc = true else . end')"
   local user un pw run rpw
   while IFS= read -r user; do
     [ -n "$user" ] || continue

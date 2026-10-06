@@ -59,6 +59,10 @@ set +e; err="$(T_USER=a ORC_TARGETS_OP_BIN="$tmp/op" bash "$cli" resolve staging
 bash "$cli" get staging | jq 'del(.users.evil) | del(.name)' > "$tmp/t.json" && jq --slurpfile t "$tmp/t.json" '.targets.staging = $t[0]' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
 # --base-url override (ad-hoc --web)
 [ "$(bash "$cli" resolve local --base-url http://127.0.0.1:4000 | jq -r .baseUrl)" = "http://127.0.0.1:4000" ] && ok || fail "base-url override"
+bash "$cli" user local dev --username devuser --password devpass >/dev/null
+out="$(bash "$cli" resolve local --base-url https://localhost.evil.example)"
+[ "$(printf '%s' "$out" | jq -r '.kind')" = "remote" ] && [ "$(printf '%s' "$out" | jq -c '.users')" = "{}" ] && ok || fail "ad-hoc remote override must drop local users (unanchored localhost match)"
+[ "$(bash "$cli" resolve local --base-url http://localhost:3000 | jq -r '.users.dev.username')" = "devuser" ] && ok || fail "localhost override keeps local users"
 
 # probe: closed port → exit 1
 bash "$cli" probe http://127.0.0.1:1 >/dev/null 2>&1 && fail "probe must fail on closed port" || ok

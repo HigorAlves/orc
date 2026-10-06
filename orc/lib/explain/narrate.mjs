@@ -10,7 +10,8 @@ const [, , segmentsPath, outDir] = process.argv;
 if (!segmentsPath || !outDir) { console.error('usage: narrate.mjs <segments.json> <outDir>'); process.exit(2); }
 const doc = JSON.parse(fs.readFileSync(segmentsPath, 'utf8'));
 const voice = doc.voice ?? process.env.ORC_EXPLAIN_VOICE ?? 'af_heart';
-const tts = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', { dtype: 'q8' });
+// Model pinned to a Hugging Face commit so a fresh cache never pulls a moved revision.
+const tts = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', { dtype: 'q8', revision: '1939ad2a8e416c0acfeecc08a694d14ef25f2231' });
 fs.mkdirSync(outDir, { recursive: true });
 for (const s of doc.segments) {
   if (!s.narration) continue;

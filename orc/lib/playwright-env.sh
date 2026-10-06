@@ -6,6 +6,14 @@
 
 ORC_PW_DEFAULT_DIR="e2e"
 
+orc_pw__backup() { # <repo_root> <file> → copies to <state>/backups/<name>.<ts>, prints the path (never the repo root: .mcp.json may hold tokens)
+  local root="$1" f="$2" dir out
+  dir="$root/.orc/backups"   # the target repo's own gitignored .orc/, never the caller's state dir
+  mkdir -p "$dir"
+  out="$dir/$(basename "$f").$(date -u +%Y%m%dT%H%M%SZ)"
+  cp "$f" "$out" && printf '%s\n' "$out"
+}
+
 orc_pw__tmpl_dir() { printf '%s/playwright\n' "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; }
 
 orc_pw_detect() { # <repo_root> → "<dir>\t<config>" | exit 1
@@ -50,7 +58,7 @@ orc_pw_init_agents() { # <repo_root> --dir D --config C  (runs from repo root so
   while [ $# -gt 0 ]; do case "$1" in --dir) dir="$2"; shift 2 ;; --config) cfg="$2"; shift 2 ;; *) return 2 ;; esac; done
   [ -n "$cfg" ] || { echo "orc-playwright: init-agents needs --config" >&2; return 2; }
   local bak=""
-  if [ -f "$root/.mcp.json" ]; then bak="$root/.mcp.json.orc-backup-$(date -u +%Y%m%dT%H%M%SZ)"; cp "$root/.mcp.json" "$bak"; fi
+  if [ -f "$root/.mcp.json" ]; then bak="$(orc_pw__backup "$root" "$root/.mcp.json")"; fi
   (cd "$root" && node "$dir/node_modules/playwright/cli.js" init-agents --loop=claude -c "$cfg")
   # init-agents overwrote .mcp.json unconditionally; restore the user's servers then add ours.
   if [ -n "$bak" ]; then cp "$bak" "$root/.mcp.json"; fi
@@ -64,7 +72,7 @@ orc_pw_mcp_merge() { # <repo_root> --dir D --config C
   local f="$root/.mcp.json" cli
   case "$dir" in .|"") cli="node_modules/playwright/cli.js" ;; *) cli="$dir/node_modules/playwright/cli.js" ;; esac
   if [ -f "$f" ]; then
-    cp "$f" "$f.orc-backup-$(date -u +%Y%m%dT%H%M%SZ)"
+    orc_pw__backup "$root" "$f" >/dev/null
   else
     printf '{"mcpServers":{}}\n' > "$f"
   fi

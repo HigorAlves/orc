@@ -15,6 +15,7 @@ const doc = JSON.parse(fs.readFileSync(segmentsPath, 'utf8'));
 const example = path.join(skillRoot, 'examples', 'history-of-ai');
 const style = process.argv[5] || doc.style || 'isometric';
 for (const s of doc.segments.filter((x) => x.kind === 'graphic')) {
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(String(s.id))) { console.error(`animate-piece: bad segment id ${s.id}`); process.exit(2); }
   const dir = path.join(workDir, 'pieces', s.id);
   fs.rmSync(dir, { recursive: true, force: true });
   fs.cpSync(example, dir, { recursive: true });

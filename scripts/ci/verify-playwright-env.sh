@@ -40,7 +40,8 @@ printf '{"mcpServers":{"other":{"command":"x","args":[]}}}' > "$tmp/r5/.mcp.json
 bash "$cli" mcp-merge "$tmp/r5" --dir e2e --config e2e/playwright.config.ts >/dev/null
 jq -e '.mcpServers.other.command == "x"' "$tmp/r5/.mcp.json" >/dev/null && ok || fail "mcp-merge must keep existing servers"
 jq -e '.mcpServers["playwright-test"].command == "node" and .mcpServers["playwright-test"].args == ["e2e/node_modules/playwright/cli.js","run-test-mcp-server","-c","e2e/playwright.config.ts"]' "$tmp/r5/.mcp.json" >/dev/null && ok || fail "mcp-merge entry shape"
-ls "$tmp/r5"/.mcp.json.orc-backup-* >/dev/null 2>&1 && ok || fail "mcp-merge must back up the previous file"
+ls "$tmp/r5"/.orc/backups/.mcp.json.* >/dev/null 2>&1 && ok || fail "mcp-merge must back up under .orc/backups"
+ls "$tmp/r5"/.mcp.json.orc-backup-* >/dev/null 2>&1 && fail "backup must never land in the repo root" || ok
 # mcp-merge with no prior file
 mkdir -p "$tmp/r6"; bash "$cli" mcp-merge "$tmp/r6" --dir . --config playwright.config.ts >/dev/null
 jq -e '.mcpServers["playwright-test"].args[0] == "node_modules/playwright/cli.js"' "$tmp/r6/.mcp.json" >/dev/null && ok || fail "mcp-merge root dir path"

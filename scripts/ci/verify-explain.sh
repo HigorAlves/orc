@@ -30,6 +30,7 @@ set +e; err="$(bash "$cli" validate --segments "$tmp/bad3.json" 2>&1)"; rc=$?; s
 set +e; err="$(ORC_ANIMATE_ROOT=/nonexistent ORC_ANIMATE_RENDER=1 bash "$cli" graphics --segments "$tmp/good.json" --work "$tmp/nopieces" 2>&1)"; rc=$?; set -e
 [ "$rc" -eq 0 ] && ok || fail "render flag without animate must still be a no-op (rc=$rc)"
 bash "$cli" setup >/dev/null
+[ -f "$XDG_CACHE_HOME/orc/explain/package-lock.json" ] && jq -e '.packages["node_modules/kokoro-js"].version == "1.2.1"' "$XDG_CACHE_HOME/orc/explain/package-lock.json" >/dev/null && ok || fail "setup must stage a lockfile pinning kokoro-js"
 [ -f "$XDG_CACHE_HOME/orc/explain/narrate.mjs" ] && [ -f "$XDG_CACHE_HOME/orc/explain/package.json" ] && ok || fail "setup must stage narrate.mjs + package.json"
 [ -f "$XDG_CACHE_HOME/orc/explain/animate-piece.mjs" ] && [ -f "$XDG_CACHE_HOME/orc/explain/animate.lock" ] && ok || fail "setup must stage animate-piece.mjs + animate.lock"
 ORC_ANIMATE_ROOT=/nonexistent bash "$cli" graphics --segments "$tmp/good.json" --work "$tmp/work" | grep -q 'fallback cards' && ok || fail "graphics without animate must exit 0 printing fallback cards"

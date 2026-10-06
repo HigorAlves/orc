@@ -33,9 +33,10 @@ orc_ex_validate() { # --segments S
 orc_ex_setup() {
   local home; home="$(orc_ex__home)"
   mkdir -p "$home"
-  cp "$(orc_ex__src)/narrate.mjs" "$(orc_ex__src)/package.json" "$(orc_ex__src)/animate-piece.mjs" "$(orc_ex__src)/animate.lock" "$home/"
+  cp "$(orc_ex__src)/narrate.mjs" "$(orc_ex__src)/package.json" "$(orc_ex__src)/package-lock.json" "$(orc_ex__src)/animate-piece.mjs" "$(orc_ex__src)/animate.lock" "$home/"
   if [ "${ORC_EXPLAIN_SKIP_NPM:-0}" != "1" ]; then
-    (cd "$home" && npm install --no-fund --no-audit >/dev/null)
+    # exact versions from the shipped lockfile; no lifecycle scripts from transitive deps
+    (cd "$home" && npm ci --ignore-scripts --no-fund --no-audit >/dev/null)
   fi
   printf '%s\n' "$home"
 }
@@ -43,6 +44,7 @@ orc_ex_setup() {
 orc_ex_narrate() { # --segments S --work W
   local s="" w=""
   while [ $# -gt 0 ]; do case "$1" in --segments) s="$2"; shift 2 ;; --work) w="$2"; shift 2 ;; *) return 2 ;; esac; done
+  orc_ex_validate --segments "$s" >/dev/null || return 2
   local home; home="$(orc_ex__home)"
   export ORC_EXPLAIN_VOICE="${ORC_EXPLAIN_VOICE:-${CLAUDE_PLUGIN_OPTION_EXPLAINER_VOICE:-af_heart}}"
   [ -d "$home/node_modules/kokoro-js" ] || { echo "orc-explain: kokoro-js not installed — run: orc-explain setup" >&2; return 3; }
@@ -60,6 +62,7 @@ orc_ex__animate_root() {
 orc_ex_graphics() { # --segments S --work W
   local s="" w=""
   while [ $# -gt 0 ]; do case "$1" in --segments) s="$2"; shift 2 ;; --work) w="$2"; shift 2 ;; *) return 2 ;; esac; done
+  orc_ex_validate --segments "$s" >/dev/null || return 2
   local style; style="$(jq -r '.style // empty' "$s")"; style="${style:-${CLAUDE_PLUGIN_OPTION_EXPLAINER_STYLE:-isometric}}"
   local root; root="$(orc_ex__animate_root || true)"
   [ -n "$root" ] || { echo "orc-explain: animate not installed — fallback cards will be used for graphic segments"; return 0; }
