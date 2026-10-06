@@ -28,7 +28,7 @@ strip_ansi() { sed $'s/\x1b\\[[0-9;]*m//g'; }
 # --- fixtures: repos -------------------------------------------------------
 mk_repo() { # $1 = dir, $2 = branch
   git init -q -b "$2" "$1"
-  git -C "$1" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init
+  git -C "$1" -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -q --allow-empty -m init
 }
 repo_a="$tmp/repo-a"; mk_repo "$repo_a" feat/checkout-retry
 echo dirty > "$repo_a/f.txt"   # untracked -> dirty
