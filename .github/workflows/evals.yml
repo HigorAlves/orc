@@ -1,7 +1,8 @@
 name: evals
 
 # Behavioral evals (`claude plugin eval`) — real model calls, so never on PRs:
-# nightly + on demand. Zero-cost graders only (tool_used / regex), one arm.
+# nightly + on demand. Zero-cost graders only (tool_used / regex / tool_order), one arm.
+# Guardrail/state cases need Bash + git fixtures: --scaffold + an explicit tool grant.
 on:
   schedule:
     - cron: "17 6 * * *"
@@ -13,7 +14,7 @@ permissions:
 jobs:
   evals:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
@@ -26,6 +27,9 @@ jobs:
         if: env.ANTHROPIC_API_KEY != ''
         with:
           node-version: 22
+      - name: Bash sandbox prerequisites (Linux)
+        if: env.ANTHROPIC_API_KEY != ''
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq bubblewrap socat
       - name: Install Claude Code CLI
         if: env.ANTHROPIC_API_KEY != ''
         # Same pin as validate.yml; models pinned below so a rollout isn't read as a regression.
@@ -35,7 +39,8 @@ jobs:
         run: >
           claude plugin eval ./orc
           --ablation none --runs 2 --threshold 0.8
-          --max-cost-usd 5 --model claude-sonnet-5-5
+          --max-cost-usd 8 --model claude-sonnet-5-5
+          --scaffold --allow-tools Bash Write Edit
           --trust-plugin --json evals-result.json
       - uses: actions/upload-artifact@v7
         if: always() && env.ANTHROPIC_API_KEY != ''
