@@ -95,6 +95,10 @@ Written by whichever browser driver ran (`orc:browser-qa`), and the only machine
 ```json
 { "schema": 1, "driver": "agent-browser", "generatedAt": "…", "verdict": "pass",
   "artifacts": [{ "file": "screenshot-01-loaded.png", "role": "golden path step 1" }],
+  "target": { "name": "staging", "baseUrl": "https://staging.example.com", "guard": true },
+  "video": { "file": "qa-feat-export.webm",
+    "chapters": [{ "id": "golden", "title": "Export golden path @golden", "outcome": "passed", "start": 2.0, "end": 9.5 }] },
+  "specs": ["e2e/specs/export.md"], "tests": ["e2e/tests/export/golden.spec.ts"],
   "curated": ["qa-feat-export.webm", "ac-3-1-export-202.png"],
   "acceptance": [
     { "id": "slice-3-ac-1", "sliceId": 3, "criterion": "POST /export returns 202 + Location header",
@@ -104,7 +108,10 @@ Written by whichever browser driver ran (`orc:browser-qa`), and the only machine
 }
 ```
 
-- `driver` enum: `agent-browser` · `chrome`.
+- `driver` enum: `agent-browser` · `chrome` · `playwright`.
+- `target` (playwright driver): `{ name, baseUrl, guard }` from `orc:qa-targets` — never credentials.
+- `video` (playwright driver): `{ file, chapters: [{ id, title, outcome, start, end }] }` — one chapter per scenario in the stitched recording; an acceptance `evidence` entry may be `qa-<branch>.webm#t=<start>`.
+- `specs[]` / `tests[]` (playwright driver): repo-relative paths committed with the change; linked from the PR comment.
 - `result` enum: `pass` · `fail` · `skipped`. A `skipped` row MUST carry a non-empty `note` — un-scoreable criteria stay visible rather than silently dropping out of the verdict.
 - `evidence` paths are relative to the packet dir. Driver A names an `ac-<sliceId>-<idx>-<slug>.png`; Driver B, which cannot write binary from the session, names `qa-<branch>.gif#step-<N>` pointing at the numbered heading in `steps.md`.
 - `curated` is the publish payload — `orc:evidence-publish` takes it verbatim.

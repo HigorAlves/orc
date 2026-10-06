@@ -61,6 +61,24 @@ if grep -q 'id="orc-report-data"' "$html" && grep -q 'Export returns 202' "$html
 if grep -qF '</script><b>' "$html"; then fail "html: '</script>' in data must be escaped"; else ok; fi
 if grep -q '__ORC_REPORT_DATA__' "$html"; then fail "html: placeholder left in output"; else ok; fi
 
+# Playwright-driver packet: video chapters + target pass through
+cat > "$files/qa/qa-manifest.json" <<'EOF'
+{ "schema": 1, "driver": "playwright", "generatedAt": "2026-10-06T00:00:00Z", "verdict": "pass",
+  "target": { "name": "staging", "baseUrl": "https://staging.example.com", "guard": true },
+  "artifacts": [{ "file": "qa-feat-x.webm", "role": "stitched recording" }],
+  "video": { "file": "qa-feat-x.webm", "chapters": [ { "id": "golden", "title": "Export golden path @golden", "outcome": "passed", "start": 2.0, "end": 9.5 } ] },
+  "curated": ["qa-feat-x.webm"], "specs": ["e2e/specs/export.md"], "tests": ["e2e/tests/export/golden.spec.ts"],
+  "acceptance": [ { "id": "slice-1-ac-1", "sliceId": 1, "criterion": "Export returns 202", "result": "pass", "evidence": ["qa-feat-x.webm#t=2.0"] } ],
+  "summary": "ok" }
+EOF
+printf 'webm' > "$files/qa/qa-feat-x.webm"
+json="$(bash "$orc_report" json --branch feat/x)"
+check "playwright driver passes through" '.driver == "playwright" and .target.name == "staging"'
+check "video chapters pass through" '(.video.chapters | length) == 1 and .video.chapters[0].start == 2.0'
+check "evidence with #t anchor resolves to the file" '.missing == []'
+path="$(bash "$orc_report" html --branch feat/x)"
+if grep -q 'Export golden path' "$html" && grep -q 'chapters' "$html"; then ok; else fail "html: chapters must render"; fi
+
 if [ "$status" -eq 0 ]; then
   echo "verify-report: OK ($pass_count cases)"
 fi
