@@ -25,7 +25,7 @@ AskUserQuestion (after PR composed):
 - Cancel
 ```
 
-**Post-open CI gate.** Once the PR(s) are open, watch CI before advancing: `gh pr checks <pr> --watch` (fallback: `gh run watch` on the head branch's newest run). In workspace mode, watch every PR in `linkedPRs`.
+**Post-open CI gate.** Once the PR(s) are open, watch CI before advancing: `gh pr checks <pr> --watch` (fallback: `gh run watch` on the head branch's newest run), started **in the background** (`run_in_background: true` Bash, or `Monitor`) so the session stays responsive — echo one line (`➡️ watching CI on #<n> — you'll be re-invoked when it concludes`) and advance only on the result. In workspace mode, watch every PR in `linkedPRs`.
 
 - **Green** → record `ci: green` in `checkpoint.md` and advance to Phase 8.
 - **Red** → dispatch `orc-ci-investigator` via `Task` with the PR ref + head SHA, save its report verbatim to `${ORC_STATE_DIR}/<branch>/files/ci-diagnosis.md` (Write, never echoed), then invoke **`orc:ci-routing`** and execute its protocol — the single source of truth shared with `/orc:ci` Phase 3. Loop until green or the user explicitly advances with red CI (logged to the digest).
