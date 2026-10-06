@@ -4,7 +4,8 @@
 #      executable script under the plugin root;
 #   2. the SessionStart skill that session-start-using-orc.sh hard-reads exists;
 #   3. every userConfig key in plugin.json is consumed — either a
-#      CLAUDE_PLUGIN_OPTION_<UPPER> env var read by a hook/lib script, or a
+#      CLAUDE_PLUGIN_OPTION_<UPPER> env var read by a hook/lib script, an
+#      `options.<key>` read in the mod (orc/hooks/mod, register's options), or a
 #      by-name gate in a command prompt under orc/commands (commands read
 #      config from prose, not the environment) — so nothing is dead config.
 # Run from the repo root. Exits non-zero on the first class of failure found.
@@ -48,10 +49,13 @@ while IFS= read -r key; do
   if grep -rqF "$env_var" orc/hooks orc/lib; then
     continue
   fi
+  if grep -rqE "options\.${key}([^A-Za-z0-9_]|$)" orc/hooks/mod 2>/dev/null; then
+    continue
+  fi
   if grep -rqw "$key" orc/commands; then
     continue
   fi
-  echo "verify-hooks: userConfig key '$key' is dead — no \$$env_var consumer in orc/hooks or orc/lib, and no '$key' gate in orc/commands"
+  echo "verify-hooks: userConfig key '$key' is dead — no \$$env_var consumer in orc/hooks or orc/lib, no options.$key in orc/hooks/mod, and no '$key' gate in orc/commands"
   status=1
 done < <(jq -r '(.userConfig // {}) | keys[]' "$plugin_json")
 

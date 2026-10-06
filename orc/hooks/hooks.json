@@ -1,4 +1,5 @@
 {
+  "description": "orc guardrails: bash settings hooks (the safety floor, always on) + the orc mod (hooks/mod/register.ts) layered on top",
   "hooks": {
     "SessionStart": [
       {
@@ -116,5 +117,8 @@
         ]
       }
     ]
-  }
+  },
+  "modules": [
+    "./mod/register.ts"
+  ]
 }
