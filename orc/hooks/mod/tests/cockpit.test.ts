@@ -7,6 +7,11 @@ const SESSION = JSON.stringify({
 const SLICES = '1\tcommitted\tstream rows\tabc1234\n2\tpending\texport job\t-\n3\tred\tdownload button\t-\n'
 const DECISIONS = JSON.stringify({ schema: 1, decisions: { autopilotLevel: { value: 'guided', provenance: 'flag' } } })
 
+const REPORT = JSON.stringify({ verdict: 'fail', missing: ['qa-feat-export.webm'], acceptance: [
+  { criterion: 'POST /export returns 202', result: 'pass', note: '', sliceId: 1 },
+  { criterion: 'Download shows progress', result: 'fail', note: 'bar never renders', sliceId: 1 }] })
+const USAGE = JSON.stringify([{ agent: 'orc-implementer', runs: 3, in: 52000, out: 9100, ms: 184000 }])
+
 const result = (stdout: string, exitCode = 0) => ({
   value: { exitCode, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false },
 })
@@ -16,6 +21,10 @@ function orcState(calls: string[][], session = SESSION) {
   return ($: unknown, e: { argv: readonly string[] }) => {
     calls.push([...e.argv])
     const verb = e.argv[1]
+    const bin = String(e.argv[0]).split('/').pop()
+    if (bin === 'orc-report') return result(REPORT)
+    if (bin === 'orc-pr-size') return result(verb === 'loc' ? '412' : '300')
+    if (verb === 'usage') return result(USAGE)
     if (verb === 'get') return session ? result(session) : result('', 1)
     if (verb === 'slice') return result(SLICES)
     if (verb === 'decision' && e.argv[2] === 'get') return result(DECISIONS)
@@ -82,4 +91,22 @@ test('a pane the terminal cannot place falls back to text', async ($, on) => {
   on('ui.open', () => ({ value: { isPlaced: false, reason: 'terminal too narrow' } }))
   const out = await $.command.run(RUN)
   expect(out.text).toContain('flow 5/9 implement')
+})
+
+test('QA, PR and Agents tabs draw the report, the size budget, and the usage ledger', async ($, on) => {
+  on('process.run', orcState([]))
+  on('session.surfaces', () => ({ value: ['terminal' as const] }))
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  await $.command.run(RUN)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await ui.press({ key: 'tab-qa' })
+  expect(await ui.find({ type: 'Text', text: 'Verdict: FAIL' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: '✓ POST /export returns 202  (slice 1)' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: '✗ Download shows progress  (slice 1) — bar never renders' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'Missing evidence: qa-feat-export.webm' })).toBeDefined()
+  await ui.press({ key: 'tab-pr' })
+  expect(await ui.find({ type: 'Text', text: /412\/300 LOC — over by 112$/ })).toBeDefined()
+  await ui.press({ key: 'tab-agents' })
+  expect(await ui.find({ type: 'Text', text: /orc-implementer\s+3 runs\s+52\.0k in \/ 9\.1k out\s+184s/ })).toBeDefined()
+  await ui.unmount()
 })

@@ -61,6 +61,18 @@
       "description": "Load the orc mod (in-process event hooks and UI, Claude Code 2.1.287+). false keeps orc on its bash hooks only — the guardrails are identical either way.",
       "default": true
     },
+    "model_profile": {
+      "type": "string",
+      "title": "Model profile",
+      "description": "Which model orc agents run on when a dispatch names none (needs the orc mod): balanced (each agent's frontmatter), quality (investigators on best — Fable where available, else Opus — reviewers on Opus), economy (Opus-tier agents on Sonnet). An explicit per-dispatch model always wins.",
+      "default": "balanced"
+    },
+    "alerts_sound": {
+      "type": "boolean",
+      "title": "Alert sound",
+      "description": "Play a short chime when the orc mod's CI watcher sees a linked PR turn red or green.",
+      "default": false
+    },
     "statusline_context_reserve": {
       "type": "number",
       "title": "Statusline context reserve (%)",
