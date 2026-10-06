@@ -120,7 +120,7 @@ Read the returned JSON. If `unsplittable: true`, surface the agent's rationale a
 
 **Persist before the gate**: write the slice + rebase plan to `${ORC_STATE_DIR}/<sanitized-branch>/files/stack-plan.json` (stamped `headSha` + `generatedAt`, per `orc:state-protocol`) — an interrupted run restacks or re-previews from the file without re-dispatching `orc-stack-analyzer`.
 
-Render the preview headline, then the stack table in a fence (tables never go inside callouts):
+Render the preview headline, then ask with the stack table as the **Approve** option's `preview` (`orc:gates` §3) — no separate fence; tables never go inside callouts. The table below is the preview payload:
 
 ```markdown
 > **📋 Preview — stack plan**
@@ -144,9 +144,9 @@ Render the preview headline, then the stack table in a fence (tables never go in
 > - Commit e4f5g6h modifies one line in ExportJob.ts (slice 2). Proposed as-is.
 ```
 
-`AskUserQuestion`:
+`AskUserQuestion` (header `Stack plan`):
 
-1. **Approve** — execute the rebase plan.
+1. **Approve (Recommended)** — execute the rebase plan. `preview`: the stack table.
 2. **Edit** — open the slice JSON in `$EDITOR`; re-validate after save.
 3. **Cancel.**
 

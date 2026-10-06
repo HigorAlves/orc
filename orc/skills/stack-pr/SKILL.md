@@ -199,7 +199,7 @@ Expected JSON output (analyzer never runs anything destructive):
 
 ### Preview & confirm
 
-Render the preview headline, then the slice table + rebase plan in a fence (never inside the callout), then any analyzer warnings as a separate **⚠️ Caution** callout after the fence:
+Render the preview headline and any analyzer warnings as a separate **⚠️ Caution** callout, then ask with the slice table + rebase plan as the **Apply** option's `preview` (`orc:gates` §3; never inside the callout):
 
 ```markdown
 > **📋 Preview — stack plan**
@@ -207,9 +207,9 @@ Render the preview headline, then the slice table + rebase plan in a fence (neve
 > <N> slices from <M> commits; est. <total> LOC across the stack.
 ```
 
-`AskUserQuestion`:
+`AskUserQuestion` (header `Stack plan`):
 
-1. **Apply** — execute the rebase plan exactly as proposed.
+1. **Apply (Recommended)** — execute the rebase plan exactly as proposed. `preview`: the slice table + rebase plan.
 2. **Edit** — open the JSON in `$EDITOR` for manual tweaks; re-validate.
 3. **Cancel.**
 
