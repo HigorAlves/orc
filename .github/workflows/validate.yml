@@ -90,6 +90,9 @@ jobs:
       - name: Explainer toolchain fixtures (orc-explain)
         run: bash scripts/ci/verify-explain.sh
 
+      - name: PR size budget exclusions
+        run: bash scripts/ci/verify-pr-size.sh
+
       - name: statusline render fixtures
         run: bash scripts/ci/verify-statusline.sh
 

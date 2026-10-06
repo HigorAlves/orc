@@ -9,7 +9,7 @@
 #
 # Defines:
 #   ORC_PR_LOC_DEFAULT_BUDGET   integer (default 300)
-#   ORC_PR_LOC_EXCLUDES         array of git pathspecs (lockfiles, generated, snapshots, builds)
+#   ORC_PR_LOC_EXCLUDES         array of git pathspecs (lockfiles, generated, snapshots, builds, e2e proof)
 #
 # Sourced-library contract: this file MUST NOT modify the caller's shell options
 # (no `set -e`, no `set -u`, no `set -o pipefail`). All functions defend against
@@ -39,6 +39,8 @@ ORC_PR_LOC_EXCLUDES=(
   ':(exclude)poetry.lock'
   ':(exclude)uv.lock'
   ':(exclude,glob)**/__snapshots__/**'
+  ':(exclude,glob)e2e/specs/**'
+  ':(exclude,glob)e2e/tests/**'
   ':(exclude,glob)**/__generated__/**'
   ':(exclude,glob)**/generated/**'
   ':(exclude,glob)**/*.gen.ts'
@@ -206,6 +208,6 @@ orc_pr_excluded_summary() {
 
   local excl_files=$((total_files - included_files))
   local excl_loc=$((total_loc - included_loc))
-  printf 'Excluded: %d files (%d LOC) — lockfiles, generated, snapshots, builds, migrations.\n' \
+  printf 'Excluded: %d files (%d LOC) — lockfiles, generated, snapshots, builds, migrations, e2e proof.\n' \
          "$excl_files" "$excl_loc"
 }

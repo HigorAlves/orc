@@ -36,6 +36,7 @@ These never count:
 - **Lockfiles** — `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `Cargo.lock`, `go.sum`, `Gemfile.lock`, `composer.lock`, `poetry.lock`, `uv.lock`, any `*.lock` / `*.lockb`.
 - **Snapshots / generated** — `**/__snapshots__/**`, `**/__generated__/**`, `**/generated/**`, `**/*.gen.{ts,go}`, `**/*.pb.{go,ts}`, `**/*_pb2.py`.
 - **Build artifacts** — `**/dist/**`, `**/build/**`, `**/.next/**`.
+- **Generated browser-QA proof** — `e2e/specs/**`, `e2e/tests/**` (Playwright plans + tests written by `/orc:qa`'s planner/generator; reviewers see them, the budget doesn't count them).
 
 ## Migrations
 
