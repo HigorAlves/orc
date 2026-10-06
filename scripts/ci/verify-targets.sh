@@ -3,6 +3,7 @@
 # /orc:qa --target. Pins the registry shape and the credential-reference
 # resolution (literal | op:// | env:) the Playwright config consumes.
 # Run from the repo root.
+# shellcheck disable=SC2015  # `A && ok || fail` is the fixture idiom; ok never fails
 set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cli="$repo_root/orc/bin/orc-targets"
