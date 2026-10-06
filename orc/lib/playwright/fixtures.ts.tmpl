@@ -1,0 +1,15 @@
+// Console + page-error capture for every test; attached as console.log so
+// orc-qa-video can lift it into the evidence packet. Generated tests import
+// `test`/`expect` from here (the seed does, and the generator copies the seed's imports).
+import { test as base, expect } from '@playwright/test';
+
+export const test = base.extend({
+  page: async ({ page }, use, testInfo) => {
+    const lines: string[] = [];
+    page.on('console', (m) => lines.push(`[${m.type()}] ${m.text()}`));
+    page.on('pageerror', (e) => lines.push(`[pageerror] ${e.message}`));
+    await use(page);
+    await testInfo.attach('console.log', { body: lines.join('\n'), contentType: 'text/plain' });
+  },
+});
+export { expect };

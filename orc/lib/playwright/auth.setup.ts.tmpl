@@ -1,0 +1,24 @@
+// Logs in once (video/trace OFF in the setup project — the password is never
+// on camera) and saves storageState for the qa/demo projects. With no users or
+// no login recipe on the target it writes an empty state and exits.
+import { test as setup, expect } from '@playwright/test';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
+const target = JSON.parse(process.env.ORC_TARGET_JSON ?? '{"users":{},"login":null}');
+const outDir = process.env.ORC_PW_OUTPUT_DIR ?? path.join(__dirname, '..', 'test-results');
+const file = path.join(outDir, '.auth', 'user.json');
+
+setup('authenticate', async ({ page }) => {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const users = target.users ?? {};
+  const user = users[process.env.ORC_QA_USER ?? ''] ?? Object.values(users)[0];
+  if (!user || !target.login) { await page.context().storageState({ path: file }); return; }
+  const l = target.login;
+  await page.goto(l.path);
+  await page.getByLabel(l.usernameField, { exact: false }).or(page.getByPlaceholder(l.usernameField, { exact: false })).first().fill(user.username);
+  await page.getByLabel(l.passwordField, { exact: false }).or(page.getByPlaceholder(l.passwordField, { exact: false })).first().fill(user.password);
+  await page.getByRole('button', { name: l.submit }).click();
+  await expect(page).toHaveURL(new RegExp(l.successPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  await page.context().storageState({ path: file });
+});

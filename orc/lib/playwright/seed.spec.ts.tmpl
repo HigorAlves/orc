@@ -1,0 +1,9 @@
+// Seed test: the planner/generator run this to inherit fixtures + login state.
+import { test, expect } from './fixtures';
+
+test.describe('seed', () => {
+  test('seed', async ({ page }) => {
+    await page.goto('/');
+    await expect(page).toHaveURL(/./);
+  });
+});
