@@ -128,7 +128,7 @@ Invoke `orc:grilling`. The skill drives an interview that exposes hidden assumpt
 
 (This gate asks at **every** autopilot level when `/orc:plan` runs standalone — the plan is the command's deliverable. Inside `/orc:flow` at `full`, the flow's contract gate IS the approval.)
 
-Print the Gate headline (`**⛔ Gate — plan review**`), then `AskUserQuestion` with two options: `Looks good — proceed` / `Iterate — revise plan`. If iterate, return to Phase 2.
+Print the Gate headline (`**⛔ Gate — plan review**`), then `AskUserQuestion` (header `Plan`) with two options: `Looks good — proceed (Recommended)` — its `preview` is the slice table (`#`, title, `est_loc`, `parallel_group`, `depends_on`), per `orc:gates` §3 — / `Iterate — revise plan` (what to change rides the notes). If iterate, return to Phase 2.
 
 On approval, **generate the slice ledger**: parse the approved plan's slice headers (`est_loc`, `repo`, `ships_as_stack`, `touchpoints`, `parallel_group`, `depends_on`, `acceptance` — per `orc:writing-plans`) into a `slices.json` (shape per `orc:state-protocol` `references/schema.md`, every slice `status: "pending"`, `planSha256` = sha of plan.md) and install it: `orc-state slice init <file>`. Consumers (`/orc:flow` Phase 5, `/orc:fan-out`, `orc-implementer`) read the ledger, not the prose; "all slices done" becomes `orc-state slice list --status pending,red,escalated` exiting clean. On plan re-approval after iteration, regenerate — statuses of slices whose `title` still matches are preserved.
 

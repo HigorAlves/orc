@@ -96,10 +96,10 @@ EPIC  <summary>                       (micro-PRD: 5/5 sections)
     └── …
 ```
 
-`AskUserQuestion`:
+`AskUserQuestion` (header `Tracker`) with the tree above as the `preview` of **Create all** (`orc:gates` §3 — over ~60 lines, preview the Epic + Story lines and point at `jira-breakdown.json`):
 - **Create all** — proceed to Phase 4.
 - **Edit the draft** — user names changes; apply to the JSON (or re-dispatch for structural edits), re-preview.
-- **Trim** — drop named items (dependency links to dropped items are recomputed), re-preview.
+- **Trim** — drop named items (named in the notes, `orc:gates` §5; dependency links to dropped items are recomputed), re-preview.
 - **Cancel** — keep `jira-breakdown.json` on disk for a later run; mark session `abandoned`.
 
 `--dry-run` stops here, echoing the JSON path.
