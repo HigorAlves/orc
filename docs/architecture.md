@@ -53,7 +53,21 @@ Multi-phase commands pause at gates, and gates are classified: **hard-outward** 
 
 ## The orc mod (Claude Code 2.1.287+)
 
-`hooks/hooks.json` also names a hooks module, `hooks/mod/register.ts` — a [Claude Code mod](https://code.claude.com/docs/en/plugins/mods/overview): in-process event handlers that can rewrite events and draw UI. It is a layer on top of the bash hooks, never a replacement: every guardrail stays in the bash settings hooks, so with mods unavailable (older Claude Code, `--safe-mode`, `disableAllHooks`, an org policy) or `mod_enabled: false`, orc behaves identically. Today it blanks the commit/PR attribution text at the source (`attribution.text`), so the model never drafts the trailer the bash guard would deny, and it hands the live `orc-state line` to the summarizer on every main-session compaction (`session.compact`), so the post-compact transcript keeps the flow's phase and slice progress. **`/orc`** opens the cockpit — a pane with the flow's phase ladder, the slice ledger, and the settled decisions (autopilot level switchable with `m`/`g`/`a`, written through `orc-state` as an `asked` decision) — with no model turn; where nothing draws (`claude -p`, VS Code) it prints the same summary as text. `/orc:status` remains the full markdown report. Tests: `claude plugin test orc` (`hooks/mod/tests/*.test.ts`, headless). `claude plugin validate ./orc` lists the events it hooks and every API call it makes.
+`hooks/hooks.json` also names a hooks module, `hooks/mod/register.ts` — a [Claude Code mod](https://code.claude.com/docs/en/plugins/mods/overview): in-process event handlers that can rewrite events and draw UI. It is a layer on top of the bash hooks, never a replacement: every guardrail stays in the bash settings hooks, so with mods unavailable (older Claude Code, `--safe-mode`, `disableAllHooks`, an org policy) or `mod_enabled: false`, orc behaves identically. What it adds:
+
+| Feature | Event / API | Notes |
+|---|---|---|
+| Attribution at the source | `attribution.text` (commit/pr) | the model never drafts the trailer the bash guard would deny |
+| Compaction keeps orc's place | `session.compact` (manual/auto) | the live `orc-state line` goes to the summarizer; the PreCompact bash hook checkpoints the same facts |
+| `/orc` cockpit | `command.run` + `ui.render` Pane | tabs Flow · Slices · QA · PR · Agents · Decisions, no model turn; autopilot switch writes an `asked` decision via `orc-state`; text summary where nothing draws (`claude -p`, VS Code) |
+| Model profiles | `agent.spawn` | `model_profile`: `balanced` (frontmatter), `quality` (investigator on `best` — Fable, else Opus; reviewers on Opus), `economy` (Opus-tier agents on Sonnet); an explicit per-dispatch model always wins |
+| Usage ledger | `agent.spawn` + `turn.complete` | every finished orc subagent run → `orc-state usage add` → `files/usage.jsonl`; the cockpit's Agents tab and model re-tuning read it |
+| Gate badges | `ui.render` AskUserQuestion | outward (`Publish`/`Post`/`Tracker`) and `Escalation` header chips (`orc:gates`) get a badge above the engine's own dialog |
+| CI watcher | `$.clock.every` + `$.store` lease | interactive sessions poll linked PRs' checks (one poller per PR across sessions); red/green → status line, toast, optional chime (`alerts_sound`), a dim `/orc:ci <n>` suggestion, and a red-CI band above the prompt with Diagnose / Dismiss. It never pushes, posts, or starts a turn. |
+
+`/orc:status` remains the full markdown report. Tests: `claude plugin test orc` (`hooks/mod/tests/*.test.ts`, headless). `claude plugin validate ./orc` lists the events it hooks and every API call it makes.
+
+**Model routing.** Agent frontmatter is the `balanced` default and stays put until the usage ledger and the eval suite justify a change; the `quality`/`economy` profiles carry the current hypotheses (investigator → Fable, code-fixer Haiku → Sonnet, …) so they can be measured per repo before they become defaults.
 
 ## Statusline
 
@@ -71,6 +85,7 @@ Multi-phase commands (`/orc:plan`, `/orc:start`, `/orc:debug`, `/orc:fan-out`, w
     └── files/
         ├── checkpoint.md                    # frontmatter mirror + resume digest — the resume entry point (≤4 KB)
         ├── slices.json                      # slice ledger (status machine; written via orc-state)
+        ├── usage.jsonl                      # per-subagent-run tokens/time (orc mod → orc-state usage add)
         ├── plan.md                          # if /orc:plan ran
         ├── diagnosis.md                     # if /orc:debug ran
         ├── progress.md                      # append-only history (never read by resume by default)

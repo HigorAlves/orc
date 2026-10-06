@@ -15,6 +15,8 @@ Prompted at plugin enable time (re-run via `/plugin`); exported to hooks and lib
 | `statusline_style` | `full` | `full` (two lines, width-aware) or `compact` (always a single dense line). |
 | `statusline_context_reserve` | `0` | 0–50. When >0, the context percentage is normalized against this reserved slice (e.g. your auto-compact reserve) and rendered with a `~` prefix. `0` shows the raw payload percentage. |
 | `mod_enabled` | `true` | Load the orc mod (`hooks/mod/`, Claude Code 2.1.287+): in-process event hooks and UI layered on the bash hooks. `false` keeps orc on its bash hooks only — the guardrails are identical either way. |
+| `model_profile` | `balanced` | Which model orc agents run on when a dispatch names none (needs the orc mod): `balanced` (each agent's frontmatter), `quality` (investigator on `best` — Fable where available, else Opus — reviewers on Opus), `economy` (Opus-tier agents on Sonnet). An explicit per-dispatch model always wins. |
+| `alerts_sound` | `false` | A short chime when the orc mod's CI watcher sees a linked PR turn red or green. |
 
 ## Environment variables
 
