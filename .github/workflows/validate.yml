@@ -165,4 +165,5 @@ jobs:
           go tool cover -func=coverage.out | tail -1
 
       - name: govulncheck
-        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+        # Pinned: govulncheck >= v1.8.0 requires go 1.26; cli/go.mod is 1.25 (GOTOOLCHAIN=local).
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
