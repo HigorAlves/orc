@@ -97,24 +97,26 @@ function register_refresh(on: On) {
 const agentTypes = new Map<string, string>()
 
 function register_agents(on: On, profile: Profile) {
+  // Both hooks gate the engine (a dispatch, a turn's end): orc's bookkeeping
+  // never fails them, so every state call here is guarded.
   on('agent.spawn', async ($, e, next) => {
-    const snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
+    const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
     const model = e.model ? undefined : modelFor(profileOf(snap, profile), e.subagentType)
     const result = await next(model ? { ...e, model } : e)
     if (result.agentId && /^(orc:)?orc-/.test(e.subagentType)) {
       agentTypes.set(result.agentId, e.subagentType.replace(/^orc:/, ''))
-      await $.state.set(LIVE_REF, { agent: e.subagentType.replace(/^orc:/, ''), since: await $.clock.now() })
+      await $.state.set(LIVE_REF, { agent: e.subagentType.replace(/^orc:/, ''), since: await $.clock.now() }).catch(() => undefined)
     }
     return result
   })
 
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)
-    if (!e.agentId) await refresh($)
+    if (!e.agentId) await refresh($).catch(() => undefined)
     const agent = e.agentId ? agentTypes.get(e.agentId) : undefined
     if (agent && e.usage) {
       agentTypes.delete(e.agentId as string)
-      await $.state.set(LIVE_REF, LIVE_INITIAL)
+      await $.state.set(LIVE_REF, LIVE_INITIAL).catch(() => undefined)
       await orc_state($, ['usage', 'add', '--agent', agent, '--model', e.usage.model,
         '--in', String(e.usage.input_tokens), '--out', String(e.usage.output_tokens), '--ms', String(e.durationMs)])
     }
