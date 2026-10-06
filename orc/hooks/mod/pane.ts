@@ -2,8 +2,10 @@
 // engine's scan follows `$` only inside that file), builds the callbacks, and
 // hands this module the element table, the data and the actions.
 import type { EngineInterface } from 'claude-code'
-import { headerCells, isDone, layoutFor, phaseRows, sliceLine, type Snapshot } from './cockpit'
+import type { OrcSections } from '../../types'
+import { attention, criterionLine, headerCells, isDone, layoutFor, phaseRows, sectionLabel, sizeLine, sliceLine, usageLine, type SectionId, type Snapshot } from './cockpit'
 import type { Profile } from './profiles'
+import type { CiAlert } from './state'
 
 export const PANE = 'orc-cockpit'
 
@@ -13,11 +15,13 @@ export type PaneModel = {
   profile: Profile
   placement: 'dock' | 'inline'
   bodyColumns: number
+  sections: OrcSections
+  ciAlert: CiAlert
 }
-export type PaneActions = { resume: () => void }
+export type PaneActions = { resume: () => void; toggle: (id: SectionId) => () => void; renderReport: () => void }
 
 export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
-  const { Box, Text, Button } = els
+  const { Box, Text, Button, Link } = els
   const { snap } = model
   const s = snap.session
   const line = (text: string, style: { bold?: boolean; dimColor?: boolean; color?: string } = {}) => Text({ ...style, children: [text] })
@@ -39,9 +43,41 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
   ] })
   const body = Box({ flexDirection: layoutFor(model.placement, model.bodyColumns), columnGap: 1, children: [...(ladder ? [ladder] : []), ledger] })
 
+  const flagged = attention(snap, model.ciAlert !== null)
+  const section = (id: SectionId, hotkey: string, children: () => ReturnType<typeof Box>[]) =>
+    Box({ flexDirection: 'column', children: [
+      Button({ key: 'sec-' + id, plain: true, hotkey, label: sectionLabel(id, model.sections[id], flagged.has(id)), onPress: actions.toggle(id) }),
+      ...(model.sections[id] ? [Box({ flexDirection: 'column', paddingLeft: 2, children: children() })] : []),
+    ] })
+
+  const qa = section('qa', 'q', () => snap.qa
+    ? [line('Verdict: ' + snap.qa.verdict.toUpperCase(), { bold: true, color: snap.qa.verdict === 'pass' ? 'green' : 'red' }),
+       ...snap.qa.acceptance.map(c => line(criterionLine(c), { color: c.result === 'pass' ? 'green' : c.result === 'fail' ? 'red' : undefined })),
+       ...(snap.qa.missing.length ? [line('Missing evidence: ' + snap.qa.missing.join(', '), { color: 'red' })] : []),
+       Button({ key: 'qa-report', label: 'Render report', onPress: actions.renderReport })]
+    : [line('No QA packet yet — /orc:qa writes one.', { dimColor: true })])
+
+  const prs = s?.linkedPRs ?? []
+  const alert = model.ciAlert
+  const pr = section('pr', 'p', () => [
+    ...(snap.size ? [line('Size  ' + sizeLine(snap.size), { color: snap.size.loc > snap.size.budget ? 'red' : undefined })] : []),
+    ...(prs.length
+      ? prs.map(p => Box({ flexDirection: 'row', columnGap: 1, children: [line(`#${p.number ?? '?'}`), ...(p.url ? [Link({ href: p.url, label: p.url })] : [])] }))
+      : [line('No PR linked yet — /orc:ship opens one.', { dimColor: true })]),
+    ...(alert ? [line(`CI: ${alert.summary.failing.length} failing (${alert.summary.failing.join(', ')})`, { color: 'red' })] : []),
+  ])
+
+  const agents = section('agents', 'g', () => snap.usage?.length
+    ? [line('agent                     runs   tokens            time', { dimColor: true }), ...snap.usage.map(u => line(usageLine(u)))]
+    : [line('No subagent runs recorded yet.', { dimColor: true })])
+
+  const decisions = section('decisions', 'd', () => snap.decisions.length
+    ? snap.decisions.map(d => line(`${d.key} = ${d.value}  (${d.provenance})`))
+    : [line('No settled decisions yet.', { dimColor: true })])
+
   const footer = Box({ flexDirection: 'row', columnGap: 2, children: [
     Button({ key: 'resume', variant: 'primary', label: s ? 'Resume (/orc:resume)' : 'New flow (/orc:flow)', hotkey: 'r', onPress: actions.resume }),
   ] })
 
-  return Box({ flexDirection: 'column', rowGap: 1, children: [header, body, footer] })
+  return Box({ flexDirection: 'column', rowGap: 1, children: [header, body, qa, pr, agents, decisions, footer] })
 }

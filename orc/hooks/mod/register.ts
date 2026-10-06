@@ -5,13 +5,14 @@
 import type { EngineInterface, On, PluginOptions } from 'claude-code'
 import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine, summarizeChecks, type CiRecord } from './ci'
 import {
-  EMPTY, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, profileOf, summaryText, type Snapshot,
+  EMPTY, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, profileOf, summaryText, type SectionId, type Snapshot,
 } from './cockpit'
 import { PANE, drawPane } from './pane'
-import { ciBox, isOrcStateWrite } from './state'
+import { SECTIONS_INITIAL, ciBox, isOrcStateWrite } from './state'
 
 // State refs: literals in this file, as the engine's scan requires.
 const SNAPSHOT_REF = { plugin: 'orc', key: 'snapshot' } as const
+const SECTIONS_REF = { plugin: 'orc', key: 'sections' } as const
 import { gateBadge } from './gates'
 import { modelFor, parseProfile, type Profile } from './profiles'
 
@@ -206,9 +207,18 @@ function register_cockpit(on: On, fallbackProfile: Profile) {
   on('ui.render', { component: 'Pane' }, async ($, e, next) => {
     if (e.requestId !== PANE) return next(e)
     const snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
-    const model = { snap, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
+    const sections = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
+    const model = { snap, sections, ciAlert: ciBox.alert, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
     return drawPane($.ui.resolve(e), model, {
       resume: () => { $.prompt.fill({ text: snap.session ? '/orc:resume' : '/orc:flow ' }) },
+      toggle: (id: SectionId) => async () => {
+        const current = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
+        await $.state.set(SECTIONS_REF, { ...current, [id]: !current[id] })
+      },
+      renderReport: async () => {
+        const path = await orc_report_html($)
+        $.ui.toast(path ? 'QA report: ' + path : 'No QA packet to render')
+      },
     })
   })
 }
@@ -238,6 +248,15 @@ function refresh($: EngineInterface): Promise<void> {
     do { dirty = false; await $.state.set(SNAPSHOT_REF, await load_snapshot($)) } while (dirty)
   })().finally(() => { inflight = null })
   return inflight
+}
+
+async function orc_report_html($: EngineInterface): Promise<string> {
+  try {
+    const r = await $.process.run([$.plugin.root + '/bin/orc-report', 'html'], { timeoutMs: 10000 })
+    return r.exitCode === 0 ? r.stdout.trim() : ''
+  } catch {
+    return ''
+  }
 }
 
 // One orc-state call; '' when it fails or there is no session.

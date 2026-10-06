@@ -151,3 +151,16 @@ export function headerCells(snap: Snapshot, profile: Profile): Cell[] {
 // Ladder beside ledger when there is room for both (28 + 2 + ~42 columns); else stacked.
 export const layoutFor = (placement: 'dock' | 'inline', bodyColumns: number): 'row' | 'column' =>
   bodyColumns >= 72 || (placement === 'dock' && bodyColumns >= 64) ? 'row' : 'column'
+
+export type SectionId = 'qa' | 'pr' | 'agents' | 'decisions' | 'digest' | 'diff'
+
+// Which sections need a look: a failing QA verdict, an over-budget diff or red CI.
+export function attention(snap: Snapshot, ciRed: boolean): Set<SectionId> {
+  const out = new Set<SectionId>()
+  if (snap.qa && snap.qa.verdict !== 'pass') out.add('qa')
+  if ((snap.size && snap.size.loc > snap.size.budget) || ciRed) out.add('pr')
+  return out
+}
+
+export const sectionLabel = (id: SectionId, open: boolean, flagged: boolean) =>
+  `${open ? '▾' : '▸'} ${({ qa: 'QA', pr: 'PR', agents: 'Agents', decisions: 'Decisions', digest: 'Digest', diff: 'Diff' })[id]}${flagged ? ' !' : ''}`

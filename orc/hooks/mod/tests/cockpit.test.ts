@@ -4,6 +4,7 @@ import { expect, test } from 'claude-code/testing'
 const SESSION = JSON.stringify({
   command: 'flow', gitBranch: 'feat/export', description: 'CSV export', status: 'in_progress',
   phase: 5, phaseLabel: 'implement', totalPhases: 9, jiraTicket: null,
+  linkedPRs: [{ url: 'https://github.com/acme/app/pull/12', number: 12 }],
 })
 const SLICES = '1\tcommitted\tstream rows\tabc1234\n2\tpending\texport job\t-\n3\tred\tdownload button\t-\n'
 const DECISIONS = JSON.stringify({ schema: 1, decisions: { autopilotLevel: { value: 'guided', provenance: 'flag' } } })
@@ -103,4 +104,29 @@ test('a pane the terminal cannot place falls back to text', async ($, on) => {
   on('ui.open', () => ({ value: { isPlaced: false, reason: 'terminal too narrow' } }))
   const out = await $.command.run(RUN)
   expect(out.text).toContain('flow 5/9 implement')
+})
+
+test('sections start collapsed, mark attention, and toggle', async ($, on) => {
+  on('process.run', orcState([]))
+  surfaces(on, ['terminal'])
+  await $.command.run(RUN)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect(await ui.find({ key: 'sec-qa' })).toMatchObject({ props: { label: '▸ QA !' } })
+  expect(await ui.find({ key: 'sec-pr' })).toMatchObject({ props: { label: '▸ PR !' } })
+  expect(await ui.find({ key: 'sec-agents' })).toMatchObject({ props: { label: '▸ Agents' } })
+  expect(await ui.find({ type: 'Text', text: /POST \/export returns 202/ })).toBeUndefined()
+  await ui.press({ key: 'sec-qa' })
+  expect(await ui.find({ key: 'sec-qa' })).toMatchObject({ props: { label: '▾ QA !' } })
+  expect(await ui.find({ type: 'Text', text: /✓ POST \/export returns 202/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /✗ Download shows progress/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'Verdict: FAIL' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'Missing evidence: qa-feat-export.webm' })).toBeDefined()
+  await ui.press({ key: 'sec-qa' })
+  expect(await ui.find({ type: 'Text', text: /POST \/export returns 202/ })).toBeUndefined()
+  await ui.press({ key: 'sec-pr' })
+  expect(await ui.find({ type: 'Link' })).toMatchObject({ props: { href: 'https://github.com/acme/app/pull/12' } })
+  expect(await ui.find({ type: 'Text', text: /412\/300 LOC — over by 112$/ })).toBeDefined()
+  await ui.press({ key: 'sec-agents' })
+  expect(await ui.find({ type: 'Text', text: /orc-implementer\s+3 runs\s+52\.0k in \/ 9\.1k out\s+184s/ })).toBeDefined()
+  await ui.unmount()
 })
