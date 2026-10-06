@@ -7,7 +7,9 @@ import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine
 import {
   EMPTY, currentSlice, cutDiff, digestOf, hintFor, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, plumbingLine, policyOf, profileOf, spinnerSuffix, summaryText, type SectionId, type Snapshot,
 } from './cockpit'
+import { gateBadge } from './gates'
 import { PANE, drawPane } from './pane'
+import { modelFor, parseProfile, type Profile } from './profiles'
 import { DETAILS_INITIAL, LIVE_INITIAL, SECTIONS_INITIAL, ciBox, isOrcStateWrite } from './state'
 
 // State refs: literals in this file, as the engine's scan requires.
@@ -15,8 +17,6 @@ const SNAPSHOT_REF = { plugin: 'orc', key: 'snapshot' } as const
 const SECTIONS_REF = { plugin: 'orc', key: 'sections' } as const
 const LIVE_REF = { plugin: 'orc', key: 'live' } as const
 const DETAILS_REF = { plugin: 'orc', key: 'details' } as const
-import { gateBadge } from './gates'
-import { modelFor, parseProfile, type Profile } from './profiles'
 
 let alertsSound = false
 

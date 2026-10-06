@@ -104,5 +104,7 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
     Button({ key: 'resume', variant: 'primary', label: s ? 'Resume (/orc:resume)' : 'New flow (/orc:flow)', hotkey: 'r', onPress: actions.resume }),
   ] })
 
-  return Box({ flexDirection: 'column', rowGap: 1, children: [header, body, qa, pr, agents, decisions, digest, diff, footer] })
+  // Sections sit tight (one row each while collapsed); the gap only separates the strip, the body, the sections and the footer.
+  const sections = Box({ flexDirection: 'column', children: [qa, pr, agents, decisions, digest, diff] })
+  return Box({ flexDirection: 'column', rowGap: 1, children: [header, body, sections, footer] })
 }
