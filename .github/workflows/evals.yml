@@ -1,0 +1,47 @@
+name: evals
+
+# Behavioral evals (`claude plugin eval`) — real model calls, so never on PRs:
+# nightly + on demand. Zero-cost graders only (tool_used / regex), one arm.
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - name: Skip without an API key
+        if: env.ANTHROPIC_API_KEY == ''
+        run: echo "::notice::ANTHROPIC_API_KEY secret not set — skipping evals"
+      - uses: actions/checkout@v7
+        if: env.ANTHROPIC_API_KEY != ''
+      - uses: actions/setup-node@v7
+        if: env.ANTHROPIC_API_KEY != ''
+        with:
+          node-version: 22
+      - name: Install Claude Code CLI
+        if: env.ANTHROPIC_API_KEY != ''
+        # Same pin as validate.yml; models pinned below so a rollout isn't read as a regression.
+        run: npm install -g @anthropic-ai/claude-code@2.1.290
+      - name: Run eval suite
+        if: env.ANTHROPIC_API_KEY != ''
+        run: >
+          claude plugin eval ./orc
+          --ablation none --runs 2 --threshold 0.8
+          --max-cost-usd 5 --model claude-sonnet-5-5
+          --trust-plugin --json evals-result.json
+      - uses: actions/upload-artifact@v7
+        if: always() && env.ANTHROPIC_API_KEY != ''
+        with:
+          name: evals-result
+          path: |
+            evals-result.json
+            orc/evals/results/
+          if-no-files-found: ignore

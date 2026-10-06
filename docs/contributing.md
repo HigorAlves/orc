@@ -100,6 +100,17 @@ claude --plugin-dir /Users/higoralves/Developer/system/orc
 /orc:                  # autocomplete should list all 22 commands
 ```
 
+### Behavioral evals
+
+`orc/evals/` holds `claude plugin eval` cases — one per directory: `prompt.md` (frontmatter: limits, `allowed_tools`) + `graders/*.md`. Keep graders zero-cost (`tool_used`, `regex`, `tool_order`, `file_exists`) so the nightly `evals` workflow stays cheap. Each run is a real model call on your account:
+
+```bash
+cd orc && claude plugin eval . --case route-debug --runs 1 --ablation none   # one case, one run
+claude plugin eval . --ablation none --runs 2 --threshold 0.8                  # the suite
+```
+
+A routing case that drops to 0 after a description change means the skill stopped triggering on natural phrasing — fix the `description`, not the grader.
+
 ## Commit hygiene
 
 - Conventional Commits format (enforced by `orc:git-commit` skill): `feat(skills): ...`, `fix(commands): ...`, `chore(hooks): ...`.
