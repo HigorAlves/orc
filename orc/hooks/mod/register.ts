@@ -5,14 +5,15 @@
 import type { EngineInterface, On, PluginOptions } from 'claude-code'
 import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine, summarizeChecks, type CiRecord } from './ci'
 import {
-  EMPTY, currentSlice, cutDiff, digestOf, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, profileOf, summaryText, type SectionId, type Snapshot,
+  EMPTY, currentSlice, cutDiff, digestOf, hintFor, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, policyOf, profileOf, spinnerSuffix, summaryText, type SectionId, type Snapshot,
 } from './cockpit'
 import { PANE, drawPane } from './pane'
-import { DETAILS_INITIAL, SECTIONS_INITIAL, ciBox, isOrcStateWrite } from './state'
+import { DETAILS_INITIAL, LIVE_INITIAL, SECTIONS_INITIAL, ciBox, isOrcStateWrite } from './state'
 
 // State refs: literals in this file, as the engine's scan requires.
 const SNAPSHOT_REF = { plugin: 'orc', key: 'snapshot' } as const
 const SECTIONS_REF = { plugin: 'orc', key: 'sections' } as const
+const LIVE_REF = { plugin: 'orc', key: 'live' } as const
 const DETAILS_REF = { plugin: 'orc', key: 'details' } as const
 import { gateBadge } from './gates'
 import { modelFor, parseProfile, type Profile } from './profiles'
@@ -28,6 +29,7 @@ export function register(on: On, options: PluginOptions) {
   register_agents(on, parseProfile(options.model_profile))
   register_refresh(on)
   register_cockpit(on, parseProfile(options.model_profile))
+  register_surfaces(on)
   register_gates(on)
   register_ci_band(on)
 }
@@ -96,7 +98,10 @@ function register_agents(on: On, profile: Profile) {
     const snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
     const model = e.model ? undefined : modelFor(profileOf(snap, profile), e.subagentType)
     const result = await next(model ? { ...e, model } : e)
-    if (result.agentId && /^(orc:)?orc-/.test(e.subagentType)) agentTypes.set(result.agentId, e.subagentType.replace(/^orc:/, ''))
+    if (result.agentId && /^(orc:)?orc-/.test(e.subagentType)) {
+      agentTypes.set(result.agentId, e.subagentType.replace(/^orc:/, ''))
+      await $.state.set(LIVE_REF, { agent: e.subagentType.replace(/^orc:/, ''), since: await $.clock.now() })
+    }
     return result
   })
 
@@ -106,10 +111,33 @@ function register_agents(on: On, profile: Profile) {
     const agent = e.agentId ? agentTypes.get(e.agentId) : undefined
     if (agent && e.usage) {
       agentTypes.delete(e.agentId as string)
+      await $.state.set(LIVE_REF, LIVE_INITIAL)
       await orc_state($, ['usage', 'add', '--agent', agent, '--model', e.usage.model,
         '--in', String(e.usage.input_tokens), '--out', String(e.usage.output_tokens), '--ms', String(e.durationMs)])
     }
     return result
+  })
+}
+
+// orc outside the pane: the spinner's suffix, the idle prompt hint and the mode
+// footer. Each is a prop rewrite; the engine keeps drawing its own line.
+function register_surfaces(on: On) {
+  on('ui.render', { component: 'Spinner' }, async ($, e, next) => {
+    const snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
+    const live = (await $.state.get(LIVE_REF)).value ?? LIVE_INITIAL
+    const suffix = spinnerSuffix(snap, live.agent)
+    return suffix ? next({ ...e, props: { ...e.props, suffix: e.props.suffix + suffix } }) : next(e)
+  })
+
+  on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
+    if (e.props.isWorking || e.props.isDraft) return next(e)
+    const hint = hintFor((await $.state.get(SNAPSHOT_REF)).value ?? EMPTY)
+    return hint ? next({ ...e, props: { ...e.props, hint } }) : next(e)
+  })
+
+  on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
+    const policy = policyOf((await $.state.get(SNAPSHOT_REF)).value ?? EMPTY)
+    return policy && policy !== 'manual' ? next({ ...e, props: { ...e.props, modes: [...e.props.modes, 'orc ' + policy] } }) : next(e)
   })
 }
 

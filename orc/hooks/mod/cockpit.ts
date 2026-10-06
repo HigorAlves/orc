@@ -180,3 +180,9 @@ export function cutDiff(text: string, max = 8000): { source: string; truncated: 
 }
 
 export const currentSlice = (slices: Slice[]): Slice | null => slices.find(x => !isDone(x)) ?? null
+
+export const phaseShort = (s: Session) =>
+  `${s.command} ${s.phase === 'done' ? 'done' : `${s.phase}/${s.totalPhases}`}${s.phaseLabel && s.phase !== 'done' ? ' ' + s.phaseLabel : ''}`
+export const spinnerSuffix = (snap: Snapshot, agent: string | null) =>
+  snap.session ? ` · orc ${phaseShort(snap.session)}${agent ? ' · ' + agent.replace(/^orc-/, '') : ''}` : ''
+export const hintFor = (snap: Snapshot) => (snap.session ? `orc ${phaseShort(snap.session)} · /orc cockpit · /orc:resume` : null)
