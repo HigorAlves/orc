@@ -1,6 +1,6 @@
 ---
 description: End-to-end feature/bug/refactor pipeline (plan → start → implement → QA → ship → address → cleanup) with an interactive gate at every phase. Resumable via /orc:resume. --jira <KEY> links a ticket. Workspace-aware.
-argument-hint: "[--auto[=guided|full]] [--type=feature|bug|refactor|docs] [--rfc] [--verbose] [--pause-at-implement] [--jira <KEY>] [--max-loc <N>] [--no-size-gate] [--driver agent-browser|chrome] [--repos a,b | --repo a | --all-repos | --this-repo] <one-line task description>"
+argument-hint: "[--auto[=guided|full]] [--type=feature|bug|refactor|docs] [--rfc] [--verbose] [--pause-at-implement] [--jira <KEY>] [--max-loc <N>] [--no-size-gate] [--driver agent-browser|chrome] [--target <name>] [--repos a,b | --repo a | --all-repos | --this-repo] <one-line task description>"
 allowed-tools:
   - Bash(orc-state:*)
   - Bash(orc-report:*)
@@ -47,6 +47,7 @@ Interactivity follows the gate taxonomy (`orc:using-orc`) and the resolved `inte
 - `--rfc` — insert an RFC phase before planning (multi-week, multi-team, or genuine-alternatives work).
 - `--verbose` — pass through to `/orc:ship` (long-form PR body; terse `orc:caveman-pr` is the default).
 - `--driver agent-browser|chrome` — pre-answers Phase 6's browser-driver gate.
+- `--target <name>` — pre-answers Phase 6's Target gate (`orc:qa-targets`); recorded as a `target` decision.
 - `--pause-at-implement` — Phase 5 pauses for the human to write the code (keeps Phase 4's red-confirm gate).
 - `--jira <KEY>` — link a Jira ticket silently (validate `^[A-Z][A-Z0-9_]*-\d+$`); lands as `Resolves <KEY>` in the PR body.
 - `--max-loc <N>` / `--no-size-gate` — pass-through to `/orc:ship`'s Phase 4.5 size gate (single owner; flow never pre-flights it).
@@ -138,7 +139,7 @@ This is the back-pointer `/orc:status` and `/orc:resume` follow when the user `c
 The resolved policy (flag > settled decision > env > userConfig > `manual`) sets how much of the run needs you:
 
 - **manual** — every soft-inward gate asks, exactly as the phase playbooks specify.
-- **guided** — mechanical confirms auto-advance with a printed one-liner: the driver defaults to `agent-browser` (recorded as a policy decision), a clean QA pass advances, Phase 9 auto-applies the standard cleanup plan. Plan approval, the size gate, and PR compose still ask.
+- **guided** — mechanical confirms auto-advance with a printed one-liner: the driver defaults to `playwright` and the target to `local` (both recorded as policy decisions), a clean QA pass advances, Phase 9 auto-applies the standard cleanup plan. Plan approval, the size gate, and PR compose still ask.
 - **auto (full)** — Phases 1–3 collapse into **one contract gate**: infer type/scope from the description (recorded as inferred decisions; `orc-prd-analyzer` still runs for long briefs and P0 questions still stop the run), draft the plan, then a single `AskUserQuestion` call:
   1. **Approve the contract** — the deliverable one-liner, the slice list, and the testable success criteria: suite + lint + type-check green, every `slices.json` acceptance criterion `pass` in `qa-verdict.json`, `orc-state slice list --status pending,red,escalated` clean, PR ≤ budget or stacked, CI green on the PR. Options: approve / iterate the plan / abort.
   2. **Repo set** (workspace mode only — asked at every level, never inferred; iron rule 7).

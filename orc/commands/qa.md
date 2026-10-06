@@ -1,6 +1,6 @@
 ---
 description: Pre-PR quality gate — browser-driven QA for web changes with a mandatory evidence packet against a provisioned environment. No QA-passed claim without artifacts. Workspace-aware. For a quick behavioral check without the evidence packet, prefer the bundled /verify or /run.
-argument-hint: "[--auto[=guided|full]] [--web <url>] [--no-web] [--no-env] [--driver agent-browser|chrome] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
+argument-hint: "[--auto[=guided|full]] [--target <name>] [--web <url>] [--no-web] [--no-env] [--driver playwright|agent-browser|chrome] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 allowed-tools:
   - Bash(orc-state:*)
   - Bash(orc-report:*)
@@ -27,6 +27,10 @@ allowed-tools:
   - Bash(acli:*)
   - Bash(jq:*)
   - Bash(git branch --show-current:*)
+  - Bash(orc-targets:*)
+  - Bash(npx playwright:*)
+  - Bash(orc-playwright:*)
+  - Bash(orc-qa-video:*)
 effort: high
 ---
 
@@ -41,6 +45,7 @@ Run a quality gate before opening a PR. Two modes:
 
 - `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`); ladder and hard-outward exemption in `orc:gates` §6.
 
+- `--target <name>` — a named QA target from `.orc/targets.json` (`orc:qa-targets`): `local` provisions the Docker env; a remote target (staging, preview) is probed and used as-is. Omitted ⇒ the Target gate asks. `--web <url>` remains as the ad-hoc remote shorthand.
 - `--web <url>` — explicit URL of a running app (skips env provisioning AND the validator's boot path — you're saying it's already up).
 - `--no-web` — force code-only mode even if web files were touched.
 - `--no-env` — skip Docker env provisioning; the validator falls back to its legacy dev-script boot.

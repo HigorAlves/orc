@@ -1,6 +1,6 @@
 ---
 description: Collect browser evidence scoped to a ticket (or shared context) and deliver it — evidence packet, then upload to the ticket or keep local (always asks). For proving a ticket's behavior without a code diff/PR. Workspace-aware.
-argument-hint: "[<TICKET-KEY>] [--web <url>] [--driver chrome|agent-browser] [--context \"<what to test>\"] [--no-env] [--repos a,b | --repo a | --this-repo]"
+argument-hint: "[<TICKET-KEY>] [--target <name>] [--web <url>] [--driver chrome|agent-browser] [--context \"<what to test>\"] [--no-env] [--repos a,b | --repo a | --this-repo]"
 arguments: [ticket]
 allowed-tools:
   - Bash(orc-state:*)
@@ -21,6 +21,10 @@ allowed-tools:
   - Bash(git branch --show-current:*)
   - Bash(agent-browser:*)
   - Bash(npx agent-browser:*)
+  - Bash(orc-targets:*)
+  - Bash(npx playwright:*)
+  - Bash(orc-playwright:*)
+  - Bash(orc-qa-video:*)
 ---
 
 # /orc:evidence
@@ -33,6 +37,7 @@ Collection **reuses `/orc:qa`'s browser drivers verbatim**; delivery reuses the 
 
 - `<TICKET-KEY>` — the ticket to scope from and (on upload) deliver to. Omit to use the session's bound `jiraTicket`, or to run context-only.
 - `--context "<what to test>"` — describe the flow to exercise, instead of (or on top of) pulling it from the ticket.
+- `--target <name>` — a named QA target from `.orc/targets.json` (`orc:qa-targets`): `local` provisions the Docker env; a remote target is probed and used as-is. Omitted ⇒ the Target gate asks.
 - `--web <url>` — app already running at this URL; skip env provisioning.
 - `--driver chrome|agent-browser` — browser driver; default is the same Phase 4.1 gate as `/orc:qa`. `chrome` = Claude-in-Chrome, watch live in your browser; `agent-browser` = headless CLI validator.
 - `--no-env` — skip Docker provisioning; use `--web` or a legacy boot.
