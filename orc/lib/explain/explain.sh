@@ -3,6 +3,7 @@
 # explain.sh — the /orc:explain toolchain behind bin/orc-explain:
 #   validate  segments.json shape (schema in orc:explainer references/segments-schema.md)
 #   setup     stage narrate.mjs + package.json into ${XDG_CACHE_HOME:-~/.cache}/orc/explain and npm install
+#   graphics  animate pieces → <work>/graphics/<id>.mp4 for graphic segments (fallback cards when animate is absent)
 #   narrate   run kokoro-js → <work>/narration/<id>.wav
 #   assemble  per-segment mp4 (clip | graphic from <work>/graphics/<id>.mp4 | fallback title card),
 #             each max(video, narration) long, concat → --out
@@ -31,7 +32,7 @@ orc_ex_validate() { # --segments S
 orc_ex_setup() {
   local home; home="$(orc_ex__home)"
   mkdir -p "$home"
-  cp "$(orc_ex__src)/narrate.mjs" "$(orc_ex__src)/package.json" "$home/"
+  cp "$(orc_ex__src)/narrate.mjs" "$(orc_ex__src)/package.json" "$(orc_ex__src)/animate-piece.mjs" "$(orc_ex__src)/animate.lock" "$home/"
   if [ "${ORC_EXPLAIN_SKIP_NPM:-0}" != "1" ]; then
     (cd "$home" && npm install --no-fund --no-audit >/dev/null)
   fi
@@ -44,6 +45,35 @@ orc_ex_narrate() { # --segments S --work W
   local home; home="$(orc_ex__home)"
   [ -d "$home/node_modules/kokoro-js" ] || { echo "orc-explain: kokoro-js not installed — run: orc-explain setup" >&2; return 3; }
   node "$home/narrate.mjs" "$s" "$w/narration"
+}
+
+orc_ex__animate_root() {
+  local r="${ORC_ANIMATE_ROOT:-}"
+  [ -n "$r" ] || r="$(find "$HOME/.claude/plugins/cache/animate/animate" -mindepth 3 -maxdepth 3 -path '*/skills/animate' 2>/dev/null | sort -V | tail -1)"
+  [ -n "$r" ] && [ -f "$r/tools/build.mjs" ] && printf '%s' "$r"
+}
+
+# animate pieces are hand-authored canvas scenes (see animate.lock notes): the generated piece carries the brief but not
+# scene code, so rendering is opt-in (ORC_ANIMATE_RENDER=1, after the scenes were authored) — default is fallback cards.
+orc_ex_graphics() { # --segments S --work W
+  local s="" w=""
+  while [ $# -gt 0 ]; do case "$1" in --segments) s="$2"; shift 2 ;; --work) w="$2"; shift 2 ;; *) return 2 ;; esac; done
+  local root; root="$(orc_ex__animate_root || true)"
+  [ -n "$root" ] || { echo "orc-explain: animate not installed — fallback cards will be used for graphic segments"; return 0; }
+  mkdir -p "$w/graphics"
+  local pieces line id dir out
+  pieces="$(node "$(orc_ex__home)/animate-piece.mjs" "$s" "$w" "$root")" || return 1
+  if [ "${ORC_ANIMATE_RENDER:-0}" != "1" ]; then
+    echo "orc-explain: animate pieces written to $w/pieces (scenes need authoring; set ORC_ANIMATE_RENDER=1 to render) — fallback cards will be used"
+    return 0
+  fi
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    id="$(printf '%s' "$line" | jq -r .id)"; dir="$(printf '%s' "$line" | jq -r .pieceDir)"
+    node "$root/tools/build.mjs" "$dir" && node "$root/tools/export.mjs" "$dir" --formats 16:9 || { echo "orc-explain: animate render failed for $id — fallback card" >&2; continue; }
+    out="$(find "$dir/renders" -maxdepth 1 -name 'final-[0-9]*x[0-9]*.mp4' 2>/dev/null | head -1)"
+    [ -n "$out" ] && cp "$out" "$w/graphics/$id.mp4"
+  done <<< "$pieces"
 }
 
 orc_ex__dur() { ffprobe -v error -show_entries format=duration -of csv=p=0 "$1" 2>/dev/null || printf '0'; }
@@ -119,9 +149,10 @@ if [ "${BASH_SOURCE[0]:-}" = "${0:-}" ]; then
   case "$sub" in
     validate) orc_ex_validate "$@" ;;
     setup)    orc_ex_setup "$@" ;;
+    graphics) orc_ex_graphics "$@" ;;
     narrate)  orc_ex_narrate "$@" ;;
     assemble) orc_ex_assemble "$@" ;;
-    --help|-h|help|'') printf 'usage: orc-explain validate --segments S | setup | narrate --segments S --work W | assemble --segments S --work W --qa-dir Q --out O\n' ;;
+    --help|-h|help|'') printf 'usage: orc-explain validate --segments S | setup | graphics --segments S --work W | narrate --segments S --work W | assemble --segments S --work W --qa-dir Q --out O\n' ;;
     *) printf 'orc-explain: unknown subcommand %s\n' "$sub" >&2; exit 2 ;;
   esac
 fi

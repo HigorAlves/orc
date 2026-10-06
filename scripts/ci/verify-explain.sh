@@ -26,6 +26,8 @@ set +e; err="$(bash "$cli" validate --segments "$tmp/bad2.json" 2>&1)"; rc=$?; s
 
 bash "$cli" setup >/dev/null
 [ -f "$XDG_CACHE_HOME/orc/explain/narrate.mjs" ] && [ -f "$XDG_CACHE_HOME/orc/explain/package.json" ] && ok || fail "setup must stage narrate.mjs + package.json"
+[ -f "$XDG_CACHE_HOME/orc/explain/animate-piece.mjs" ] && [ -f "$XDG_CACHE_HOME/orc/explain/animate.lock" ] && ok || fail "setup must stage animate-piece.mjs + animate.lock"
+ORC_ANIMATE_ROOT=/nonexistent bash "$cli" graphics --segments "$tmp/good.json" --work "$tmp/work" | grep -q 'fallback cards' && ok || fail "graphics without animate must exit 0 printing fallback cards"
 
 if command -v ffmpeg >/dev/null 2>&1 && command -v ffprobe >/dev/null 2>&1; then
   mkdir -p "$tmp/qa/demo" "$tmp/work/narration"
