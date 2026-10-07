@@ -1,46 +1,57 @@
 ---
 name: browser-qa
-description: The canonical browser-QA protocol for web changes — env attach, the driver gate (agent-browser headless vs Claude-in-Chrome live), the validator dispatch contract, and the chrome-mode evidence packet. Use when running browser QA on a web change; /orc:qa Phase 4 and /orc:flow Phase 6 delegate here.
+description: The canonical browser-QA protocol for web changes — target resolution, env attach, the driver gate (Playwright primary, agent-browser, Claude-in-Chrome), validator dispatch, chrome evidence packet. Use when running browser QA; /orc:qa and /orc:flow Phase 6 delegate here.
 ---
 
 # Browser QA
 
 The single source of truth for driving browser QA — `/orc:qa` and `/orc:flow` both execute this protocol instead of restating it. Inputs from the caller: the feature description, the state dir, `--driver`/`--web`/`--no-env` flags when given, and (workspace mode) the web-surface repo + siblings.
 
-## Step 0 — Provision or attach the environment
+## Step 0 — Resolve the target
 
-Skip when `--web <url>` or `--no-env`. Check `orc-docker-env is-ready $(orc-docker-env state-path "$ORC_STATE_DIR" <sanitized-branch>)`:
+Invoke `orc:qa-targets`: `--target` / `--web` / settled decision / the Target gate. Result: a target **name** (plus a `--base-url` override when one applies) and `guard`. The resolved JSON is never produced here — the engine resolves it inline in the command that consumes it (`orc:qa-targets` iron rule). Remote target ⇒ probe; unreachable ⇒ `🛑 Escalation — target unreachable`, stop.
+
+## Step 1 — Provision or attach the environment (local target only)
+
+Skip for remote targets and under `--no-env`. Check `orc-docker-env is-ready $(orc-docker-env state-path "$ORC_STATE_DIR" <sanitized-branch>)`:
 
 - `ready` → attach; echo the reuse line (project, appUrl, "reused").
 - otherwise → dispatch **`orc-env-provisioner`** via `Task` (repoPath = the worktree; workspace mode adds `repos[]`, `webSurfaceRepo`, plan path). On `fallback`: re-print the agent's ⚠️ callout and continue. On `failed`: re-print the 🛑 callout and `AskUserQuestion` — retry / retry `--fresh` / continue with `--no-env` legacy boot / abort QA.
 
-The environment **stays up after QA** — the "QA partial → fix → re-run" loop attaches in seconds. Teardown belongs to `/orc:cleanup`. Then init `${ORC_STATE_DIR}/<sanitized-branch>/files/qa/`; in workspace mode, cross-repo integration evidence goes there while per-repo QA stays at `<repoPath>/.orc/<branch>/files/qa/`.
+Record `<appUrl>` as the `--base-url` override for the `local` target (the engine resolves inline). The environment **stays up after QA** — the "QA partial → fix → re-run" loop attaches in seconds. Teardown belongs to `/orc:cleanup`. Init `${ORC_STATE_DIR}/<sanitized-branch>/files/qa/`; in workspace mode, cross-repo integration evidence goes there while per-repo QA stays at `<repoPath>/.orc/<branch>/files/qa/`.
 
-## Step 1 — Choose the driver
+## Step 1b — Choose the driver
 
-If `--driver` was passed or the session has a settled `driver` decision, use it silently. Otherwise print the Gate headline, then `AskUserQuestion` (record the answer via `orc-state decision set driver <v> --provenance asked` — re-runs keep the same driver unless the user asks to switch):
+If `--driver` was passed or the session has a settled `driver` decision, use it silently. Otherwise print the Gate headline, then `AskUserQuestion` (re-runs keep the same driver unless the user asks to switch):
 
 ```markdown
 > **⛔ Gate — browser driver**
 >
-> Web QA is ready to run against <appUrl>. Pick how to drive the browser.
+> Web QA is ready to run against <target name> (<baseUrl>). Pick how to drive the browser.
 ```
 
-- **agent-browser CLI (headless)** — richest evidence: annotated screenshots, network HAR, request mocking for failure-state testing, and a WebM recording when `ffmpeg` is installed; runs isolated from your browsing. Best for thorough pre-PR gates and CI-like rigor.
-- **Claude-in-Chrome extension (watch live)** — the test runs in YOUR Chrome; you see every click as it happens, with your real sessions, cookies, and extensions, and the GIF recording needs no external tooling. Best when you want to visually follow the flow or the app needs an already-logged-in state.
+- **Playwright (Recommended)** — plans and generates real Playwright tests committed with your change (`e2e/`), heals flaky locators, and records a stitched video whose on-screen tags name each criterion as it is proven; traces per scenario. Needs Node; first use creates `e2e/` behind a gate.
+- **agent-browser CLI (headless)** — one-off walk with annotated screenshots, HAR, request mocking, WebM when ffmpeg is installed. No tests left behind. Used automatically when Node is unavailable.
+- **Claude-in-Chrome extension (watch live)** — the test runs in YOUR Chrome with your sessions and extensions; GIF recording, no external tooling.
 
-## Step 2 — Load the acceptance criteria (both drivers)
+Record: `orc-state decision set driver <playwright|agent-browser|chrome> --provenance asked`. `guided`/`full` ⇒ `playwright` as a policy decision.
+
+## Step 2 — Load the acceptance criteria (all drivers)
 
 Before driving anything, read the session's `slices.json` ledger and collect the relevant slices' **`acceptance` lists**. These are the scoring rubric — the walk exists to prove them, not to tour the app. Every criterion ends the run as `pass`, `fail`, or `skipped` **with a stated reason**, each carrying the artifact that proves it.
 
 No ledger (ad-hoc QA, `/orc:evidence` against a ticket) ⇒ distil the criteria from the feature description or ticket body instead; the scoring contract is identical.
+
+## Driver P — Playwright (delegate)
+
+Invoke `orc:playwright-qa` with the inputs listed in its header (feature description, `<qa-dir>`, the step-2 acceptance lists, target name + optional `--base-url` override + `guard` (never the resolved JSON), `isVisual`; workspace mode adds the web-surface `repoPath`). It returns `pass|fail|partial` with `qa-manifest.json` written, or `fallback` (Node missing, setup declined, MCP not connected) — on `fallback` print the reason and run **Driver A** below with the same inputs; never silently.
 
 ## Driver A — agent-browser (dispatch the validator)
 
 Dispatch the `orc-qa-validator` subagent via `Task`. Pass:
 
 - The feature description.
-- **`appUrl` + `serviceEndpoints` + `envStatePath`** from `docker-env-state.json` (the validator NEVER boots infra when env state exists — it attaches). Only when step 0 was skipped: the `--web` URL, or legacy boot instructions under `--no-env`.
+- **`appUrl` + `serviceEndpoints` + `envStatePath`** from `docker-env-state.json` (the validator NEVER boots infra when env state exists — it attaches). Pass `baseUrl` from the resolved target; under `--no-env`, legacy boot instructions.
 - The artifact directory.
 - **The acceptance lists from step 2**, each criterion tagged with its slice id and index — the agent captures a dedicated `ac-<sliceId>-<idx>-<slug>.png` at the moment each criterion is observable and scores it evidence-cited, instead of narrating vibes.
 - **Whether the change is visual** (the diff touches a rendered surface) — when it is, the agent records the walk via `agent-browser record`. That recorder wraps `ffmpeg`: with ffmpeg installed the WebM is a required artifact; without it the run passes on stills and says so in one line. Never a silent omission, never an install.

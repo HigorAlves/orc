@@ -1,6 +1,6 @@
 ---
 description: Pre-PR quality gate — browser-driven QA for web changes with a mandatory evidence packet against a provisioned environment. No QA-passed claim without artifacts. Workspace-aware. For a quick behavioral check without the evidence packet, prefer the bundled /verify or /run.
-argument-hint: "[--auto[=guided|full]] [--web <url>] [--no-web] [--no-env] [--driver agent-browser|chrome] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
+argument-hint: "[--auto[=guided|full]] [--target <name>] [--web <url>] [--no-web] [--no-env] [--driver playwright|agent-browser|chrome] [--repos a,b | --repo a | --all-repos | --this-repo] <feature description>"
 allowed-tools:
   - Bash(orc-state:*)
   - Bash(orc-report:*)
@@ -27,6 +27,13 @@ allowed-tools:
   - Bash(acli:*)
   - Bash(jq:*)
   - Bash(git branch --show-current:*)
+  - Bash(orc-targets:*)
+  - Bash(npx playwright:*)
+  - Bash(orc-playwright:*)
+  - Bash(orc-qa-video:*)
+  - Bash(gh pr comment:*)
+  - Bash(gh pr view:*)
+  - Bash(gh auth status:*)
 effort: high
 ---
 
@@ -35,16 +42,17 @@ effort: high
 Run a quality gate before opening a PR. Two modes:
 
 - **Code/CLI/library change** — run tests, lint, type-check; verify with `orc:verification-before-completion`; do a self-review with `orc:caveman-review`. No browser.
-- **Web change** — same as above PLUS browser-driven QA, with a **driver chosen per run** (Phase 4.1): the `agent-browser` CLI via the `orc-qa-validator` agent (headless, richest evidence), or the **Claude-in-Chrome extension** run inline in this session (the user watches the test live in their own browser). Evidence is saved to `.orc/<branch>/files/qa/` either way.
+- **Web change** — same as above PLUS browser-driven QA, with a **driver chosen per run** (the `orc:browser-qa` driver gate): **Playwright** (Driver P, default — real tests plus a stitched, step-tagged video and traces), the `agent-browser` CLI via the `orc-qa-validator` agent (Driver A, headless one-off walk), or the **Claude-in-Chrome extension** run inline in this session (Driver B — the user watches the test live in their own browser). Evidence is saved to `.orc/<branch>/files/qa/` either way.
 
 ## Arguments
 
 - `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`); ladder and hard-outward exemption in `orc:gates` §6.
 
+- `--target <name>` — a named QA target from `.orc/targets.json` (`orc:qa-targets`): `local` provisions the Docker env; a remote target (staging, preview) is probed and used as-is. Omitted ⇒ the Target gate asks. `--web <url>` remains as the ad-hoc remote shorthand.
 - `--web <url>` — explicit URL of a running app (skips env provisioning AND the validator's boot path — you're saying it's already up).
 - `--no-web` — force code-only mode even if web files were touched.
 - `--no-env` — skip Docker env provisioning; the validator falls back to its legacy dev-script boot.
-- `--driver agent-browser|chrome` — pick the browser driver up front and skip the Phase 4.1 prompt. `agent-browser` = headless CLI via `orc-qa-validator` (criterion-anchored annotated screenshots, WebM recording when `ffmpeg` is installed, HAR, network mocking). `chrome` = Claude-in-Chrome extension, run inline so the user watches live in their real browser (real sessions/extensions, GIF recording).
+- `--driver playwright|agent-browser|chrome` — pick the browser driver up front and skip the `orc:browser-qa` driver gate. `playwright` = Playwright Test with the planner/generator/healer agents (tests committed under `e2e/`, stitched step-tagged video, traces). `agent-browser` = headless CLI via `orc-qa-validator` (criterion-anchored annotated screenshots, WebM recording when `ffmpeg` is installed, HAR, network mocking). `chrome` = Claude-in-Chrome extension, run inline so the user watches live in their real browser (real sessions/extensions, GIF recording).
 - The remaining argument is the feature description (used to scope golden-path testing).
 
 ## Workflow
@@ -77,7 +85,7 @@ If verification (Phase 2) flagged untested branches — dispatch **`orc-test-aut
 
 ### Phase 4 (web mode only) — Browser QA
 
-Invoke **`orc:browser-qa`** and execute its protocol end-to-end: env attach/provision (step 0), the driver gate (step 1 — `--driver` or a settled `driver` decision skips it), the acceptance-criteria load (step 2 — both drivers), then Driver A (validator dispatch) or Driver B (Claude-in-Chrome inline). Either way the driver writes `qa-manifest.json` into the packet dir. This command adds nothing to the protocol — the skill is the single source of truth shared with `/orc:flow` Phase 6.
+Invoke **`orc:browser-qa`** and execute its protocol end-to-end: target resolution (step 0, `orc:qa-targets`), env attach/provision for local targets (step 1), the driver gate (step 1b — `--driver`/`--target` or settled decisions skip it), the acceptance-criteria load (step 2 — all drivers), then Driver P (Playwright, default), Driver A (validator dispatch) or Driver B (Claude-in-Chrome inline). Either way the driver writes `qa-manifest.json` into the packet dir. This command adds nothing to the protocol — the skill is the single source of truth shared with `/orc:flow` Phase 6.
 
 ### Phase 5 — Write the verdict
 
@@ -105,16 +113,16 @@ When Phase 4 produced a packet, invoke `orc:evidence-publish` — pass `qaDir = 
 
 For any web-mode QA, the `qa/` directory MUST contain the driver's full packet:
 
-| Artifact | Driver A — agent-browser | Driver B — chrome |
-|----------|--------------------------|-------------------|
-| Visual proof | `screenshot-NN-<step>.png` per golden-path step (`--annotate`) + edge-case shots | in-conversation screenshots, referenced by step number in `steps.md` (`Write` cannot emit binary) |
-| Criterion proof | `ac-<sliceId>-<idx>-<slug>.png` per scored criterion | the numbered `### Step <N>` anchor a criterion's `evidence` points at |
-| Motion proof | `qa-<branch>.webm` (`agent-browser record` — needs `ffmpeg`) (+ optional `.gif` for ticket embedding) | `qa-<branch>.gif` (`gif_creator`, edge cases included) |
-| Manifest | `qa-manifest.json` | `qa-manifest.json` |
-| A11y snapshot | `snapshot-final.txt` (`agent-browser snapshot`) | `snapshot-final.txt` (`read_page` output) |
-| Console | `console.log` (`agent-browser console`) | `console.log` (`read_console_messages`; state any filter used) |
-| Network | `network.har` (`agent-browser network har stop`) | `network-summary.md` (distilled `read_network_requests`) |
-| Narrative | `steps.md` | `steps.md` (same template) |
+| Artifact | Driver P — playwright | Driver A — agent-browser | Driver B — chrome |
+|----------|-----------------------|--------------------------|-------------------|
+| Visual proof | `trace-<id>.zip` per scenario (screenshots inside) | `screenshot-NN-<step>.png` per golden-path step (`--annotate`) + edge-case shots | in-conversation screenshots, referenced by step number in `steps.md` (`Write` cannot emit binary) |
+| Criterion proof | `qa-<branch>.webm#t=<chapter>` + the `test.step` title | `ac-<sliceId>-<idx>-<slug>.png` per scored criterion | the numbered `### Step <N>` anchor a criterion's `evidence` points at |
+| Motion proof | `qa-<branch>.webm` stitched (ffmpeg) | `qa-<branch>.webm` (`agent-browser record` — needs `ffmpeg`) (+ optional `.gif` for ticket embedding) | `qa-<branch>.gif` (`gif_creator`, edge cases included) |
+| Manifest | `qa-manifest.json` (`video.chapters`) | `qa-manifest.json` | `qa-manifest.json` |
+| A11y snapshot | `trace-<id>.zip` (ARIA snapshots per action) | `snapshot-final.txt` (`agent-browser snapshot`) | `snapshot-final.txt` (`read_page` output) |
+| Console | `console-<id>.log` | `console.log` (`agent-browser console`) | `console.log` (`read_console_messages`; state any filter used) |
+| Network | `trace-<id>.zip` | `network.har` (`agent-browser network har stop`) | `network-summary.md` (distilled `read_network_requests`) |
+| Narrative | `steps.md` | `steps.md` | `steps.md` (same template) |
 
 Motion proof is required whenever the change touches a rendered surface. Two exemptions, both of which must be stated as a one-line reason in `steps.md` rather than silently omitted: a non-visual change, or (Driver A only) `ffmpeg` not installed — agent-browser's recorder wraps ffmpeg, so a headless run without it captures stills only. The Claude-in-Chrome driver's `gif_creator` has no such dependency. Every acceptance criterion must appear in `qa-manifest.json` with a result, and a `skipped` row must say why.
 

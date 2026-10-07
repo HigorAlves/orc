@@ -1,8 +1,8 @@
 # What orc can do
 
-The full catalog: every slash command, the specialist agents behind them, the skill library underneath, and the CLI that installs it all. Not sure where to start? The [examples index](examples/README.md) maps 18 real scenarios to the command that handles each.
+The full catalog: every slash command, the specialist agents behind them, the skill library underneath, and the CLI that installs it all. Not sure where to start? The [examples index](examples/README.md) maps 19 real scenarios to the command that handles each.
 
-## Commands (30)
+## Commands (31)
 
 | Command | Purpose |
 |---------|---------|
@@ -10,7 +10,7 @@ The full catalog: every slash command, the specialist agents behind them, the sk
 | `/orc:plan` | Plan a feature/refactor; writes a TDD-shaped plan to `.orc/<branch>/files/` |
 | `/orc:start` | Worktree + plan + first failing test (TDD red light) |
 | `/orc:debug` | Root-cause investigation, then fix with TDD; never papers over |
-| `/orc:qa` | Pre-PR quality gate; for web changes, full browser QA with screenshots/snapshot/HAR/steps |
+| `/orc:qa` | Pre-PR quality gate; web changes run Playwright-first browser QA against a named target (`--target`) with a stitched step-tagged video, traces, and committed e2e specs/tests |
 | `/orc:env` | Provision a containerized dev environment; `up`/`status`/`down`; reused across QA runs |
 | `/orc:code-review` | Review someone else's open PR; terse, signal-only output |
 | `/orc:address` | Answer reviewer comments on YOUR PR; parallel code-fixer + reply-drafter |
@@ -25,6 +25,7 @@ The full catalog: every slash command, the specialist agents behind them, the sk
 | `/orc:jira` | Manage Jira tickets via `acli`; bind/unbind a ticket to the current session |
 | `/orc:jira-breakdown` | Build a Jira Epic (micro-PRD) → Stories → concurrency-sliced Tasks from a brief or PRD |
 | `/orc:evidence` | Collect browser evidence scoped to a ticket, then upload or keep local |
+| `/orc:explain` | Narrated walkthrough video of a QA packet — Playwright demo clips + animate graphics + local kokoro voice. Graphic segments are authored: orc writes the piece metadata and brief, the session writes `src/scenes.js` per the notes in `orc/lib/explain/animate.lock` (pinned animate commit), then renders with `ORC_ANIMATE_RENDER=1`. |
 | `/orc:postmortem` | Author a blameless incident postmortem; files P0 items as tracker issues |
 | `/orc:ci` | Watch + diagnose CI after PR-open; classified failures routed to `orc-code-fixer` |
 | `/orc:incident` | Live incident triage — Sentry intake, mitigate-vs-root-cause gate, UTC timeline |
@@ -39,9 +40,9 @@ The full catalog: every slash command, the specialist agents behind them, the sk
 
 `orc-implementer` (writes code slice-by-slice), `orc-debug-investigator`, `orc-test-author`, `orc-code-fixer`, `orc-pr-reviewer`, `orc-security-reviewer`, `orc-ci-investigator`, `orc-qa-validator`, `orc-env-provisioner`, `orc-prd-analyzer`, `orc-refactor-architect`, `orc-jira-architect`, `orc-reply-drafter`, `orc-stack-analyzer` — each a read-only investigator or a scoped executor, dispatched by the commands above. Every agent pins both a `model` (haiku for mechanical work, sonnet for senior-dev execution, opus for deep investigation) and a reasoning `effort` matched to its task shape.
 
-## Skills (81)
+## Skills (84)
 
-Under the commands and agents sit 81 curated skills — reusable, progressively-disclosed playbooks the model pulls in on demand: process doctrine (`tdd`, `systematic-debugging`, `verification-before-completion`, `grilling`, `codebase-design`, `domain-modeling`), stack packs (Next.js, NestJS, PostgreSQL, SwiftUI, Tailwind, Turborepo, …), authoring guides (PRD/TRD/ADR/RFC/postmortem), and the `orc:map` router when you're not sure which to reach for. Fifteen are vendored or merged from [mattpocock/skills](https://github.com/mattpocock/skills) and other MIT sources with full provenance ([THIRD-PARTY-LICENSES.md](../THIRD-PARTY-LICENSES.md)); their descriptions are deliberately differentiated so co-installing the originals doesn't double-trigger. Each skill is a thin index that loads its detail only when invoked, so they cost almost nothing until used. **Total: 81 skills.**
+Under the commands and agents sit 84 curated skills — reusable, progressively-disclosed playbooks the model pulls in on demand: process doctrine (`tdd`, `systematic-debugging`, `verification-before-completion`, `grilling`, `codebase-design`, `domain-modeling`), stack packs (Next.js, NestJS, PostgreSQL, SwiftUI, Tailwind, Turborepo, …), authoring guides (PRD/TRD/ADR/RFC/postmortem), and the `orc:map` router when you're not sure which to reach for. Fifteen are vendored or merged from [mattpocock/skills](https://github.com/mattpocock/skills) and other MIT sources with full provenance ([THIRD-PARTY-LICENSES.md](../THIRD-PARTY-LICENSES.md)); their descriptions are deliberately differentiated so co-installing the originals doesn't double-trigger. Each skill is a thin index that loads its detail only when invoked, so they cost almost nothing until used. **Total: 84 skills.**
 
 ## The orc CLI
 

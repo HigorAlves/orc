@@ -22,6 +22,8 @@ plan starts at `/orc:start`. The one-shot alternative: `/orc:flow` runs the
 whole pipeline (plan → implement → QA → ship → address → cleanup) with an
 interactive gate per phase. Prefer `/orc:flow` when you want to hand over a
 well-described feature; prefer the step commands when you want to steer.
+`/orc:explain` is the optional step after QA: a narrated walkthrough of what
+was built and proven.
 
 ## On-ramps (how work arrives)
 
@@ -38,6 +40,7 @@ well-described feature; prefer the step commands when you want to steer.
 | Issue backlog needs herding | `/orc:triage` |
 | Feature needs a Jira Epic→Story→Task build-out | `/orc:jira-breakdown` |
 | Dependencies stale or vulnerable | `/orc:deps` |
+| Need a narrated video of what shipped | `/orc:explain` (after `/orc:qa`) |
 | Cut a release (user project) | `/orc:release` |
 | New package/service/app shell | `/orc:scaffold` |
 | Interrupted mid-anything | `/orc:resume` (see `/orc:status` for what's live) |

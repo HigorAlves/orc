@@ -24,6 +24,7 @@
   .note { color: var(--muted); font-size: 13px; margin-top: 4px; }
   .shots { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 10px; }
   .shots img, .shots video { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--chip); }
+  .chapters { margin: 10px 0 0; padding-left: 18px; font-size: 14px; }
   .missing { color: var(--fail); font-size: 13px; }
   code { background: var(--chip); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
 </style>
@@ -43,7 +44,7 @@ __ORC_REPORT_DATA__
     var src = file.split('#')[0];
     if (missing.has(file)) return el('div', 'missing', 'missing: ' + file);
     if (/\.(png|jpe?g|gif|webp)$/i.test(src)) { var i = el('img'); i.src = src; i.alt = file; i.loading = 'lazy'; return i; }
-    if (/\.(webm|mp4)$/i.test(src)) { var v = el('video'); v.src = src; v.controls = true; v.preload = 'metadata'; return v; }
+    if (/\.(webm|mp4)$/i.test(src)) { var v = el('video'); v.src = src + (file.indexOf('#t=') > -1 ? '#t=' + file.split('#t=')[1] : ''); v.controls = true; v.preload = 'metadata'; return v; }
     var a = el('a', null, file); a.href = src; return a;
   }
   app.appendChild(el('h1', null, 'QA evidence — ' + (r.branch || 'unknown branch')));
@@ -54,6 +55,21 @@ __ORC_REPORT_DATA__
     r.jiraTicket, r.generatedAt && ('generated ' + r.generatedAt)].filter(Boolean).join(' · ')));
   app.appendChild(meta);
   if (r.summary) app.appendChild(el('p', null, r.summary));
+  if (r.video && r.video.file) {
+    app.appendChild(el('h2', null, 'Recording'));
+    var vwrap = el('div', 'row'); var vid = media(r.video.file); vwrap.appendChild(vid);
+    if ((r.video.chapters || []).length) {
+      var ul = el('ul', 'chapters');
+      r.video.chapters.forEach(function (c) {
+        var li = el('li'); var a = el('a', null, c.title + ' (' + c.start + 's)'); a.href = '#t=' + c.start;
+        a.onclick = function (e) { e.preventDefault(); if (vid.currentTime !== undefined) { vid.currentTime = c.start; vid.play(); } };
+        li.appendChild(a); li.appendChild(el('span', 'meta badge ' + (c.outcome === 'passed' ? 'pass' : 'fail'), ' ' + c.outcome)); ul.appendChild(li);
+      });
+      vwrap.appendChild(ul);
+    }
+    if (r.target) vwrap.appendChild(el('div', 'note', 'target ' + r.target.name + (r.target.baseUrl ? ' · ' + r.target.baseUrl : '') + (r.target.guard ? ' · read-only' : '')));
+    app.appendChild(vwrap);
+  }
 
   if ((r.checks || []).length) {
     app.appendChild(el('h2', null, 'Checks'));

@@ -39,7 +39,8 @@ orc_report_json() { # [--branch B]
       artifacts: [$m.artifacts[]? | {file, role: (.role // ""),
         kind: (if (.file | test("\\.(png|jpe?g|gif|webp)(#.*)?$"; "i")) then "image"
                elif (.file | test("\\.(webm|mp4)$"; "i")) then "video" else "file" end)}],
-      curated: ($m.curated // []), missing: $missing }'
+      curated: ($m.curated // []), target: ($m.target // null), video: ($m.video // null),
+      specs: ($m.specs // []), tests: ($m.tests // []), missing: $missing }'
 }
 
 orc_report_html() { # [--branch B]

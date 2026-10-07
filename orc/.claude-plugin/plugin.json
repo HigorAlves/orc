@@ -86,6 +86,18 @@
       "title": "Statusline context reserve (%)",
       "description": "0-50. When >0, the context percentage is normalized against this reserved slice (e.g. your auto-compact reserve) and rendered with a ~ prefix. 0 shows the raw payload percentage.",
       "default": 0
+    },
+    "explainer_style": {
+      "type": "string",
+      "title": "Explainer style",
+      "description": "animate motion-graphics style for /orc:explain segments: cut-paper, crosshatch, riso, sketchbook, math, pixel, isometric.",
+      "default": "isometric"
+    },
+    "explainer_voice": {
+      "type": "string",
+      "title": "Explainer voice",
+      "description": "kokoro-js voice id for /orc:explain narration (local TTS, no key). af_heart = English; pf_dora / pm_alex = Brazilian Portuguese.",
+      "default": "af_heart"
     }
   }
 }

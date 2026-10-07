@@ -1,0 +1,9 @@
+{
+  "name": "orc-explain",
+  "private": true,
+  "type": "module",
+  "description": "Local narration for /orc:explain (kokoro-js, no API key). Installed by orc-explain setup into the user cache, never into a repo.",
+  "dependencies": {
+    "kokoro-js": "1.2.1"
+  }
+}

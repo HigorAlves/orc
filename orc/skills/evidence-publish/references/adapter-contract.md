@@ -1,6 +1,6 @@
 # Tracker adapter contract
 
-`evidence-publish` is tracker-agnostic. Each adapter implements four operations; the SKILL.md protocol is written against **these**, not against Jira. Shipped adapters: **jira** (`jira-adapter.md`). GitHub Issues / Linear are added by writing a sibling reference file — no protocol change.
+`evidence-publish` is tracker-agnostic. Each adapter implements four operations; the SKILL.md protocol is written against **these**, not against Jira. Shipped adapters: **jira** (`jira-adapter.md`), **github-pr** (`github-pr-adapter.md`; comment-only, links media). GitHub Issues / Linear are added by writing a sibling reference file — no protocol change.
 
 | Op | Signature | Jira implementation |
 |----|-----------|---------------------|

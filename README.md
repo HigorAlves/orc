@@ -36,14 +36,14 @@
 </p>
 
 <p align="center">
-  <code>81 skills</code> &nbsp;·&nbsp; <code>30 commands</code> &nbsp;·&nbsp;
+  <code>84 skills</code> &nbsp;·&nbsp; <code>31 commands</code> &nbsp;·&nbsp;
   <code>14 agents</code> &nbsp;·&nbsp; <code>9 hooks</code> &nbsp;·&nbsp;
   <code>0 telemetry</code> &nbsp;·&nbsp; <code>MIT</code>
 </p>
 
 ---
 
-`orc` is a full-SDLC workflow plugin for Claude Code: **81 curated skills, 30 composite slash commands, 14 specialist subagents, and 10 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers, destructive git commands gated, a dependency pre-flight, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged", with the `orc-implementer` agent writing the code slice-by-slice in between — and the lifecycle no longer stops at PR-open: `/orc:ci`, `/orc:release`, `/orc:deps`, and `/orc:incident` cover what happens after.
+`orc` is a full-SDLC workflow plugin for Claude Code: **84 curated skills, 31 composite slash commands, 14 specialist subagents, and 10 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers, destructive git commands gated, a dependency pre-flight, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged", with the `orc-implementer` agent writing the code slice-by-slice in between — and the lifecycle no longer stops at PR-open: `/orc:ci`, `/orc:release`, `/orc:deps`, and `/orc:incident` cover what happens after.
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
@@ -123,7 +123,7 @@ Claude Code loads every skill/command/agent **description** at session start (th
 |------|--------------|
 | [docs/install.md](./docs/install.md) | Step-by-step install with verification checkpoints, marketplace-only path, requirements table |
 | [docs/commands.md](./docs/commands.md) | Full command table, the specialist agents, the skill library, the CLI reference |
-| [docs/examples](./docs/examples/README.md) | 18 scenario walk-throughs — start here for usage |
+| [docs/examples](./docs/examples/README.md) | 19 scenario walk-throughs — start here for usage |
 | [docs/configuration.md](./docs/configuration.md) | Plugin settings, env vars, statusline tuning |
 | [docs/safety.md](./docs/safety.md) | The safety case in depth + FAQ |
 | [docs/architecture.md](./docs/architecture.md) | Why the layout is what it is; hooks, state, and the `.orc/` lifecycle |

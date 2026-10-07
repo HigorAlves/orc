@@ -1,0 +1,55 @@
+// Managed by orc (/orc:qa Driver P). Target + credentials arrive at run time
+// via ORC_TARGET_JSON (orc-targets resolve <name>) — nothing secret lives here.
+import { defineConfig, devices } from '@playwright/test';
+import * as path from 'node:path';
+
+const target = JSON.parse(process.env.ORC_TARGET_JSON ?? '{"name":"local","baseUrl":"http://localhost:3000","users":{},"login":null}');
+const outDir = process.env.ORC_PW_OUTPUT_DIR ?? path.join(__dirname, 'test-results');
+const storageState = path.join(outDir, '.auth', 'user.json');
+
+export default defineConfig({
+  testDir: './tests',
+  outputDir: outDir,
+  fullyParallel: false,
+  workers: 1,
+  retries: 0,
+  reporter: [['list'], ['json', { outputFile: path.join(outDir, 'results.json') }]],
+  use: { baseURL: target.baseUrl ?? 'http://localhost:3000' },
+  projects: [
+    { name: 'setup', testMatch: /auth\.setup\.ts/, use: { video: 'off', trace: 'off', screenshot: 'off' } },
+    {
+      name: 'qa',
+      testIgnore: /auth\.setup\.ts/,
+      dependencies: ['setup'],
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState,
+        trace: 'on',
+        screenshot: 'on',
+        video: {
+          mode: 'on',
+          size: { width: 1280, height: 720 },
+          show: {
+            actions: { duration: 700, position: 'bottom' },
+            test: { level: 'step', position: 'top-left' },
+          },
+        },
+      },
+    },
+    {
+      name: 'demo',
+      testIgnore: /auth\.setup\.ts/,
+      dependencies: ['setup'],
+      grep: /@golden/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState,
+        viewport: { width: 1920, height: 1080 },
+        launchOptions: { slowMo: 300 },
+        trace: 'off',
+        screenshot: 'off',
+        video: { mode: 'on', size: { width: 1920, height: 1080 } },
+      },
+    },
+  ],
+});

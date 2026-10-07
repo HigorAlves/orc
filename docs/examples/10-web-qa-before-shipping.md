@@ -234,7 +234,7 @@ Then: `/orc:ship` — and the PR body links to `qa/steps.md` so reviewers can ve
 - **Multiple devices/breakpoints** — repeat the golden path with `agent-browser set viewport <w> <h>` for each. Save screenshots per breakpoint (`screenshot-01a-mobile-loaded.png`, `screenshot-01b-desktop-loaded.png`).
 - **Watch the QA live** — pick the Claude-in-Chrome driver at the gate (or `--driver chrome`). The walk runs inline in your real browser (real sessions, cookies, extensions), narrated step by step; the evidence packet swaps per-step screenshots for a `gif_creator` recording and the HAR for a distilled `network-summary.md`. Acceptance scoring is identical — each criterion anchors to a numbered step in `steps.md` instead of its own PNG.
 - **Behind a feature flag** — boot the app with the flag enabled, document the flag state at the top of `steps.md`.
-- **App not yet boot-able locally** — ask the user for a deployed preview URL (Vercel preview, staging, etc.). Don't fake QA against the prod app.
+- **App not yet boot-able locally** — use `--target <name>` (`orc:qa-targets`) to point QA at a registered staging or preview target. Never fake QA against prod.
 
 ## Iron rules in play
 

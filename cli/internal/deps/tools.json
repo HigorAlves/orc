@@ -55,7 +55,7 @@
     {
       "name": "agent-browser",
       "tier": "recommended",
-      "usedBy": "`/orc:qa` (web mode — required for browser-driven QA evidence)",
+      "usedBy": "`/orc:qa` fallback driver when Node/Playwright is unavailable; `/orc:evidence`",
       "hints": {
         "macos": "brew install agent-browser && agent-browser install",
         "default": "npm install -g agent-browser && agent-browser install"
@@ -153,7 +153,7 @@
     {
       "name": "ffmpeg",
       "tier": "recommended",
-      "usedBy": "`/orc:qa`, `/orc:evidence` (motion evidence — agent-browser's `record` wraps ffmpeg; without it a headless QA run captures stills only)",
+      "usedBy": "`/orc:qa` (stitched QA video), `/orc:explain` (explainer render), agent-browser `record` — title cards and captions need an ffmpeg build with libfreetype (`brew install ffmpeg` has it; minimal builds don't)",
       "hints": {
         "macos": "brew install ffmpeg",
         "debian": "sudo apt-get install -y ffmpeg",
