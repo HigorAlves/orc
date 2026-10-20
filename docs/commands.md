@@ -39,13 +39,29 @@ The full catalog: every slash command, the specialist agents behind them, the sk
 
 Three of these (`/orc:code-review`, `/orc:cleanup`, `/orc:incident`) are piloted as skill directories with their phase modules beside them (ADR 0008); they are invoked the same way and counted as skills.
 
+### How a command is built
+
+Every command follows one anatomy: a one-sentence title, Arguments, Preconditions (the warnings for the whole run), a Phases table with Phase 0 resident, Iron rules, Output. Phases past Phase 0 are modules loaded one at a time from `orc:phases` (`references/<command>/PHASE-<N>-<NAME>.md`), so a command costs a few KB on entry and the rest only when reached. Every gate is an `AskUserQuestion` with a header chip naming its class: hard-outward gates (tracker writes, PR posts, evidence publish) always ask; soft-inward ones follow the `interaction_policy` ladder. The writing rules are in the [authoring standard](../orc/skills/skill-writing/references/AUTHORING-STANDARD.md).
+
 ## Specialist agents (14)
 
 `orc-implementer` (writes code slice-by-slice), `orc-debug-investigator`, `orc-test-author`, `orc-code-fixer`, `orc-pr-reviewer`, `orc-security-reviewer`, `orc-ci-investigator`, `orc-qa-validator`, `orc-env-provisioner`, `orc-prd-analyzer`, `orc-refactor-architect`, `orc-jira-architect`, `orc-reply-drafter`, `orc-stack-analyzer` — each a read-only investigator or a scoped executor, dispatched by the commands above. Every agent pins both a `model` (haiku for mechanical work, sonnet for senior-dev execution, opus for deep investigation) and a reasoning `effort` matched to its task shape.
 
 ## Skills (87)
 
-Under the commands and agents sit 87 curated skills — reusable, progressively-disclosed playbooks the model pulls in on demand: process doctrine (`tdd`, `systematic-debugging`, `verification-before-completion`, `grilling`, `codebase-design`, `domain-modeling`), stack packs (Next.js, NestJS, PostgreSQL, SwiftUI, Tailwind, Turborepo, …), authoring guides (PRD/TRD/ADR/RFC/postmortem), and the `orc:map` router when you're not sure which to reach for. Fifteen are vendored or merged from [mattpocock/skills](https://github.com/mattpocock/skills) and other MIT sources with full provenance ([THIRD-PARTY-LICENSES.md](../THIRD-PARTY-LICENSES.md)); their descriptions are deliberately differentiated so co-installing the originals doesn't double-trigger. Each skill is a thin index that loads its detail only when invoked, so they cost almost nothing until used. **Total: 87 skills.**
+Under the commands and agents sit 87 curated skills: progressively disclosed playbooks the model pulls in on demand. Each carries a `description` (what it does) and a `when_to_use` (the triggers), which is how the model routes to it; the body loads only when it fires. **Total: 87 skills.**
+
+| Family | Skills |
+|---|---|
+| Doctrine the commands and agents preload | `using-orc`, `tdd`, `systematic-debugging`, `verification-before-completion`, `grilling`, `codebase-design`, `domain-modeling`, `writing-plans`, `executing-plans`, `dispatching-parallel-agents`, `receiving-code-review`, `requesting-code-review`, `writing-for-agents`, `skill-writing` |
+| Protocols shared by several commands | `gates`, `callouts`, `state-protocol`, `tracker-config`, `phases`, `pr-size-budget`, `review-contract`, `inline-review`, `browser-qa`, `playwright-qa`, `qa-targets`, `env-provisioning`, `evidence-publish`, `ci-routing`, `stack-pr`, `workspace-mode`, `code-discovery`, `using-git-worktrees`, `finishing-a-development-branch`, `git-commit` |
+| Authoring guides | `prd-writing`, `trd-writing`, `adr-writing`, `rfc-writing`, `postmortem-writing`, `doc-writing`, `documentation-writing`, `readme-writing`, `caveman-pr`, `caveman-review`, `release-management`, `dependency-management`, `jira-hierarchy`, `to-issues`, `to-prd` |
+| Standalone, reach for any time | `map` (the router), `grill-me`, `grill-with-docs`, `prototype`, `research`, `wizard`, `handoff`, `wait-what`, `to-questionnaire`, `improve-codebase-architecture`, `resolving-merge-conflicts`, `explainer` |
+| Stack packs | `next-best-practices`, `vercel-react-best-practices`, `vercel-composition-patterns`, `nodejs-best-practices`, `nestjs-best-practices`, `typescript-advanced-types`, `vitest`, `tailwind-design-system`, `shadcn`, `postgresql-table-design`, `postgresql-optimization`, `stripe-best-practices`, `swiftui-best-practices`, `mobile-ios-design`, `docker-best-practices`, `turborepo`, `architecture-patterns`, `error-handling-patterns` |
+| CLI references | `gh-cli`, `jira-cli`, `sentry-cli`, `agent-browser` |
+| Commands piloted as skill directories | `code-review`, `cleanup`, `incident` ([ADR 0008](adr/0008-commands-as-skills.md)) |
+
+Fifteen are vendored or derived from [mattpocock/skills](https://github.com/mattpocock/skills) and other MIT sources with provenance frontmatter and the licences in [THIRD-PARTY-LICENSES.md](../THIRD-PARTY-LICENSES.md); their descriptions are differentiated so co-installing the originals does not double-trigger.
 
 ## The orc CLI
 

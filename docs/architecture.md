@@ -172,6 +172,7 @@ orc borrows compozy's session-state idea, hook layout, and YAML-frontmatter conv
 
 ## See also
 
+- `docs/adr/` — the decisions behind this layout; `GLOSSARY.md` — the terms; `SCOPE.md` — what is accepted; `CHANGELOG.md` — every release
 - `docs/contributing.md` — how to add a new skill, command, or agent
 - `docs/commands.md` — the full command / agent / skill catalog
 - `docs/examples/` — scenario walk-throughs
