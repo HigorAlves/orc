@@ -4,7 +4,7 @@ description: Find architecture-deepening opportunities in a codebase. Use when t
 license: MIT
 metadata:
   author: Matt Pocock
-  source: Derived from https://github.com/mattpocock/skills (audit pin 2ffb184)
+  source: Derived from https://github.com/mattpocock/skills (audit pin 5beb35b)
 ---
 
 # Improve Codebase Architecture
@@ -14,7 +14,7 @@ Surface architectural friction and propose **deepening opportunities** — refac
 This skill is _informed_ by the project's domain model and built on a shared design vocabulary:
 
 - Use `orc:codebase-design` for the architecture vocabulary (**module**, **interface**, **depth**, **seam**, **adapter**, **leverage**, **locality**) and its principles (the deletion test, "the interface is the test surface", "one adapter = hypothetical seam, two = real"). Use these terms exactly in every suggestion — don't drift into "component," "service," "API," or "boundary."
-- The domain language in `CONTEXT.md` gives names to good seams; ADRs in `docs/adr/` record decisions this skill should not re-litigate.
+- The domain language in `GLOSSARY.md` gives names to good seams; ADRs in `docs/adr/` record decisions this skill should not re-litigate.
 
 ## Delegation in an orc session
 
@@ -29,7 +29,7 @@ When running inside an orc session, the codebase SCAN phase (step 1 below) is de
 - If the user named a direction — a module, a subsystem, a pain point — take it, and skip the inference below.
 - Otherwise, walk back a good stretch of the commit history (`git log --oneline`) to find the codebase's hot spots — the files and areas that keep coming up — and let those paths pull your attention first. If the changes are scattered with no clear hot spot, widen the net.
 
-Read the project's domain glossary (`CONTEXT.md`) and any ADRs in the area you're touching first.
+Read the project's domain glossary (`GLOSSARY.md`) and any ADRs in the area you're touching first.
 
 Then walk the codebase. If a Graphify code graph is available (see `orc:code-discovery`), start from its god-nodes and community structure — they surface high-fan-in modules and coupling directly, which is exactly the friction this skill hunts for — then read the cited spans. Otherwise use the Agent tool with `subagent_type=Explore`. Either way, don't follow rigid heuristics — explore organically and note where you experience friction:
 
@@ -58,7 +58,7 @@ For each candidate, render a card with:
 
 End the report with a **Top recommendation** section: which candidate you'd tackle first and why.
 
-**Use CONTEXT.md vocabulary for the domain, and the `orc:codebase-design` vocabulary for the architecture.** If `CONTEXT.md` defines "Order," talk about "the Order intake module" — not "the FooBarHandler," and not "the Order service."
+**Use GLOSSARY.md vocabulary for the domain, and the `orc:codebase-design` vocabulary for the architecture.** If `GLOSSARY.md` defines "Order," talk about "the Order intake module" — not "the FooBarHandler," and not "the Order service."
 
 **ADR conflicts**: if a candidate contradicts an existing ADR, only surface it when the friction is real enough to warrant revisiting the ADR. Mark it clearly in the card (e.g. a warning callout: _"contradicts ADR-0007 — but worth reopening because…"_). Don't list every theoretical refactor an ADR forbids.
 
@@ -72,8 +72,8 @@ Once the user picks a candidate, run `orc:grilling` to walk the decision tree wi
 
 Side effects happen inline as decisions crystallize — use `orc:domain-modeling` to keep the domain model current as you go:
 
-- **Naming a deepened module after a concept not in `CONTEXT.md`?** Add the term to `CONTEXT.md` — same discipline as `orc:grill-with-docs` (see [CONTEXT-FORMAT.md](../domain-modeling/references/CONTEXT-FORMAT.md)). Create the file lazily if it doesn't exist.
-- **Sharpening a fuzzy term during the conversation?** Update `CONTEXT.md` right there.
+- **Naming a deepened module after a concept not in `GLOSSARY.md`?** Add the term to `GLOSSARY.md` — same discipline as `orc:grill-with-docs` (see [GLOSSARY-FORMAT.md](../domain-modeling/references/GLOSSARY-FORMAT.md)). Create the file lazily if it doesn't exist.
+- **Sharpening a fuzzy term during the conversation?** Update `GLOSSARY.md` right there.
 - **User rejects the candidate with a load-bearing reason?** Offer an ADR, framed as: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Only offer when the reason would actually be needed by a future explorer to avoid re-suggesting the same thing — skip ephemeral reasons ("not worth it right now") and self-evident ones. See the `orc:adr-writing` template (docs/adr/NNNN-*.md numbering).
 - **Deepening a cluster with real dependencies?** See [DEEPENING.md](../codebase-design/references/DEEPENING.md) for dependency categories, seam discipline, and replace-don't-layer testing.
 - **Want to explore alternative interfaces for the deepened module?** Use the design-it-twice parallel sub-agent pattern in [DESIGN-IT-TWICE.md](../codebase-design/references/DESIGN-IT-TWICE.md).
