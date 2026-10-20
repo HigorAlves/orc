@@ -72,7 +72,7 @@ metrics() {
         gsub(/\*\*/, "", head); gsub(/`/, "", head)
         sub(/^[^A-Za-z]*/, "", head)
         split(head, w, /[^A-Za-z]/)
-        if (w[1] ~ /^(The|A|An|This|That|These|Those|It|If|When|Where|Each|Every|Any|Optional|Default|Both|Your|Our|In|On|At|For|With|No|One|Two|Three|Four|Five|Also|Then|Otherwise)$/) notimp++
+        if (w[1] ~ /^(The|A|An|This|That|These|Those|It|Each|Every|Any|Optional|Default|Both|Your|Our|No|One|Two|Three|Four|Five|Also|Then)$/) notimp++
       }
     }
     { lo = " " tolower($0) " "; if (lo ~ /[^a-z](is|are|was|were|be|been|being|gets|get|got) ([a-z]+ed|built|written|read|run|set|done|made|sent|shown|given|kept|left|put|found|held)[^a-z]/) passive++ }
@@ -158,6 +158,7 @@ fi
 tighten=0
 while read -r f kind long notimp passive bytes desc; do
   if jq -e --arg f "$f" '.files[$f]' "$baseline" >/dev/null; then
+    # shellcheck disable=SC2034  # read through indirect expansion below
     read -r b_long b_notimp b_passive b_bytes b_desc < <(jq -r --arg f "$f" '.files[$f] | "\(.long) \(.notimp) \(.passive) \(.bytes) \(.desc)"' "$baseline")
     for m in long notimp passive bytes desc; do
       cur="${!m}"; b="b_$m"; base="${!b}"

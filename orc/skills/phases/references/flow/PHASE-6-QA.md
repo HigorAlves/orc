@@ -1,6 +1,7 @@
 # /orc:flow — Phase 6-QA
 
-_Loaded on demand via orc:flow-phases. Do not run this phase from memory — this file is the phase._
+<!-- orc:flow/P6 -->
+_Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
 
 
 Detect web vs code mode (heuristic on changed files vs main).

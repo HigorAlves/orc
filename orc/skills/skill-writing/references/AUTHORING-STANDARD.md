@@ -34,7 +34,7 @@ How every orc file is written: commands, agents, skills, phase modules. Adapted 
 
 ## 3. Voice and mood
 
-- **Imperative, active, verb first.** "Run `gh pr diff`", "Read the ledger", "Dispatch the reviewer". The lint counts steps that open with `The`, `This`, `If`, `When`, `A`, `An`, `It`.
+- **Imperative, active, verb first.** "Run `gh pr diff`", "Read the ledger", "Dispatch the reviewer". The lint counts steps that open with `The`, `This`, `A`, `An`, `It`, `Each`, `Then`. A condition opener (`If`, `When`, `In`, `Unless`) is allowed when the verb follows the comma.
 - **Conditions lead, then the verb.** "If the diff is empty, stop and report." Never "stop and report if…".
 - **No passive in steps.** "Findings are merged" hides who merges. "Merge the findings."
 - **Name the actor only when it is not the reader.** The command's reader is the agent; "dispatch `orc-pr-reviewer`" needs no subject. "The user picks" names a different actor on purpose.

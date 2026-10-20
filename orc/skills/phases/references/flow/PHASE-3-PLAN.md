@@ -1,6 +1,7 @@
 # /orc:flow — Phase 3-PLAN
 
-_Loaded on demand via orc:flow-phases. Do not run this phase from memory — this file is the phase._
+<!-- orc:flow/P3 -->
+_Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
 
 
 For `--type=feature|refactor`: invoke `orc:writing-plans`, optionally `orc:grilling` if scope ≥ medium. Saves `${ORC_STATE_DIR}/<branch>/files/plan.md`.

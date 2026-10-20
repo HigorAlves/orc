@@ -1,6 +1,7 @@
 # /orc:flow — Phase 7-SHIP
 
-_Loaded on demand via orc:flow-phases. Do not run this phase from memory — this file is the phase._
+<!-- orc:flow/P7 -->
+_Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
 
 
 Invoke `/orc:ship` logic. The **size gate runs exactly once — inside ship's Phase 4.5** (never pre-flight it here; `ship.md` owns the gate and its "Stack from plan slices" option lights up automatically when this session has a plan whose commits map 1:1 to slices). Pass through `--max-loc` / `--no-size-gate` / `--verbose` / `--draft` unchanged.

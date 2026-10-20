@@ -1,6 +1,7 @@
 # /orc:flow — Phase 8-ADDRESS
 
-_Loaded on demand via orc:flow-phases. Do not run this phase from memory — this file is the phase._
+<!-- orc:flow/P8 -->
+_Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
 
 
 After the PR is open, flow exits — there is nothing to decide until reviewers comment, and the checkpoint already routes the next invocation here (every answer to the old "wait / come back / done" question resolved to exactly this). Echo the handoff instead of asking:

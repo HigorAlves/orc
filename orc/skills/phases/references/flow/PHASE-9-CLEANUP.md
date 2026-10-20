@@ -1,6 +1,7 @@
 # /orc:flow — Phase 9-CLEANUP
 
-_Loaded on demand via orc:flow-phases. Do not run this phase from memory — this file is the phase._
+<!-- orc:flow/P9 -->
+_Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
 
 
 After merge in GitHub, the user re-invokes `/orc:flow` and orc detects `gh pr view <ref> --json state` returns `merged`. Then run `/orc:cleanup` logic for this session:

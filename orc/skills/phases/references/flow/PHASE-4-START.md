@@ -1,6 +1,7 @@
 # /orc:flow — Phase 4-START
 
-_Loaded on demand via orc:flow-phases. Do not run this phase from memory — this file is the phase._
+<!-- orc:flow/P4 -->
+_Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
 
 
 For code work (`feature`, `bug`, `refactor`): invoke `orc:using-git-worktrees` (worktree + branch), then write the first failing test.

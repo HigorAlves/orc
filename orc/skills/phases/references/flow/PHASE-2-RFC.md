@@ -1,6 +1,7 @@
 # /orc:flow — Phase 2-RFC
 
-_Loaded on demand via orc:flow-phases. Do not run this phase from memory — this file is the phase._
+<!-- orc:flow/P2 -->
+_Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
 
 
 If triage flagged "1–4 weeks" or `--rfc` was passed, invoke the RFC sub-flow (same logic as `/orc:rfc`). Saves to `.orc/<branch>/files/rfc-NNNN.md` workspace draft, optionally commits to `docs/rfcs/NNNN-*.md`.

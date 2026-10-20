@@ -1,6 +1,7 @@
 # /orc:flow — Phase 5-IMPLEMENT
 
-_Loaded on demand via orc:flow-phases. Do not run this phase from memory — this file is the phase._
+<!-- orc:flow/P5 -->
+_Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
 
 
 Two modes, picked by the `--pause-at-implement` flag:
