@@ -28,7 +28,10 @@ import { agentRows, progressModel } from './progress/model'
 import { TOUCHED_INITIAL, applyNumstat, markCommitted, parseNumstat, relPath, touch, touchedRows, type TouchKind } from './touched/model'
 import { progressText } from './progress/text'
 import { progressAlt, progressSvg } from './progress/svg'
-import { DETAILS_INITIAL, LIVE_INITIAL, RADIUS_INITIAL, SECTIONS_INITIAL, ciBox, guardBox, isOrcStateWrite } from './state'
+import { REPLAY_INITIAL, recordEdit, replayView, type ReplayState } from './replay/model'
+import { replayText } from './replay/text'
+import { replayAlt, replaySvg } from './replay/svg'
+import { DETAILS_INITIAL, LIVE_INITIAL, RADIUS_INITIAL, SECTIONS_INITIAL, ciBox, guardBox, isOrcStateWrite, latestReplayView, stepReplay } from './state'
 
 // State refs: literals in this file, as the engine's scan requires.
 const SNAPSHOT_REF = { plugin: 'orc', key: 'snapshot' } as const
@@ -38,6 +41,8 @@ const DETAILS_REF = { plugin: 'orc', key: 'details' } as const
 const LEDGER_REF = { plugin: 'orc', key: 'ledger' } as const
 const TOUCHED_REF = { plugin: 'orc', key: 'touched' } as const
 const RADIUS_REF = { plugin: 'orc', key: 'radius' } as const
+const REPLAY_REF = { plugin: 'orc', key: 'replay' } as const
+const REPLAY_PANE = 'orc-replay'
 
 let alertsSound = false
 
@@ -50,9 +55,10 @@ export function register(on: On, options: PluginOptions) {
   register_compaction(on)
   register_agents(on, parseProfile(options.model_profile))
   register_step_tool(on)
-  register_touched(on)
+  register_touched(on, features)
+  register_replay_close(on)
   register_refresh(on, features)
-  register_cockpit(on, parseProfile(options.model_profile))
+  register_cockpit(on, parseProfile(options.model_profile), features)
   register_surfaces(on)
   register_toolrows(on)
   register_gates(on)
@@ -321,7 +327,7 @@ async function touched_counts($: EngineInterface): Promise<void> {
   } catch { /* counts stay as they were */ }
 }
 
-function register_touched(on: On) {
+function register_touched(on: On, features: Features) {
   on('tool.call', { tool: 'Read' }, async ($, e, next) => {
     const result = await next(e)
     if (!failed(result)) await touch_files($, [String((e as { file_path?: string }).file_path ?? '')].filter(Boolean), 'read')
@@ -336,12 +342,103 @@ function register_touched(on: On) {
     return result
   })
 
-  // Shared with the replay recorder (later): each observer step runs after a successful edit.
+  // The shared edit observer: each step runs after a successful edit (touch, then record).
   on('tool.call', { tool: ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'] }, async ($, e, next) => {
+    // A Write replaces the whole file, so the old content is read before the write runs.
+    const before = features.replay ? await replay_before($, e) : null
     const result = await next(e)
     if (failed(result)) return result
     const call = e as { file_path?: string; notebook_path?: string }
     await touch_files($, [call.file_path ?? call.notebook_path ?? ''].filter(Boolean), 'edit')
+    if (features.replay) await record_edit($, e, before)
+    return result
+  })
+}
+
+// --- Slice replay ------------------------------------------------------------
+type EditCall = { tool?: string; file_path?: string; old_string?: string; new_string?: string; content?: string; edits?: { old_string?: string; new_string?: string }[] }
+
+async function replay_before($: EngineInterface, e: unknown): Promise<string | null> {
+  const call = e as EditCall
+  if (call.tool !== 'Write' || !call.file_path) return null
+  return $.fs.read(call.file_path).then(t => (typeof t === 'string' ? t : ''), () => '')
+}
+
+async function record_edit($: EngineInterface, e: unknown, before: string | null): Promise<void> {
+  try {
+    const call = e as EditCall
+    let old: string, now: string
+    if (call.tool === 'Edit') { old = call.old_string ?? ''; now = call.new_string ?? '' }
+    else if (call.tool === 'MultiEdit') { old = (call.edits ?? []).map(x => x.old_string ?? '').join('\n'); now = (call.edits ?? []).map(x => x.new_string ?? '').join('\n') }
+    else if (call.tool === 'Write') { old = before ?? ''; now = call.content ?? '' }
+    else return
+    if (!call.file_path) return
+    const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
+    const slice = snap.session ? currentSlice(snap.slices) : null
+    const sliceId = slice ? Number(slice.id) : NaN
+    if (!Number.isFinite(sliceId)) return
+    const { root } = await git_facts($)
+    const at = await $.clock.now()
+    const cur = (await $.state.get(REPLAY_REF)).value ?? REPLAY_INITIAL
+    await $.state.set(REPLAY_REF, recordEdit(cur, { sliceId, path: relPath(call.file_path, root), tool: call.tool, old, new: now, at }))
+  } catch { /* bookkeeping never fails a tool call */ }
+}
+
+const replay_state = ($: EngineInterface) => $.state.get(REPLAY_REF).then(r => r.value ?? REPLAY_INITIAL, () => REPLAY_INITIAL)
+
+// Open the replay pane at the latest slice. False when nothing is recorded or the pane was refused.
+async function open_replay($: EngineInterface): Promise<boolean> {
+  const cur = await replay_state($)
+  if (!cur.edits.length) return false
+  await $.state.set(REPLAY_REF, { ...cur, view: latestReplayView(cur) })
+  try {
+    if (!(await $.ui.open({ id: REPLAY_PANE, title: 'replay', focus: true, closeOnEscape: true, rows: 18, columns: 64 })).isPlaced) return false
+  } catch {
+    return false
+  }
+  await $.ui.focus({ requestId: REPLAY_PANE, key: 'replay-next' }).catch(() => undefined)
+  return true
+}
+
+async function replay_command($: EngineInterface, features: Features): Promise<{ text?: string }> {
+  if (!features.replay) return { text: 'Slice replay is off (replay option).' }
+  const cur = await replay_state($)
+  const v = replayView(cur, latestReplayView(cur))
+  if (!v) return { text: 'No edits recorded yet in this session.' }
+  if ((await $.session.surfaces()).length && (await open_replay($))) return {}
+  return { text: `Slice ${v.sliceId} · ${v.tool} ${v.path} +${v.add} -${v.del}\n${v.diff}` }
+}
+
+function draw_replay($: EngineInterface, e: { surface: RenderSurface | null; props: { bodyColumns: number } }, els: Els, state: ReplayState) {
+  const { Box, Text, Button } = els
+  const v = replayView(state, state.view)
+  const walk = (delta: 1 | -1) => async () => {
+    try {
+      const cur = await replay_state($)
+      await $.state.set(REPLAY_REF, { ...cur, view: stepReplay(cur, delta) })
+    } catch { /* the view stays as drawn */ }
+  }
+  const buttons = Box({ flexDirection: 'row', columnGap: 2, children: [
+    Button({ key: 'replay-prev', hotkey: 'p', label: '◀ Prev', onPress: walk(-1) }),
+    Button({ key: 'replay-next', hotkey: 'n', label: 'Next ▶', onPress: walk(1) }),
+    Button({ key: 'replay-close', hotkey: 'c', role: 'dismiss', label: 'Close', onPress: async () => { await $.ui.close({ id: REPLAY_PANE }).catch(() => undefined); await reset_replay($) } }),
+  ] })
+  if (!v) return Box({ flexDirection: 'column', children: [Text({ dimColor: true, children: ['No edits recorded yet'] }), buttons] })
+  const source = isRich(e.surface) && 'Svg' in els ? replaySvg(v, e.props.bodyColumns) : null
+  const body = source && 'Svg' in els ? els.Svg({ source, alt: replayAlt(v), width: px(e.props.bodyColumns) }) : replayText(els, v)
+  return Box({ flexDirection: 'column', children: [body, buttons] })
+}
+
+async function reset_replay($: EngineInterface): Promise<void> {
+  try { await $.state.set(REPLAY_REF, { ...(await replay_state($)), view: REPLAY_INITIAL.view }) } catch { /* ignore */ }
+}
+
+// Closing the pane rewinds the view. The hook hears the person's close (Escape, close key); a plugin's own
+// $.ui.close skips its own hooks, so the Close button resets directly.
+function register_replay_close(on: On) {
+  on('ui.close', { id: REPLAY_PANE }, async ($, e, next) => {
+    const result = await next(e)
+    if (!failed(result)) await reset_replay($)
     return result
   })
 }
@@ -475,7 +572,7 @@ function register_band(on: On, features: Features) {
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey) return next(e)
     const ci: BandRow | null = ciBox.alert ? { kind: 'ci', pr: ciBox.alert.pr, failing: ciBox.alert.summary.failing } : null
-    const progress = features.progressBand ? await progress_row($) : null
+    const progress = features.progressBand ? await progress_row($, features) : null
     const guard: BandRow | null = guardBox.current ? { kind: 'guard', summary: guardBox.current.summary.headline, detail: guardBox.current.summary } : null
     // sentinel, retro and cache rows join here in later slices
     const row = pickBand([ci, guard, progress])
@@ -487,11 +584,13 @@ function register_band(on: On, features: Features) {
   })
 }
 
-async function progress_row($: EngineInterface): Promise<BandRow | null> {
+async function progress_row($: EngineInterface, features: Features): Promise<BandRow | null> {
   const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
   const ledger = await $.state.get(LEDGER_REF).then(r => r.value ?? LEDGER_INITIAL, () => LEDGER_INITIAL)
   const model = progressModel(snap, ledger)
-  return model ? { kind: 'progress', model } : null
+  if (!model) return null
+  const replay = features.replay && model.phase >= 6 && (await replay_state($)).edits.length > 0
+  return { kind: 'progress', model, ...(replay ? { replay } : {}) }
 }
 
 // One row, drawn for the surface: SVG strip + real Buttons on rich surfaces, text elsewhere.
@@ -524,7 +623,8 @@ function draw_band_row($: EngineInterface, e: { surface: RenderSurface | null; p
     const drawn = source && 'Svg' in els
       ? els.Svg({ source, alt: progressAlt(m), height: 28 })
       : els.Text({ children: [progressText(m, e.props.bodyColumns)] })
-    return els.Box({ flexDirection: 'row', columnGap: 2, children: [drawn, ...go] })
+    const again = row.replay ? [els.Button({ key: 'orc-replay', hotkey: 'r', label: 'Replay', onPress: () => { open_replay($).catch(() => undefined) } })] : []
+    return els.Box({ flexDirection: 'row', columnGap: 2, children: [drawn, ...go, ...again] })
   }
   return els.Text({ children: [] })
 }
@@ -533,9 +633,10 @@ function draw_band_row($: EngineInterface, e: { surface: RenderSurface | null; p
 // A dashboard pane drawn from $.state, no model turn: header strip, phase
 // ladder beside the slice ledger. Where nothing can draw (VS Code, claude -p)
 // it answers with a text summary.
-function register_cockpit(on: On, fallbackProfile: Profile) {
+function register_cockpit(on: On, fallbackProfile: Profile, features: Features) {
   on('command.run', { command: 'orc' }, async ($, e) => {
     await refresh($).catch(() => undefined)
+    if (e.args.trim() === 'replay') return replay_command($, features)
     // `/orc radius` opens the cockpit with the ship-radius section already expanded.
     if (e.args.trim() === 'radius') {
       try {
@@ -556,6 +657,7 @@ function register_cockpit(on: On, fallbackProfile: Profile) {
   })
 
   on('ui.render', { component: 'Pane' }, async ($, e, next) => {
+    if (e.requestId === REPLAY_PANE) return draw_replay($, e, $.ui.resolve(e), await replay_state($))
     if (e.requestId !== PANE) return next(e)
     const snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
     const sections = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL

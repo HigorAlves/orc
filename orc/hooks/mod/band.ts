@@ -9,7 +9,7 @@ export type BandRow =
   | { kind: 'sentinel'; id: string; text: string }
   | { kind: 'retro'; id: string; rule: string; seen: number }
   | { kind: 'cache'; minutesLeft: number; rewriteUsd: number | null; tokens: number; waitingOn: string | null }
-  | { kind: 'progress'; model: ProgressModel }
+  | { kind: 'progress'; model: ProgressModel; replay?: boolean }
 
 export const PRIORITY: BandRow['kind'][] = ['ci', 'guard', 'sentinel', 'retro', 'cache', 'progress']
 

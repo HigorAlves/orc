@@ -35,6 +35,8 @@ export type OrcDetails = { digest: string | null; diff: string | null; diffTrunc
 export type OrcLedgerEntry = { requests: number; input: number; output: number; cacheRead: number; cacheWrite: number; lastAt: number | null; lastContext: number; model: string | null; ms: number; type: string | null; step: { label: string; n: number; of: number } | null; startedAt: number | null; finishedAt: number | null; trail: number[] }
 export type OrcRadius = { loc: number; budget: number; files: number; dependents: number | null }
 export type OrcTouched = { sliceId: string | null; files: { path: string; kind: 'read' | 'edit' | 'committed'; at: number; add: number | null; del: number | null }[]; stamp: string }
+export type OrcReplayEdit = { sliceId: number; path: string; tool: string; diff: string; add: number; del: number; at: number }
+export type OrcReplay = { edits: OrcReplayEdit[]; view: { slice: number; step: number } }
 export type OrcLedger = { main: OrcLedgerEntry; agents: Record<string, OrcLedgerEntry> }
 export type OrcStatusInfo = { phase: number | 'done' | null; phaseLabel: string | null; slicesDone: number; slicesTotal: number; qa: string | null; pr: number | string | null; policy: string | null }
 export type Orc = { status: () => Promise<OrcStatusInfo> }
@@ -50,6 +52,7 @@ declare module 'claude-code' {
       ledger: OrcLedger
       touched: OrcTouched
       radius: OrcRadius | null
+      replay: OrcReplay
     }
   }
 }

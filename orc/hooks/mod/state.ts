@@ -5,6 +5,7 @@
 import type { OrcDetails, OrcLive, OrcRadius, OrcSections } from '../../types'
 import type { CiSummary } from './ci'
 import type { GuardSummary } from './guard/measure'
+import type { ReplayState } from './replay/model'
 export { LEDGER_INITIAL } from './ledger'
 
 export const SECTIONS_INITIAL: OrcSections = { qa: false, pr: false, agents: false, decisions: false, digest: false, diff: false, touched: false, radius: false }
@@ -23,3 +24,21 @@ export const guardBox: { current: { summary: GuardSummary; lines: string[] } | n
 // orc-state verbs that change what the cockpit shows. Reads (get, list, line…) never refresh.
 const WRITE = /(^|[\s;&|/])orc-state["']?\s+(init|phase|status|link-pr|digest|checkpoint|usage\s+add|slice\s+(init|set)|jira|decision\s+set|migrate)\b/
 export const isOrcStateWrite = (command: string) => WRITE.test(command)
+
+// Replay navigation: Next/Prev walk the steps of a slice, then cross into the neighbouring slice.
+export function stepReplay(state: ReplayState, delta: 1 | -1): ReplayState['view'] {
+  const ids = [...new Set(state.edits.map(x => x.sliceId))]
+  if (!ids.length) return state.view
+  const { slice, step } = state.view
+  const at = Math.max(0, Math.min(slice, ids.length - 1))
+  const steps = state.edits.filter(x => x.sliceId === ids[at]).length
+  const cur = Math.max(0, Math.min(step, steps - 1))
+  if (delta === 1) return cur + 1 < steps ? { slice: at, step: cur + 1 } : at + 1 < ids.length ? { slice: at + 1, step: 0 } : { slice: at, step: cur }
+  if (cur > 0) return { slice: at, step: cur - 1 }
+  if (at === 0) return { slice: 0, step: 0 }
+  return { slice: at - 1, step: state.edits.filter(x => x.sliceId === ids[at - 1]).length - 1 }
+}
+
+// `/orc replay` opens at the latest slice, first step.
+export const latestReplayView = (state: ReplayState): ReplayState['view'] =>
+  ({ slice: Math.max(0, new Set(state.edits.map(x => x.sliceId)).size - 1), step: 0 })
