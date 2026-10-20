@@ -11,7 +11,7 @@ import { fitSvg, px } from './draw/svg'
 import { isRich } from './draw/surface'
 import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine, summarizeChecks, type CiRecord } from './ci'
 import {
-  EMPTY, currentSlice, cutDiff, diffSlice, digestOf, hintFor, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, plumbingLine, policyOf, profileOf, spinnerSuffix, summaryText, type SectionId, type Snapshot,
+  EMPTY, contextChipSvg, currentSlice, cutDiff, diffSlice, digestOf, hintWithContext, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, plumbingLine, policyOf, profileOf, spinnerSuffix, summaryText, type SectionId, type Snapshot,
 } from './cockpit'
 import { parseFeatures, type Features } from './config'
 import { gateBadge } from './gates'
@@ -319,8 +319,23 @@ function register_surfaces(on: On) {
 
   on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
     if (e.props.isWorking || e.props.isDraft) return next(e)
-    const hint = hintFor(await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY))
-    return hint ? next({ ...e, props: { ...e.props, hint } }) : next(e)
+    const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
+    const usage = await $.session.usage().then(u => u, () => null)
+    const percent = parseMeter(usage)?.contextPercent ?? null
+    const trail = ((await $.state.get(LEDGER_REF).then(r => r.value, () => undefined)) ?? LEDGER_INITIAL).main.trail
+    const window = usage?.context?.window ?? 200_000
+    const hint = hintWithContext(snap, percent, trail, window)
+    if (!hint) return next(e)
+    const els = $.ui.resolve(e)
+    // Desktop: the ring and bars as a drawing, then the same words.
+    if (percent != null && isRich(e.surface) && 'Svg' in els) {
+      const source = fitSvg(contextChipSvg(percent, trail, window))
+      if (source) return els.Box({ flexDirection: 'row', columnGap: 1, children: [
+        els.Svg({ source, alt: `context ${percent}% used`, width: 72, height: 18 }),
+        els.Text({ dimColor: true, children: [hint] }),
+      ] })
+    }
+    return next({ ...e, props: { ...e.props, hint } })
   })
 
   on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
