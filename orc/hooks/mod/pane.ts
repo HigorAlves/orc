@@ -4,8 +4,20 @@
 import type { EngineInterface } from 'claude-code'
 import type { OrcDetails, OrcSections } from '../../types'
 import { POLICIES, attention, criterionLine, diffSlice, headerCells, isDone, layoutFor, phaseRows, policyOf, sectionLabel, sizeLine, sliceLine, usageLine, type SectionId, type Snapshot } from './cockpit'
+import { fitSvg, px } from './draw/svg'
 import type { Profile } from './profiles'
+import { agentRowLine, type AgentRow } from './progress/model'
+import { touchedAlt, touchedHeight, touchedSvg } from './touched/svg'
+import { touchedText } from './touched/text'
+import type { TouchedRow } from './touched/model'
+import { AGENT_H, agentAlt, agentLabel, agentSvg } from './progress/svg'
 import type { CiAlert } from './state'
+import type { Radius } from './radius/model'
+import { RADIUS_H, radiusAlt, radiusSvg } from './radius/svg'
+import { radiusText } from './radius/text'
+import { embeddable } from './qa/model'
+import { qaAlt, qaHeight, qaSvg } from './qa/svg'
+import { qaThumbsText, type QaMode } from './qa/text'
 
 export const PANE = 'orc-cockpit'
 
@@ -18,8 +30,14 @@ export type PaneModel = {
   sections: OrcSections
   ciAlert: CiAlert
   details: OrcDetails
+  rich: boolean
+  agents: AgentRow[]
+  touched: TouchedRow[]
+  radius: Radius | null
+  shotMode: QaMode
+  retroPending: number
 }
-export type PaneActions = { resume: () => void; toggle: (id: SectionId) => () => void; renderReport: () => void; settle: (key: string, value: string) => void }
+export type PaneActions = { resume: () => void; toggle: (id: SectionId) => () => void; renderReport: () => void; openTarget: (url: string) => void; settle: (key: string, value: string) => void }
 
 const PROFILES = ['balanced', 'quality', 'economy'] as const
 
@@ -57,11 +75,26 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
       ...(model.sections[id] ? [Box({ flexDirection: 'column', paddingLeft: 2, children: children() })] : []),
     ] })
 
+  const Svg = 'Svg' in els ? els.Svg : null
+  // Up to 3 screenshot thumbnails: one Svg on rich surfaces, Image/Raster/paths in the terminal.
+  const shots = () => {
+    const all = model.details.shots ?? []
+    if (model.rich && Svg) {
+      const set = embeddable(all)
+      const source = set.length ? fitSvg(qaSvg(set, px(model.bodyColumns))) : null
+      return source ? [Svg({ source, alt: qaAlt(set), width: px(model.bodyColumns), height: qaHeight(px(model.bodyColumns), set.length) })] : []
+    }
+    return model.rich ? [] : qaThumbsText(els, all, model.shotMode)
+  }
   const qa = section('qa', 'q', () => snap.qa
     ? [line('Verdict: ' + snap.qa.verdict.toUpperCase(), { bold: true, color: snap.qa.verdict === 'pass' ? 'green' : 'red' }),
        ...snap.qa.acceptance.map(c => line(criterionLine(c), { color: c.result === 'pass' ? 'green' : c.result === 'fail' ? 'red' : undefined })),
        ...(snap.qa.missing.length ? [line('Missing evidence: ' + snap.qa.missing.join(', '), { color: 'red' })] : []),
-       Button({ key: 'qa-report', label: 'Render report', onPress: actions.renderReport })]
+       ...shots(),
+       Box({ flexDirection: 'row', columnGap: 2, children: [
+         Button({ key: 'qa-report', label: 'Open report', onPress: actions.renderReport }),
+         ...(snap.qa.url ? [Button({ key: 'qa-target', label: 'Open target', onPress: () => actions.openTarget(snap.qa?.url ?? '') })] : []),
+       ] })]
     : [line('No QA packet yet — /orc:qa writes one.', { dimColor: true })])
 
   const prs = s?.linkedPRs ?? []
@@ -74,9 +107,32 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
     ...(alert ? [line(`CI: ${alert.summary.failing.length} failing (${alert.summary.failing.join(', ')})`, { color: 'red' })] : []),
   ])
 
-  const agents = section('agents', 'g', () => snap.usage?.length
-    ? [line('agent                     runs   tokens            time', { dimColor: true }), ...snap.usage.map(u => line(usageLine(u)))]
+  const agentRow = (r: AgentRow) => {
+    const source = model.rich && Svg ? fitSvg(agentSvg(r, px(model.bodyColumns))) : null
+    return source && Svg
+      ? Svg({ source, alt: agentAlt(r), width: px(model.bodyColumns), height: AGENT_H })
+      : line([agentLabel(r), r.step, agentRowLine(r)].filter(Boolean).join('  '), { dimColor: !r.running })
+  }
+  const agents = section('agents', 'g', () => model.agents.length || snap.usage?.length
+    ? [...model.agents.map(agentRow),
+       ...(snap.usage?.length ? [line('agent                     runs   tokens            time', { dimColor: true }), ...snap.usage.map(u => line(usageLine(u)))] : [])]
     : [line('No subagent runs recorded yet.', { dimColor: true })])
+
+  const touchedSource = model.rich && Svg && model.touched.length ? fitSvg(touchedSvg(model.touched, px(model.bodyColumns))) : null
+  const touched = section('touched', 't', () => !model.touched.length
+    ? [line('No files touched in this slice yet.', { dimColor: true })]
+    : touchedSource && Svg
+      ? [Svg({ source: touchedSource, alt: touchedAlt(model.touched), width: px(model.bodyColumns), height: touchedHeight(model.touched) })]
+      : touchedText(els, model.touched))
+
+  const radiusSource = model.rich && Svg && model.radius ? radiusSvg(model.radius, model.bodyColumns) : null
+  const radius = section('radius', 'b', () => !model.radius
+    ? [line('Loading…', { dimColor: true })]
+    : model.radius.budget <= 0
+    ? [line('No size reading — is there a base branch to compare against?', { dimColor: true })]
+    : radiusSource && Svg
+      ? [Svg({ source: radiusSource, alt: radiusAlt(model.radius), width: px(model.bodyColumns), height: RADIUS_H })]
+      : [radiusText(els, model.radius)])
 
   const policy = policyOf(snap) ?? 'manual'
   const decisions = section('decisions', 'd', () => [
@@ -85,6 +141,7 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
     ...(Select ? [Select({ key: 'profile', label: 'Model profile', options: PROFILES.map(p => ({ value: p })), value: model.profile,
       onSelect: (v: string) => { if (v !== model.profile) actions.settle('modelProfile', v) } })] : []),
     ...snap.decisions.map(d => line(`${d.key} = ${d.value}  (${d.provenance})`, { dimColor: true })),
+    ...(model.retroPending ? [line(`retro candidates ${model.retroPending} pending`, { dimColor: true })] : []),
   ])
 
   const { details } = model
@@ -105,6 +162,6 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
   ] })
 
   // Sections sit tight (one row each while collapsed); the gap only separates the strip, the body, the sections and the footer.
-  const sections = Box({ flexDirection: 'column', children: [qa, pr, agents, decisions, digest, diff] })
+  const sections = Box({ flexDirection: 'column', children: [qa, pr, radius, agents, touched, decisions, digest, diff] })
   return Box({ flexDirection: 'column', rowGap: 1, children: [header, body, sections, footer] })
 }

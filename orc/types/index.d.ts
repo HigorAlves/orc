@@ -16,7 +16,7 @@ export type OrcSession = {
 export type OrcSlice = { id: string; status: string; title: string; commit: string | null }
 export type OrcDecision = { key: string; value: string; provenance: string }
 export type OrcCriterion = { criterion: string; result: string; note: string; sliceId: number | string }
-export type OrcQaReport = { verdict: string; acceptance: OrcCriterion[]; missing: string[] }
+export type OrcQaReport = { verdict: string; acceptance: OrcCriterion[]; missing: string[]; url?: string | null }
 export type OrcAgentUsage = { agent: string; runs: number; in: number; out: number; ms: number }
 export type OrcSize = { loc: number; budget: number }
 export type OrcMeter = { contextPercent: number | null; usd: number | null }
@@ -29,17 +29,31 @@ export type OrcSnapshot = {
   usage?: OrcAgentUsage[]
   meter?: OrcMeter | null
 }
-export type OrcSections = { qa: boolean; pr: boolean; agents: boolean; decisions: boolean; digest: boolean; diff: boolean }
+export type OrcSections = { qa: boolean; pr: boolean; agents: boolean; decisions: boolean; digest: boolean; diff: boolean; touched: boolean; radius: boolean }
 export type OrcLive = { agent: string | null; since: number | null }
-export type OrcDetails = { digest: string | null; diff: string | null; diffTruncated: boolean }
+export type OrcShot = { name: string; criterion: string; jpg: string | null; png: string | null; b64: string | null; rgb: string | null }
+export type OrcDetails = { digest: string | null; diff: string | null; diffTruncated: boolean; shots: OrcShot[] | null }
+export type OrcLedgerEntry = { requests: number; input: number; output: number; cacheRead: number; cacheWrite: number; lastAt: number | null; lastContext: number; model: string | null; ms: number; type: string | null; step: { label: string; n: number; of: number } | null; startedAt: number | null; finishedAt: number | null; trail: number[] }
+export type OrcRadius = { loc: number; budget: number; files: number; dependents: number | null }
+export type OrcTouched = { sliceId: string | null; files: { path: string; kind: 'read' | 'edit' | 'committed'; at: number; add: number | null; del: number | null }[]; stamp: string }
+export type OrcReplayEdit = { sliceId: number; path: string; tool: string; diff: string; add: number; del: number; at: number }
+export type OrcReplay = { edits: OrcReplayEdit[]; view: { slice: number; step: number } }
+export type OrcLedger = { main: OrcLedgerEntry; agents: Record<string, OrcLedgerEntry> }
+export type OrcStatusInfo = { phase: number | 'done' | null; phaseLabel: string | null; slicesDone: number; slicesTotal: number; qa: string | null; pr: number | string | null; policy: string | null }
+export type Orc = { status: () => Promise<OrcStatusInfo> }
 
 declare module 'claude-code' {
+  interface EngineInterface { orc: Orc }
   interface PluginState {
     orc: {
       snapshot: OrcSnapshot
       sections: OrcSections
       live: OrcLive
       details: OrcDetails
+      ledger: OrcLedger
+      touched: OrcTouched
+      radius: OrcRadius | null
+      replay: OrcReplay
     }
   }
 }
