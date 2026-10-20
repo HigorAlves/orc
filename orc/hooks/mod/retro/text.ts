@@ -1,0 +1,24 @@
+// Terminal drawing of the retro band row: pure, takes the resolved element table.
+import type { BandRow } from '../band'
+import type { Els } from '../pane'
+
+export type RetroRow = Extract<BandRow, { kind: 'retro' }>
+export type RetroActions = { save: () => void; edit: () => void; skip: () => void }
+
+export const retroLine = (r: RetroRow): string => `✎ retro "${r.rule}" · seen ${r.seen}×`
+export const retroAlt = retroLine
+
+export function retroText(els: Els, r: RetroRow, a: RetroActions) {
+  const { Box, Text } = els
+  return Box({ flexDirection: 'row', columnGap: 2, children: [
+    Text({ color: 'cyan', children: [retroLine(r)] }),
+    ...retroButtons(els, a),
+  ] })
+}
+
+// The same three buttons beside the terminal line or the desktop card.
+export const retroButtons = (els: Els, a: RetroActions) => [
+  els.Button({ key: 'retro-save', variant: 'primary', hotkey: '1', label: 'Save rule', onPress: a.save }),
+  els.Button({ key: 'retro-edit', label: 'Edit', onPress: a.edit }),
+  els.Button({ key: 'retro-skip', hotkey: '0', label: 'Skip', onPress: a.skip }),
+]

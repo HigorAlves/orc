@@ -35,6 +35,7 @@ export type PaneModel = {
   touched: TouchedRow[]
   radius: Radius | null
   shotMode: QaMode
+  retroPending: number
 }
 export type PaneActions = { resume: () => void; toggle: (id: SectionId) => () => void; renderReport: () => void; openTarget: (url: string) => void; settle: (key: string, value: string) => void }
 
@@ -140,6 +141,7 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
     ...(Select ? [Select({ key: 'profile', label: 'Model profile', options: PROFILES.map(p => ({ value: p })), value: model.profile,
       onSelect: (v: string) => { if (v !== model.profile) actions.settle('modelProfile', v) } })] : []),
     ...snap.decisions.map(d => line(`${d.key} = ${d.value}  (${d.provenance})`, { dimColor: true })),
+    ...(model.retroPending ? [line(`retro candidates ${model.retroPending} pending`, { dimColor: true })] : []),
   ])
 
   const { details } = model

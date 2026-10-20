@@ -6,6 +6,7 @@ import type { OrcDetails, OrcLive, OrcRadius, OrcSections } from '../../types'
 import type { CiSummary } from './ci'
 import type { GuardSummary } from './guard/measure'
 import type { ReplayState } from './replay/model'
+import type { CandidateFile } from './retro/store'
 export { LEDGER_INITIAL } from './ledger'
 
 export const SECTIONS_INITIAL: OrcSections = { qa: false, pr: false, agents: false, decisions: false, digest: false, diff: false, touched: false, radius: false }
@@ -50,3 +51,8 @@ export const warmBox: { gen: number; timer: { cancel(): void } | null; deadline:
 
 // True while an AskUserQuestion dialog is on screen (set by its render, cleared when the tool call ends).
 export const askBox: { open: boolean } = { open: false }
+
+// Corrections -> retro store, module scope (writes happen from deferred work, not events): the resolved retro dir,
+// the cached candidates, the last assistant answer (context for the check), and the write chain.
+export const retroBox: { dir: string | null; file: CandidateFile | null; prev: string; chain: Promise<unknown> } =
+  { dir: null, file: null, prev: '', chain: Promise.resolve() }

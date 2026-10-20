@@ -33,9 +33,15 @@ import { cacheSvg } from './cache/svg'
 import { cacheAlt, cacheText } from './cache/text'
 import { openPlan, parseThumbs, pixelTerminal } from './qa/model'
 import { REPLAY_INITIAL, recordEdit, replayView, type ReplayState } from './replay/model'
+import { cleanRule, similarity } from './retro/clean'
+import { mayBeCorrection } from './retro/detect'
+import { HAIKU, RETRO_SYSTEM, parseRetro, retroPrompt, rulesSection, savedRules } from './retro/prompt'
+import { mergeCandidate, renderRules, spliceRules, type CandidateFile } from './retro/store'
+import { retroSvg } from './retro/svg'
+import { retroAlt, retroButtons, retroText, type RetroActions } from './retro/text'
 import { replayText } from './replay/text'
 import { replayAlt, replaySvg } from './replay/svg'
-import { DETAILS_INITIAL, LIVE_INITIAL, RADIUS_INITIAL, SECTIONS_INITIAL, ciBox, askBox, guardBox, isOrcStateWrite, latestReplayView, stepReplay, warmBox } from './state'
+import { DETAILS_INITIAL, LIVE_INITIAL, RADIUS_INITIAL, SECTIONS_INITIAL, ciBox, askBox, guardBox, isOrcStateWrite, latestReplayView, retroBox, stepReplay, warmBox } from './state'
 
 // State refs: literals in this file, as the engine's scan requires.
 const SNAPSHOT_REF = { plugin: 'orc', key: 'snapshot' } as const
@@ -70,6 +76,7 @@ export function register(on: On, options: PluginOptions) {
   register_band(on, features)
   register_steps(on, features)
   register_prompt(on, features)
+  register_compose(on, features)
   register_api(on)
 }
 
@@ -95,6 +102,8 @@ function register_session(on: On, features: Features) {
       // name taken in this build: the markdown /orc:status stays the fallback
     }
     gitFacts = null
+    retroBox.dir = null
+    retroBox.file = null
     // The step tool: orc subagents label their TDD steps for the progress view.
     try {
       await $.tool.register({ name: 'step', description: STEP_DESC, inputSchema: STEP_SCHEMA })
@@ -102,6 +111,7 @@ function register_session(on: On, features: Features) {
       // tools can't register in this build: agents just don't report steps
     }
     void refresh($).catch(() => undefined)
+    if (retroOn(features)) void retro_load($).then(f => { retroBox.file = f; $.ui.invalidate('ui.render') }).catch(() => undefined)
     if (e.isInteractive) {
       $.clock.every(POLL_MS, () => { void ci_tick($) })
       if (features.cacheCliff === 'warn') $.clock.every(60_000, () => { void cache_tick($, features) })
@@ -227,6 +237,7 @@ function register_agents(on: On, profile: Profile) {
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)
     if (!e.agentId) {
+      retroBox.prev = String(e.answer ?? '')
       await refresh($).catch(() => undefined)
       // Finished agent rows showed once; the next main-loop completion clears them.
       const cur = await $.state.get(LEDGER_REF).then(r => r.value ?? LEDGER_INITIAL, () => LEDGER_INITIAL)
@@ -581,7 +592,140 @@ async function cache_cold_toast($: EngineInterface, e: { origin: { kind: string 
 function register_prompt(on: On, features: Features) {
   on('prompt.submit', async ($, e, next) => {
     await cache_cold_toast($, e, features)
-    return next(e)
+    const kept = next(e)
+    retro_defer($, e, features)
+    return kept
+  })
+}
+
+// --- Corrections -> retro store -------------------------------------------------
+// A composer prompt that reads like a correction is checked by Haiku after the send went through; the rule it
+// proposes becomes a candidate in <state root>/retro/candidates.json. Saved rules (rules.md) reach later sessions
+// through prompt.compose. $.fs.write creates parent directories, so no mkdir.
+const retroOn = (features: Features) => features.corrections && !companions.reflect
+
+function retro_defer($: EngineInterface, e: { text: string; origin: { kind: string } }, features: Features): void {
+  if (!retroOn(features) || e.origin.kind !== 'composer' || !mayBeCorrection(e.text)) return
+  const text = e.text, prev = retroBox.prev
+  $.clock.after(0, () => { void retro_drain($, text, prev).catch(() => undefined) })
+}
+
+async function retro_dir($: EngineInterface): Promise<string> {
+  if (retroBox.dir) return retroBox.dir
+  const env = await $.env.get('ORC_STATE_DIR').catch(() => undefined)
+  const root = env ? '' : (await git_facts($)).root
+  const dir = (env || (root ? root + '/.orc' : '.orc')) + '/retro'
+  if (env || root) retroBox.dir = dir
+  return dir
+}
+
+async function retro_read($: EngineInterface, name: string): Promise<string> {
+  return $.fs.read((await retro_dir($)) + '/' + name).then(t => (typeof t === 'string' ? t : ''), () => '')
+}
+
+async function retro_load($: EngineInterface): Promise<CandidateFile> {
+  try {
+    const f = JSON.parse(await retro_read($, 'candidates.json')) as CandidateFile
+    if (f.schema === 1 && Array.isArray(f.items)) return f
+  } catch { /* missing or unreadable: start empty */ }
+  return { schema: 1, items: [] }
+}
+
+// Writes run one at a time, each re-reading the file first, so two checks finishing together both land.
+function retro_serial<T>(job: () => Promise<T>): Promise<T> {
+  const run = retroBox.chain.then(job)
+  retroBox.chain = run.catch(() => undefined)
+  return run
+}
+
+async function retro_put($: EngineInterface, file: CandidateFile): Promise<void> {
+  await $.fs.write((await retro_dir($)) + '/candidates.json', JSON.stringify(file, null, 2) + '\n')
+  retroBox.file = file
+  $.ui.invalidate('ui.render')
+}
+
+async function retro_drain($: EngineInterface, text: string, prev: string): Promise<void> {
+  const r = await $.model.complete({ model: HAIKU, maxTokens: 300, system: RETRO_SYSTEM, prompt: retroPrompt(text, prev) })
+  if (!r.isAnswered) return
+  const v = parseRetro(r.text)
+  const rule = v && v.isCorrection && v.confidence >= 0.7 ? cleanRule(v.rule) : undefined
+  if (!rule) return
+  const at = await $.clock.now()
+  await retro_serial(async () => {
+    const f = await retro_load($)
+    const m = mergeCandidate(f.items, rule, { source: 'composer', at, saved: f.items.filter(i => i.status === 'saved').map(i => i.rule) })
+    if (!m.alreadySaved) await retro_put($, { schema: 1, items: m.items })
+  })
+}
+
+// Save a clean rule: mark its candidate saved (the card's id, else the closest one, else a new one) and splice rules.md.
+async function retro_save($: EngineInterface, raw: string, id?: string): Promise<string> {
+  const clean = cleanRule(raw)
+  if (!clean) return 'Rule not saved: it must be one line, under 200 characters, with no secrets.'
+  try {
+    return await retro_serial(async () => {
+      const f = await retro_load($)
+      const at = await $.clock.now()
+      let items = f.items
+      let hit = id ? items.findIndex(i => i.id === id) : -1
+      if (hit < 0) {
+        // The closest candidate (no seen bump: this is the person deciding), else a new one.
+        hit = items.reduce((best, c, i) => (similarity(c.rule, clean) > (best < 0 ? 0 : similarity(items[best].rule, clean)) ? i : best), -1)
+        if (hit < 0 || similarity(items[hit].rule, clean) < 0.6) { items = mergeCandidate(items, clean, { source: 'manual', at }).items; hit = items.length - 1 }
+      }
+      items = items.map((c, i) => (i === hit ? { ...c, rule: clean, status: 'saved' as const, at } : c))
+      const current = await retro_read($, 'rules.md')
+      // Bullets already in rules.md (typed by hand, or saved from another checkout) stay.
+      const rules = [...new Set([...savedRules(current), ...items.filter(i => i.status === 'saved').map(i => i.rule)])]
+      const out = current.trim() === '' ? renderRules(rules) : spliceRules(current, rules)
+      if (out === undefined) return 'Rule not saved: rules.md has no single orc:retro start/end markers, in that order. Fix or remove the file.'
+      await $.fs.write((await retro_dir($)) + '/rules.md', out)
+      await retro_put($, { schema: 1, items })
+      return 'Saved rule: ' + clean
+    })
+  } catch {
+    return 'Rule not saved: the retro files could not be written.'
+  }
+}
+
+async function retro_skip($: EngineInterface, id: string): Promise<void> {
+  await retro_serial(async () => {
+    const f = await retro_load($)
+    await retro_put($, { schema: 1, items: f.items.map(i => (i.id === id ? { ...i, status: 'skipped' as const } : i)) })
+  })
+}
+
+async function retro_command($: EngineInterface, arg: string): Promise<{ text: string }> {
+  const save = arg.match(/^save\s+([\s\S]+)$/)
+  if (save) return { text: await retro_save($, save[1].trim().replace(/^"([\s\S]*)"$/, '$1')) }
+  const items = (await retro_load($)).items
+  const pending = items.filter(i => i.status === 'pending'), saved = items.filter(i => i.status === 'saved')
+  if (!pending.length && !saved.length) return { text: 'No retro candidates yet. Usage: /orc retro save "<rule>"' }
+  return { text: [
+    ...(pending.length ? [`${pending.length} pending:`, ...pending.map(i => `- "${i.rule}" · seen ${i.seen}×`)] : []),
+    ...(saved.length ? ['Saved:', ...saved.map(i => '- ' + i.rule)] : []),
+  ].join('\n') }
+}
+
+// Drawing reads the cached candidates only (loaded at session.start, kept current by every write): no IO per render.
+const retro_pending_items = (features: Features) => (retroOn(features) ? (retroBox.file?.items ?? []).filter(i => i.status === 'pending') : [])
+
+function retro_row(features: Features): BandRow | null {
+  const top = retro_pending_items(features).sort((a, b) => b.at - a.at)[0]
+  return top ? { kind: 'retro', id: top.id, rule: top.rule, seen: top.seen } : null
+}
+
+// Saved rules join the system prompt as one session section (after any shared ones), capped at 2,000 chars.
+function register_compose(on: On, features: Features) {
+  on('prompt.compose', async ($, e, next) => {
+    const result = await next(e)
+    if (!retroOn(features)) return result
+    try {
+      const text = rulesSection(savedRules(await retro_read($, 'rules.md')))
+      return text ? { sections: [...result.sections, { id: 'orc:retro-rules', text, scope: 'session' as const }] } : result
+    } catch {
+      return result
+    }
   })
 }
 
@@ -717,9 +861,10 @@ function register_band(on: On, features: Features) {
     const ci: BandRow | null = ciBox.alert ? { kind: 'ci', pr: ciBox.alert.pr, failing: ciBox.alert.summary.failing } : null
     const progress = features.progressBand ? await progress_row($, features) : null
     const guard: BandRow | null = guardBox.current ? { kind: 'guard', summary: guardBox.current.summary.headline, detail: guardBox.current.summary } : null
+    const retro = retro_row(features)
     const cache = await cache_row($, features, !e.props.isWorking)
-    // sentinel and retro rows join here in later slices
-    const row = pickBand([ci, guard, cache, progress])
+    // the sentinel row joins here in slice 21
+    const row = pickBand([ci, guard, retro, cache, progress])
     if (!row) return next(e)
     const below = await next(e)
     const els = $.ui.resolve(e)
@@ -770,6 +915,16 @@ function draw_band_row($: EngineInterface, e: { surface: RenderSurface | null; p
     }
     return cacheText(els, row, warm)
   }
+  if (row.kind === 'retro') {
+    const actions: RetroActions = {
+      save: () => { void retro_save($, row.rule, row.id).then(m => $.ui.toast(m)).catch(() => undefined) },
+      edit: () => { $.prompt.fill({ text: `/orc retro save "${row.rule}"` }).catch(() => undefined) },
+      skip: () => { void retro_skip($, row.id).catch(() => undefined) },
+    }
+    const source = isRich(e.surface) && 'Svg' in els ? fitSvg(retroSvg(row, px(e.props.bodyColumns))) : null
+    if (source && 'Svg' in els) return els.Box({ flexDirection: 'row', columnGap: 2, children: [els.Svg({ source, alt: retroAlt(row), height: 28 }), ...retroButtons(els, actions)] })
+    return retroText(els, row, actions)
+  }
   if (row.kind === 'progress') {
     const m = row.model
     const next = m.next
@@ -793,6 +948,7 @@ function register_cockpit(on: On, fallbackProfile: Profile, features: Features) 
     await refresh($).catch(() => undefined)
     if (e.args.trim() === 'replay') return replay_command($, features)
     if (/^keepwarm(\s|$)/.test(e.args.trim())) return keepwarm_command($, features, e.args.trim().slice(8).trim())
+    if (/^retro(\s|$)/.test(e.args.trim())) return retro_command($, e.args.trim().slice(5).trim())
     // `/orc radius` opens the cockpit with the ship-radius section already expanded.
     if (e.args.trim() === 'radius') {
       try {
@@ -824,7 +980,7 @@ function register_cockpit(on: On, fallbackProfile: Profile, features: Features) 
     const radius = (await $.state.get(RADIUS_REF)).value ?? RADIUS_INITIAL
     const touched = touchedRows((await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL, now)
     const shotMode = pixelTerminal(await $.env.get('TERM_PROGRAM').catch(() => undefined), await $.env.get('KITTY_WINDOW_ID').catch(() => undefined)) ? 'image' as const : 'raster' as const
-    const model = { snap, sections, details, agents, touched, radius, shotMode, rich: isRich(e.surface), ciAlert: ciBox.alert, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
+    const model = { snap, sections, details, agents, touched, radius, shotMode, retroPending: retro_pending_items(features).length, rich: isRich(e.surface), ciAlert: ciBox.alert, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
     return drawPane($.ui.resolve(e), model, {
       resume: () => { $.prompt.fill({ text: snap.session ? '/orc:resume' : '/orc:flow ' }) },
       toggle: (id: SectionId) => async () => {
