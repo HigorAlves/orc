@@ -7,7 +7,9 @@ import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine
 import {
   EMPTY, cutDiff, diffSlice, digestOf, hintFor, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, plumbingLine, policyOf, profileOf, spinnerSuffix, summaryText, type SectionId, type Snapshot,
 } from './cockpit'
+import { parseFeatures, type Features } from './config'
 import { gateBadge } from './gates'
+import { LEDGER_INITIAL, dropAgent, recordStep, tagAgent } from './ledger'
 import { PANE, drawPane } from './pane'
 import { modelFor, parseProfile, type Profile } from './profiles'
 import { DETAILS_INITIAL, LIVE_INITIAL, SECTIONS_INITIAL, ciBox, isOrcStateWrite } from './state'
@@ -17,12 +19,14 @@ const SNAPSHOT_REF = { plugin: 'orc', key: 'snapshot' } as const
 const SECTIONS_REF = { plugin: 'orc', key: 'sections' } as const
 const LIVE_REF = { plugin: 'orc', key: 'live' } as const
 const DETAILS_REF = { plugin: 'orc', key: 'details' } as const
+const LEDGER_REF = { plugin: 'orc', key: 'ledger' } as const
 
 let alertsSound = false
 
 export function register(on: On, options: PluginOptions) {
   if (options.mod_enabled === false) return
   alertsSound = options.alerts_sound === true
+  const features = parseFeatures(options)
   register_session(on)
   register_attribution(on)
   register_compaction(on)
@@ -33,6 +37,7 @@ export function register(on: On, options: PluginOptions) {
   register_toolrows(on)
   register_gates(on)
   register_ci_band(on)
+  register_steps(on, features)
 }
 
 // One session.start hook: add /orc, and in an interactive session start the CI watcher.
@@ -106,13 +111,21 @@ function register_agents(on: On, profile: Profile) {
     if (result.agentId && /^(orc:)?orc-/.test(e.subagentType)) {
       agentTypes.set(result.agentId, e.subagentType.replace(/^orc:/, ''))
       await $.state.set(LIVE_REF, { agent: e.subagentType.replace(/^orc:/, ''), since: await $.clock.now().catch(() => null) }).catch(() => undefined)
+      const cur = await $.state.get(LEDGER_REF).then(r => r.value ?? LEDGER_INITIAL, () => LEDGER_INITIAL)
+      await $.state.set(LEDGER_REF, tagAgent(cur, result.agentId, e.subagentType.replace(/^orc:/, ''))).catch(() => undefined)
     }
     return result
   })
 
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)
-    if (!e.agentId) await refresh($).catch(() => undefined)
+    if (!e.agentId) {
+      await refresh($).catch(() => undefined)
+      // Finished agent rows showed once; the next main-loop completion clears them.
+      const cur = await $.state.get(LEDGER_REF).then(r => r.value ?? LEDGER_INITIAL, () => LEDGER_INITIAL)
+      const kept = Object.keys(cur.agents).filter(id => !agentTypes.has(id)).reduce(dropAgent, cur)
+      if (kept !== cur) await $.state.set(LEDGER_REF, kept).catch(() => undefined)
+    }
     const agent = e.agentId ? agentTypes.get(e.agentId) : undefined
     if (agent) {
       // Cleared on every finish — an abort or API error carries no usage but the agent is gone.
@@ -124,6 +137,21 @@ function register_agents(on: On, profile: Profile) {
           '--in', String(e.usage.input_tokens), '--out', String(e.usage.output_tokens), '--ms', String(e.durationMs)])
       }
     }
+    return result
+  })
+}
+
+// The only turn.step hook: every model request's usage lands in the ledger
+// (main loop, or the subagent named by agentId). Later slices extend the body.
+function register_steps(on: On, _features: Features) {
+  on('turn.step', async function* ($, e, next) {
+    const startedAt = await $.clock.now().catch(() => 0)
+    const result = yield* next(e)
+    try {
+      const at = await $.clock.now()
+      const cur = (await $.state.get(LEDGER_REF)).value ?? LEDGER_INITIAL
+      await $.state.set(LEDGER_REF, recordStep(cur, { agentId: e.agentId ?? null, usage: result?.usage ?? null, at, ms: at - startedAt }))
+    } catch { /* bookkeeping never fails a request */ }
     return result
   })
 }

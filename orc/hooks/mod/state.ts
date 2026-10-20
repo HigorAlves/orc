@@ -4,6 +4,7 @@
 // refs, the loader and the triggers all live in register.ts.
 import type { OrcDetails, OrcLive, OrcSections } from '../../types'
 import type { CiSummary } from './ci'
+export { LEDGER_INITIAL } from './ledger'
 
 export const SECTIONS_INITIAL: OrcSections = { qa: false, pr: false, agents: false, decisions: false, digest: false, diff: false }
 export const LIVE_INITIAL: OrcLive = { agent: null, since: null }

@@ -32,6 +32,8 @@ export type OrcSnapshot = {
 export type OrcSections = { qa: boolean; pr: boolean; agents: boolean; decisions: boolean; digest: boolean; diff: boolean }
 export type OrcLive = { agent: string | null; since: number | null }
 export type OrcDetails = { digest: string | null; diff: string | null; diffTruncated: boolean }
+export type OrcLedgerEntry = { requests: number; input: number; output: number; cacheRead: number; cacheWrite: number; lastAt: number | null; lastContext: number; model: string | null; ms: number; type: string | null; step: { label: string; n: number; of: number } | null; startedAt: number | null }
+export type OrcLedger = { main: OrcLedgerEntry; agents: Record<string, OrcLedgerEntry> }
 
 declare module 'claude-code' {
   interface PluginState {
@@ -40,6 +42,7 @@ declare module 'claude-code' {
       sections: OrcSections
       live: OrcLive
       details: OrcDetails
+      ledger: OrcLedger
     }
   }
 }
