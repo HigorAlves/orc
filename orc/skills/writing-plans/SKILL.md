@@ -50,22 +50,7 @@ This structure informs the task decomposition. Each task produces self-contained
 
 Each task produces a diff small enough to review in one sitting. Target **≤ 300 LOC per task** (additions + deletions, post-exclusion — lockfiles, generated code, snapshots, and migrations don't count). Defer to `orc:pr-size-budget` for the exclusion list and resolution order (env var, per-repo config, default).
 
-Add an `est_loc: <int>` field to every task header. Heuristic for the estimate:
-
-```
-est_loc ≈ (new_files * 80) + (modified_files * 30) + boilerplate_test_lines
-```
-
-Adjust upward for known-large files (config, fixtures), downward for one-line tweaks.
-
-When a Graphify code graph is available (per `orc:code-discovery`), sharpen the `modified_files` term with real blast-radius: `graphify affected "<symbol-you'll-change>" --depth 2` lists the call sites that ripple from a change. Count each caller you'll actually have to touch as ~+30 LOC, and treat a symbol with many affected callers as a **`ships_as_stack: true`** signal *before* implementation, not a surprise at ship time. `affected` is a lead, not proof — it doesn't expose per-edge confidence — so read each cited caller to confirm it needs to change before counting it. Fall back to `Grep` for callers when no graph is available.
-
-When a task's natural decomposition would exceed **1.5× the budget** (~450 LOC), that's a planning signal:
-
-- **Split the task further.** Usually there's a refactor-then-feature seam that hasn't been surfaced yet.
-- **OR mark `ships_as_stack: true`** in the task header to signal the implementer that this task is expected to ship as a stacked PR group via `/orc:stack-pr`. Don't quietly accept a 600-LOC task.
-
-The estimate is a **budget contract**, not a precision prediction — the implementer escalates when actual exceeds `est_loc * 1.5` rather than ballooning silently.
+Add an `est_loc: <int>` field to every task header. Read [LOC-BUDGET.md](references/LOC-BUDGET.md) for the estimate heuristic, the Graphify blast-radius refinement, the **1.5× budget** signal (split further, or mark `ships_as_stack: true`), and the budget-contract rule the implementer escalates on.
 
 ## Per-slice concurrency + acceptance annotations (mandatory)
 
@@ -83,73 +68,13 @@ Every slice header also carries — same vocabulary `orc-jira-architect` emits f
   - row-stream test covers a 10k-row report
 ```
 
-- **`touchpoints`** — the files this slice owns. Evidence-based, never guessed: use the graph (`graphify affected`) or Grep to confirm what the slice actually touches. These become the implementer's file-ownership boundary.
-- **`parallel_group`** — two slices share a group **iff** no `depends_on` edge connects them AND their touchpoints are pairwise disjoint. Groups execute in ascending order; slices in the same group may run as parallel implementer dispatches. A slice with any doubt gets its own group — sequential is the safe default.
-- **`depends_on`** — slice IDs whose output this slice consumes. Drives group ordering.
-- **`acceptance`** — 2–5 **testable** criteria: each names a command to run or an observable behavior, never "works correctly". They are the slice's contract for the implementer and the scoring rubric for QA.
+Field semantics (`touchpoints` evidence rule, the `parallel_group` disjointness test, `depends_on`, testable `acceptance`): [TEMPLATE.md](references/TEMPLATE.md), "Slice header fields".
 
 On plan approval, the dispatching command copies these annotations into the `slices.json` ledger (`orc-state slice init`; shape per `orc:state-protocol`) — consumers read the ledger, not the prose.
 
-## Plan Document Header
+## Plan Document Header and Task Structure
 
-**Every plan MUST start with this header:**
-
-```markdown
-# [Feature Name] Implementation Plan
-
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
-**Goal:** [One sentence describing what this builds]
-
-**Architecture:** [2-3 sentences about approach]
-
-**Tech Stack:** [Key technologies/libraries]
-
----
-```
-
-## Task Structure
-
-````markdown
-### Task N: [Component Name]
-
-**Files:**
-- Create: `exact/path/to/file.py`
-- Modify: `exact/path/to/existing.py:123-145`
-- Test: `tests/exact/path/to/test.py`
-
-- [ ] **Step 1: Write the failing test**
-
-```python
-def test_specific_behavior():
-    result = function(input)
-    assert result == expected
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: FAIL with "function not defined"
-
-- [ ] **Step 3: Write minimal implementation**
-
-```python
-def function(input):
-    return expected
-```
-
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: PASS
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add tests/path/test.py src/path/file.py
-git commit -m "feat: add specific feature"
-```
-````
+Every plan starts with the mandatory header and lays out each task as numbered checkbox steps (failing test → run → implement → run → commit) with exact paths and code. Read [TEMPLATE.md](references/TEMPLATE.md) before writing the plan file.
 
 ## No Placeholders
 
@@ -181,20 +106,4 @@ If you find issues, fix them inline. No need to re-review — just fix and move 
 
 ## Execution Handoff
 
-After saving the plan, offer execution choice:
-
-**"Plan complete and saved to `docs/superpowers/plans/<filename>.md`. Two execution options:**
-
-**1. Subagent-Driven (recommended)** - I dispatch a fresh subagent per task, review between tasks, fast iteration
-
-**2. Inline Execution** - Execute tasks in this session using executing-plans, batch execution with checkpoints
-
-**Which approach?"**
-
-**If Subagent-Driven chosen:**
-- **REQUIRED SUB-SKILL:** Use superpowers:subagent-driven-development
-- Fresh subagent per task + two-stage review
-
-**If Inline Execution chosen:**
-- **REQUIRED SUB-SKILL:** Use superpowers:executing-plans
-- Batch execution with checkpoints for review
+After saving the plan, offer the execution choice (subagent-driven or inline). Read [HANDOFF.md](references/HANDOFF.md) for the prompt text and the required sub-skill per choice.
