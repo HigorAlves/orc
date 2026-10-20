@@ -12,10 +12,11 @@ dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 
 usage() {
   cat <<'USAGE'
-usage: orc-report <json|html> [--branch <raw-or-sanitized>]
+usage: orc-report <json|html|thumbs> [--branch <raw-or-sanitized>]
 
   json   normalized report JSON (packet + qa-verdict + session) on stdout
   html   write <state>/<session>/files/qa/report.html; print its path
+  thumbs write files/qa/thumbs/<name>.{jpg,png,rgb} for the first 3 image evidence files; print JSON
 USAGE
 }
 
@@ -25,6 +26,7 @@ shift
 case "$sub" in
   json) orc_report_json "$@" ;;
   html) orc_report_html "$@" ;;
+  thumbs) orc_report_thumbs "$@" ;;
   -h|--help) usage ;;
   *) usage >&2; exit 2 ;;
 esac

@@ -76,3 +76,27 @@ test('a non-interactive session never polls', async ($, on) => {
   await clock.advance(120_000); await flush()
   expect(seen.gh).toBe(0)
 })
+
+const ABOVE = (surface: 'terminal' | 'desktop') => ({
+  plugin: 'orc', surface, component: 'AbovePrompt' as const,
+  props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 80, scroll: {} as never, view: {} as never },
+})
+
+test('the red-CI band row: Text on the terminal, Svg on desktop, the same buttons on both', async ($, on) => {
+  const clock = mock.clock(on)
+  world(on, () => RED)
+  on('ui.render', () => ({ type: 'engine' as const, ref: 0 }))
+  await $.session.start(START)
+  await clock.advance(60_000); await flush()
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount(ABOVE(surface))
+    if (surface === 'terminal') {
+      expect(await ui.find({ type: 'Text', text: /CI red on #12: lint, test/ })).toBeDefined()
+    } else {
+      expect((await ui.find({ type: 'Svg' }))?.props.alt).toMatch(/CI red on #12: lint, test/)
+    }
+    expect(await ui.find({ type: 'Button', key: 'ci-diagnose' })).toBeDefined()
+    expect(await ui.find({ type: 'Button', key: 'ci-dismiss' })).toBeDefined()
+    await ui.unmount()
+  }
+})

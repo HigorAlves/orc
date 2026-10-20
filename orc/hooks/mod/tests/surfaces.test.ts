@@ -7,14 +7,14 @@ const GUIDED = JSON.stringify({ schema: 1, decisions: { autopilotLevel: { value:
 const RUN = { command: 'orc', args: '', origin: { kind: 'composer' as const }, presentation: { isFullscreen: false, columns: 120 } }
 
 // The beneath render stub plays core: it records the props the plugin handed down.
-function world(on: On, opts: { session?: string; decisions?: string } = {}) {
+function world(on: On, opts: { session?: string; decisions?: string; percent?: number } = {}) {
   const seen: Record<string, unknown>[] = []
   on('process.run', ($, e) => {
     if (e.argv[1] === 'get') return opts.session === '' ? ran('', 1) : ran(opts.session ?? SESSION)
     if (e.argv[1] === 'decision') return ran(opts.decisions ?? '')
     return ran('')
   })
-  on('session.usage', () => ({ value: { startedAt: 0, context: { window: 200000 }, rateLimits: [] } }))
+  on('session.usage', () => ({ value: { startedAt: 0, context: { window: 200000, ...(opts.percent != null ? { percent: opts.percent } : {}) }, rateLimits: [] } }))
   on('session.surfaces', () => ({ value: [] }))
   on('clock.now', () => ({ value: 1000 }))
   on('agent.spawn', ($, e) => ({ model: e.model ?? 'x', agentId: 'a1' }))
@@ -90,4 +90,50 @@ test('an aborted orc agent (no usage) still leaves the spinner', async ($, on) =
   await $.turn.complete({ turnId: 't1', answer: '', durationMs: 10, isAborted: true, reason: 'aborted' as const, agentId: 'a1' })
   await (await $.ui.mount(SPINNER)).unmount()
   expect(seen.at(-1)?.suffix).toBe('… · orc flow 5/9 implement')
+})
+
+// Four main steps whose contexts are 12.5%, 25%, 50% and 67% of the 200k window.
+const trailSteps = (on: On) => {
+  const contexts = [25_000, 50_000, 100_000, 134_000]
+  let i = 0
+  on('turn.step', async function* () {
+    const c = contexts[i++]
+    return { turnId: 't1', index: 0, answer: '', toolUses: [], stopReason: 'end_turn' as const,
+      usage: { model: 'm', input_tokens: c - 1000, output_tokens: 10, cache_read_input_tokens: 1000, cache_creation_input_tokens: 0 } }
+  })
+}
+const step = async ($: any) => { for await (const _ of $.turn.step({ turnId: 't1', index: 0, model: 'm', messageCount: 2 })) { /* drain */ } }
+
+test('the idle hint leads with the context chip and a four-step sparkline', async ($, on) => {
+  const seen = world(on, { percent: 67 })
+  trailSteps(on)
+  await $.command.run(RUN)
+  for (let i = 0; i < 4; i++) await step($)
+  await (await $.ui.mount(HINT)).unmount()
+  expect(seen.at(-1)?.hint).toBe('ctx 67% ▂▃▅▆ · orc flow 5/9 implement · /orc cockpit')
+})
+
+test('on desktop the chip is an Svg beside the same words', async ($, on) => {
+  world(on, { percent: 67 })
+  trailSteps(on)
+  await $.command.run(RUN)
+  for (let i = 0; i < 4; i++) await step($)
+  const ui = await $.ui.mount({ ...HINT, surface: 'desktop' as never })
+  expect(await ui.find({ type: 'Svg', alt: /ctx 67%/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'ctx 67% ▂▃▅▆ · orc flow 5/9 implement · /orc cockpit' })).toBeDefined()
+  await ui.unmount()
+})
+
+test('without a context reading the hint stays the plain flow hint', async ($, on) => {
+  const seen = world(on)
+  await $.command.run(RUN)
+  await (await $.ui.mount(HINT)).unmount()
+  expect(seen.at(-1)?.hint).toBe('orc flow 5/9 implement · /orc cockpit · /orc:resume')
+})
+
+test('the chip yields while working or drafting', async ($, on) => {
+  const seen = world(on, { percent: 67 })
+  await $.command.run(RUN)
+  await (await $.ui.mount({ ...HINT, props: { ...HINT.props, isDraft: true } })).unmount()
+  expect(seen.at(-1)?.hint).toBe('? for shortcuts')
 })

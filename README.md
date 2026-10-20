@@ -102,6 +102,30 @@ Opus 4.5 high think │ ctx ▓▓▓▓▓▓▓░░░ 68% │ $4.83 +412/�
 
 Line 1 is the work: live orc session, Jira ticket, slice progress, autopilot level, branch, and the open PR with its review state. Line 2 is the machine: model + effort, an honest context bar, session cost, and your worst rate limit past 50%. It adapts to terminal width, honors `NO_COLOR`, and never breaks a render — and it feeds a context-monitor bridge that nudges the agent to checkpoint when context runs red. Tuning knobs in [docs/configuration.md](./docs/configuration.md#statusline).
 
+## In-session view (the orc mod)
+
+On Claude Code 2.1.287+, orc also draws inside the session. The Desktop app (and VS Code) get SVG drawings; the terminal gets the same information as text. Every feature has its own switch in the plugin settings, and the bash guardrails work the same with all of them off.
+
+| Feature | What you see | Switch | Model cost |
+|---|---|---|---|
+| Progress band | A row above the prompt: phase, slices done and in flight, QA, PR, live agents, and the next command on key `1` | `progress_band` | none |
+| Agent rows | Per-agent context, cost, time and current TDD step in the `/orc` cockpit | always on | none |
+| Touched files | The current slice's read, edited and committed files with line counts, in the cockpit | always on | none |
+| Measured guard | Under orc's destructive-git confirm: what the command would actually discard or drop | `guard_measure` | none |
+| Ship radius | Diff size against the PR budget, plus graphify dependents when available (`/orc radius`) | always on | none |
+| Slice replay | Every edit, one diff at a time, grouped by slice (`/orc replay`, or `r` on the band after QA starts) | `replay` | none |
+| Cache warning | A countdown before the prompt cache expires while orc waits on you, and a cost toast after it went cold; `/orc keepwarm 2h` keeps it warm | `cache_cliff`, `cache_ttl_minutes` | keep-warm pings only |
+| Corrections | When you correct Claude, a candidate rule with Save / Edit / Skip; saved rules live in `.orc/retro/rules.md` and reach later sessions (`/orc retro`) | `corrections` | one Haiku call per flagged prompt |
+| Sentinel | During implement, a heads-up when work drifts from the slice: files outside its touchpoints, budget creep, repeated failures, and a periodic Haiku review | `sentinel`, `sentinel_every` | one Haiku call every N implementer steps (`sentinel: checks` = none) |
+
+## Works well with
+
+Optional companions. orc does not install or require any of them.
+
+- [Filetree](https://github.com/data-goblin/claude-code-filetree) shows a file tree beside the cockpit.
+- [Claude Skins](https://github.com/hellosverre/claude-skins) restyles the Claude Code UI. orc's hooks only redraw orc's own rows, so the two do not overlap.
+- [Terminal Browser](https://github.com/zenbu-labs/terminal-browser) can open QA targets in the terminal. It is experimental (v0.0.2), needs a separately installed app and a kitty or Ghostty terminal, and sends PostHog telemetry by default. Set `DO_NOT_TRACK=1` to turn that off.
+
 ## Iron rules (enforced by hooks + the `using-orc` skill)
 
 1. No commits to `main`/`master`/`develop` — the PreToolUse hook downgrades them to a confirm prompt; approve only with explicit consent.

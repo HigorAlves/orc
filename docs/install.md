@@ -145,3 +145,7 @@ orc's SessionStart pre-flight (`session-start-tool-check.sh`) verifies these CLI
 - **kokoro model (~90 MB)** downloads on first narration, then runs locally.
 
 Suppress the check where missing tools are intentional: `export ORC_SKIP_TOOL_CHECK=1`.
+
+## Optional companions
+
+Filetree, Claude Skins, and Terminal Browser pair well with orc but are not required. See [Works well with](../README.md#works-well-with) in the README.
