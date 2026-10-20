@@ -25,7 +25,7 @@ orc version
 **You should see** a semantic version (e.g. `0.10.0`) — **not** the word `dev`. That confirms you got a real release build.
 
 > [!TIP]
-> **Prefer Go?** `go install github.com/HigorAlves/orc/cli/cmd/orc@latest` (requires Go ≥ 1.25.8). A source build injects no version metadata, so `orc version` prints `dev` — that's expected. **Homebrew** is on the way: once the `HigorAlves/homebrew-tap` cask is published, `brew install --cask HigorAlves/tap/orc` will be the one-liner. See [Other ways to install](#other-ways-to-install-the-cli).
+> **Prefer Go?** `go install github.com/HigorAlves/orc/cli/cmd/orc@latest` (requires Go ≥ 1.27.3). A source build injects no version metadata, so `orc version` prints `dev` — that's expected. **Homebrew** is on the way: once the `HigorAlves/homebrew-tap` cask is published, `brew install --cask HigorAlves/tap/orc` will be the one-liner. See [Other ways to install](#other-ways-to-install-the-cli).
 
 ## 2. Install the runtime tools orc needs
 
@@ -73,7 +73,7 @@ orc init
 
 Reference alternatives to step 1. After either, **continue from step 2** (`orc doctor --fix`).
 
-**From source (`go install`)** — requires Go ≥ 1.25.8:
+**From source (`go install`)** — requires Go ≥ 1.27.3:
 
 ```bash
 go install github.com/HigorAlves/orc/cli/cmd/orc@latest
