@@ -121,6 +121,7 @@
       "type": "string",
       "title": "Cache cliff",
       "description": "warn or off — cache-expiry countdown and cold-send cost toast",
+      "options": ["warn", "off"],
       "default": "warn"
     },
     "cache_ttl_minutes": {
@@ -139,6 +140,7 @@
       "type": "string",
       "title": "Sentinel",
       "description": "off, checks (model-free), or model (checks + model review)",
+      "options": ["off", "checks", "model"],
       "default": "model"
     },
     "sentinel_every": {

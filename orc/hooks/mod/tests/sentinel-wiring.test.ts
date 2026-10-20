@@ -89,7 +89,7 @@ for (const surface of ['terminal', 'desktop'] as const) {
       expect(await ui.find({ type: 'Text', text: HEADS_UP })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /Edited outside this slice's files: src\/z\.ts/ })).toBeDefined()
     } else expect(await ui.find({ type: 'Svg', alt: /Heads up: Edited outside this slice's files: src\/z\.ts/ })).toBeDefined()
-    expect(await ui.find({ key: 'sentinel-dismiss' })).toMatchObject({ props: { label: 'Dismiss', hotkey: '0' } })
+    expect(await ui.find({ key: 'sentinel-dismiss' })).toMatchObject({ props: { label: 'Dismiss', hotkey: 'x' } })
     expect(w.completes).toEqual([])
     await ui.unmount()
   })
@@ -110,7 +110,7 @@ test('a main turn.complete runs the budget check', async ($, on) => {
   await $.command.run(RUN)
   await $.turn.complete(done())
   const ui = await mountBand($)
-  expect(await ui.find({ type: 'Text', text: /Projected 1500 LOC at this pace vs budget 300/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /Projected 1000 LOC at this pace vs budget 300/ })).toBeDefined()
   await ui.unmount()
 })
 

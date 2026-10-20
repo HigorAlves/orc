@@ -13,7 +13,7 @@ export function sentinelText(els: Els, note: SentinelNote, actions: SentinelActi
     Box({ flexDirection: 'row', columnGap: 1, children: [
       Button({ key: 'sentinel-learn', label: 'Learn more', onPress: actions.learn }),
       Button({ key: 'sentinel-chat', label: 'Chat in main session', onPress: actions.chat }),
-      Button({ key: 'sentinel-dismiss', label: 'Dismiss', hotkey: '0', onPress: actions.dismiss }),
+      Button({ key: 'sentinel-dismiss', label: 'Dismiss', hotkey: 'x', onPress: actions.dismiss }),
     ] }),
   ] })
 }

@@ -149,17 +149,20 @@ test('cache_cliff: off hides the row and the toast', { options: { cache_cliff: '
 
 test('the row says what it is waiting on while an AskUserQuestion is open', async ($, on) => {
   const w = world(on)
+  // The dialog is open while its tool.call is pending (the band reads that, not the dialog's drawing).
+  let release: () => void = () => undefined
+  const held = new Promise<void>(r => { release = r })
+  on('tool.call', async () => { await held; return { result: 'answered' } as never })
   await $.command.run(RUN())
   await step($)
   await w.clock.advance(52 * MIN)
-  const q = await $.ui.mount({
-    plugin: 'orc', component: 'AskUserQuestion' as const, requestId: 'toolu_q', surface: 'terminal' as const, viewport: { columns: 120, rows: 40 },
-    props: { tool: 'AskUserQuestion', questions: [{ header: 'Plan', question: 'Go?', multiSelect: false, options: [{ label: 'Yes', description: 'y' }, { label: 'No', description: 'n' }] }] as unknown[] },
-  })
+  const q = $.tool.call({ tool: 'AskUserQuestion', tool_use_id: 'toolu_q', questions: [] })
+  await flush(50)
   const ui = await $.ui.mount(ABOVE('terminal', true))
   expect(await ui.find({ type: 'Text', text: /waiting on your answer/ })).toBeDefined()
   await ui.unmount()
-  await q.unmount()
+  release()
+  await q
 })
 
 test('a composer send past the ttl toasts the rewrite and goes through unchanged', async ($, on) => {
@@ -285,4 +288,12 @@ test('a stored deadline re-arms keep-warm when the plugin loads again', async ($
   await $.session.start(START)
   await go(w, 50 * MIN)
   expect(w.forks).toBe(1)
+})
+
+test('M14 a short ttl rewrites at the 5-minute cache-write rate (1.25x input), a long one at 1 hour (2x)', () => {
+  const short = { ...base, ttlMs: 5 * MIN, now: 4 * MIN }
+  expect(cacheState(short).rewriteUsd).toBe(2.25) // 180k tokens * $12.5 per MTok
+  expect(cacheState({ ...short, ttlMs: 10 * MIN }).rewriteUsd).toBe(2.25)
+  expect(cacheState({ ...short, ttlMs: 11 * MIN }).rewriteUsd).toBe(3.6)
+  expect(cacheState({ ...base, now: 50 * MIN }).rewriteUsd).toBe(3.6)
 })

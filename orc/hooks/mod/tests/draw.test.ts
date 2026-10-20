@@ -62,3 +62,7 @@ test('isRich: terminal draws text, every remote surface draws svg', () => {
   expect(isRich('mobile')).toBe(true)
   expect(isRich(null)).toBe(false)
 })
+
+test('M12 esc strips control characters XML cannot carry, keeping tab and newline', () => {
+  expect(esc('a\u0000b\u0008c\u000bd\u000ce\u001ff\u007fg\th\ni')).toBe('abcdefg\th\ni')
+})

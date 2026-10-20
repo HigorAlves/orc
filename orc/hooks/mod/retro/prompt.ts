@@ -13,7 +13,7 @@ export const RETRO_SYSTEM = [
 ].join('\n')
 
 // Nothing inside the data may close its own tag.
-const wrap = (kind: string, s: string) => `<untrusted kind="${kind}">\n${s.replace(/<\/untrusted/gi, '<\\/untrusted')}\n</untrusted>`
+export const wrap = (kind: string, s: string) => `<untrusted kind="${kind}">\n${s.replace(/<\/untrusted/gi, '<\\/untrusted')}\n</untrusted>`
 
 export const retroPrompt = (text: string, prev: string): string =>
   [wrap('user-message', text), wrap('previous-assistant-answer', prev.slice(-PREV_CAP) || '(none)')].join('\n\n')
@@ -22,7 +22,7 @@ export type RetroVerdict = { isCorrection: boolean; rule: string; confidence: nu
 
 export function parseRetro(raw: string): RetroVerdict | null {
   let v: unknown
-  try { v = JSON.parse(raw.trim().replace(/^```[a-z]*\s*|\s*```$/g, '')) } catch { return null }
+  try { v = JSON.parse(raw.trim().replace(/^```[a-z]*\s*|\s*```$/gi, '')) } catch { return null }
   if (typeof v !== 'object' || v === null) return null
   const o = v as Record<string, unknown>
   if (typeof o.isCorrection !== 'boolean' || typeof o.rule !== 'string' || typeof o.confidence !== 'number') return null

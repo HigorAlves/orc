@@ -52,17 +52,18 @@ test('classify keeps the trailing args', () => {
 
 test('measurePlan is read-only argv for every kind', () => {
   const readOnly = new Set(['status', 'diff', 'rev-list', 'log', 'rev-parse', 'clean'])
+  const sub = (argv: string[]) => argv.filter(a => a !== '--no-optional-locks')[1]
   for (const kind of ['reset', 'clean', 'branch', 'push'] as const) {
     const plan = measurePlan(kind, kind === 'branch' ? ['-D', 'feat-x'] : kind === 'clean' ? ['-fdx'] : [])
     expect(plan.length > 0).toBe(true)
     for (const argv of plan) {
       expect(argv[0]).toBe('git')
-      expect(readOnly.has(argv[1])).toBe(true)
+      expect(readOnly.has(sub(argv))).toBe(true)
       if (argv[1] === 'clean') expect(argv).toContain('-n')
     }
   }
-  expect(measurePlan('reset')[0]).toEqual(['git', 'status', '--porcelain', '--untracked-files=no'])
-  expect(measurePlan('reset')[1]).toEqual(['git', 'diff', '--shortstat', 'HEAD'])
+  expect(measurePlan('reset')[0]).toEqual(['git', '--no-optional-locks', 'status', '--porcelain', '--untracked-files=no'])
+  expect(measurePlan('reset')[1]).toEqual(['git', '--no-optional-locks', 'diff', '--shortstat', 'HEAD'])
   expect(measurePlan('clean', ['-fdx'])[0]).toEqual(['git', 'clean', '-n', '-d', '-x'])
   expect(measurePlan('clean', ['-f'])[0]).toEqual(['git', 'clean', '-n'])
   expect(measurePlan('branch', ['-D', 'feat-x'])[0]).toEqual(['git', 'rev-list', '--count', '--not', 'HEAD', '--remotes', '--not', '--end-of-options', 'feat-x'])
@@ -148,4 +149,71 @@ test('a branch name that looks like an option is never passed to git', () => {
     const i = argv.indexOf('feat-x')
     expect(argv[i - 1]).toBe('--end-of-options')
   }
+})
+
+test('M1 classify stays linear on a long run of parenthesised pairs', () => {
+  const cmd = 'x ' + '<a>'.repeat(200) + ' ' + '(a)'.repeat(200) + ' y'
+  const t = Date.now()
+  classify(cmd)
+  classify(Array.from({ length: 200 }, () => '(<a>)').join(' '))
+  expect(Date.now() - t).toBeLessThan(20)
+})
+
+test('M1 closing parens after a redirect still pop the scope', () => {
+  expect(classify('(cd sub >/dev/null) && git reset --hard')?.cwd).toBeNull()
+  expect(classify('(cd sub && echo hi >out.txt) && git reset --hard')?.cwd).toBeNull()
+})
+
+test('M11 cd to home or bare cd is an unknown directory', () => {
+  expect(classify('cd ~ && git reset --hard')?.cwd).toBe('-')
+  expect(classify('cd ~/proj && git clean -fd')?.cwd).toBe('-')
+  expect(classify('cd && git reset --hard')?.cwd).toBe('-')
+  expect(classify('cd ~ && cd sub && git reset --hard')?.cwd).toBe('-')
+})
+
+test('M7 clean forwards -X, -e, --exclude and pathspecs after --', () => {
+  expect(measurePlan('clean', ['-fdX'])[0]).toEqual(['git', 'clean', '-n', '-d', '-X'])
+  expect(measurePlan('clean', ['-fd', '-e', '*.log', 'src', 'lib'])[0]).toEqual(['git', 'clean', '-n', '-d', '-e', '*.log', '--', 'src', 'lib'])
+  expect(measurePlan('clean', ['-f', '--exclude=keep'])[0]).toEqual(['git', 'clean', '-n', '--exclude=keep'])
+  expect(measurePlan('clean', ['-f', '--', 'tmp'])[0]).toEqual(['git', 'clean', '-n', '--', 'tmp'])
+})
+
+test('M16 summarize clean drops Would skip lines', () => {
+  const s = summarize('clean', ['Would remove a.log\nWould skip repository vendor/x\n'])
+  expect(s.items).toEqual(['a.log'])
+  expect(s.headline).toBe('Would delete 1 untracked path')
+})
+
+test('M8 push measures only the bare forms', () => {
+  expect(measurePlan('push', ['-f']).length).toBe(3)
+  expect(measurePlan('push', ['-f', 'origin']).length).toBe(3)
+  expect(measurePlan('push', ['--force', 'origin', 'feat']).length).toBe(4)
+  expect(measurePlan('push', ['-f', 'origin', 'HEAD:other'])).toEqual([])
+  expect(measurePlan('push', ['-f', 'origin', 'a', 'b'])).toEqual([])
+  expect(measurePlan('push', ['-f', '--mirror'])).toEqual([])
+  expect(measurePlan('push', ['-f', '--all', 'origin'])).toEqual([])
+  expect(measurePlan('push', ['-f', '--repo', 'x'])).toEqual([])
+})
+
+test('M8 push with an explicit branch must be the current branch pushing to its upstream', () => {
+  const args = ['-f', 'origin', 'feat']
+  expect(summarize('push', ['origin/feat\n', '2\n', 'a one\nb two\n', 'feat\n'], args).headline).toBe('Would drop 2 commits from origin/feat')
+  expect(summarize('push', ['origin/feat\n', '2\n', 'a one\nb two\n', 'other\n'], args).headline).toBe('Could not measure what this would discard')
+  expect(summarize('push', ['upstream/feat\n', '2\n', 'a one\n', 'feat\n'], ['-f', 'origin']).headline).toBe('Could not measure what this would discard')
+})
+
+test('M9 reset --hard <target> also counts local commits it would drop', () => {
+  const plan = measurePlan('reset', ['--hard', 'origin/main'])
+  expect(plan[2]).toEqual(['git', 'rev-list', '--count', '--end-of-options', 'origin/main..HEAD'])
+  expect(measurePlan('reset', ['--hard']).length).toBe(2)
+  expect(measurePlan('reset', ['--hard', '--output=x']).length).toBe(2)
+  const s = summarize('reset', [' M a.ts\n', '', '3\n'], ['--hard', 'origin/main'])
+  expect(s.headline).toBe('Would discard uncommitted changes in 1 file · would drop 3 local commits')
+  expect(summarize('reset', ['', '', '1\n'], ['--hard', 'HEAD~1']).headline).toBe('Nothing uncommitted to discard · would drop 1 local commit')
+})
+
+test('W19 summarize names the measured directory', () => {
+  expect(summarize('clean', [''], ['-f'], '/work/other-repo/').headline).toBe('No untracked paths to delete · in other-repo')
+  expect(summarize('clean', [''], ['-f']).headline).toBe('No untracked paths to delete')
+  expect(summarize('push', ['', '', ''], [], 'sub').headline).toBe('Could not measure what this would discard · in sub')
 })

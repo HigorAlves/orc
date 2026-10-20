@@ -1,5 +1,6 @@
 import { expect, test } from 'claude-code/testing'
-import { cleanRule, similarity } from '../retro/clean'
+import { cleanRule, hasSecret, similarity } from '../retro/clean'
+import { parseRetro } from '../retro/prompt'
 import { mayBeCorrection } from '../retro/detect'
 import { mergeCandidate, renderRules, spliceRules, type Candidate } from '../retro/store'
 
@@ -70,4 +71,28 @@ test('spliceRules never guesses', () => {
   expect(spliceRules(`${s}\n`, ['a'])).toBeUndefined()
   expect(spliceRules(`${e}\n${s}`, ['a'])).toBeUndefined()
   expect(spliceRules(`${s}${e}${s}${e}`, ['a'])).toBeUndefined()
+})
+
+test('M13 hasSecret catches common key shapes', () => {
+  const secrets = [
+    'sk_live_' + 'a1B2c3D4e5F6g7H8', 'rk_live_' + 'a1B2c3D4e5F6g7H8', 'github_pat_' + '11ABCDEFG0abcdefghij_klmnop',
+    'glpat-' + 'abcdefghij1234567890', 'AIza' + 'SyA-abcdefghijklmnopqrstuvwxyz012345', 'npm_' + 'abcdefghijklmnopqrstuvwxyz0123456789',
+    'xapp-1-A0123456789-abcdefghij', 'xoxe-1-abcdefghij0123', 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abc',
+    '-----BEGIN RSA PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----', 'ASIA' + 'ABCDEFGHIJKLMNOP', 'postgres://user:hunter2@db.example.com/x',
+  ]
+  for (const s of secrets) expect(hasSecret(`use ${s} here`)).toBe(true)
+  for (const s of secrets) expect(cleanRule(`use ${s} here`)).toBeUndefined()
+  expect(hasSecret('Use pnpm, not npm; see https://example.com/docs and npm_config')).toBe(false)
+  expect(hasSecret('connect to postgres://db.example.com/x')).toBe(false)
+})
+
+test('M13 the secret scan stays linear on long input', () => {
+  const t = Date.now()
+  hasSecret('a'.repeat(100_000) + ' eyJ' + 'b'.repeat(50_000))
+  hasSecret('://' .repeat(20_000))
+  expect(Date.now() - t).toBeLessThan(100)
+})
+
+test('M21 parseRetro strips an uppercase fence', () => {
+  expect(parseRetro('```JSON\n{"isCorrection":true,"rule":"r","confidence":0.9}\n```')).toEqual({ isCorrection: true, rule: 'r', confidence: 0.9 })
 })

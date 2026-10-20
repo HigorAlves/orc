@@ -11,7 +11,7 @@ export type BandRow =
   | { kind: 'cache'; minutesLeft: number; rewriteUsd: number | null; tokens: number; waitingOn: string | null }
   | { kind: 'progress'; model: ProgressModel; replay?: boolean }
 
-export const PRIORITY: BandRow['kind'][] = ['ci', 'guard', 'sentinel', 'retro', 'cache', 'progress']
+export const PRIORITY: BandRow['kind'][] = ['guard', 'ci', 'sentinel', 'retro', 'cache', 'progress']
 
 export function pickBand(rows: (BandRow | null | undefined)[]): BandRow | null {
   const present = rows.filter((r): r is BandRow => !!r)

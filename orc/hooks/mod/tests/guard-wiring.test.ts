@@ -56,7 +56,7 @@ test('a guarded command is measured, then notices post while the floor is pendin
   expect(await ui.drawn()).toEqual({ type: 'engine', ref: 0 })
   const pending = $.tool.call(bash('git reset --hard'))
   await flush(200)
-  expect(measured.map(a => a.slice(1).join(' '))).toEqual(['status --porcelain --untracked-files=no', 'diff --shortstat HEAD'])
+  expect(measured.map(a => a.slice(1).join(' '))).toEqual(['--no-optional-locks status --porcelain --untracked-files=no', '--no-optional-locks diff --shortstat HEAD'])
   expect(notices.map(n => n.text)[0]).toBe('Would discard uncommitted changes in 2 files')
   expect(notices.every(n => n.tool_use_id === 'toolu_g1')).toBe(true)
   expect(await ui.find({ type: 'Text', text: /Would discard uncommitted changes in 2 files/ })).toBeDefined()

@@ -2,7 +2,19 @@
 
 export const MAX_RULE = 200
 
-const SECRET = /\b(?:sk-[A-Za-z0-9_-]{10,}|gh[pousr]_[A-Za-z0-9]{10,}|AKIA[A-Z0-9]{12,}|xox[abprs]-[A-Za-z0-9-]{10,})/
+// Linear patterns only: fixed prefixes, then one bounded or single-class run.
+const SECRET = new RegExp([
+  '\\b(?:sk-[A-Za-z0-9_-]{10,}|gh[pousr]_[A-Za-z0-9]{10,}|(?:AKIA|ASIA)[A-Z0-9]{12,}|xox[abprse]-[A-Za-z0-9-]{10,})',
+  '\\b[sr]k_live_[A-Za-z0-9]{10,}',
+  '\\bgithub_pat_[A-Za-z0-9_]{20,}',
+  '\\bglpat-[A-Za-z0-9_-]{16,}',
+  '\\bAIza[A-Za-z0-9_-]{30,}',
+  '\\bnpm_[A-Za-z0-9]{30,}',
+  '\\bxapp-[A-Za-z0-9-]{10,}',
+  '\\beyJ[A-Za-z0-9_-]{5,}\\.eyJ[A-Za-z0-9_-]{5,}',
+  '-----BEGIN [A-Z ]{0,30}PRIVATE KEY',
+  '[a-z][a-z0-9+.-]{1,20}://[^\\s/:@]{1,100}:[^\\s/@]{1,100}@',
+].join('|'))
 
 export const hasSecret = (s: string): boolean => SECRET.test(s)
 

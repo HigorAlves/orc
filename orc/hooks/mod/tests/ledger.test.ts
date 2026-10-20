@@ -95,3 +95,10 @@ function lastLedger(writes: unknown[]): Ledger {
   const hits = writes.filter(w => (w as { key?: string }).key === 'ledger')
   return (hits.at(-1) as { value: Ledger }).value
 }
+
+test('M14 rewriteCost takes the ttl: <= 10 min is the 5m rate, else 1h; default 1h', () => {
+  expect(rewriteCost(1_000_000, 'claude-opus-5-5', 300_000)).toBe(5)
+  expect(rewriteCost(1_000_000, 'claude-opus-5-5', 600_000)).toBe(5)
+  expect(rewriteCost(1_000_000, 'claude-opus-5-5', 3_600_000)).toBe(8)
+  expect(rewriteCost(1_000_000, 'claude-nonesuch-1', 300_000)).toBeNull()
+})

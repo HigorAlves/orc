@@ -70,6 +70,34 @@ test('agentRows puts running agents first and formats ctx, cost, elapsed', () =>
   const costOf = (_u: unknown, model: string) => (model.startsWith('claude-sonnet') ? 0.41 : null)
   const rows = agentRows(ledger, costOf, NOW)
   expect(rows.map(r => [r.name, r.running])).toEqual([['live', true], ['old', false]])
-  expect(agentRowLine(rows[0])).toBe('ctx 38% · $0.41 · 3m12s')
+  expect(agentRowLine(rows[0])).toBe('ctx 38% · $0.41 · 3m14s')
   expect(agentRows({ ...ledger, agents: { x: entry({ model: null }) } }, costOf, NOW)[0].usd).toBeNull()
+})
+
+test('M18 a running agent keeps ticking while idle: elapsed is now - startedAt', () => {
+  const rows = agentRows({ ...ledger, agents: { idle: entry({ startedAt: 5_000, lastAt: 6_000 }) } }, () => null, 65_000)
+  expect(rows[0].elapsed).toBe('1m00s')
+})
+
+test('M23 the context window follows the model id: [1m] is 1,000,000', () => {
+  const agents = { a: entry({ lastContext: 100_000, model: 'claude-opus-5-5[1m]' }), b: entry({ lastContext: 100_000, model: 'claude-opus-5-5' }) }
+  const rows = agentRows({ ...ledger, agents }, () => null, NOW)
+  expect(rows.map(r => r.ctxPct).sort()).toEqual([10, 50])
+})
+
+test('T1 under 90 columns the line is compact: null QA/PR dropped, 7-cell bar, fits beside the button', () => {
+  const m = { ...progressModel(snap, ledger)!, title: 'a-rather-long-feature-title', done: 22, total: 22, running: 0 }
+  for (const cols of [63, 80, 89]) {
+    const line = progressText(m, cols)
+    expect(line.length).toBeLessThanOrEqual(cols - 14)
+    expect(line).toContain('22/22')
+    expect(line).not.toContain('QA —')
+    expect(line).not.toContain('PR —')
+    expect((line.match(/[▓▒░]/g) ?? []).length).toBe(7)
+  }
+  const full = progressText({ ...m, qa: 'pass', pr: 42 }, 120)
+  expect(full).toContain('QA pass')
+  expect(full).toContain('PR 42')
+  expect(progressText({ ...m, qa: 'pass', pr: 42 }, 80)).toContain('QA pass')
+  expect(progressText({ ...m, qa: 'pass', pr: 42 }, 80).length).toBeLessThanOrEqual(66)
 })

@@ -101,6 +101,29 @@ fi
 again="$(bash "$orc_report" thumbs --branch feat/x)"
 if [ "$again" = "$thumbs" ]; then ok; else fail "thumbs: second run must print the same list"; fi
 
+# Nested evidence paths keep distinct thumbnail names, and missing files do not use up the three slots
+mkdir -p "$files/qa/test-results/a" "$files/qa/test-results/b"
+for f in test-results/a/x.png test-results/b/x.png test-results/b/y.png; do cp "$files/qa/ac-1-1-export.png" "$files/qa/$f"; done
+cat > "$files/qa/qa-manifest.json" <<'EOF'
+{ "schema": 1, "driver": "playwright", "verdict": "pass", "artifacts": [],
+  "acceptance": [
+    { "id": "a1", "sliceId": 1, "criterion": "Nested", "result": "pass", "evidence": ["m1.png", "m2.png", "m3.png", "test-results/a/x.png", "test-results/b/x.png", "test-results/b/y.png", "ac-1-1-export.png"] } ] }
+EOF
+nested="$(bash "$orc_report" thumbs --branch feat/x)"
+if printf '%s' "$nested" | jq -e '[.[].name] == ["test-results__a__x", "test-results__b__x", "test-results__b__y"]' >/dev/null 2>&1; then ok; else fail "thumbs: nested names must be unique and missing files must not use the slots, got: $nested"; fi
+
+# A tall screenshot is cropped to 240x150 so it fits the embed cap
+if command -v ffmpeg >/dev/null 2>&1 && command -v sips >/dev/null 2>&1; then
+  ffmpeg -loglevel error -y -f lavfi -i color=c=red:s=300x900 -frames:v 1 "$files/qa/tall.png" >/dev/null 2>&1
+  cat > "$files/qa/qa-manifest.json" <<'EOF'
+{ "schema": 1, "driver": "playwright", "verdict": "pass", "artifacts": [],
+  "acceptance": [ { "id": "a1", "sliceId": 1, "criterion": "Tall", "result": "pass", "evidence": ["tall.png"] } ] }
+EOF
+  bash "$orc_report" thumbs --branch feat/x >/dev/null
+  h="$(sips -g pixelHeight "$files/qa/thumbs/tall.png" | awk '/pixelHeight/ { print $2 }')"
+  if [ "${h:-9999}" -le 150 ]; then ok; else fail "thumbs: tall screenshot must be cropped to <=150px, got ${h}px"; fi
+fi
+
 if [ "$status" -eq 0 ]; then
   echo "verify-report: OK ($pass_count cases)"
 fi

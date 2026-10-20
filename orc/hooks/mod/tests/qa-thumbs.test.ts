@@ -145,3 +145,9 @@ test('Open target runs the OS opener with the packet url', async ($, on) => {
   expect(calls).toContainEqual(['open', 'https://staging.example.com'])
   await ui.unmount()
 })
+
+test('M15 a single shot over the cap is dropped, not returned', () => {
+  expect(embeddable([shot('a', EMBED_CAP + 1)]).map(s => s.name)).toEqual([])
+  expect(embeddable([shot('a', EMBED_CAP + 1), shot('b', 10)]).map(s => s.name)).toEqual(['b'])
+  expect(embeddable([shot('a', EMBED_CAP + 1), shot('b', 60_000), shot('c', 60_000)]).map(s => s.name)).toEqual(['b', 'c'])
+})

@@ -9,12 +9,24 @@ type Op = { op: ' ' | '+' | '-'; t: string }
 
 const splitLines = (text: string): string[] => {
   if (!text) return []
-  const lines = text.split('\n')
+  const lines = text.split(/\r?\n/)
   if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop()
   return lines
 }
 
+// Common prefix/suffix are context; only the middle needs the LCS (or the
+// all-removed/all-added fallback), so a one-line change in a long file shows.
 function diffOps(a: string[], b: string[]): Op[] {
+  let pre = 0
+  while (pre < a.length && pre < b.length && a[pre] === b[pre]) pre++
+  let suf = 0
+  while (suf < a.length - pre && suf < b.length - pre && a[a.length - 1 - suf] === b[b.length - 1 - suf]) suf++
+  const head = a.slice(0, pre).map((t): Op => ({ op: ' ', t }))
+  const tail = a.slice(a.length - suf).map((t): Op => ({ op: ' ', t }))
+  return [...head, ...diffMiddle(a.slice(pre, a.length - suf), b.slice(pre, b.length - suf)), ...tail]
+}
+
+function diffMiddle(a: string[], b: string[]): Op[] {
   if (a.length > MAX_LCS_LINES || b.length > MAX_LCS_LINES) {
     return [...a.map((t): Op => ({ op: '-', t })), ...b.map((t): Op => ({ op: '+', t }))]
   }
@@ -35,6 +47,10 @@ function diffOps(a: string[], b: string[]): Op[] {
   return out
 }
 
+// `Code` accepts only tab and newline as control characters: show the rest as
+// their Control Pictures glyphs (U+2400 + code; DEL is U+2421).
+const visible = (t: string) => t.replace(/[\x00-\x08\x0A-\x1F\x7F]/g, c => String.fromCharCode(c === '\x7F' ? 0x2421 : 0x2400 + c.charCodeAt(0)))
+
 // Index ranges [from, to) of ops that form one hunk, with CONTEXT lines around changes.
 function hunkRanges(ops: Op[]): Array<[number, number]> {
   const ranges: Array<[number, number]> = []
@@ -53,10 +69,14 @@ function header(kept: Op[], aStart: number, bStart: number): string {
   return `@@ -${aCount ? aStart : Math.max(0, aStart - 1)},${aCount} +${bCount ? bStart : Math.max(0, bStart - 1)},${bCount} @@`
 }
 
-export function unifiedDiff(oldText: string, newText: string, path: string): string {
+export type DiffResult = { text: string; add: number; del: number }
+
+// `add`/`del` count every changed line, however much of the text the cap keeps.
+export function unifiedDiff(oldText: string, newText: string, path: string): DiffResult {
   const ops = diffOps(splitLines(oldText), splitLines(newText))
+  const add = ops.filter(o => o.op === '+').length, del = ops.filter(o => o.op === '-').length
   const ranges = hunkRanges(ops)
-  if (!ranges.length) return ''
+  if (!ranges.length) return { text: '', add, del }
   // 1-based line numbers of each op on each side.
   const aAt: number[] = [], bAt: number[] = []
   let a = 1, b = 1
@@ -72,10 +92,10 @@ export function unifiedDiff(oldText: string, newText: string, path: string): str
     kept = kept.slice(0, n)
     if (!kept.some(o => o.op !== ' ')) break
     const h = header(kept, aAt[from], bAt[from])
-    const body = kept.map(o => o.op + o.t)
+    const body = kept.map(o => o.op + visible(o.t))
     out.push(h, ...body)
     used += h.length + 1 + body.reduce((s, l) => s + l.length + 1, 0)
     if (n < to - from) break
   }
-  return out.join('\n')
+  return { text: out.join('\n'), add, del }
 }

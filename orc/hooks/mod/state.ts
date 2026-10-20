@@ -49,7 +49,7 @@ export const latestReplayView = (state: ReplayState): ReplayState['view'] =>
 export const warmBox: { gen: number; timer: { cancel(): void } | null; deadline: number | null; pingedAt: number | null } =
   { gen: 0, timer: null, deadline: null, pingedAt: null }
 
-// True while an AskUserQuestion dialog is on screen (set by its render, cleared when the tool call ends).
+// True while an AskUserQuestion dialog is on screen (set by its tool.call hook before the dialog, cleared when the call ends).
 export const askBox: { open: boolean } = { open: false }
 
 // Corrections -> retro store, module scope (writes happen from deferred work, not events): the resolved retro dir,

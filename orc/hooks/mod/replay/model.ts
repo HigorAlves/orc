@@ -11,18 +11,9 @@ export const REPLAY_INITIAL: ReplayState = { edits: [], view: { slice: 0, step: 
 
 export type EditInput = { sliceId: number; path: string; tool: string; old: string; new: string; at: number }
 
-function count(diff: string): { add: number; del: number } {
-  let add = 0, del = 0
-  for (const l of diff.split('\n').slice(2)) {
-    if (l.startsWith('+')) add++
-    else if (l.startsWith('-')) del++
-  }
-  return { add, del }
-}
-
 export function recordEdit(state: ReplayState, e: EditInput): ReplayState {
-  const diff = unifiedDiff(e.old, e.new, e.path)
-  const next: ReplayEdit = { sliceId: e.sliceId, path: e.path, tool: e.tool, diff, ...count(diff), at: e.at }
+  const { text: diff, add, del } = unifiedDiff(e.old, e.new, e.path)
+  const next: ReplayEdit = { sliceId: e.sliceId, path: e.path, tool: e.tool, diff, add, del, at: e.at }
   let edits = [...state.edits, next]
   // Per-slice cap: drop that slice's oldest edits.
   let over = edits.filter(x => x.sliceId === e.sliceId).length - PER_SLICE_CAP

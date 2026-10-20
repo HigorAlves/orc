@@ -35,12 +35,12 @@ import { openPlan, parseThumbs, pixelTerminal } from './qa/model'
 import { REPLAY_INITIAL, recordEdit, replayView, type ReplayState } from './replay/model'
 import { cleanRule, similarity } from './retro/clean'
 import { mayBeCorrection } from './retro/detect'
-import { HAIKU, RETRO_SYSTEM, parseRetro, retroPrompt, rulesSection, savedRules } from './retro/prompt'
+import { HAIKU, RETRO_SYSTEM, parseRetro, retroPrompt, rulesSection, savedRules, wrap } from './retro/prompt'
 import { mergeCandidate, renderRules, spliceRules, type CandidateFile } from './retro/store'
 import { retroSvg } from './retro/svg'
 import { retroAlt, retroButtons, retroText, type RetroActions } from './retro/text'
 import { budgetCreep, outsideSlice, repeatedFailure, type SentinelNote } from './sentinel/checks'
-import { DIFF_CAP, parseSentinel, sentinelPrompt, type SentinelSlice } from './sentinel/prompt'
+import { DIFF_CAP, SENTINEL_SYSTEM, parseSentinel, sentinelPrompt, type SentinelSlice } from './sentinel/prompt'
 import { sentinelAlt, sentinelSvg } from './sentinel/svg'
 import { sentinelText, type SentinelActions } from './sentinel/text'
 import { replayText } from './replay/text'
@@ -59,12 +59,46 @@ const RADIUS_REF = { plugin: 'orc', key: 'radius' } as const
 const REPLAY_REF = { plugin: 'orc', key: 'replay' } as const
 const REPLAY_PANE = 'orc-replay'
 
+// Hooks run in parallel, so a get -> set on the ledger or the touched list loses updates. Every
+// read-modify-write goes through one promise chain per key. A write is only visible to other hooks
+// once its own hook returns, so the chain also keeps the latest value in module memory and reads
+// that (state.get only seeds it, after a reload or a new session).
+const chains: Record<'ledger' | 'touched', Promise<unknown>> = { ledger: Promise.resolve(), touched: Promise.resolve() }
+function in_chain<T>(key: 'ledger' | 'touched', job: () => Promise<T>): Promise<T> {
+  const run = chains[key].then(job)
+  chains[key] = run.catch(() => undefined)
+  return run
+}
+type Ledger = typeof LEDGER_INITIAL
+type TouchedList = typeof TOUCHED_INITIAL
+// `fn` returns the same object for "no change" (nothing is written then).
+const latest: { ledger: Ledger | null; touched: TouchedList | null } = { ledger: null, touched: null }
+function update_ledger($: EngineInterface, fn: (cur: Ledger) => Ledger): Promise<void> {
+  return in_chain('ledger', async () => {
+    const cur = latest.ledger ?? (await $.state.get(LEDGER_REF)).value ?? LEDGER_INITIAL
+    const next = fn(cur)
+    if (next !== cur) await $.state.set(LEDGER_REF, next)
+    latest.ledger = next
+  })
+}
+function update_touched($: EngineInterface, fn: (cur: TouchedList) => TouchedList): Promise<void> {
+  return in_chain('touched', async () => {
+    const cur = latest.touched ?? (await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL
+    const next = fn(cur)
+    if (next !== cur) await $.state.set(TOUCHED_REF, next)
+    latest.touched = next
+  })
+}
+const read_touched = async ($: EngineInterface): Promise<TouchedList> => latest.touched ?? (await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL
+
 let alertsSound = false
 
 export function register(on: On, options: PluginOptions) {
   if (options.mod_enabled === false) return
   alertsSound = options.alerts_sound === true
   const features = parseFeatures(options)
+  latest.ledger = null
+  latest.touched = null
   register_session(on, features)
   register_attribution(on)
   register_compaction(on)
@@ -107,13 +141,18 @@ function register_session(on: On, features: Features) {
       // name taken in this build: the markdown /orc:status stays the fallback
     }
     gitFacts = null
+    latest.ledger = null
+    latest.touched = null
     retroBox.dir = null
     retroBox.file = null
     Object.assign(sentinelBox, { check: null, model: null, learn: null, inflight: false, history: [] })
     sentinelBox.steps.clear()
     // The step tool: orc subagents label their TDD steps for the progress view.
+    stepToolReady = false
+    learnInflight = false
     try {
       await $.tool.register({ name: 'step', description: STEP_DESC, inputSchema: STEP_SCHEMA })
+      stepToolReady = true
     } catch {
       // tools can't register in this build: agents just don't report steps
     }
@@ -207,11 +246,11 @@ async function guard_measure($: EngineInterface, command: string): Promise<{ sum
       outputs.push(r.stdout)
     }
     if (!outputs.length) return null
-    const summary = summarize(hit.kind, outputs, hit.args)
+    const summary = summarize(hit.kind, outputs, hit.args, hit.cwd)
     const lines = guardText(summary)
     const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
     const slice = snap.session ? currentSlice(snap.slices) : null
-    const t = (await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL
+    const t = await read_touched($)
     if (slice && t.sliceId === slice.id && t.files.some(f => f.kind === 'edit')) lines.push(`slice ${slice.id} has edits not yet checkpointed`)
     return { summary, lines }
   } catch {
@@ -224,6 +263,8 @@ async function guard_measure($: EngineInterface, command: string): Promise<{ sum
 // subagent run lands in the usage ledger (`orc-state usage add`) — the data the
 // routing is re-tuned from.
 const agentTypes = new Map<string, string>()
+// The brief names mcp__orc__step, so it is only appended once the tool registered.
+let stepToolReady = false
 
 function register_agents(on: On, profile: Profile, features: Features) {
   // Both hooks gate the engine (a dispatch, a turn's end): orc's bookkeeping
@@ -231,13 +272,13 @@ function register_agents(on: On, profile: Profile, features: Features) {
   on('agent.spawn', async ($, e, next) => {
     const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
     const model = e.model ? undefined : modelFor(profileOf(snap, profile), e.subagentType)
-    const brief = /^(orc:)?orc-implementer$/.test(e.subagentType) && !e.prompt.includes('mcp__orc__step') ? { prompt: e.prompt + STEP_BRIEF } : null
+    const brief = stepToolReady && /^(orc:)?orc-implementer$/.test(e.subagentType) && !e.prompt.includes('mcp__orc__step') ? { prompt: e.prompt + STEP_BRIEF } : null
     const result = await next(model || brief ? { ...e, ...(model ? { model } : {}), ...brief } : e)
     if (result.agentId && /^(orc:)?orc-/.test(e.subagentType)) {
       agentTypes.set(result.agentId, e.subagentType.replace(/^orc:/, ''))
       await $.state.set(LIVE_REF, { agent: e.subagentType.replace(/^orc:/, ''), since: await $.clock.now().catch(() => null) }).catch(() => undefined)
-      const cur = await $.state.get(LEDGER_REF).then(r => r.value ?? LEDGER_INITIAL, () => LEDGER_INITIAL)
-      await $.state.set(LEDGER_REF, tagAgent(cur, result.agentId, e.subagentType.replace(/^orc:/, ''))).catch(() => undefined)
+      const agentId = result.agentId
+      await update_ledger($, cur => tagAgent(cur, agentId, e.subagentType.replace(/^orc:/, ''))).catch(() => undefined)
     }
     return result
   })
@@ -249,9 +290,7 @@ function register_agents(on: On, profile: Profile, features: Features) {
       await refresh($).catch(() => undefined)
       await sentinel_check($, features)
       // Finished agent rows showed once; the next main-loop completion clears them.
-      const cur = await $.state.get(LEDGER_REF).then(r => r.value ?? LEDGER_INITIAL, () => LEDGER_INITIAL)
-      const kept = Object.keys(cur.agents).filter(id => !agentTypes.has(id)).reduce(dropAgent, cur)
-      if (kept !== cur) await $.state.set(LEDGER_REF, kept).catch(() => undefined)
+      await update_ledger($, cur => Object.keys(cur.agents).filter(id => !agentTypes.has(id)).reduce(dropAgent, cur)).catch(() => undefined)
     }
     const agent = e.agentId ? agentTypes.get(e.agentId) : undefined
     if (agent) {
@@ -259,9 +298,7 @@ function register_agents(on: On, profile: Profile, features: Features) {
       agentTypes.delete(e.agentId as string)
       // An explicit finish stamp: the agent row stops reading as running.
       const at = await $.clock.now().catch(() => 0)
-      const cur = await $.state.get(LEDGER_REF).then(r => r.value ?? LEDGER_INITIAL, () => LEDGER_INITIAL)
-      const stamped = finishAgent(cur, e.agentId as string, at)
-      if (stamped !== cur) await $.state.set(LEDGER_REF, stamped).catch(() => undefined)
+      await update_ledger($, cur => finishAgent(cur, e.agentId as string, at)).catch(() => undefined)
       const remaining = [...agentTypes.values()].at(-1) ?? null
       await $.state.set(LIVE_REF, remaining ? { agent: remaining, since: null } : LIVE_INITIAL).catch(() => undefined)
       if (e.usage) {
@@ -291,8 +328,8 @@ function register_step_tool(on: On) {
     if (!call.agentId) return { result: 'ignored: only orc subagents report steps' }
     try {
       const step = { label: String(call.label ?? '').slice(0, 80), n: Number(call.n) || 0, of: Number(call.of) || 0 }
-      const cur = (await $.state.get(LEDGER_REF)).value ?? LEDGER_INITIAL
-      await $.state.set(LEDGER_REF, setStep(cur, call.agentId, step))
+      const agentId = call.agentId
+      await update_ledger($, cur => setStep(cur, agentId, step))
     } catch { /* a label never fails the agent */ }
     return { result: 'ok' }
   })
@@ -327,17 +364,15 @@ async function touch_files($: EngineInterface, paths: string[], kind: TouchKind)
     if (!slice || !paths.length) return
     const { root } = await git_facts($)
     const at = await $.clock.now()
-    let t = (await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL
-    for (const p of paths) t = touch(t, { sliceId: slice.id, path: relPath(p, root), kind, at })
-    await $.state.set(TOUCHED_REF, t)
+    await update_touched($, cur => paths.reduce((t, p) => touch(t, { sliceId: slice.id, path: relPath(p, root), kind, at }), cur))
     await touched_counts($)
   } catch { /* bookkeeping never fails a tool call */ }
 }
 
 async function commit_touched($: EngineInterface): Promise<void> {
   try {
-    const t = (await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL
-    if (t.files.some(f => f.kind === 'edit')) await $.state.set(TOUCHED_REF, markCommitted(t, await $.clock.now()))
+    const at = await $.clock.now()
+    await update_touched($, t => (t.files.some(f => f.kind === 'edit') ? markCommitted(t, at) : t))
     await touched_counts($)
   } catch { /* ignore */ }
 }
@@ -346,14 +381,14 @@ async function commit_touched($: EngineInterface): Promise<void> {
 // (State writes are refused while a drawing renders, so this runs from events, never from ui.render.)
 async function touched_counts($: EngineInterface): Promise<void> {
   try {
-    if (!((await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL).files.length) return
+    if (!(await read_touched($)).files.length) return
     const g = await git_facts($)
     if (!g.gitDir) return
     const stamp = (await Promise.all(['index', 'HEAD'].map(f => $.fs.stat(g.gitDir + '/' + f).then(st => st.mtimeMs, () => 0)))).join(':')
-    if (stamp === ((await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL).stamp) return
+    if (stamp === (await read_touched($)).stamp) return
     const r = await $.process.run(['git', '-C', g.root, 'diff', '--numstat', g.mergeBase], { timeoutMs: 10000 })
-    const fresh = (await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL
-    await $.state.set(TOUCHED_REF, applyNumstat(fresh, r.exitCode === 0 ? parseNumstat(r.stdout) : new Map(), stamp))
+    const counts = r.exitCode === 0 ? parseNumstat(r.stdout) : new Map()
+    await update_touched($, fresh => applyNumstat(fresh, counts, stamp))
   } catch { /* counts stay as they were */ }
 }
 
@@ -482,10 +517,11 @@ function register_steps(on: On, features: Features) {
     const result = yield* next(e)
     try {
       const at = await $.clock.now()
-      const cur = (await $.state.get(LEDGER_REF)).value ?? LEDGER_INITIAL
-      // A request that re-wrote the cache starts the clock over (the ping clock too).
-      if (!e.agentId && result?.usage && isColdRewrite(cur.main.lastContext, result.usage)) warmBox.pingedAt = null
-      await $.state.set(LEDGER_REF, recordStep(cur, { agentId: e.agentId ?? null, usage: result?.usage ?? null, at, ms: at - startedAt }))
+      await update_ledger($, cur => {
+        // A request that re-wrote the cache starts the clock over (the ping clock too).
+        if (!e.agentId && result?.usage && isColdRewrite(cur.main.lastContext, result.usage)) warmBox.pingedAt = null
+        return recordStep(cur, { agentId: e.agentId ?? null, usage: result?.usage ?? null, at, ms: at - startedAt })
+      })
       if (e.agentId) sentinel_step($, features, e.agentId)
     } catch { /* bookkeeping never fails a request */ }
     return result
@@ -544,6 +580,8 @@ function register_toolrows(on: On) {
 // The dialog stays open for as long as the tool call is pending; the cache row reads it as "waiting on your answer".
 function register_ask(on: On) {
   on('tool.call', { tool: 'AskUserQuestion' }, async ($, e, next) => {
+    askBox.open = true
+    $.ui.invalidate('ui.render')
     try {
       return await next(e)
     } finally {
@@ -557,7 +595,6 @@ function register_ask(on: On) {
 // badge above the engine's own dialog, which is kept exactly once.
 function register_gates(on: On) {
   on('ui.render', { component: 'AskUserQuestion' }, async ($, e, next) => {
-    askBox.open = true
     const badge = gateBadge(e.props.questions)
     if (!badge) return next(e)
     const { Box, Text } = $.ui.resolve(e)
@@ -616,9 +653,11 @@ function register_prompt(on: On, features: Features) {
 const retroOn = (features: Features) => features.corrections && !companions.reflect
 
 function retro_defer($: EngineInterface, e: { text: string; origin: { kind: string } }, features: Features): void {
-  if (!retroOn(features) || e.origin.kind !== 'composer' || !mayBeCorrection(e.text)) return
-  const text = e.text, prev = retroBox.prev
-  $.clock.after(0, () => { void retro_drain($, text, prev).catch(() => undefined) })
+  try {
+    if (!retroOn(features) || e.origin.kind !== 'composer' || !mayBeCorrection(e.text)) return
+    const text = e.text, prev = retroBox.prev
+    $.clock.after(0, () => { void retro_drain($, text, prev).catch(() => undefined) })
+  } catch { /* a check never fails a send */ }
 }
 
 async function retro_dir($: EngineInterface): Promise<string> {
@@ -634,12 +673,28 @@ async function retro_read($: EngineInterface, name: string): Promise<string> {
   return $.fs.read((await retro_dir($)) + '/' + name).then(t => (typeof t === 'string' ? t : ''), () => '')
 }
 
-async function retro_load($: EngineInterface): Promise<CandidateFile> {
+// null = the file does not exist; a file that exists but cannot be read throws (it is never overwritten).
+async function retro_read_file($: EngineInterface, name: string): Promise<string | null> {
+  const path = (await retro_dir($)) + '/' + name
   try {
-    const f = JSON.parse(await retro_read($, 'candidates.json')) as CandidateFile
-    if (f.schema === 1 && Array.isArray(f.items)) return f
-  } catch { /* missing or unreadable: start empty */ }
-  return { schema: 1, items: [] }
+    const t = await $.fs.read(path)
+    return typeof t === 'string' ? t : ''
+  } catch (err) {
+    if (await $.fs.stat(path).then(() => true, () => false)) throw err
+    return null
+  }
+}
+
+const UNREADABLE = 'retro/candidates.json is unreadable — fix or delete it'
+
+// Missing -> empty. Present but unparseable -> throws, so no writer clobbers it.
+async function retro_load($: EngineInterface): Promise<CandidateFile> {
+  const raw = await retro_read_file($, 'candidates.json')
+  if (raw === null || raw.trim() === '') return { schema: 1, items: [] }
+  let f: CandidateFile | undefined
+  try { f = JSON.parse(raw) as CandidateFile } catch { /* falls to the throw below */ }
+  if (f && f.schema === 1 && Array.isArray(f.items)) return f
+  throw new Error(UNREADABLE)
 }
 
 // Writes run one at a time, each re-reading the file first, so two checks finishing together both land.
@@ -685,17 +740,17 @@ async function retro_save($: EngineInterface, raw: string, id?: string): Promise
         if (hit < 0 || similarity(items[hit].rule, clean) < 0.6) { items = mergeCandidate(items, clean, { source: 'manual', at }).items; hit = items.length - 1 }
       }
       items = items.map((c, i) => (i === hit ? { ...c, rule: clean, status: 'saved' as const, at } : c))
-      const current = await retro_read($, 'rules.md')
-      // Bullets already in rules.md (typed by hand, or saved from another checkout) stay.
-      const rules = [...new Set([...savedRules(current), ...items.filter(i => i.status === 'saved').map(i => i.rule)])]
-      const out = current.trim() === '' ? renderRules(rules) : spliceRules(current, rules)
+      // rules.md is the source of truth: its bullets stay, the saved rule is appended. A read failure on an existing file throws.
+      const current = await retro_read_file($, 'rules.md')
+      const rules = [...new Set([...savedRules(current ?? ''), clean])]
+      const out = current === null || current.trim() === '' ? renderRules(rules) : spliceRules(current, rules)
       if (out === undefined) return 'Rule not saved: rules.md has no single orc:retro start/end markers, in that order. Fix or remove the file.'
       await $.fs.write((await retro_dir($)) + '/rules.md', out)
       await retro_put($, { schema: 1, items })
       return 'Saved rule: ' + clean
     })
-  } catch {
-    return 'Rule not saved: the retro files could not be written.'
+  } catch (err) {
+    return err instanceof Error && err.message === UNREADABLE ? 'Rule not saved: ' + UNREADABLE + '.' : 'Rule not saved: the retro files could not be written.'
   }
 }
 
@@ -709,7 +764,9 @@ async function retro_skip($: EngineInterface, id: string): Promise<void> {
 async function retro_command($: EngineInterface, arg: string): Promise<{ text: string }> {
   const save = arg.match(/^save\s+([\s\S]+)$/)
   if (save) return { text: await retro_save($, save[1].trim().replace(/^"([\s\S]*)"$/, '$1')) }
-  const items = (await retro_load($)).items
+  const loaded = await retro_load($).catch(() => null)
+  if (!loaded) return { text: UNREADABLE + '.' }
+  const items = loaded.items
   const pending = items.filter(i => i.status === 'pending'), saved = items.filter(i => i.status === 'saved')
   if (!pending.length && !saved.length) return { text: 'No retro candidates yet. Usage: /orc retro save "<rule>"' }
   return { text: [
@@ -765,20 +822,23 @@ async function sentinel_check($: EngineInterface, features: Features): Promise<v
     let card: SentinelCard | null = null
     if (snap.session && slice) {
       const plan = await sentinel_plan($, snap.session.branch, slice.id, slice.title)
-      const t = (await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL
+      const t = await read_touched($)
       const done = snap.slices.filter(isDone).length
+      const running = snap.slices.filter(x => x.status === 'red' || x.status === 'green').length
       const notes: (SentinelNote | null)[] = [
         repeatedFailure(sentinelBox.history),
         plan.touchpoints.length && t.sliceId === slice.id ? outsideSlice(t.files, plan.touchpoints) : null,
-        snap.size ? budgetCreep({ loc: snap.size.loc, budget: snap.size.budget, done, total: snap.slices.length }) : null,
+        snap.size ? budgetCreep({ loc: snap.size.loc, budget: snap.size.budget, done, running, total: snap.slices.length }) : null,
       ]
       const dismissed = await sentinel_dismissed($, snap.session.branch)
       const hit = notes.find(n => n && !dismissed.includes(n.id))
       card = hit ? { ...hit, slice: slice.id } : null
     }
-    const changed = sentinelBox.check?.id !== card?.id || (!card && !!sentinelBox.model)
+    // A model card belongs to the slice it reviewed: a new slice (or none) retires it.
+    const stale = !!sentinelBox.model && (!slice || sentinelBox.model.slice !== slice.id)
+    const changed = sentinelBox.check?.id !== card?.id || stale || (!card && !!sentinelBox.model && !slice)
     sentinelBox.check = card
-    if (!slice) sentinelBox.model = null
+    if (stale) sentinelBox.model = null
     if (changed) $.ui.invalidate('ui.render')
   } catch { /* a watcher never fails the turn */ }
 }
@@ -793,6 +853,8 @@ function sentinel_step($: EngineInterface, features: Features, agentId: string):
   $.clock.after(0, () => { void sentinel_review($).catch(() => undefined).finally(() => { sentinelBox.inflight = false }) })
 }
 
+let learnInflight = false
+
 async function sentinel_review($: EngineInterface): Promise<void> {
   const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
   const slice = snap.session && snap.session.phase === 5 ? currentSlice(snap.slices) : null
@@ -801,7 +863,7 @@ async function sentinel_review($: EngineInterface): Promise<void> {
   const g = await git_facts($)
   const diff = await $.process.run(['git', ...(g.root ? ['-C', g.root] : []), 'diff', '-U0', '--no-color', 'HEAD'], { timeoutMs: 10000 }).then(r => (r.exitCode === 0 ? r.stdout : ''), () => '')
   if (!diff.trim()) return
-  const r = await $.model.complete({ model: HAIKU, maxTokens: 400, timeoutMs: 20_000, prompt: sentinelPrompt(plan, diff.slice(0, DIFF_CAP)) })
+  const r = await $.model.complete({ model: HAIKU, maxTokens: 400, timeoutMs: 20_000, system: SENTINEL_SYSTEM, prompt: sentinelPrompt(plan, diff.slice(0, DIFF_CAP)) })
   const v = r.isAnswered ? parseSentinel(r.text) : null
   if (!v?.headsUp) return
   const id = 'model:' + v.kind + ':' + v.headsUp.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 60)
@@ -812,12 +874,17 @@ async function sentinel_review($: EngineInterface): Promise<void> {
 
 async function sentinel_learn($: EngineInterface, id: string): Promise<void> {
   const card = sentinel_card(id)
-  if (!card) return
-  const r = await $.model.complete({ model: HAIKU, maxTokens: 250, timeoutMs: 20_000,
-    prompt: `A reviewer raised this heads-up about slice ${card.slice} of the current change:\n"${card.text}"\nIn at most 120 words, explain what it means and how to check it. Plain text, no preamble.` })
-  if (!r.isAnswered) return
-  sentinelBox.learn = { id, text: r.text.trim().split(/\s+/).slice(0, 120).join(' ') }
-  $.ui.invalidate('ui.render')
+  if (!card || learnInflight) return
+  learnInflight = true
+  try {
+    const r = await $.model.complete({ model: HAIKU, maxTokens: 250, timeoutMs: 20_000, system: SENTINEL_SYSTEM,
+      prompt: `A reviewer raised this heads-up about slice ${card.slice} of the current change:\n${wrap('card', card.text)}\nIn at most 120 words, explain what it means and how to check it. Plain text, no preamble.` })
+    if (!r.isAnswered) return
+    sentinelBox.learn = { id, text: r.text.trim().split(/\s+/).slice(0, 120).join(' ') }
+    $.ui.invalidate('ui.render')
+  } finally {
+    learnInflight = false
+  }
 }
 
 async function sentinel_dismiss($: EngineInterface, id: string): Promise<void> {
@@ -859,7 +926,7 @@ async function cache_tick($: EngineInterface, features: Features): Promise<void>
 const keepwarmKey = (sid: string) => 'keepwarm:' + sid
 
 function keepwarm_schedule($: EngineInterface, features: Features, gen: number, delay: number): void {
-  warmBox.timer = $.clock.after(delay, () => { void keepwarm_ping($, features, gen).catch(() => undefined) })
+  warmBox.timer = $.clock.after(delay, () => { void keepwarm_ping($, features, gen) })
 }
 
 async function keepwarm_arm($: EngineInterface, features: Features, deadline: number, persist: boolean): Promise<void> {
@@ -885,7 +952,16 @@ async function keepwarm_stop($: EngineInterface, why: string | null): Promise<vo
   $.ui.invalidate('ui.render')
 }
 
+// A failed ping (state, clock, fork) stops keep-warm with a toast instead of dying silently.
 async function keepwarm_ping($: EngineInterface, features: Features, gen: number): Promise<void> {
+  try {
+    await keepwarm_ping_once($, features, gen)
+  } catch {
+    if (gen === warmBox.gen) await keepwarm_stop($, 'keep-warm stopped: the ping failed').catch(() => undefined)
+  }
+}
+
+async function keepwarm_ping_once($: EngineInterface, features: Features, gen: number): Promise<void> {
   if (gen !== warmBox.gen) return
   const now = await $.clock.now()
   if (warmBox.deadline == null || now >= warmBox.deadline) return keepwarm_stop($, 'keep-warm finished')
@@ -996,11 +1072,14 @@ async function progress_row($: EngineInterface, features: Features): Promise<Ban
   return { kind: 'progress', model, ...(replay ? { replay } : {}) }
 }
 
+// A band Button label stays short so a docked cockpit (about 63 columns) never truncates it mid-word.
+const BUTTON_MAX = 12
+
 // One row, drawn for the surface: SVG strip + real Buttons on rich surfaces, text elsewhere.
 function draw_band_row($: EngineInterface, e: { surface: RenderSurface | null; props: { bodyColumns: number } }, els: Els, row: BandRow) {
   if (row.kind === 'ci') {
     const actions = {
-      diagnose: () => { $.prompt.fill({ text: '/orc:ci ' + row.pr }) },
+      diagnose: () => { $.prompt.fill({ text: '/orc:ci ' + row.pr }).catch(() => undefined) },
       dismiss: () => { ciBox.alert = null; $.ui.invalidate('ui.render') },
     }
     if (isRich(e.surface) && 'Svg' in els) {
@@ -1044,7 +1123,7 @@ function draw_band_row($: EngineInterface, e: { surface: RenderSurface | null; p
         els.Svg({ source, alt: sentinelAlt(note), height: 28 }),
         els.Button({ key: 'sentinel-learn', label: 'Learn more', onPress: actions.learn }),
         els.Button({ key: 'sentinel-chat', label: 'Chat in main session', onPress: actions.chat }),
-        els.Button({ key: 'sentinel-dismiss', label: 'Dismiss', hotkey: '0', onPress: actions.dismiss }),
+        els.Button({ key: 'sentinel-dismiss', label: 'Dismiss', hotkey: 'x', onPress: actions.dismiss }),
       ] }),
       ...(expanded ? [els.Text({ dimColor: true, children: [expanded] })] : []),
     ] })
@@ -1053,7 +1132,7 @@ function draw_band_row($: EngineInterface, e: { surface: RenderSurface | null; p
     const actions: RetroActions = {
       save: () => { void retro_save($, row.rule, row.id).then(m => $.ui.toast(m)).catch(() => undefined) },
       edit: () => { $.prompt.fill({ text: `/orc retro save "${row.rule}"` }).catch(() => undefined) },
-      skip: () => { void retro_skip($, row.id).catch(() => undefined) },
+      skip: () => { void retro_skip($, row.id).catch(err => { if (err instanceof Error && err.message === UNREADABLE) $.ui.toast(UNREADABLE) }) },
     }
     const source = isRich(e.surface) && 'Svg' in els ? fitSvg(retroSvg(row, px(e.props.bodyColumns))) : null
     if (source && 'Svg' in els) return els.Box({ flexDirection: 'row', columnGap: 2, children: [els.Svg({ source, alt: retroAlt(row), height: 28 }), ...retroButtons(els, actions)] })
@@ -1062,7 +1141,7 @@ function draw_band_row($: EngineInterface, e: { surface: RenderSurface | null; p
   if (row.kind === 'progress') {
     const m = row.model
     const next = m.next
-    const go = next ? [els.Button({ key: 'orc-next', hotkey: '1', label: next, onPress: () => { $.prompt.fill({ text: next }).catch(() => undefined) } })] : []
+    const go = next ? [els.Button({ key: 'orc-next', hotkey: '1', label: next.length > BUTTON_MAX ? next.slice(0, BUTTON_MAX - 1) + '…' : next, onPress: () => { $.prompt.fill({ text: next }).catch(() => undefined) } })] : []
     const source = isRich(e.surface) && 'Svg' in els ? fitSvg(progressSvg(m, px(e.props.bodyColumns))) : null
     const drawn = source && 'Svg' in els
       ? els.Svg({ source, alt: progressAlt(m), height: 28 })
@@ -1175,8 +1254,9 @@ function refresh($: EngineInterface): Promise<void> {
       if (!open.digest && !open.diff && !open.qa) await $.state.set(DETAILS_REF, DETAILS_INITIAL)
       if (open.digest) await load_details($, 'digest')
       if (open.diff) await load_details($, 'diff')
-      if (open.radius) await load_details($, 'radius')
-      if (open.qa) await load_details($, 'qa')
+      // Heavy loaders never hold the tool path or a turn's end: fire and forget, failures swallowed.
+      if (open.radius) void load_details($, 'radius').catch(() => undefined)
+      if (open.qa) void load_details($, 'qa').catch(() => undefined)
     } while (dirty)
   })().finally(() => { inflight = null })
   return inflight

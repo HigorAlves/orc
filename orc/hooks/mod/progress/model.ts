@@ -17,7 +17,8 @@ export type ProgressModel = {
   qa: 'pass' | 'fail' | 'partial' | null; pr: number | string | null; agents: number; next: string | null
 }
 
-const CONTEXT_WINDOW = 200_000
+// `[1m]` on the model id marks the 1,000,000-token window.
+const windowOf = (model: string | null) => (model && /\[1m\]$/i.test(model) ? 1_000_000 : 200_000)
 
 const titleOf = (branch: string) => branch.replace(/^(feat|fix|chore|refactor|docs|test|perf)[-/]/, '')
 const qaOf = (v: string | undefined): ProgressModel['qa'] => (v === 'pass' || v === 'fail' || v === 'partial' ? v : null)
@@ -55,9 +56,9 @@ export function agentRows(ledger: LedgerLike, costOf: CostOf, now: number): Agen
       }
       return {
         name, type: e.type, slice: null, step: e.step ? `${e.step.label} ${e.step.n}/${e.step.of}` : '',
-        ctxPct: e.lastContext > 0 ? Math.round((e.lastContext / CONTEXT_WINDOW) * 100) : null,
+        ctxPct: e.lastContext > 0 ? Math.round((e.lastContext / windowOf(e.model)) * 100) : null,
         usd: usage && e.model ? costOf(usage, e.model) : null,
-        elapsed: elapsedOf((e.finishedAt ?? e.lastAt ?? now) - (e.startedAt ?? e.lastAt ?? now)),
+        elapsed: elapsedOf((e.finishedAt ?? now) - (e.startedAt ?? e.lastAt ?? now)),
         running: e.finishedAt == null,
         startedAt: e.startedAt ?? 0,
       }

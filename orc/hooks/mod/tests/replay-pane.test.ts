@@ -181,3 +181,12 @@ test('no Replay button before phase 6', async ($, on) => {
   expect(await ui.findAll({ key: 'orc-replay' })).toEqual([])
   await ui.unmount()
 })
+
+test('M22 a hunk whose body lines start with --- / +++ still mounts as a diff Code block', async ($, on) => {
+  world(on)
+  await $.command.run(RUN())
+  await edit($, '/w/src/a.sql', '-- old comment', '++ new marker')
+  await $.command.run(RUN('replay'))
+  const ui = await $.ui.mount(PANE('terminal'))
+  expect(await ui.find({ type: 'Code' })).toMatchObject({ props: { format: 'diff' } })
+})

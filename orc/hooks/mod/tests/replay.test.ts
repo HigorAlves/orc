@@ -9,29 +9,29 @@ const edit = (sliceId: number, n = 1, extra = {}) => ({ sliceId, path: 'a.ts', t
 const lines = (n: number, tag = 'l') => Array.from({ length: n }, (_, i) => `${tag}${i}`).join('\n')
 
 test('unifiedDiff emits one hunk with context and counts', () => {
-  const d = unifiedDiff('a\nb\nc\nd\ne', 'a\nb\nC\nd\ne', 'src/x.ts')
+  const d = unifiedDiff('a\nb\nc\nd\ne', 'a\nb\nC\nd\ne', 'src/x.ts').text
   expect(d).toBe('--- a/src/x.ts\n+++ b/src/x.ts\n@@ -1,5 +1,5 @@\n a\n b\n-c\n+C\n d\n e')
 })
 
 test('unifiedDiff of a new file starts at 0 and of identical text is empty', () => {
-  expect(unifiedDiff('', 'one\ntwo\n', 'n.ts')).toContain('@@ -0,0 +1,2 @@\n+one\n+two')
-  expect(unifiedDiff('same', 'same', 'n.ts')).toBe('')
+  expect(unifiedDiff('', 'one\ntwo\n', 'n.ts').text).toContain('@@ -0,0 +1,2 @@\n+one\n+two')
+  expect(unifiedDiff('same', 'same', 'n.ts').text).toBe('')
 })
 
 test('unifiedDiff splits distant changes into separate hunks', () => {
   const a = lines(30), b = a.replace('l2\n', 'L2\n').replace('l27\n', 'L27\n')
-  expect((unifiedDiff(a, b, 'f').match(/^@@ /gm) ?? []).length).toBe(2)
+  expect((unifiedDiff(a, b, 'f').text.match(/^@@ /gm) ?? []).length).toBe(2)
 })
 
 test('unifiedDiff falls back to all-removed then all-added above 400 lines', () => {
-  const d = unifiedDiff(lines(401), lines(401) + '\nz', 'big')
+  const d = unifiedDiff(lines(401, 'a'), lines(401, 'b') + '\nz', 'big').text
   expect(d).toContain('@@ -1,401 +1,402 @@')
   expect((d.match(/^-/gm) ?? []).length).toBe(401 + 1) // 401 removed + the '---' header
   expect(d).not.toMatch(/^ /m)
 })
 
 test('unifiedDiff caps at 10,000 chars with header counts that match the body', () => {
-  const d = unifiedDiff(lines(300, 'old-line-with-padding-'), lines(300, 'new-line-with-padding-'), 'p')
+  const d = unifiedDiff(lines(300, 'old-line-with-padding-'), lines(300, 'new-line-with-padding-'), 'p').text
   expect(d.length).toBeLessThanOrEqual(10_000)
   const body = d.split('\n').slice(3)
   const m = d.match(/@@ -(\d+),(\d+) \+(\d+),(\d+) @@/)!
@@ -94,4 +94,31 @@ test('replaySvg draws step pills and colored diff lines within the size cap', ()
 test('replaySvg shows at most 12 diff lines', () => {
   const v = replayView(recordEdit(REPLAY_INITIAL, { sliceId: 1, path: 'f', tool: 'Write', old: '', new: lines(40), at: 1 }), { slice: 0, step: 0 })!
   expect((replaySvg(v, 56)!.match(/data-diff/g) ?? []).length).toBeLessThanOrEqual(12)
+})
+
+test('M2 CRLF text splits cleanly and control characters become visible glyphs', () => {
+  const crlf = unifiedDiff('a\r\nb\r\n', 'a\r\nB\r\n', 'f').text
+  expect(crlf).toBe('--- a/f\n+++ b/f\n@@ -1,2 +1,2 @@\n a\n-b\n+B')
+  const d = unifiedDiff('x', 'a\u0001b\u007fc\rd\u000be\tf', 'f').text
+  expect(d).toContain('+a\u2401b\u2421c\u240dd\u240be\tf')
+  expect(/[\x00-\x08\x0b-\x1f\x7f]/.test(d)).toBe(false)
+})
+
+test('M3 a one-line change in a large file still shows that line', () => {
+  const big = Array.from({ length: 800 }, (_, i) => `line ${i}`)
+  const changed = big.slice(); changed[400] = 'CHANGED'
+  const d = unifiedDiff(big.join('\n'), changed.join('\n'), 'big')
+  expect(d.text).toContain('-line 400\n+CHANGED')
+  expect(d.add).toBe(1)
+  expect(d.del).toBe(1)
+  expect(d.text).toContain(' line 399')
+})
+
+test('M4 add/del count the whole change, not the capped text', () => {
+  const d = unifiedDiff(lines(300, 'old-line-with-padding-'), lines(300, 'new-line-with-padding-'), 'p')
+  expect(d.text.length).toBeLessThanOrEqual(10_000)
+  expect(d.add).toBe(300)
+  expect(d.del).toBe(300)
+  const e = recordEdit(REPLAY_INITIAL, { sliceId: 1, path: 'p', tool: 'Write', old: lines(300, 'old-line-with-padding-'), new: lines(300, 'new-line-with-padding-'), at: 1 })
+  expect([e.edits[0].add, e.edits[0].del]).toEqual([300, 300])
 })

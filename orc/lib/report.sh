@@ -59,10 +59,14 @@ orc_report_html() { # [--branch B]
 # One thumbnail, 240px wide: jpeg (small, for data: embeds) or png (the terminal Image takes png, not jpeg).
 # sips on macOS, ffmpeg elsewhere; either may be absent.
 orc_report__scaled() { # $1 = source image, $2 = destination, $3 = jpeg|png
+  # 240 wide, then cropped to the top 150 rows so a full-page screenshot still fits the embed cap.
   if [ "$(uname -s)" = "Darwin" ] && command -v sips >/dev/null 2>&1; then
-    sips -s format "$3" --resampleWidth 240 "$1" --out "$2" >/dev/null 2>&1
+    sips -s format "$3" --resampleWidth 240 "$1" --out "$2" >/dev/null 2>&1 || return 1
+    local h
+    h="$(sips -g pixelHeight "$2" 2>/dev/null | awk '/pixelHeight/ { print $2 }')"
+    if [ "${h:-0}" -gt 150 ] 2>/dev/null; then sips --cropToHeightWidth 150 240 --cropOffset 0 0 "$2" >/dev/null 2>&1 || return 1; fi
   elif command -v ffmpeg >/dev/null 2>&1; then
-    ffmpeg -loglevel error -y -i "$1" -vf scale=240:-1 -frames:v 1 -update 1 "$2" >/dev/null 2>&1
+    ffmpeg -loglevel error -y -i "$1" -vf 'scale=240:-1,crop=240:min(150\,ih):0:0' -frames:v 1 -update 1 "$2" >/dev/null 2>&1
   else
     return 1
   fi
@@ -74,10 +78,10 @@ orc_report__rgb() { # $1 = source image, $2 = destination .rgb
   ffmpeg -loglevel error -y -i "$1" -vf scale=32:16 -f rawvideo -pix_fmt rgb24 -frames:v 1 "$2" >/dev/null 2>&1
 }
 
-# Thumbnails of the first three image evidence files, written under files/qa/thumbs/.
+# Thumbnails of the first three existing image evidence files, written under files/qa/thumbs/.
 # Prints [{ name, criterion, jpg, png, rgb }]; each is null when the tool is missing. Idempotent.
 orc_report_thumbs() { # [--branch B]
-  local branch="" sid qa th row file crit name jpg png rgb out="[]"
+  local branch="" sid qa th row file crit name jpg png rgb out="[]" hits=0
   while [ $# -gt 0 ]; do
     case "$1" in
       --branch) branch="${2:-}"; shift 2 ;;
@@ -93,7 +97,8 @@ orc_report_thumbs() { # [--branch B]
     case "$file" in *..*|/*) continue ;; esac
     [ -f "$qa/$file" ] || continue
     mkdir -p "$th"
-    name="$(basename "${file%.*}")"
+    # The name carries the whole relative path (test-results/<test>/x.png must not collide with y/x.png).
+    name="${file%.*}"; name="${name#./}"; name="${name//\//__}"
     jpg="$th/$name.jpg"; png="$th/$name.png"; rgb="$th/$name.rgb"
     if ! { [ -s "$jpg" ] && [ "$jpg" -nt "$qa/$file" ]; }; then orc_report__scaled "$qa/$file" "$jpg" jpeg || rm -f "$jpg"; fi
     if ! { [ -s "$png" ] && [ "$png" -nt "$qa/$file" ]; }; then orc_report__scaled "$qa/$file" "$png" png || rm -f "$png"; fi
@@ -103,7 +108,9 @@ orc_report_thumbs() { # [--branch B]
     [ -s "$rgb" ] || rgb=""
     out="$(jq -n --argjson o "$out" --arg n "$name" --arg c "$crit" --arg j "$jpg" --arg p "$png" --arg r "$rgb" \
       '$o + [{name: $n, criterion: $c, jpg: (if $j == "" then null else $j end), png: (if $p == "" then null else $p end), rgb: (if $r == "" then null else $r end)}]')"
+    # Existence and traversal are filtered above, so the first three that survive are the ones shown.
+    hits=$((hits + 1)); [ "$hits" -lt 3 ] || break
   done < <(jq -c '[.acceptance[]? | . as $a | ($a.evidence // [])[] | select(test("\\.(png|jpe?g)(#.*)?$"; "i")) | {file: sub("#.*$"; ""), criterion: $a.criterion}]
-    | reduce .[] as $r ([]; if any(.[]; .file == $r.file) then . else . + [$r] end) | .[:3][]' "$qa/qa-manifest.json")
+    | reduce .[] as $r ([]; if any(.[]; .file == $r.file) then . else . + [$r] end) | .[]' "$qa/qa-manifest.json")
   printf '%s\n' "$out"
 }

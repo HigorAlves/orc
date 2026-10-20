@@ -1,5 +1,8 @@
 // Pure command classifier for the measured guard. The recognised set matches
-// hooks/scripts/pre-destructive-git-check.sh exactly; the cd/pushd/git -C/
+// hooks/scripts/pre-destructive-git-check.sh in kinds, but not in reach: the
+// shell floor also sees through `bash -c '…'` and ssh quotes, while classify
+// treats quoted text as prose, so those commands get the floor's confirmation
+// without a measured summary, by design. The cd/pushd/git -C/
 // subshell scoping is adapted, with changes, from Blast Radius (Apache-2.0, see
 // THIRD-PARTY-LICENSES.md).
 export type GuardKind = 'reset' | 'clean' | 'branch' | 'push'
@@ -34,8 +37,11 @@ function tokenize(text: string): string[] {
   return words
 }
 
+// '-' = unknown: home (`cd`, `cd ~`, `cd ~/x`) and anything relative to an unknown dir.
 function joinDir(dir: string | null, arg: string | undefined): string {
-  if (arg === undefined || arg === '~' || arg.startsWith('/') || arg.startsWith('~/')) return arg ?? '~'
+  if (arg === undefined || arg === '~' || arg.startsWith('~/')) return '-'
+  if (arg.startsWith('/')) return arg
+  if (dir === '-') return '-'
   return dir ? `${dir.replace(/\/$/, '')}/${arg}` : arg
 }
 
@@ -70,13 +76,29 @@ function segment(raw: string, dir: string | null, pushed: Array<string | null>):
   return hit ? { hit } : null
 }
 
+// Trailing `)` count after any trailing redirections: a backwards token scan
+// (a nested-quantifier regex here backtracked exponentially).
+const REDIR_ATTACHED = /^(?:\d*>>?|<)\S+$/, REDIR_OP = /^(?:\d*>>?|<)$/
+function closingParens(raw: string): number {
+  const trailing = (w: string) => { let n = 0; while (n < w.length && w[w.length - 1 - n] === ')') n++; return n }
+  const words = raw.trim().split(/\s+/)
+  const own = trailing(words[words.length - 1] ?? '') // a paren glued to the redirect target still closes
+  while (words.length > 0) {
+    const last = words[words.length - 1]
+    if (REDIR_ATTACHED.test(last)) words.pop()
+    else if (words.length > 1 && REDIR_OP.test(words[words.length - 2])) words.length -= 2
+    else break
+  }
+  return Math.max(own, trailing(words[words.length - 1] ?? ''))
+}
+
 export function classify(cmd: string): Guarded | null {
   let dir: string | null = null
   const scopes: Array<string | null> = []
   const pushed: Array<string | null> = []
   for (const raw of splitSegments(cmd)) {
     const opens = raw.match(/^\s*\(+/)?.[0].trim().length ?? 0
-    const closes = raw.replace(/(?:\s*(?:\d*>>?|<)\s*\S+)+\s*$/, '').match(/\)+\s*$/)?.[0].trim().length ?? 0
+    const closes = closingParens(raw)
     for (let k = 0; k < opens; k++) scopes.push(dir)
     const step = segment(raw, dir, pushed)
     if (step && 'hit' in step) return step.hit

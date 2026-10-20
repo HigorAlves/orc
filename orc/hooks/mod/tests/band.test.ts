@@ -11,7 +11,7 @@ const progress: BandRow = { kind: 'progress', model: {} as never }
 
 test('pickBand returns the highest-priority present row', () => {
   const all = [progress, cache, retro, sentinel, guard, ci]
-  expect(PRIORITY).toEqual(['ci', 'guard', 'sentinel', 'retro', 'cache', 'progress'])
+  expect(PRIORITY).toEqual(['guard', 'ci', 'sentinel', 'retro', 'cache', 'progress'])
   const order: BandRow['kind'][] = []
   let rest = all
   while (rest.length) {
@@ -19,7 +19,7 @@ test('pickBand returns the highest-priority present row', () => {
     order.push(row.kind)
     rest = rest.filter(r => r.kind !== row.kind)
   }
-  expect(order).toEqual(['ci', 'guard', 'sentinel', 'retro', 'cache', 'progress'])
+  expect(order).toEqual(['guard', 'ci', 'sentinel', 'retro', 'cache', 'progress'])
 })
 
 test('pickBand ignores empty slots and returns null when nothing is present', () => {

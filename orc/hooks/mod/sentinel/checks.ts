@@ -18,9 +18,10 @@ export function outsideSlice(touched: Touched[], touchpoints: string[]): Sentine
   return { id: 'outside-slice:' + out.join(','), text: `Edited outside this slice's files: ${out.join(', ')}` }
 }
 
-export function budgetCreep(o: { loc: number; budget: number; done: number; total: number }): SentinelNote | null {
+// `running` slices count half: their work is already in `loc`.
+export function budgetCreep(o: { loc: number; budget: number; done: number; running?: number; total: number }): SentinelNote | null {
   if (o.done >= o.total) return null
-  const projected = Math.round(o.loc / Math.max(1, o.done) * o.total)
+  const projected = Math.round(o.loc / Math.max(1, o.done + 0.5 * (o.running ?? 0)) * o.total)
   if (projected <= 0.9 * o.budget) return null
   return { id: 'budget-creep', text: `Projected ${projected} LOC at this pace vs budget ${o.budget}` }
 }

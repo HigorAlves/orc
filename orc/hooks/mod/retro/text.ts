@@ -18,7 +18,7 @@ export function retroText(els: Els, r: RetroRow, a: RetroActions) {
 
 // The same three buttons beside the terminal line or the desktop card.
 export const retroButtons = (els: Els, a: RetroActions) => [
-  els.Button({ key: 'retro-save', variant: 'primary', hotkey: '1', label: 'Save rule', onPress: a.save }),
-  els.Button({ key: 'retro-edit', label: 'Edit', onPress: a.edit }),
-  els.Button({ key: 'retro-skip', hotkey: '0', label: 'Skip', onPress: a.skip }),
+  els.Button({ key: 'retro-save', variant: 'primary', hotkey: 's', label: 'Save rule', onPress: a.save }),
+  els.Button({ key: 'retro-edit', hotkey: 'e', label: 'Edit', onPress: a.edit }),
+  els.Button({ key: 'retro-skip', hotkey: 'k', label: 'Skip', onPress: a.skip }),
 ]

@@ -20,7 +20,8 @@ export function parseThumbs(json: string): QaThumb[] {
 
 // Up to 3 embeddable shots; the whole set drops to 2, then 1, while the embedded text is over the cap.
 export function embeddable(shots: QaShot[], cap = EMBED_CAP): QaShot[] {
-  const have = shots.filter(s => s.b64).slice(0, SHOTS)
+  // A shot that alone exceeds the cap can never embed: drop it before counting.
+  const have = shots.filter(s => s.b64 && s.b64.length <= cap).slice(0, SHOTS)
   for (let n = have.length; n > 1; n--) {
     const set = have.slice(0, n)
     if (set.reduce((sum, s) => sum + (s.b64?.length ?? 0), 0) <= cap) return set

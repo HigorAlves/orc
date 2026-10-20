@@ -13,7 +13,7 @@ export function cacheState(a: { lastAt: number; lastContext: number; model: stri
   return {
     phase: left <= 0 ? 'cold' : left <= COOLING_MS ? 'cooling' : 'warm',
     minutesLeft: Math.max(0, Math.ceil(left / 60_000)), coldFor: Math.max(0, -left),
-    tokens: a.lastContext, rewriteUsd: rewriteCost(a.lastContext, a.model),
+    tokens: a.lastContext, rewriteUsd: rewriteCost(a.lastContext, a.model, a.ttlMs),
   }
 }
 

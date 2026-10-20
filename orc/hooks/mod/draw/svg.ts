@@ -1,6 +1,6 @@
 import { PALETTE, type Slot } from './palette'
 export const SVG_MAX = 131_072
-export const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+export const esc = (s: string) => s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 export const px = (columns: number) => Math.max(1, Math.round(columns * 8))
 export const textWidth = (s: string, size = 12) => Math.round(s.length * size * 7 / 12)
 const slots = Object.keys(PALETTE) as Slot[]
