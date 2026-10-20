@@ -102,6 +102,14 @@ Opus 4.5 high think │ ctx ▓▓▓▓▓▓▓░░░ 68% │ $4.83 +412/�
 
 Line 1 is the work: live orc session, Jira ticket, slice progress, autopilot level, branch, and the open PR with its review state. Line 2 is the machine: model + effort, an honest context bar, session cost, and your worst rate limit past 50%. It adapts to terminal width, honors `NO_COLOR`, and never breaks a render — and it feeds a context-monitor bridge that nudges the agent to checkpoint when context runs red. Tuning knobs in [docs/configuration.md](./docs/configuration.md#statusline).
 
+### Works well with
+
+Optional companions. orc does not install or require any of them.
+
+- [Filetree](https://github.com/data-goblin/claude-code-filetree) shows a file tree beside the cockpit.
+- [Claude Skins](https://github.com/hellosverre/claude-skins) restyles the Claude Code UI. orc's hooks only redraw orc's own rows, so the two do not overlap.
+- [Terminal Browser](https://github.com/zenbu-labs/terminal-browser) can open QA targets in the terminal. It is experimental (v0.0.2), needs a separately installed app and a kitty or Ghostty terminal, and sends PostHog telemetry by default. Set `DO_NOT_TRACK=1` to turn that off.
+
 ## Iron rules (enforced by hooks + the `using-orc` skill)
 
 1. No commits to `main`/`master`/`develop` — the PreToolUse hook downgrades them to a confirm prompt; approve only with explicit consent.
