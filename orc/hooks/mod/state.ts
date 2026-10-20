@@ -6,7 +6,7 @@ import type { OrcDetails, OrcLive, OrcSections } from '../../types'
 import type { CiSummary } from './ci'
 export { LEDGER_INITIAL } from './ledger'
 
-export const SECTIONS_INITIAL: OrcSections = { qa: false, pr: false, agents: false, decisions: false, digest: false, diff: false }
+export const SECTIONS_INITIAL: OrcSections = { qa: false, pr: false, agents: false, decisions: false, digest: false, diff: false, touched: false }
 export const LIVE_INITIAL: OrcLive = { agent: null, since: null }
 export const DETAILS_INITIAL: OrcDetails = { digest: null, diff: null, diffTruncated: false }
 

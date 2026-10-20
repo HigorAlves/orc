@@ -7,6 +7,9 @@ import { POLICIES, attention, criterionLine, diffSlice, headerCells, isDone, lay
 import { fitSvg, px } from './draw/svg'
 import type { Profile } from './profiles'
 import { agentRowLine, type AgentRow } from './progress/model'
+import { touchedAlt, touchedHeight, touchedSvg } from './touched/svg'
+import { touchedText } from './touched/text'
+import type { TouchedRow } from './touched/model'
 import { AGENT_H, agentAlt, agentLabel, agentSvg } from './progress/svg'
 import type { CiAlert } from './state'
 
@@ -23,6 +26,7 @@ export type PaneModel = {
   details: OrcDetails
   rich: boolean
   agents: AgentRow[]
+  touched: TouchedRow[]
 }
 export type PaneActions = { resume: () => void; toggle: (id: SectionId) => () => void; renderReport: () => void; settle: (key: string, value: string) => void }
 
@@ -91,6 +95,13 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
        ...(snap.usage?.length ? [line('agent                     runs   tokens            time', { dimColor: true }), ...snap.usage.map(u => line(usageLine(u)))] : [])]
     : [line('No subagent runs recorded yet.', { dimColor: true })])
 
+  const touchedSource = model.rich && Svg && model.touched.length ? fitSvg(touchedSvg(model.touched, px(model.bodyColumns))) : null
+  const touched = section('touched', 't', () => !model.touched.length
+    ? [line('No files touched in this slice yet.', { dimColor: true })]
+    : touchedSource && Svg
+      ? [Svg({ source: touchedSource, alt: touchedAlt(model.touched), width: px(model.bodyColumns), height: touchedHeight(model.touched) })]
+      : touchedText(els, model.touched))
+
   const policy = policyOf(snap) ?? 'manual'
   const decisions = section('decisions', 'd', () => [
     ...(Select ? [Select({ key: 'policy', label: 'Autopilot', options: POLICIES.map(p => ({ value: p })), value: policy,
@@ -118,6 +129,6 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
   ] })
 
   // Sections sit tight (one row each while collapsed); the gap only separates the strip, the body, the sections and the footer.
-  const sections = Box({ flexDirection: 'column', children: [qa, pr, agents, decisions, digest, diff] })
+  const sections = Box({ flexDirection: 'column', children: [qa, pr, agents, touched, decisions, digest, diff] })
   return Box({ flexDirection: 'column', rowGap: 1, children: [header, body, sections, footer] })
 }

@@ -11,7 +11,7 @@ import { fitSvg, px } from './draw/svg'
 import { isRich } from './draw/surface'
 import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine, summarizeChecks, type CiRecord } from './ci'
 import {
-  EMPTY, cutDiff, diffSlice, digestOf, hintFor, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, plumbingLine, policyOf, profileOf, spinnerSuffix, summaryText, type SectionId, type Snapshot,
+  EMPTY, currentSlice, cutDiff, diffSlice, digestOf, hintFor, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, plumbingLine, policyOf, profileOf, spinnerSuffix, summaryText, type SectionId, type Snapshot,
 } from './cockpit'
 import { parseFeatures, type Features } from './config'
 import { gateBadge } from './gates'
@@ -20,6 +20,7 @@ import { PANE, drawPane, type Els } from './pane'
 import { modelFor, parseProfile, type Profile } from './profiles'
 import { costOf } from './prices'
 import { agentRows, progressModel } from './progress/model'
+import { TOUCHED_INITIAL, applyNumstat, markCommitted, parseNumstat, relPath, touch, touchedRows, type TouchKind } from './touched/model'
 import { progressText } from './progress/text'
 import { progressAlt, progressSvg } from './progress/svg'
 import { DETAILS_INITIAL, LIVE_INITIAL, SECTIONS_INITIAL, ciBox, isOrcStateWrite } from './state'
@@ -30,6 +31,7 @@ const SECTIONS_REF = { plugin: 'orc', key: 'sections' } as const
 const LIVE_REF = { plugin: 'orc', key: 'live' } as const
 const DETAILS_REF = { plugin: 'orc', key: 'details' } as const
 const LEDGER_REF = { plugin: 'orc', key: 'ledger' } as const
+const TOUCHED_REF = { plugin: 'orc', key: 'touched' } as const
 
 let alertsSound = false
 
@@ -42,6 +44,7 @@ export function register(on: On, options: PluginOptions) {
   register_compaction(on)
   register_agents(on, parseProfile(options.model_profile))
   register_step_tool(on)
+  register_touched(on)
   register_refresh(on)
   register_cockpit(on, parseProfile(options.model_profile))
   register_surfaces(on)
@@ -73,6 +76,7 @@ function register_session(on: On) {
     } catch {
       // name taken in this build: the markdown /orc:status stays the fallback
     }
+    gitFacts = null
     // The step tool: orc subagents label their TDD steps for the progress view.
     try {
       await $.tool.register({ name: 'step', description: STEP_DESC, inputSchema: STEP_SCHEMA })
@@ -122,6 +126,7 @@ function register_refresh(on: On) {
     const call = e as { command?: string; input?: { command?: string } }
     const command = call.command ?? call.input?.command ?? ''
     if (isOrcStateWrite(command)) await refresh($).catch(() => undefined)
+    if (GIT_COMMIT.test(command) && !failed(result)) await commit_touched($)
     return result
   })
 }
@@ -200,6 +205,90 @@ function register_step_tool(on: On) {
       await $.state.set(LEDGER_REF, setStep(cur, call.agentId, step))
     } catch { /* a label never fails the agent */ }
     return { result: 'ok' }
+  })
+}
+
+// --- Touched files -----------------------------------------------------------
+// What the session read, edited and committed during the current slice. Reads
+// and edits are recorded after the tool ran (a denied or errored call marks
+// nothing); a `git commit` through Bash promotes the slice's edits to committed.
+const GIT_COMMIT = /(^|[;&|]\s*)git\s+(-C\s+\S+\s+)?commit\b/
+const failed = (r: unknown) => { const x = r as { deny?: unknown; isError?: unknown }; return !!x.deny || !!x.isError }
+
+type GitFacts = { root: string; gitDir: string; mergeBase: string }
+let gitFacts: GitFacts | null = null
+
+// Repo root, git dir and the point the branch left the base: once per session (not cached when git can't answer).
+async function git_facts($: EngineInterface): Promise<GitFacts> {
+  if (gitFacts) return gitFacts
+  const run = (argv: string[]) => $.process.run(['git', ...argv], { timeoutMs: 5000 }).then(r => (r.exitCode === 0 ? r.stdout.trim() : ''), () => '')
+  const [root = '', gitDir = ''] = (await run(['rev-parse', '--show-toplevel', '--absolute-git-dir'])).split('\n')
+  const head = await run(['rev-parse', '--abbrev-ref', 'origin/HEAD'])
+  const base = head && head !== 'origin/HEAD' ? head : 'origin/main'
+  const facts = { root, gitDir, mergeBase: (await run(['merge-base', 'HEAD', base])) || base }
+  if (root) gitFacts = facts
+  return facts
+}
+
+async function touch_files($: EngineInterface, paths: string[], kind: TouchKind): Promise<void> {
+  try {
+    const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
+    const slice = snap.session ? currentSlice(snap.slices) : null
+    if (!slice || !paths.length) return
+    const { root } = await git_facts($)
+    const at = await $.clock.now()
+    let t = (await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL
+    for (const p of paths) t = touch(t, { sliceId: slice.id, path: relPath(p, root), kind, at })
+    await $.state.set(TOUCHED_REF, t)
+    await touched_counts($)
+  } catch { /* bookkeeping never fails a tool call */ }
+}
+
+async function commit_touched($: EngineInterface): Promise<void> {
+  try {
+    const t = (await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL
+    if (t.files.some(f => f.kind === 'edit')) await $.state.set(TOUCHED_REF, markCommitted(t, await $.clock.now()))
+    await touched_counts($)
+  } catch { /* ignore */ }
+}
+
+// Line counts come from git, re-read only when the index or HEAD changed.
+// (State writes are refused while a drawing renders, so this runs from events, never from ui.render.)
+async function touched_counts($: EngineInterface): Promise<void> {
+  try {
+    if (!((await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL).files.length) return
+    const g = await git_facts($)
+    if (!g.gitDir) return
+    const stamp = (await Promise.all(['index', 'HEAD'].map(f => $.fs.stat(g.gitDir + '/' + f).then(st => st.mtimeMs, () => 0)))).join(':')
+    if (stamp === ((await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL).stamp) return
+    const r = await $.process.run(['git', '-C', g.root, 'diff', '--numstat', g.mergeBase], { timeoutMs: 10000 })
+    const fresh = (await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL
+    await $.state.set(TOUCHED_REF, applyNumstat(fresh, r.exitCode === 0 ? parseNumstat(r.stdout) : new Map(), stamp))
+  } catch { /* counts stay as they were */ }
+}
+
+function register_touched(on: On) {
+  on('tool.call', { tool: 'Read' }, async ($, e, next) => {
+    const result = await next(e)
+    if (!failed(result)) await touch_files($, [String((e as { file_path?: string }).file_path ?? '')].filter(Boolean), 'read')
+    return result
+  })
+
+  on('tool.call', { tool: ['Grep', 'Glob'] }, async ($, e, next) => {
+    const result = await next(e)
+    if (failed(result)) return result
+    const names = (result as { result?: { filenames?: unknown } }).result?.filenames
+    if (Array.isArray(names)) await touch_files($, names.filter((n): n is string => typeof n === 'string').slice(0, 10), 'read')
+    return result
+  })
+
+  // Shared with the replay recorder (later): each observer step runs after a successful edit.
+  on('tool.call', { tool: ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'] }, async ($, e, next) => {
+    const result = await next(e)
+    if (failed(result)) return result
+    const call = e as { file_path?: string; notebook_path?: string }
+    await touch_files($, [call.file_path ?? call.notebook_path ?? ''].filter(Boolean), 'edit')
+    return result
   })
 }
 
@@ -389,8 +478,10 @@ function register_cockpit(on: On, fallbackProfile: Profile) {
     const sections = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
     const details = (await $.state.get(DETAILS_REF)).value ?? DETAILS_INITIAL
     const ledger = (await $.state.get(LEDGER_REF)).value ?? LEDGER_INITIAL
-    const agents = agentRows(ledger, costOf, await $.clock.now().catch(() => 0))
-    const model = { snap, sections, details, agents, rich: isRich(e.surface), ciAlert: ciBox.alert, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
+    const now = await $.clock.now().catch(() => 0)
+    const agents = agentRows(ledger, costOf, now)
+    const touched = touchedRows((await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL, now)
+    const model = { snap, sections, details, agents, touched, rich: isRich(e.surface), ciAlert: ciBox.alert, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
     return drawPane($.ui.resolve(e), model, {
       resume: () => { $.prompt.fill({ text: snap.session ? '/orc:resume' : '/orc:flow ' }) },
       toggle: (id: SectionId) => async () => {
@@ -398,6 +489,7 @@ function register_cockpit(on: On, fallbackProfile: Profile) {
           const current = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
           await $.state.set(SECTIONS_REF, { ...current, [id]: !current[id] })
           if (!current[id]) await load_details($, id)
+          if (!current[id] && id === 'touched') await touched_counts($)
         } catch {
           // a state or loader failure leaves the pane as drawn
         }
@@ -443,6 +535,7 @@ function refresh($: EngineInterface): Promise<void> {
       dirty = false
       lastSnapshot = await load_snapshot($)
       await $.state.set(SNAPSHOT_REF, lastSnapshot)
+      await touched_counts($)
       // Open Digest/Diff sections reload against the new snapshot; closed ones start clean next time.
       const open = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
       if (!open.digest && !open.diff) await $.state.set(DETAILS_REF, DETAILS_INITIAL)
