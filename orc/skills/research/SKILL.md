@@ -4,7 +4,7 @@ description: "Delegate a research question to a background agent that reads prim
 license: MIT
 metadata:
   author: Matt Pocock
-  source: Vendored from https://github.com/mattpocock/skills @ 2ffb184
+  source: Vendored from https://github.com/mattpocock/skills @ 5beb35b
 ---
 
 Spin up a **background agent** to do the research, so you keep working while it reads.

@@ -4,7 +4,7 @@ description: Turn the current conversation context into a PRD and publish it to 
 license: MIT
 metadata:
   author: Matt Pocock
-  source: Derived from https://github.com/mattpocock/skills (audit pin 2ffb184; techniques re-merged from upstream @ 2ffb184)
+  source: Derived from https://github.com/mattpocock/skills (audit pin 5beb35b; techniques re-merged from upstream @ 5beb35b)
 ---
 
 This skill takes the current conversation context and codebase understanding and produces a PRD. Do NOT interview the user — just synthesize what you already know. (For an interview-driven PRD authored from scratch and published to `docs/prds/NNNN-*.md`, use `orc:prd-writing` instead — see `orc:doc-writing` for the split.)

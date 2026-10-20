@@ -46,7 +46,7 @@ Skills vendored or derived from an external source carry provenance in frontmatt
 license: MIT
 metadata:
   author: Matt Pocock
-  source: Vendored from https://github.com/mattpocock/skills @ 2ffb184
+  source: Vendored from https://github.com/mattpocock/skills @ 5beb35b
 ```
 
 Use `Vendored from … @ <pin>` for near-verbatim copies and `Derived from …` for forks that diverge. If a later merge adds material from a second upstream, extend `source` to name both.
