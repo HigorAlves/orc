@@ -45,8 +45,8 @@
       "long": 0,
       "notimp": 0,
       "passive": 0,
-      "bytes": 4616,
-      "desc": 215
+      "bytes": 4300,
+      "desc": 198
     },
     "orc/commands/setup.md": {
       "kind": "command",
@@ -685,7 +685,7 @@
       "long": 0,
       "notimp": 0,
       "passive": 1,
-      "bytes": 3254,
+      "bytes": 3249,
       "desc": 191
     },
     "orc/skills/playwright-qa/SKILL.md": {

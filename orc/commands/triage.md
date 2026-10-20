@@ -1,7 +1,7 @@
 ---
-description: Move tracker issues and external PRs through the triage state machine into agent-ready briefs
-when_to_use: Use when triaging incoming issues, an external PR, or the backlog. Reads the tracker + label config written by /orc:setup.
-argument-hint: "[<issue/PR number, Jira key, or natural-language request>]"
+description: "Intake for any report (issue, PR, Jira, Sentry, paste): check it is valid, then brief, file, park or reject it"
+when_to_use: Use when a report, ticket, Sentry issue or message arrives, or the backlog needs triage.
+argument-hint: "[<issue/PR number, Jira key, or request> | --sentry <id|url> | <pasted report>]"
 license: MIT
 metadata:
   author: Matt Pocock
@@ -19,6 +19,8 @@ allowed-tools:
   - Bash(acli:*)
   - Bash(jq:*)
   - Bash(git log:*)
+  - Bash(git fetch:*)
+  - Bash(sentry:*)
   - Bash(git switch:*)
   - Bash(npm:*)
   - Bash(pnpm:*)
@@ -30,13 +32,15 @@ allowed-tools:
 
 # /orc:triage
 
-Move tracker issues and external PRs through a small state machine of triage roles: categorise, verify the claim, grill when needed, then brief it, park it, or reject it.
+The intake for every incoming report: categorise it, check it is valid, grill when needed, then brief, file, park or reject it.
 
 ## Arguments
 
 - `<issue/PR number, Jira key, or natural-language request>` — optional. A bare `#42` resolves to an issue or a PR per the tracker config.
+- `--sentry <id|url>` — a Sentry issue short ID or URL. Read-only intake via `orc:triage/P4`.
+- `<pasted report>` — a chat message, email, stack trace or complaint with no tracker item. Intake via `orc:triage/P4`.
 
-Natural-language routing: "Show me anything that needs my attention" → P1; "Let's look at #42" or "look at PROJ-123" → P2; "Move #42 to ready-for-agent" → P3; "What's ready for agents to pick up?" → query and list.
+Natural-language routing: "Show me anything that needs my attention" → P1; "Let's look at #42" or "look at PROJ-123" → P2; "Is this real?" plus a paste → P4; "Move #42 to ready-for-agent" → P3; "What's ready for agents to pick up?" → query and list.
 
 ## Preconditions
 
@@ -58,6 +62,9 @@ Modules live in `orc:phases` (`references/triage/`). Entering a phase, Read exac
 | 1 Attention queue | `orc:triage/P1` | the request names an item or a state move |
 | 2 Triage a specific item | `orc:triage/P2` | attention queue (until a pick) or quick override |
 | 3 Quick state override | `orc:triage/P3` | the request is not "move X to <state>" |
+| 4 Intake a raw report | `orc:triage/P4` | the input is a tracker item |
+| Validity check | `orc:triage/VALIDITY` | never in P2 and P4 |
+| Roles and transitions | `orc:triage/ROLES` | the run writes no role |
 | Briefs and triage notes | `orc:triage/BRIEFS` | no brief or notes to post |
 | Out-of-scope KB | `orc:triage/OUT-OF-SCOPE` | never; P2 reads it, rejected enhancements write it |
 
@@ -77,30 +84,21 @@ Modules live in `orc:phases` (`references/triage/`). Entering a phase, Read exac
 
 NOTE: PRs enter discovery only when the config's "PRs as a request surface" flag is `yes`. An explicitly named PR always enters triage. Consumer rules from `domain.md`: glossary vocabulary, ADR awareness.
 
-Roles are canonical names; the label strings come from `docs/agents/triage-labels.md`:
-
-| Role | Kind | Meaning | For a PR |
-|---|---|---|---|
-| `bug` | category | something is broken | same |
-| `enhancement` | category | new feature or improvement | same |
-| `needs-triage` | state | the maintainer evaluates next | same |
-| `needs-info` | state | waiting on the reporter | same |
-| `ready-for-agent` | state | fully specified for an AFK agent | a brief exists; an agent works the diff next |
-| `ready-for-human` | state | needs human implementation | ready for a human to merge |
-| `wontfix` | state | not actioned | same |
-
-Every triaged item carries exactly one category role and one state role. Transitions: unlabeled → `needs-triage` → one of `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`; `needs-info` returns to `needs-triage` when the reporter replies. On conflicting state roles, flag it and ask the maintainer before anything else. The maintainer overrides any transition; flag unusual ones and ask.
+Every triaged item carries exactly one category role and one state role, per `orc:triage/ROLES`.
 
 ## Iron rules
 
 - No tracker write without the preview gate: every comment, label change and close shows verbatim and confirms first.
-- Verify-the-claim never writes: reproduce and run tests; never commit fixes. Fixes are `/orc:debug` or `/orc:flow` work, seeded by the brief.
+- The validity check never writes: reproduce and run tests; never commit fixes. Fixes are `/orc:debug` or `/orc:flow` work.
+- Never resolve, ignore, assign, merge or comment on a Sentry issue.
+- Suggest the next command; never start it.
 - No AI attribution in any posted comment, brief, or close message.
-- Session state lives on the tracker (triage-note comments), never in `.orc/`. No checkpoint to register.
+- Session state lives on the tracker (triage-note comments), never in `.orc/`. A raw report keeps no state until filed.
 - Resuming means re-reading the item's notes, checking what the reporter answered, and presenting an updated picture.
 
 ## Output
 
-- Tracker writes (labels, briefs, triage notes, closes), each behind its preview gate.
+- A validity verdict for every report, and a suggested next command.
+- Tracker writes (labels, briefs, triage notes, closes, filed raw reports), each behind its preview gate.
 - `docs/agents/out-of-scope.md` entries for rejected enhancements.
 - Updated `GLOSSARY.md` and ADRs when grilling resolved domain terms (via `orc:domain-modeling`).

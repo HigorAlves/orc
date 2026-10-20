@@ -6,7 +6,7 @@ when_to_use: Use only from a command — entering phase N, Read exactly referenc
 
 # Phases
 
-The phase bodies of orc's larger commands, disclosed progressively. A command's entry file carries its arguments, preconditions, Phase 0 and the phase index; each phase module loads only when the command reaches it.
+Phase bodies of orc's larger commands. The command entry keeps arguments, preconditions, Phase 0 and the phase index; a module loads only when its phase starts.
 
 ## Protocol
 
@@ -18,7 +18,7 @@ The phase bodies of orc's larger commands, disclosed progressively. A command's 
 
 ## Module code
 
-The first line of every module is its code: `<!-- orc:<command>/P<N> -->`. Cross-references use the code ("per orc:flow/P5"), never prose like "the implement phase above".
+The first line of every module is its code: `<!-- orc:<command>/P<N> -->`. Cross-references use the code: "per orc:flow/P5", never prose.
 
 ## Modules
 
@@ -30,9 +30,9 @@ The first line of every module is its code: `<!-- orc:<command>/P<N> -->`. Cross
 | `/orc:retro` | [P1](references/retro/PHASE-1-SOURCES.md) · [P2](references/retro/PHASE-2-CANDIDATES.md) · [P3](references/retro/PHASE-3-PRESENT.md) · [P4](references/retro/PHASE-4-ACT.md) |
 | `/orc:ship` | [P1](references/ship/PHASE-1-VERIFY.md) · [P2](references/ship/PHASE-2-REVIEW.md) · [P3](references/ship/PHASE-3-COMPOSE.md) · [P4](references/ship/PHASE-4-GATE.md) · [P4.5](references/ship/PHASE-4.5-SIZE-GATE.md) · [P5](references/ship/PHASE-5-PUSH.md) · [P6](references/ship/PHASE-6-CLEANUP-HINT.md) |
 | `/orc:stack-pr` | [P1](references/stack-pr/PHASE-1-TOOLING.md) · [P2](references/stack-pr/PHASE-2-PRECONDITIONS.md) · [P3](references/stack-pr/PHASE-3-ANALYZE.md) · [P4](references/stack-pr/PHASE-4-PREVIEW.md) · [P5](references/stack-pr/PHASE-5-EXECUTE.md) · [P6](references/stack-pr/PHASE-6-WRITEBACK.md) · [P7](references/stack-pr/PHASE-7-SUMMARY.md) · [SMART](references/stack-pr/SMART.md) |
-| `/orc:triage` | [P1](references/triage/PHASE-1-QUEUE.md) · [P2](references/triage/PHASE-2-ITEM.md) · [P3](references/triage/PHASE-3-OVERRIDE.md) · [BRIEFS](references/triage/BRIEFS.md) · [OUT-OF-SCOPE](references/triage/OUT-OF-SCOPE.md) |
+| `/orc:triage` | [P1](references/triage/PHASE-1-QUEUE.md) · [P2](references/triage/PHASE-2-ITEM.md) · [P3](references/triage/PHASE-3-OVERRIDE.md) · [P4](references/triage/PHASE-4-INTAKE.md) · [VALIDITY](references/triage/VALIDITY.md) · [ROLES](references/triage/ROLES.md) · [BRIEFS](references/triage/BRIEFS.md) · [OUT-OF-SCOPE](references/triage/OUT-OF-SCOPE.md) |
 | `/orc:wayfinder` | [MAP](references/wayfinder/MAP.md) · [A](references/wayfinder/MODE-A-CHART.md) · [B](references/wayfinder/MODE-B-WORK.md) |
 
-Phase 0 (context detection, state registration) always lives in the command and runs on every invocation.
+Phase 0 (context detection, state registration) always lives in the command and runs every time.
 
-Commands piloted as skill directories (ADR 0008: `code-review`, `cleanup`, `incident`) keep their modules under their own `references/` and follow the same protocol.
+Skill-directory commands (ADR 0008: `code-review`, `cleanup`, `incident`) keep modules in their own `references/`; same protocol.

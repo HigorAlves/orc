@@ -5,6 +5,7 @@ All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tag
 ## [Unreleased]
 
 ### Added
+- `/orc:triage` is now the intake for any report: a Sentry issue (`--sentry`, read-only) or pasted text goes through a new intake phase. Every report gets a five-question validity check (real, duplicate, already done, in scope, enough detail) plus a severity, a verdict, an offer to file it, and a suggested next command. `/orc:map` routes unverified reports to triage and confirmed bugs to `/orc:debug`.
 - Website: a Next.js and shadcn/ui landing page under `site/`, with the Claude Desktop cockpit drawn by the real mod renderers, counts generated from the plugin on disk, and a `site` CI job. No plugin change.
 
 ### Changed

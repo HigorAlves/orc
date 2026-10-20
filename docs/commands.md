@@ -32,7 +32,7 @@ The full catalog: every slash command, the specialist agents behind them, the sk
 | `/orc:deps` | Dependency audit / outdated / upgrade — one bump per commit, majors escalated |
 | `/orc:release` | Cut a user-project release: semver from commits, changelog, tag, GitHub release |
 | `/orc:setup` | Run-once tracker/labels/domain-docs interview; powers to-issues, triage, wayfinder |
-| `/orc:triage` | Herd issues + external PRs through triage roles into agent-ready briefs |
+| `/orc:triage` | Intake for any report (issue, PR, Jira, Sentry, pasted text): validity check, then brief, file, park or reject |
 | `/orc:wayfinder` | Plan multi-session work as decision tickets on the tracker |
 | `/orc:cleanup` | Remove `.orc/` state, worktree, and (if merged) branch for completed sessions |
 | `/orc:retro` | Retrospective on a session — environment changes (checks, standards, pointers, tool economy), most severe first; applies or files them |
