@@ -4,6 +4,7 @@
 // refs, the loader and the triggers all live in register.ts.
 import type { OrcDetails, OrcLive, OrcSections } from '../../types'
 import type { CiSummary } from './ci'
+import type { GuardSummary } from './guard/measure'
 export { LEDGER_INITIAL } from './ledger'
 
 export const SECTIONS_INITIAL: OrcSections = { qa: false, pr: false, agents: false, decisions: false, digest: false, diff: false, touched: false }
@@ -14,6 +15,9 @@ export const DETAILS_INITIAL: OrcDetails = { digest: null, diff: null, diffTrunc
 // any event); the band and the PR section read it and ui.invalidate redraws.
 export type CiAlert = { pr: number | string; summary: CiSummary } | null
 export const ciBox: { alert: CiAlert } = { alert: null }
+
+// The measured guard card lives only while the shell floor's confirm dialog is pending.
+export const guardBox: { current: { summary: GuardSummary; lines: string[] } | null } = { current: null }
 
 // orc-state verbs that change what the cockpit shows. Reads (get, list, line…) never refresh.
 const WRITE = /(^|[\s;&|/])orc-state["']?\s+(init|phase|status|link-pr|digest|checkpoint|usage\s+add|slice\s+(init|set)|jira|decision\s+set|migrate)\b/

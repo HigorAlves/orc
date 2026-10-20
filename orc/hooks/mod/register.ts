@@ -8,6 +8,10 @@ import { COMPANIONS_NONE, companionsOf, type Companions } from './companions'
 import { pickBand, type BandRow } from './band'
 import { ciAlt, ciSvg, ciText } from './band/ci'
 import { fitSvg, px } from './draw/svg'
+import { classify } from './guard/classify'
+import { measurePlan, summarize, type GuardSummary } from './guard/measure'
+import { guardSvg } from './guard/svg'
+import { guardText } from './guard/text'
 import { isRich } from './draw/surface'
 import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine, summarizeChecks, type CiRecord } from './ci'
 import {
@@ -23,7 +27,7 @@ import { agentRows, progressModel } from './progress/model'
 import { TOUCHED_INITIAL, applyNumstat, markCommitted, parseNumstat, relPath, touch, touchedRows, type TouchKind } from './touched/model'
 import { progressText } from './progress/text'
 import { progressAlt, progressSvg } from './progress/svg'
-import { DETAILS_INITIAL, LIVE_INITIAL, SECTIONS_INITIAL, ciBox, isOrcStateWrite } from './state'
+import { DETAILS_INITIAL, LIVE_INITIAL, SECTIONS_INITIAL, ciBox, guardBox, isOrcStateWrite } from './state'
 
 // State refs: literals in this file, as the engine's scan requires.
 const SNAPSHOT_REF = { plugin: 'orc', key: 'snapshot' } as const
@@ -45,7 +49,7 @@ export function register(on: On, options: PluginOptions) {
   register_agents(on, parseProfile(options.model_profile))
   register_step_tool(on)
   register_touched(on)
-  register_refresh(on)
+  register_refresh(on, features)
   register_cockpit(on, parseProfile(options.model_profile))
   register_surfaces(on)
   register_toolrows(on)
@@ -119,16 +123,64 @@ function register_compaction(on: On) {
 // Every orc-state write the model runs through Bash re-reads .orc/ into state;
 // subscribed drawings redraw by themselves. (Main-loop turns refresh in the
 // turn.complete hook below — one registration per event without a matcher.)
-function register_refresh(on: On) {
+function register_refresh(on: On, features: Features) {
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
-    const result = await next(e)
     // 2.1.291 types the Bash call flat (`e.command`); older builds nested it under `input`.
     const call = e as { command?: string; input?: { command?: string } }
     const command = call.command ?? call.input?.command ?? ''
-    if (isOrcStateWrite(command)) await refresh($).catch(() => undefined)
-    if (GIT_COMMIT.test(command) && !failed(result)) await commit_touched($)
-    return result
+    // Measured before the floor's dialog opens, so its notices can attach to it; never denies.
+    const measured = features.guardMeasure ? await guard_measure($, command) : null
+    const pending = next(e)
+    void pending.catch(() => undefined)
+    if (measured) {
+      const clear = () => { guardBox.current = null; $.ui.invalidate('ui.render') }
+      next.signal?.addEventListener('abort', clear)
+      guardBox.current = measured
+      $.ui.invalidate('ui.render')
+      for (const line of measured.lines) { try { $.ui.notice(e.tool_use_id, line) } catch { /* a notice never fails the call */ } }
+      try {
+        const result = await pending
+        clear()
+        return after_bash($, command, result)
+      } catch (err) {
+        clear()
+        throw err
+      }
+    }
+    return after_bash($, command, await pending)
   })
+}
+
+async function after_bash($: EngineInterface, command: string, result: unknown) {
+  if (isOrcStateWrite(command)) await refresh($).catch(() => undefined)
+  if (GIT_COMMIT.test(command) && !failed(result)) await commit_touched($)
+  return result
+}
+
+// The read-only measure for a command the shell floor will confirm; null when
+// it is not one of those, or anything about measuring fails.
+async function guard_measure($: EngineInterface, command: string): Promise<{ summary: GuardSummary; lines: string[] } | null> {
+  try {
+    const hit = classify(command)
+    if (!hit || hit.cwd === '-') return null
+    const outputs: string[] = []
+    for (const argv of measurePlan(hit.kind, hit.args)) {
+      const scoped = hit.cwd ? [argv[0], '-C', hit.cwd, ...argv.slice(1)] : argv
+      const r = await $.process.run(scoped, { timeoutMs: 5000 })
+      if (r.exitCode !== 0) return null
+      outputs.push(r.stdout)
+    }
+    if (!outputs.length) return null
+    const summary = summarize(hit.kind, outputs, hit.args)
+    const lines = guardText(summary)
+    const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
+    const slice = snap.session ? currentSlice(snap.slices) : null
+    const t = (await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL
+    if (slice && t.sliceId === slice.id && t.files.some(f => f.kind === 'edit')) lines.push(`slice ${slice.id} has edits not yet checkpointed`)
+    return { summary, lines }
+  } catch {
+    return null
+  }
 }
 
 // orc agents: model_profile picks the model when the Agent call named none
@@ -422,8 +474,9 @@ function register_band(on: On, features: Features) {
     if (e.props.hasSurvey) return next(e)
     const ci: BandRow | null = ciBox.alert ? { kind: 'ci', pr: ciBox.alert.pr, failing: ciBox.alert.summary.failing } : null
     const progress = features.progressBand ? await progress_row($) : null
-    // guard, sentinel, retro and cache rows join here in later slices
-    const row = pickBand([ci, progress])
+    const guard: BandRow | null = guardBox.current ? { kind: 'guard', summary: guardBox.current.summary.headline, detail: guardBox.current.summary } : null
+    // sentinel, retro and cache rows join here in later slices
+    const row = pickBand([ci, guard, progress])
     if (!row) return next(e)
     const below = await next(e)
     const els = $.ui.resolve(e)
@@ -454,6 +507,12 @@ function draw_band_row($: EngineInterface, e: { surface: RenderSurface | null; p
       ] })
     }
     return ciText(els, row, actions)
+  }
+  if (row.kind === 'guard') {
+    const source = row.detail && isRich(e.surface) && 'Svg' in els ? guardSvg(row.detail, e.props.bodyColumns) : null
+    return source && 'Svg' in els
+      ? els.Svg({ source, alt: row.summary, width: px(e.props.bodyColumns) })
+      : els.Text({ color: 'yellow', children: ['⚠ ' + row.summary] })
   }
   if (row.kind === 'progress') {
     const m = row.model

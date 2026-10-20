@@ -1,10 +1,11 @@
+import type { GuardSummary } from './guard/measure'
 import type { ProgressModel } from './progress/model'
 
 // The one orc row above the prompt: every feature offers a row, the highest
 // priority wins. Pure — register.ts draws it.
 export type BandRow =
   | { kind: 'ci'; pr: number | string; failing: string[] }
-  | { kind: 'guard'; summary: string }
+  | { kind: 'guard'; summary: string; detail?: GuardSummary }
   | { kind: 'sentinel'; id: string; text: string }
   | { kind: 'retro'; id: string; rule: string; seen: number }
   | { kind: 'cache'; minutesLeft: number; rewriteUsd: number | null; tokens: number; waitingOn: string | null }
