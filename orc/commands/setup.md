@@ -16,6 +16,7 @@ allowed-tools:
   - Bash(gh repo view:*)
   - Bash(gh auth status:*)
   - Bash(gh label list:*)
+  - Bash(gh label create:*)
   - Bash(acli:*)
   - Bash(command -v:*)
   - Bash(ls:*)
@@ -100,7 +101,8 @@ Then `AskUserQuestion`: **Write them** / **Edit first — tell me what to change
    [one line — "single-context" or "multi-context"]. See `docs/agents/domain.md`.
    ```
 
-3. Close with `**➡️ Next**`: name the surfaces now unlocked (`/orc:triage`, `/orc:wayfinder`, `orc:to-issues`, `orc:to-prd`) and note that `docs/agents/*.md` can be edited directly later.
+3. **Create the labels the tracker lacks** (GitHub and Jira only; local markdown has none). Diff the vocabulary just written against `gh label list` (or the Jira project's labels via `acli`). Nothing missing → say so and move on. Otherwise print `**📋 Preview — tracker writes**` listing each `gh label create <name> --description <role>` (or the `acli` equivalent) verbatim, then `AskUserQuestion` — this is a hard-outward Tracker gate per `orc:gates` §1, never skipped by `--auto`. On yes, run exactly the previewed commands; `/orc:triage` can then apply labels instead of failing on a missing one.
+4. Close with `**➡️ Next**`: name the surfaces now unlocked (`/orc:triage`, `/orc:wayfinder`, `orc:to-issues`, `orc:to-prd`) and note that `docs/agents/*.md` can be edited directly later.
 
 ## Seed templates
 
@@ -109,11 +111,12 @@ The seed templates live in `orc:tracker-config` (`references/templates/{GITHUB,J
 ## Iron rules
 
 - Never overwrite user edits in `docs/agents/*.md` or the memory file without showing a diff-level preview first.
-- Never create labels, issues, or Jira items during setup — this command writes repo config files only.
+- Never create issues or Jira work items during setup. Labels are the one tracker write, and only behind the Phase 4 preview gate — never silently, never under autopilot.
 - Recommend only trackers whose CLI is actually usable here (Phase 1 evidence); never recommend Jira when `acli` is absent or unauthenticated.
 
 ## Output
 
 - `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md`, `docs/agents/domain.md`
 - An `## Agent skills` block in `CLAUDE.md` or `AGENTS.md`
+- Missing triage labels created on the tracker, when the user approved the preview
 - No `.orc/` session state — this is run-once repo configuration with nothing to resume; the written files ARE the durable state.
