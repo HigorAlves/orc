@@ -196,3 +196,32 @@ jobs:
       - name: govulncheck
         # Pinned for reproducibility; bump with the Go toolchain (v1.8+ needs go 1.26+).
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+
+  site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: site/package.json # pnpm version from packageManager
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: site/pnpm-lock.yaml
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Facts match the plugin on disk
+        run: pnpm facts:check
+      - name: Unit tests
+        run: pnpm test
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Build
+        run: pnpm build

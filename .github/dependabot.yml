@@ -21,3 +21,14 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+
+  # The website (site/, pnpm).
+  - package-ecosystem: "npm"
+    directory: "/site"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(site)"
+    groups:
+      site-deps:
+        patterns: ["*"]

@@ -4,6 +4,9 @@ All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tag
 
 ## [Unreleased]
 
+### Added
+- Website: a Next.js and shadcn/ui landing page under `site/`, with the Claude Desktop cockpit drawn by the real mod renderers, counts generated from the plugin on disk, and a `site` CI job. No plugin change.
+
 ### Changed
 - CLI: Go toolchain 1.25.8 → 1.27.3, modules refreshed (x/term, x/sys, x/text, bubbletea deps), golangci-lint v2.15.0 and govulncheck v1.9.0 in CI. No plugin change.
 
