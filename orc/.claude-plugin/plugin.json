@@ -98,6 +98,54 @@
       "title": "Explainer voice",
       "description": "kokoro-js voice id for /orc:explain narration (local TTS, no key). af_heart = English; pf_dora / pm_alex = Brazilian Portuguese.",
       "default": "af_heart"
+    },
+    "progress_band": {
+      "type": "boolean",
+      "title": "Progress band",
+      "description": "Flow progress row above the prompt",
+      "default": true
+    },
+    "guard_measure": {
+      "type": "boolean",
+      "title": "Guard measure",
+      "description": "Measured impact lines under destructive-git confirms",
+      "default": true
+    },
+    "replay": {
+      "type": "boolean",
+      "title": "Replay",
+      "description": "Record edits per slice for /orc replay",
+      "default": true
+    },
+    "cache_cliff": {
+      "type": "string",
+      "title": "Cache cliff",
+      "description": "warn or off — cache-expiry countdown and cold-send cost toast",
+      "default": "warn"
+    },
+    "cache_ttl_minutes": {
+      "type": "number",
+      "title": "Cache TTL (minutes)",
+      "description": "Prompt-cache lifetime assumed by the countdown (5 for API-key billing)",
+      "default": 60
+    },
+    "corrections": {
+      "type": "boolean",
+      "title": "Corrections",
+      "description": "Catch corrections into the retro store (one Haiku call per flagged prompt)",
+      "default": true
+    },
+    "sentinel": {
+      "type": "string",
+      "title": "Sentinel",
+      "description": "off, checks (model-free), or model (checks + model review)",
+      "default": "model"
+    },
+    "sentinel_every": {
+      "type": "number",
+      "title": "Sentinel interval",
+      "description": "Implementer steps between sentinel model reviews (min 4)",
+      "default": 12
     }
   }
 }
