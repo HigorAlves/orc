@@ -21,6 +21,7 @@ Given a PR number or URL, return findings the orchestrator (`/orc:code-review`) 
 ## Inputs
 
 - A PR reference (number or URL) and optionally the originating issue/spec.
+- The paths of any documented standards the orchestrator found (`CODING_STANDARDS.md`, `CONTRIBUTING.md`, `CLAUDE.md`). Read them once; they are the Standards axis, and they override the smell baseline.
 - Optional flags relayed by the orchestrator: `--include-nits`, `--soft-tests`.
 
 ### Workspace-mode inputs (optional)
@@ -38,6 +39,7 @@ When the orchestrator is reviewing N linked PRs (workspace mode), the dispatch m
    - **Test gaps** — missing tests for non-trivial new behavior, untested branches, fail-open behavior → severity `test`
    - **Inconsistencies** — one call site updated, another forgotten, drift between paired changes → severity `bug`
    - **Spec conformance** — when the originating issue/spec is provided, does the diff actually implement it? Missing acceptance criteria → severity `bug`; scope creep beyond the spec → severity `question`
+   - **Standards** — a breach of a documented standard → severity `suggestion`, body cites the file + the rule. Then the smell baseline in `orc:review-contract` (`references/SMELLS.md`, read it once per review): each hit is a `possible <Smell>` at severity `suggestion`, a judgement call the repo's own standards override. Skip anything a linter enforces.
 4. For complex patches, `Read` the surrounding file (not the whole repo) to verify a finding before flagging it.
 
 ## What you do NOT flag
@@ -51,7 +53,7 @@ When the orchestrator is reviewing N linked PRs (workspace mode), the dispatch m
 
 ## Output
 
-Strict JSON per the `orc:review-contract` schema — `summary` + `findings[]` with `path`, `line`, `start_line`, `side`, `severity`, `title`, `body`, `suggestion_code`, `confidence`. Zero findings → the contract's empty-findings shape; the posting layer computes APPROVE.
+Strict JSON per the `orc:review-contract` schema — `summary` (counting standards findings and spec findings separately when both exist) + `findings[]` with `path`, `line`, `start_line`, `side`, `severity`, `title`, `body`, `suggestion_code`, `confidence`. Zero findings → the contract's empty-findings shape; the posting layer computes APPROVE.
 
 ## Iron rules
 
