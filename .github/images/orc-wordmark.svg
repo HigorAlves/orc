@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 5 148 56" role="img" aria-labelledby="orc-wordmark-title">
+  <title id="orc-wordmark-title">orc</title>
+  <g fill="none" stroke="#4f8f2f" stroke-width="9">
+    <circle cx="32" cy="33" r="20"/>
+    <path d="M72 57.5V33A20 20 0 0 1 92 13"/>
+    <path d="M139.3 20.1A20 20 0 1 0 139.3 45.9"/>
+  </g>
+  <path fill="#4f8f2f" d="M22 47C22 41 23.5 37 26.5 33C26.5 38 27.5 44 28.5 50Z"/>
+  <path fill="#4f8f2f" d="M42 47C42 41 40.5 37 37.5 33C37.5 38 36.5 44 35.5 50Z"/>
+</svg>
