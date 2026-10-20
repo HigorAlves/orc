@@ -22,12 +22,15 @@
 
 set -euo pipefail
 
+# Always drain stdin first: exiting before the harness finishes writing the
+# payload gives the writer EPIPE (seen on Linux as "jq: Broken pipe").
+input=$(cat)
+
 if ! command -v jq >/dev/null 2>&1; then
   printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"orc guards need jq and it is not on PATH — failing closed. Install it (orc doctor --fix) or confirm this command deliberately."}}'
   exit 0
 fi
 
-input=$(cat)
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 deny_reasons=()
