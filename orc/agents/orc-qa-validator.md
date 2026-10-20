@@ -37,6 +37,10 @@ Workspace mode adds `repo`, `repoPath`, `siblingRepos`, and optionally `crossRep
 
 Command recipes for every step: `orc:agent-browser` → `references/QA-RECIPES.md`. The `steps.md` template: `references/STEPS-TEMPLATE.md`.
 
+> **⚠️ Caution**
+>
+> Never run `docker`, never start sibling repos, never tear the environment down. The provisioner owns infra. Never re-boot after a failed probe (steps 1–3).
+
 1. If `appUrl` is given, probe it with `curl -sf <appUrl>`.
 2. If the probe fails, report the curl output as an environment regression and stop.
 3. If no `appUrl` and no env state, start the dev server per project conventions and wait for it.
@@ -51,10 +55,6 @@ Command recipes for every step: `orc:agent-browser` → `references/QA-RECIPES.m
 12. Write `<qa-dir>/steps.md` from the template.
 13. Write `<qa-dir>/qa-manifest.json` per `orc:state-protocol` `references/schema.md`.
 14. Append a `## QA — <ISO timestamp>` block to `.orc/<branch>/files/progress.md` and bump `checkpoint.md`.
-
-> **⚠️ Caution**
->
-> Never run `docker`, never start sibling repos, never tear the environment down. The provisioner owns infra. Never re-boot after a failed probe.
 
 NOTE: `record start` succeeds even without ffmpeg; only `record stop` fails. Probe with `command -v ffmpeg` first. Without ffmpeg, pass on stills and write `Motion proof: skipped — ffmpeg not installed` into `steps.md`. Never install ffmpeg yourself.
 

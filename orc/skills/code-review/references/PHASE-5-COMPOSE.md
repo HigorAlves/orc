@@ -10,6 +10,9 @@ _Loaded on demand (orc:phases protocol). Do not run this phase from memory — t
 5. Build one comment per finding: `path`, `line`, `start_line`, `side: "RIGHT"`, `body`.
 6. Append the suggestion block when `suggestion_code` is set and passes `orc:inline-review`'s rules.
 7. If more than 15 comments remain, print the comment-cap gate and ask which to drop.
+8. In multi-PR mode, name every PR in the body and state the merge order from the workspace plan.
+
+Merge-order line: "Merge order: api → ui (per workspace plan)".
 
 Example body:
 

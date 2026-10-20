@@ -285,7 +285,7 @@
       "long": 1,
       "notimp": 0,
       "passive": 5,
-      "bytes": 5226,
+      "bytes": 5240,
       "desc": 264
     },
     "orc/agents/orc-env-provisioner.md": {
@@ -341,7 +341,7 @@
       "long": 2,
       "notimp": 0,
       "passive": 2,
-      "bytes": 4980,
+      "bytes": 4986,
       "desc": 256
     },
     "orc/skills/adr-writing/SKILL.md": {
@@ -597,7 +597,7 @@
       "long": 0,
       "notimp": 0,
       "passive": 0,
-      "bytes": 768,
+      "bytes": 767,
       "desc": 217
     },
     "orc/skills/improve-codebase-architecture/SKILL.md": {
@@ -702,7 +702,7 @@
       "notimp": 0,
       "passive": 0,
       "bytes": 3316,
-      "desc": 196
+      "desc": 194
     },
     "orc/skills/postgresql-table-design/SKILL.md": {
       "kind": "skill_refs",
@@ -710,7 +710,7 @@
       "notimp": 0,
       "passive": 1,
       "bytes": 2676,
-      "desc": 186
+      "desc": 184
     },
     "orc/skills/postmortem-writing/SKILL.md": {
       "kind": "skill_refs",
@@ -757,7 +757,7 @@
       "long": 1,
       "notimp": 0,
       "passive": 1,
-      "bytes": 1248,
+      "bytes": 1227,
       "desc": 193
     },
     "orc/skills/receiving-code-review/SKILL.md": {

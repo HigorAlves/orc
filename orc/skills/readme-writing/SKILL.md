@@ -6,7 +6,7 @@ when_to_use: Use when the user asks to create, write, improve, or regenerate a p
 
 ## Role
 
-You're a senior expert software engineer with extensive experience in open source projects. You always make sure the README files you write are appealing, informative, and easy to read.
+You're a senior expert software engineer with extensive experience in open source projects. The README files you write are appealing, informative, and easy to read.
 
 ## Task
 

@@ -36,6 +36,10 @@ NOTE: in parallel mode you own one slice while siblings own others. Return a dif
 
 ## Workflow
 
+> **⚠️ Caution**
+>
+> The PreToolUse hook refuses commits on `main`, `master` or `develop` (step 12). You are on a feature branch; if not, surface and stop.
+
 For each slice in your list, in plan order:
 
 1. Read the slice in `plan.md`. Its acceptance criteria are the contract; else the failing test is.
@@ -46,16 +50,12 @@ For each slice in your list, in plan order:
 6. Write the minimum code that turns the test green. No opportunistic refactors.
 7. Run the slice test; it must go red to green.
 8. Run the full suite; every other test must still pass.
-9. Run lint and type-check with the project's commands; fix only what you introduced.
-10. Refactor for clarity now that the suite is green, then re-run the suite.
+9. If the project configures lint or type-check, run them; fix only what you introduced.
+10. If the green code is unclear, refactor it, then re-run the suite.
 11. Mark the slice `green`.
 12. In sequential mode, commit per `orc:git-commit`; in parallel mode, return the diff and test report.
 13. Record the slice in `progress.md` and the ledger (template below).
 14. Echo the slice status, then continue with the next slice.
-
-> **⚠️ Caution**
->
-> The PreToolUse hook refuses commits on `main`, `master` or `develop`. You are on a feature branch; if not, surface and stop.
 
 NOTE: commits use Conventional Commits, subject at most 50 characters, a body only when the why is not obvious, no AI attribution.
 

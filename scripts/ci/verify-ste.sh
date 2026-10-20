@@ -17,6 +17,10 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repo_root"
 baseline="scripts/ci/precision-baseline.json"
 mode="${1:-check}"
+case "$mode" in
+  check|--update|--report|--where) ;;
+  *) echo "usage: verify-ste.sh [--update | --report | --where <file>]" >&2; exit 2 ;;
+esac
 
 # Size caps (bytes) for files NOT yet in the baseline (new files).
 cap_command=6144
@@ -35,6 +39,10 @@ ensure(s|d)? => verify
 in order to => to
 prior to => before
 subsequently => then
+employ(s|ed|ing)? => use
+make sure => verify
+terminate(s|d)? => stop
+commence(s|d)? => start
 perhaps => delete; state the condition
 ascertain => determine
 approximately => about
@@ -120,7 +128,7 @@ while IFS= read -r entry; do
     while IFS= read -r line; do
       [ -n "$line" ] || continue
       hits=$((hits + 1))
-      [ "$mode" = report ] || echo "verify-ste: $f: unapproved '$(printf '%s' "$line" | grep -oiE "\b($pat)\b" | head -1)' → $fix :: ${line:0:90}"
+      [ "$mode" = "--report" ] || echo "verify-ste: $f: unapproved '$(printf '%s' "$line" | grep -oiE "\b($pat)\b" | head -1)' → $fix :: ${line:0:90}"
     done < <(prose "$f" | grep -v '^|' | sed -E 's/"[^"]*"//g; s/“[^”]*”//g' | grep -iE "\b($pat)\b" || true)
   done
 done <<< "$unapproved"
@@ -150,6 +158,12 @@ if [ "$mode" = "--report" ]; then
   echo "unapproved words: $hits"
   exit 0
 fi
+
+# ---- module codes: every phase module opens with its code -----------------------
+while IFS= read -r m; do
+  head -1 "$m" | grep -qE '^<!-- orc:[a-z0-9-]+/[A-Za-z0-9.-]+ -->$' && continue
+  echo "verify-ste: $m: first line must be the module code <!-- orc:<command>/P<N> -->"; status=1
+done < <({ find orc/skills/phases/references -mindepth 2 -name '*.md'; find orc/skills -path '*/references/PHASE-*.md' -not -path '*/phases/*'; } | sort)
 
 # ---- check -------------------------------------------------------------------
 [ "$hits" -eq 0 ] || status=1

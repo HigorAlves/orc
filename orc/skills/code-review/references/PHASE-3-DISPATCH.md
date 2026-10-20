@@ -7,8 +7,9 @@ _Loaded on demand (orc:phases protocol). Do not run this phase from memory — t
 2. Match the changed files against the security paths below.
 3. If any file matches, dispatch `orc-security-reviewer` in the same response, in parallel.
 4. If the user asked to force or skip the security review, obey that instead.
-5. Give each agent the inputs listed below, by path, in a brief under 400 words.
-6. In multi-PR mode, dispatch one `orc-pr-reviewer` per PR, each with `repo` and `repoPath`.
+5. If the match is borderline (one file, or a path that only resembles the list), ask via `AskUserQuestion`: force security review / skip it / auto.
+6. Give each agent the inputs listed below, by path, in a brief under 400 words.
+7. In multi-PR mode, dispatch one `orc-pr-reviewer` per PR, each with `repo` and `repoPath`.
 
 Security paths:
 

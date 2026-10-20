@@ -13,6 +13,7 @@ _Loaded on demand (orc:phases protocol). Do not run this phase from memory — t
 4. On "Post", send the review by the backend below and echo the returned URL.
 5. If `--dry-run`, print the payload as JSON and stop before step 4.
 6. In multi-PR mode, repeat steps 1–4 per PR with that PR's findings and event.
+7. Post a cross-repo finding (one PR's bug needs a fix in another) on both PRs, each referencing the other.
 
 Preview callout:
 

@@ -9,8 +9,8 @@ The precision train: every orc file is written to a controlled-language standard
 ### Added
 - Authoring standard (`orc/skills/skill-writing/references/AUTHORING-STANDARD.md`, ADR 0007): glossary as restricted vocabulary, a fixed unapproved-word list, 15-word verb-first procedural steps, notices before the step they guard, a fixed task anatomy for commands, size caps, phase modules with a code. `scripts/ci/verify-ste.sh` enforces it as a ratchet (`--report`, `--where`, `--update`); `verify-context-cost.sh` ratchets the always-on description total.
 - `orc:phases` (generalised from `flow-phases`): per-command phase modules under `references/<command>/PHASE-<N>-<NAME>.md`, headed by `<!-- orc:<command>/P<N> -->`, loaded one at a time.
-- `when_to_use` frontmatter on 60 skills and commands, with `description` reduced to what the surface does; agent descriptions capped near 250 characters. Always-on description total 30,435 → 27,449 characters.
-- Guard hooks fail closed: `onFailure: "block"` on every PreToolUse guard, checked by `verify-hooks.sh`.
+- `when_to_use` frontmatter on 60 skills and commands, with `description` reduced to what the surface does; agent descriptions capped near 250 characters. Always-on description total 30,435 → 27,419 characters.
+- Guard hooks fail closed: the `pre-git-guard` dispatcher now asks (never allows) when `jq` is missing, a check script is missing, crashes, or returns unreadable output; `verify-guard-hooks.sh` covers both. `onFailure: "block"` on every PreToolUse guard additionally lets the harness block when the dispatcher itself cannot run, on Claude Code versions that honour the key (hooks.md); older clients ignore it, and the in-script behaviour holds either way.
 - Eval suite 7 → 21 cases: a routing case per command family, two negatives, and a fail-fast regression on the rewritten `code-review`.
 - ADR 0008 (commands stay flat files; `code-review`, `cleanup`, `incident` piloted as skill directories with modules beside them) and a skill-doctor step in contributing.md.
 - `orc:agent-browser` gains `references/QA-RECIPES.md` and `references/STEPS-TEMPLATE.md`, disclosed from the QA validator.

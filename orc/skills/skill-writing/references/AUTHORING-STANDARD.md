@@ -5,7 +5,7 @@ How every orc file is written: commands, agents, skills, phase modules. Adapted 
 ## 1. Controlled vocabulary
 
 - **One word, one meaning.** `GLOSSARY.md` is the restricted vocabulary. Use its term; never a synonym it lists under *Avoid*. A concept that needs a new word goes into the glossary before it goes into a file.
-- **Unapproved words.** Replace on sight; the lint fails on them:
+- **Unapproved words.** Replace on sight. The lint fails on every row except `may` and `maybe`, which it leaves to review: "may" also grants permission ("a file may only improve") and "Maybe" names a type:
 
 | Unapproved | Write instead |
 |---|---|
@@ -28,9 +28,9 @@ How every orc file is written: commands, agents, skills, phase modules. Adapted 
 ## 2. Sentence limits
 
 - **Procedural step: 15 words, one action.** A numbered or bulleted line inside a Phase, Workflow, Steps, Process or Mode section. A step that needs more is two steps, or a step plus a NOTE.
-- **Descriptive statement: 20 words.** Prose outside steps, and bullets under Arguments, Output, Iron rules, Principles.
+- **Descriptive statement: 20 words.** Prose outside steps, and bullets under Arguments, Output, Iron rules, Principles. The lint counts bullets; paragraphs are reviewed by eye.
 - **Qualifiers move out.** Paths, flags and the reason go in a NOTE under the step, or in the Arguments section, not in the step line.
-- **Punctuation.** One em-dash per line at most. A second clause is a second sentence.
+- **Punctuation.** One em-dash per line at most; a second clause is a second sentence. Reviewed, not linted.
 
 ## 3. Voice and mood
 
@@ -41,7 +41,7 @@ How every orc file is written: commands, agents, skills, phase modules. Adapted 
 
 ## 4. Safety hierarchy
 
-Maps onto the callout palette (`orc:callouts`). A notice goes **before** the step it guards, never after.
+Maps onto the callout palette (`orc:callouts`). A WARNING or CAUTION goes **before** the step it guards, never after. A NOTE goes before or after, wherever it reads best (issue #115).
 
 | Level | Palette | Use for |
 |---|---|---|
@@ -53,7 +53,7 @@ A gate is not a notice: `⛔ Gate` precedes the `AskUserQuestion` it introduces 
 
 ## 5. Task anatomy (commands)
 
-Every command file, in this order. The lint checks the headings exist in order; it does not check prose.
+Every command file, in this order. Heading order is reviewed, not linted.
 
 ```
 # /orc:<name>                      one sentence: what the command does
@@ -77,7 +77,7 @@ Tools live in `allowed-tools` frontmatter only; never restated in prose.
 ## 6. Data modules
 
 - **One module, one phase.** A phase module is self-contained: an agent that reads only it, plus the command's Phase 0 state, can perform the phase.
-- **Module code.** The first line of a phase module is its code: `<!-- orc:<command>/P<N> -->`. Cross-references between modules use the code, not prose ("per orc:flow/P5", not "see the implement phase above").
+- **Module code.** The first line of a phase module is its code: `<!-- orc:<command>/P<N> -->`. The lint checks it on every file under `orc:phases` and every `references/PHASE-*.md`. Cross-references between modules use the code, not prose ("per orc:flow/P5", not "see the implement phase above").
 - **Stored once.** A rule two commands share lives in one skill both invoke, never in both commands. `orc:gates`, `orc:callouts`, `orc:state-protocol`, `orc:pr-size-budget` exist for this.
 - **Update once.** Changing a phase changes one file; the command entry's phase index names the module, nothing else about it.
 
@@ -118,6 +118,7 @@ After:
 
 `scripts/ci/verify-ste.sh` runs in `validate.yml`:
 
-- **Hard fail:** an unapproved word; a new file over its size cap; a new file with any step over the limit or not verb-first.
-- **Ratchet:** for files in `scripts/ci/precision-baseline.json`, long steps, non-imperative steps, passive lines, bytes and description length may not exceed the recorded value. When a file improves, run `verify-ste.sh --update` so the baseline tightens; the PR carries the new baseline.
+- **Hard fail:** an unapproved word (outside quotes and tables); a phase module without its code; a new file over its cap; a new file with any step over the limit or not verb-first.
+- **Ratchet:** for files in `scripts/ci/precision-baseline.json`, long steps, non-imperative steps, passive lines, body bytes and description length may not exceed the recorded value. When a file improves, run `verify-ste.sh --update` so the baseline tightens; the PR carries the new baseline. Files that predate the standard (for example `shadcn`, `writing-for-agents`, `systematic-debugging`, `stack-pr`) sit above the caps and only ratchet down.
+- **What the lint measures:** bytes are the body only (frontmatter and fenced code excluded); a step is a list line, with the 15-word limit under a heading containing Phase, Workflow, Steps, Process, Mode, Protocol or Loop and 20 words elsewhere; a condition opener (`If`, `When`, `In`, `Unless`) is allowed before the verb; the always-on budget is `description` plus `when_to_use`, 200 characters for skills and commands, 250 for agents; a skill with a `references/` directory may reach 8 KB.
 - **Report:** `verify-ste.sh --report` prints the worst files, which is what `/orc:retro` reads under coding standards.

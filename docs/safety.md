@@ -26,7 +26,7 @@ Eight rules, injected at every session start by the `using-orc` skill. The hooks
 
 ## Guardrails enforced by hooks, not vibes
 
-Every rule below is a short, readable shell script under [`orc/hooks/scripts/`](../orc/hooks/scripts) that Claude Code runs as a real hook, not a suggestion the model can talk itself out of. The PreToolUse guards carry `onFailure: "block"`: a missing or timed-out guard script blocks the git command instead of letting it through, and CI (`verify-hooks.sh`) refuses a guard without it.
+Every rule below is a short, readable shell script under [`orc/hooks/scripts/`](../orc/hooks/scripts) that Claude Code runs as a real hook, not a suggestion the model can talk itself out of. The guards fail closed: the dispatcher asks, never allows, when `jq` is missing or a check script is missing, crashes or returns unreadable output (smoke-tested in CI). The hook entries also carry `onFailure: "block"`, so on Claude Code versions that honour the key the harness blocks the command when the dispatcher itself cannot run.
 
 | Guardrail | What it does | Enforced by |
 |-----------|--------------|-------------|
@@ -57,7 +57,7 @@ No. There is no orc backend and no telemetry; nothing in the tree tracks usage. 
 <details>
 <summary><strong>Can orc commit to <code>main</code> or force-push without me?</strong></summary>
 
-No. A PreToolUse hook (`pre-commit-branch-check.sh`) intercepts `git commit` and `git push` on `main`/`master`/`develop` and downgrades them to a confirm prompt that needs your keystroke, with no env-var escape hatch. The protected branch list is configurable (`protected_branches`). A second hook (`pre-destructive-git-check.sh`) applies the same confirm-prompt gate to `git reset --hard`, `git clean -f`, `git branch -D` and `git push --force` on any branch. If a guard script is missing or times out, the command is blocked, not allowed.
+No. A PreToolUse hook (`pre-commit-branch-check.sh`) intercepts `git commit` and `git push` on `main`/`master`/`develop` and downgrades them to a confirm prompt that needs your keystroke, with no env-var escape hatch. The protected branch list is configurable (`protected_branches`). A second hook (`pre-destructive-git-check.sh`) applies the same confirm-prompt gate to `git reset --hard`, `git clean -f`, `git branch -D` and `git push --force` on any branch. If `jq` or a guard script is missing or crashes, the dispatcher asks for your keystroke instead of allowing the command.
 </details>
 
 <details>
