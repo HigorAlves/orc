@@ -1,0 +1,52 @@
+name: plugin-release
+
+# Plugin releases are tagged `orc--vX.Y.Z` (plain `v*` is the CLI's namespace,
+# see release-cli.yml and docs/contributing.md). On that tag this workflow
+# checks the tag against orc/.claude-plugin/plugin.json, pulls the version's
+# section out of CHANGELOG.md, and publishes the GitHub Release with it. It
+# never bumps, commits, or retags: the version PR did that.
+
+on:
+  push:
+    tags:
+      - "orc--v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: plugin-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Tag matches plugin.json
+        run: |
+          ver="${GITHUB_REF_NAME#orc--v}"
+          plugin_ver="$(jq -r '.version' orc/.claude-plugin/plugin.json)"
+          if [ "$ver" != "$plugin_ver" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} is version ${ver} but plugin.json says ${plugin_ver}. Bump the manifest in the release PR, then retag."
+            exit 1
+          fi
+          echo "VERSION=${ver}" >> "$GITHUB_ENV"
+
+      - name: Extract the changelog section
+        # Fails when CHANGELOG.md has no "## [VERSION]" heading, same as verify-changelog.sh in validate.
+        run: bash scripts/ci/changelog-section.sh "$VERSION" > release-notes.md
+
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release ${GITHUB_REF_NAME} already exists (created by hand?) — leaving it untouched."
+            exit 0
+          fi
+          printf '\n**Full changelog**: https://github.com/%s/compare/%s...%s\n' \
+            "$GITHUB_REPOSITORY" "$(git describe --tags --abbrev=0 --match 'orc--v*' "${GITHUB_REF_NAME}^" 2>/dev/null || echo main)" "$GITHUB_REF_NAME" >> release-notes.md
+          gh release create "$GITHUB_REF_NAME" --title "orc ${VERSION}" --notes-file release-notes.md --latest
