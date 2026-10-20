@@ -21,3 +21,6 @@ orc/evals/results/
 
 # Claude Code regenerates the mod type declarations per installed version
 orc/.claude-plugin/types/
+
+# npm installs (orc-explain installs its deps into the user cache, never here)
+node_modules/
