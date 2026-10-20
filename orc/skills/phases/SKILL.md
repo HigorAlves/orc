@@ -25,6 +25,7 @@ The first line of every module is its code: `<!-- orc:<command>/P<N> -->`. Cross
 | Command | Modules |
 |---|---|
 | `/orc:flow` | [P2 RFC](references/flow/PHASE-2-RFC.md) · [P3 Plan](references/flow/PHASE-3-PLAN.md) · [P4 Start](references/flow/PHASE-4-START.md) · [P5 Implement](references/flow/PHASE-5-IMPLEMENT.md) · [P6 QA](references/flow/PHASE-6-QA.md) · [P7 Ship](references/flow/PHASE-7-SHIP.md) · [P8 Address](references/flow/PHASE-8-ADDRESS.md) · [P9 Cleanup](references/flow/PHASE-9-CLEANUP.md) |
-| `/orc:code-review` | [P1 Scope](references/code-review/PHASE-1-SCOPE.md) · [P3 Dispatch](references/code-review/PHASE-3-DISPATCH.md) · [P4 Merge](references/code-review/PHASE-4-MERGE.md) · [P5 Compose](references/code-review/PHASE-5-COMPOSE.md) · [P6 Post](references/code-review/PHASE-6-POST.md) · [P8 Summary](references/code-review/PHASE-8-SUMMARY.md) · [Audit](references/code-review/AUDIT.md) |
 
 Phase 0 (context detection, state registration) always lives in the command and runs on every invocation.
+
+Commands piloted as skill directories (ADR 0008: `code-review`, `cleanup`, `incident`) keep their modules under their own `references/` and follow the same protocol.

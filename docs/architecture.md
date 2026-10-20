@@ -158,6 +158,12 @@ Curated skills cover four optional packs (all enabled): `web-react` (incl. vites
 
 Plus the doc-authoring family for senior/architect practice: `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem-writing` (blameless incident postmortems), `prd-writing` (Product Requirements Documents), `trd-writing` (Technical Requirements Documents). Fifteen further skills are vendored or merged from MIT-licensed community sources (mattpocock/skills at pin `5beb35b`, obra/superpowers, antfu/skills, twostraws/SwiftUI-Agent-Skill) with provenance frontmatter per skill and full notices in `THIRD-PARTY-LICENSES.md`.
 
+## Authoring standard and phase modules
+
+Every command, agent and skill is written to the controlled-language standard in `orc/skills/skill-writing/references/AUTHORING-STANDARD.md` (ADR 0007): glossary vocabulary, a fixed unapproved-word list, procedural steps of at most 15 words that open with a verb, WARNING/CAUTION/NOTE before the step they guard, a fixed task anatomy, and size caps (command entry 6 KB, agent 8 KB, skill 6 KB without `references/`). `scripts/ci/verify-ste.sh` enforces it as a ratchet against `scripts/ci/precision-baseline.json`; `verify-context-cost.sh` ratchets the always-on description total.
+
+Large commands keep only Phase 0 and the phase index resident; each later phase is a **module** under `orc/skills/phases/references/<command>/PHASE-<N>-<NAME>.md`, headed by its code (`<!-- orc:<command>/P<N> -->`) and loaded exactly when the command enters that phase. The three largest commands are piloted as skill directories with their modules beside them (ADR 0008); the rest stay flat files.
+
 ## Relationship to compozy
 
 orc borrows compozy's session-state idea, hook layout, and YAML-frontmatter conventions. It diverges in two places:

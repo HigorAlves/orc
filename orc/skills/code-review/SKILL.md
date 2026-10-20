@@ -1,4 +1,5 @@
 ---
+name: code-review
 description: Review someone else's open GitHub PR — posts a real review with line-anchored inline comments; verdict computed mechanically; mandatory preview gate. Workspace-aware. For your OWN working diff, prefer the bundled /code-review instead.
 argument-hint: "<pr-number-or-url> [--prs a#1,b#2,...] [--context <description>] [--summary-only] [--soft-tests] [--dry-run] [--include-nits] [--audit]"
 allowed-tools:
@@ -49,7 +50,7 @@ Review a pull request someone else authored. Post a real GitHub review: inline c
 
 ## Phases
 
-Modules live in `orc:phases` (`references/code-review/`). Entering a phase, Read exactly its module.
+Modules live beside this file under `references/` (ADR 0008 pilot). Entering a phase, Read exactly its module, per the `orc:phases` protocol.
 
 | Phase | Module | Skipped when |
 |---|---|---|

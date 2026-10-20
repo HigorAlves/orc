@@ -1,5 +1,5 @@
 <!-- orc:code-review/P1 -->
-_Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
+_Loaded on demand (orc:phases protocol). Do not run this phase from memory — this file is the phase._
 
 # Phase 1 — Scope: eligibility, diff, standards, spec
 

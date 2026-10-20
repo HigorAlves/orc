@@ -1,5 +1,5 @@
 <!-- orc:code-review/P5 -->
-_Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
+_Loaded on demand (orc:phases protocol). Do not run this phase from memory — this file is the phase._
 
 # Phase 5 — Compose the review
 
