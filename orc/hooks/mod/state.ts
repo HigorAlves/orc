@@ -11,7 +11,7 @@ export { LEDGER_INITIAL } from './ledger'
 export const SECTIONS_INITIAL: OrcSections = { qa: false, pr: false, agents: false, decisions: false, digest: false, diff: false, touched: false, radius: false }
 export const RADIUS_INITIAL: OrcRadius | null = null
 export const LIVE_INITIAL: OrcLive = { agent: null, since: null }
-export const DETAILS_INITIAL: OrcDetails = { digest: null, diff: null, diffTruncated: false }
+export const DETAILS_INITIAL: OrcDetails = { digest: null, diff: null, diffTruncated: false, shots: null }
 
 // The red-CI alert lives in module scope (the watcher runs on a timer, outside
 // any event); the band and the PR section read it and ui.invalidate redraws.

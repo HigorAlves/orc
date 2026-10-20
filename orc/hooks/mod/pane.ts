@@ -15,6 +15,9 @@ import type { CiAlert } from './state'
 import type { Radius } from './radius/model'
 import { RADIUS_H, radiusAlt, radiusSvg } from './radius/svg'
 import { radiusText } from './radius/text'
+import { embeddable } from './qa/model'
+import { qaAlt, qaHeight, qaSvg } from './qa/svg'
+import { qaThumbsText, type QaMode } from './qa/text'
 
 export const PANE = 'orc-cockpit'
 
@@ -31,8 +34,9 @@ export type PaneModel = {
   agents: AgentRow[]
   touched: TouchedRow[]
   radius: Radius | null
+  shotMode: QaMode
 }
-export type PaneActions = { resume: () => void; toggle: (id: SectionId) => () => void; renderReport: () => void; settle: (key: string, value: string) => void }
+export type PaneActions = { resume: () => void; toggle: (id: SectionId) => () => void; renderReport: () => void; openTarget: (url: string) => void; settle: (key: string, value: string) => void }
 
 const PROFILES = ['balanced', 'quality', 'economy'] as const
 
@@ -70,11 +74,26 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
       ...(model.sections[id] ? [Box({ flexDirection: 'column', paddingLeft: 2, children: children() })] : []),
     ] })
 
+  const Svg = 'Svg' in els ? els.Svg : null
+  // Up to 3 screenshot thumbnails: one Svg on rich surfaces, Image/Raster/paths in the terminal.
+  const shots = () => {
+    const all = model.details.shots ?? []
+    if (model.rich && Svg) {
+      const set = embeddable(all)
+      const source = set.length ? fitSvg(qaSvg(set, px(model.bodyColumns))) : null
+      return source ? [Svg({ source, alt: qaAlt(set), width: px(model.bodyColumns), height: qaHeight(px(model.bodyColumns), set.length) })] : []
+    }
+    return model.rich ? [] : qaThumbsText(els, all, model.shotMode)
+  }
   const qa = section('qa', 'q', () => snap.qa
     ? [line('Verdict: ' + snap.qa.verdict.toUpperCase(), { bold: true, color: snap.qa.verdict === 'pass' ? 'green' : 'red' }),
        ...snap.qa.acceptance.map(c => line(criterionLine(c), { color: c.result === 'pass' ? 'green' : c.result === 'fail' ? 'red' : undefined })),
        ...(snap.qa.missing.length ? [line('Missing evidence: ' + snap.qa.missing.join(', '), { color: 'red' })] : []),
-       Button({ key: 'qa-report', label: 'Render report', onPress: actions.renderReport })]
+       ...shots(),
+       Box({ flexDirection: 'row', columnGap: 2, children: [
+         Button({ key: 'qa-report', label: 'Open report', onPress: actions.renderReport }),
+         ...(snap.qa.url ? [Button({ key: 'qa-target', label: 'Open target', onPress: () => actions.openTarget(snap.qa?.url ?? '') })] : []),
+       ] })]
     : [line('No QA packet yet — /orc:qa writes one.', { dimColor: true })])
 
   const prs = s?.linkedPRs ?? []
@@ -87,7 +106,6 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
     ...(alert ? [line(`CI: ${alert.summary.failing.length} failing (${alert.summary.failing.join(', ')})`, { color: 'red' })] : []),
   ])
 
-  const Svg = 'Svg' in els ? els.Svg : null
   const agentRow = (r: AgentRow) => {
     const source = model.rich && Svg ? fitSvg(agentSvg(r, px(model.bodyColumns))) : null
     return source && Svg

@@ -31,6 +31,7 @@ import { progressAlt, progressSvg } from './progress/svg'
 import { COLD_MIN_TOKENS, cacheState, coldToast, isColdRewrite, parseDuration, pingEvery, pingGone, type CacheView } from './cache/model'
 import { cacheSvg } from './cache/svg'
 import { cacheAlt, cacheText } from './cache/text'
+import { openPlan, parseThumbs, pixelTerminal } from './qa/model'
 import { REPLAY_INITIAL, recordEdit, replayView, type ReplayState } from './replay/model'
 import { replayText } from './replay/text'
 import { replayAlt, replaySvg } from './replay/svg'
@@ -822,7 +823,8 @@ function register_cockpit(on: On, fallbackProfile: Profile, features: Features) 
     const agents = agentRows(ledger, costOf, now)
     const radius = (await $.state.get(RADIUS_REF)).value ?? RADIUS_INITIAL
     const touched = touchedRows((await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL, now)
-    const model = { snap, sections, details, agents, touched, radius, rich: isRich(e.surface), ciAlert: ciBox.alert, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
+    const shotMode = pixelTerminal(await $.env.get('TERM_PROGRAM').catch(() => undefined), await $.env.get('KITTY_WINDOW_ID').catch(() => undefined)) ? 'image' as const : 'raster' as const
+    const model = { snap, sections, details, agents, touched, radius, shotMode, rich: isRich(e.surface), ciAlert: ciBox.alert, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
     return drawPane($.ui.resolve(e), model, {
       resume: () => { $.prompt.fill({ text: snap.session ? '/orc:resume' : '/orc:flow ' }) },
       toggle: (id: SectionId) => async () => {
@@ -835,6 +837,7 @@ function register_cockpit(on: On, fallbackProfile: Profile, features: Features) 
           // a state or loader failure leaves the pane as drawn
         }
       },
+      openTarget: (url: string) => { open_target($, url).catch(() => undefined) },
       // The user picked it in the pane, so it settles as an asked decision.
       settle: async (key: string, value: string) => {
         await orc_state($, ['decision', 'set', key, value, '--provenance', 'asked', '--supersede'])
@@ -879,10 +882,11 @@ function refresh($: EngineInterface): Promise<void> {
       await touched_counts($)
       // Open Digest/Diff sections reload against the new snapshot; closed ones start clean next time.
       const open = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
-      if (!open.digest && !open.diff) await $.state.set(DETAILS_REF, DETAILS_INITIAL)
+      if (!open.digest && !open.diff && !open.qa) await $.state.set(DETAILS_REF, DETAILS_INITIAL)
       if (open.digest) await load_details($, 'digest')
       if (open.diff) await load_details($, 'diff')
       if (open.radius) await load_details($, 'radius')
+      if (open.qa) await load_details($, 'qa')
     } while (dirty)
   })().finally(() => { inflight = null })
   return inflight
@@ -903,6 +907,25 @@ async function load_details($: EngineInterface, id: SectionId): Promise<void> {
   if (id === 'digest') await load_digest($, snap)
   if (id === 'diff') await load_diff($, snap)
   if (id === 'radius') await load_radius($)
+  if (id === 'qa') await load_qa($)
+}
+
+// QA thumbnails: `orc-report thumbs` writes them beside the packet; read the jpg (desktop embeds it) and the rgb (terminal Raster).
+async function load_qa($: EngineInterface): Promise<void> {
+  const out = await $.process.run([$.plugin.root + '/bin/orc-report', 'thumbs'], { timeoutMs: 20000 }).then(r => (r.exitCode === 0 ? r.stdout : ''), () => '')
+  const b64 = (path: string | null) => path ? $.fs.read(path, { as: 'bytes' }).then(r => r.base64, () => null) : Promise.resolve(null)
+  const shots = await Promise.all(parseThumbs(out).map(async t => ({ name: t.name, criterion: t.criterion, jpg: t.jpg, png: t.png, b64: await b64(t.jpg), rgb: await b64(t.rgb) })))
+  const d = (await $.state.get(DETAILS_REF)).value ?? DETAILS_INITIAL
+  await $.state.set(DETAILS_REF, { ...d, shots })
+}
+
+// "Open target": the terminal-browser companion's /browser command, else the OS opener (darwin: open, otherwise xdg-open).
+async function open_target($: EngineInterface, url: string): Promise<void> {
+  const uname = await $.process.run(['uname', '-s'], { timeoutMs: 3000 }).then(r => r.stdout, () => '')
+  const plan = openPlan(url, companions.terminalBrowser, uname)
+  if (!plan) return $.ui.toast('No http(s) target to open')
+  if ('command' in plan) await $.command.run(plan.command)
+  else await $.process.run(plan.argv, { timeoutMs: 5000 })
 }
 
 // Ship radius, read when its section opens: size against budget, the changed files, and

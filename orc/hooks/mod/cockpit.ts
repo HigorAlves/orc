@@ -83,7 +83,7 @@ export function summaryText(snap: Snapshot): string {
 export function parseReport(json: string): QaReport | null {
   try {
     const r = JSON.parse(json)
-    return Array.isArray(r.acceptance) ? { verdict: String(r.verdict ?? ''), acceptance: r.acceptance, missing: r.missing ?? [] } : null
+    return Array.isArray(r.acceptance) ? { verdict: String(r.verdict ?? ''), acceptance: r.acceptance, missing: r.missing ?? [], url: typeof r.target?.baseUrl === 'string' ? r.target.baseUrl : null } : null
   } catch {
     return null
   }
