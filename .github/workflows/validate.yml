@@ -182,7 +182,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.12.2
+          version: v2.15.0
           working-directory: cli
 
       - name: go build
@@ -194,5 +194,5 @@ jobs:
           go tool cover -func=coverage.out | tail -1
 
       - name: govulncheck
-        # Pinned: govulncheck >= v1.8.0 requires go 1.26; cli/go.mod is 1.25 (GOTOOLCHAIN=local).
-        run: go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
+        # Pinned for reproducibility; bump with the Go toolchain (v1.8+ needs go 1.26+).
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
