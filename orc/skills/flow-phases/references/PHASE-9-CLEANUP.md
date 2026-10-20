@@ -21,5 +21,7 @@ AskUserQuestion (preview the cleanup plan):
 - Abort cleanup
 ```
 
+Before the cleanup plan runs, offer the retro — a soft-inward gate (`orc:gates` §6: auto-advances to *skip* under `guided`/`full`, asks under `manual`): **Run `/orc:retro` on this session first?** The retro reads `.orc/<branch>/files/` (usage ledger, slice history, escalations), which cleanup is about to delete, so it has to come first. On yes, run `/orc:retro --session <branch>` and return here when it closes.
+
 After cleanup: mark `.orc/orc.json` entry `status: completed`, echo a summary.
 

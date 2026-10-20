@@ -127,6 +127,8 @@ graphify save-result --type query --outcome useful --nodes <cited-nodes> \
 
 Update `.orc/<branch>/files/checkpoint.md` to phase=done, with paths to `diagnosis.md`, the test file, and the fix file.
 
+Then close with `**➡️ Next**`: suggest `/orc:retro` in this same session — now that the fix is in, the question "what would have prevented this bug?" has an answer (a missing seam, a check that didn't exist, a log the investigator could not see), and the retro turns it into an environment change rather than a note.
+
 ## Output
 
 - `.orc/<branch>/files/diagnosis.md`
