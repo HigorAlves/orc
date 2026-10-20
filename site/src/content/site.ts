@@ -81,7 +81,8 @@ export const situations: { group: string; items: { label: string; cmd: string }[
     { label: "Open the PR", cmd: "/orc:ship" }, { label: "Split a branch that grew too big", cmd: "/orc:stack-pr" },
   ] },
   { group: "Fix", items: [
-    { label: "A bug or a failing test", cmd: "/orc:debug" }, { label: "CI is red on my PR", cmd: "/orc:ci" },
+    { label: "A bug report, Sentry issue or ticket came in: is it real?", cmd: "/orc:triage" },
+    { label: "A confirmed bug or a failing test", cmd: "/orc:debug" }, { label: "CI is red on my PR", cmd: "/orc:ci" },
     { label: "Production is down right now", cmd: "/orc:incident" },
   ] },
   { group: "Review", items: [
