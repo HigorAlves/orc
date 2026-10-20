@@ -34,8 +34,11 @@ export type OrcLive = { agent: string | null; since: number | null }
 export type OrcDetails = { digest: string | null; diff: string | null; diffTruncated: boolean }
 export type OrcLedgerEntry = { requests: number; input: number; output: number; cacheRead: number; cacheWrite: number; lastAt: number | null; lastContext: number; model: string | null; ms: number; type: string | null; step: { label: string; n: number; of: number } | null; startedAt: number | null }
 export type OrcLedger = { main: OrcLedgerEntry; agents: Record<string, OrcLedgerEntry> }
+export type OrcStatusInfo = { phase: number | 'done' | null; phaseLabel: string | null; slicesDone: number; slicesTotal: number; qa: string | null; pr: number | string | null; policy: string | null }
+export type Orc = { status: () => Promise<OrcStatusInfo> }
 
 declare module 'claude-code' {
+  interface EngineInterface { orc: Orc }
   interface PluginState {
     orc: {
       snapshot: OrcSnapshot

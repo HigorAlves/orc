@@ -3,6 +3,8 @@
 // mods can't load (Claude Code < 2.1.287, --safe-mode, disableAllHooks, an
 // org policy) or `mod_enabled` is false, orc behaves exactly as without it.
 import type { EngineInterface, On, PluginOptions, RenderSurface } from 'claude-code'
+import { statusInfo } from './api'
+import { COMPANIONS_NONE, companionsOf, type Companions } from './companions'
 import { pickBand, type BandRow } from './band'
 import { ciAlt, ciSvg, ciText } from './band/ci'
 import { fitSvg, px } from './draw/svg'
@@ -42,6 +44,20 @@ export function register(on: On, options: PluginOptions) {
   register_gates(on)
   register_band(on, features)
   register_steps(on, features)
+  register_api(on)
+}
+
+// $.orc: the noun other mods read orc's state through. The method must not need
+// `$`, so the snapshot writer (refresh) keeps `lastSnapshot` current.
+let companions: Companions = COMPANIONS_NONE
+let lastSnapshot: Snapshot = EMPTY
+
+function register_api(on: On) {
+  on('engine.create', async (_$, e, next) => {
+    companions = companionsOf(e.plugins)
+    const built = await next(e)
+    return { ...built, orc: { status: async () => statusInfo(lastSnapshot) } }
+  })
 }
 
 // One session.start hook: add /orc, and in an interactive session start the CI watcher.
@@ -363,7 +379,8 @@ function refresh($: EngineInterface): Promise<void> {
   inflight = (async () => {
     do {
       dirty = false
-      await $.state.set(SNAPSHOT_REF, await load_snapshot($))
+      lastSnapshot = await load_snapshot($)
+      await $.state.set(SNAPSHOT_REF, lastSnapshot)
       // Open Digest/Diff sections reload against the new snapshot; closed ones start clean next time.
       const open = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
       if (!open.digest && !open.diff) await $.state.set(DETAILS_REF, DETAILS_INITIAL)
