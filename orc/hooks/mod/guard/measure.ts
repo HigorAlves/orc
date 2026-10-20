@@ -23,8 +23,12 @@ export function measurePlan(kind: GuardKind, args: string[] = []): string[][] {
       return [['git', 'clean', ...flags]]
     }
     case 'branch': {
+      // The name comes from the model's command: never let it reach git as an
+      // option (`--output=<file>` truncates files before the user is asked).
       const name = branchOf(args)
-      return name ? [['git', 'rev-list', '--count', name, '--not', 'HEAD', '--remotes'], ['git', 'log', '--oneline', '-n', String(ITEM_MAX), name, '--not', 'HEAD', '--remotes']] : []
+      if (!name || name.startsWith('-')) return []
+      const range = ['--not', 'HEAD', '--remotes', '--not', '--end-of-options', name]
+      return [['git', 'rev-list', '--count', ...range], ['git', 'log', '--oneline', '-n', String(ITEM_MAX), ...range]]
     }
     case 'push':
       return [['git', 'rev-parse', '--abbrev-ref', '@{u}'], ['git', 'rev-list', '--count', 'HEAD..@{u}'], ['git', 'log', '--oneline', '-n', String(ITEM_MAX), 'HEAD..@{u}']]

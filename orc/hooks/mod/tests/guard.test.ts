@@ -65,7 +65,7 @@ test('measurePlan is read-only argv for every kind', () => {
   expect(measurePlan('reset')[1]).toEqual(['git', 'diff', '--shortstat', 'HEAD'])
   expect(measurePlan('clean', ['-fdx'])[0]).toEqual(['git', 'clean', '-n', '-d', '-x'])
   expect(measurePlan('clean', ['-f'])[0]).toEqual(['git', 'clean', '-n'])
-  expect(measurePlan('branch', ['-D', 'feat-x'])[0]).toEqual(['git', 'rev-list', '--count', 'feat-x', '--not', 'HEAD', '--remotes'])
+  expect(measurePlan('branch', ['-D', 'feat-x'])[0]).toEqual(['git', 'rev-list', '--count', '--not', 'HEAD', '--remotes', '--not', '--end-of-options', 'feat-x'])
   expect(measurePlan('push')[1]).toEqual(['git', 'rev-list', '--count', 'HEAD..@{u}'])
 })
 
@@ -138,4 +138,14 @@ test('guardSvg escapes hostile item text', () => {
   const svg = guardSvg(summarize('clean', ['Would remove <script>x</script>\n']), 80)
   expect(svg).toContain('&lt;script&gt;')
   expect(svg).not.toContain('<script>')
+})
+
+test('a branch name that looks like an option is never passed to git', () => {
+  // `git branch -D --output=<file>` must not become `git rev-list --output=<file>` (truncates the file pre-approval).
+  expect(measurePlan('branch', ['-D', '--output=/tmp/victim'])).toEqual([])
+  expect(measurePlan('branch', ['-D', '-x'])).toEqual([])
+  for (const argv of measurePlan('branch', ['-D', 'feat-x'])) {
+    const i = argv.indexOf('feat-x')
+    expect(argv[i - 1]).toBe('--end-of-options')
+  }
 })
