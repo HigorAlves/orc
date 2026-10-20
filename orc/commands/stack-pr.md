@@ -31,241 +31,73 @@ allowed-tools:
 
 # /orc:stack-pr
 
-Convert a single big branch into a stack of smaller, chained PRs. Use this when the size gate fires on `/orc:ship`, or anytime you've ended up with a 600-LOC branch and want to break it down before review.
+Convert one big branch into a stack of smaller, chained PRs: one per Conventional Commit by default, or agent-proposed slices with `--smart`.
 
 ## Arguments
 
-- `--smart` — dispatch the `orc-stack-analyzer` agent to propose logical slices from the diff (rather than the default commit-based slicing). Use when commits are messy (WIP, fixups, no Conventional Commits).
+- `--smart` — dispatch `orc-stack-analyzer` to propose logical slices from the diff instead of commit-based slicing.
+  - Use when commits are messy: WIP, fixups, no Conventional Commits.
 - `--base <branch>` — target a non-default base (e.g. `develop`). Defaults to `origin/HEAD`.
 - `--draft` — open every PR in the stack as a draft.
 - `--max-loc <N>` — override the per-slice LOC budget (default: 300).
 - `--repos a,b` / `--repo a` / `--all-repos` / `--this-repo` — workspace-mode targeting. See `orc:workspace-mode`.
 
-## Workflow
+## Preconditions
+
+> **🛑 Outward write**
+>
+> P5 pushes N branches and opens N PRs; P6 rewrites every PR body. The P4 preview gate guards both.
+
+> **⚠️ Caution**
+>
+> P5 reshapes history with cherry-picks. It creates `<branch>-pre-stack-backup` first; the original branch stays safe there.
+
+- Tests pass and lint is clean (`orc:verification-before-completion`, P2).
+- The worktree is clean; the branch has no merge commits and at least two commits.
+- Use this when the `/orc:ship` size gate fires and the user picks "Stack it", or standalone before the PR.
+- Do not invoke for a one-commit branch, or for a hot-fix where review-cycle time dominates (`/orc:ship` with the `Size-budget-override:` trailer).
+
+## Phases
+
+Modules live in `orc:phases` (`references/stack-pr/`). Entering a phase, Read exactly its module.
+
+| Phase | Module | Skipped when |
+|---|---|---|
+| 0 Detect context | resident, below | never |
+| 1 Detect tooling | `orc:stack-pr/P1` | never |
+| 2 Verify preconditions | `orc:stack-pr/P2` | never |
+| 3 Analyze: commit-based slices | `orc:stack-pr/P3` | `--smart` (P3 hands off) |
+| Smart analysis | `orc:stack-pr/SMART` | not `--smart` and no switch from P3 |
+| 4 Preview and confirm | `orc:stack-pr/P4` | never |
+| 5 Execute: backup, reshape, push, open PRs | `orc:stack-pr/P5` | never |
+| 6 Body rewrite, metadata writeback | `orc:stack-pr/P6` | never |
+| 7 Reviewer hint, summary | `orc:stack-pr/P7` | never |
 
 ### Phase 0 — Detect context
 
 !`orc-workspace-detect --banner`
 
-Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection). Per-slice budget resolution: `orc-pr-size budget ${ARG_MAX_LOC:+--max-loc "$ARG_MAX_LOC"}`; per-slice LOC: `orc-pr-size loc --base <slice-base>`.
+1. Read the banner above; `ORC_*` vars are exported. Do not re-run detection.
+2. Resolve the per-slice budget with the command below.
+3. In workspace mode, resolve `targetRepos` from flags or `AskUserQuestion`.
 
-In workspace mode, resolve `targetRepos` from flags or `AskUserQuestion`. The stack lives **per repo**; cross-repo stacking is intentionally out of scope.
+Budget: `orc-pr-size budget ${ARG_MAX_LOC:+--max-loc "$ARG_MAX_LOC"}`. Per-slice LOC: `orc-pr-size loc --base <slice-base>`.
 
-### Phase 1 — Detect tooling
+NOTE: the stack lives per repo; cross-repo stacking is out of scope on purpose.
 
-```bash
-if command -v gh-stack >/dev/null 2>&1; then
-  STACK_TOOL="gh-stack"
-elif gh stack --help >/dev/null 2>&1; then
-  STACK_TOOL="gh-stack-ext"
-else
-  STACK_TOOL="none"
-fi
-```
+## Iron rules
 
-If `none`, present `AskUserQuestion`:
-
-1. **Install** — run `gh extension install github/gh-stack`. Continue when complete.
-2. **Use plain-gh fallback** — chain via `gh pr create --base <prev-branch>` per layer. No extension needed.
-3. **Cancel.**
-
-Never auto-install.
-
-### Phase 2 — Verify preconditions
-
-Invoke `orc:verification-before-completion` (tests pass, lint clean). Then per repo:
-
-```bash
-git status --porcelain                              # must be empty
-git rev-list --merges "$base"..HEAD                 # must be empty
-n_commits=$(git rev-list --count "$base"..HEAD)     # must be ≥ 2
-git rev-list "@{u}..HEAD" --count 2>/dev/null       # should be 0; warn if not
-```
-
-Any failure → surface the specific check + repo in a **⚠️ Caution** callout, stop. Don't try to "fix it for them."
-
-If `n_commits == 1`, surface and exit 0:
-
-```markdown
-> **➡️ Next**
->
-> Single commit on the branch — nothing to stack. Use `/orc:ship`.
-```
-
-### Phase 3 — Analyze
-
-**Default (commit-based):** validate every commit subject matches the Conventional Commits regex (per `orc:stack-pr` skill). On any miss, `AskUserQuestion`:
-
-1. **Reword** — non-interactive subject rewrite, one prompt per commit.
-2. **Switch to `--smart`** — agent doesn't care about subjects.
-3. **Cancel.**
-
-Build the slice list: one slice per commit. For each, compute `est_loc` from `git diff --shortstat <prev>...<this>` simulated by per-commit numstat sum.
-
-**`--smart`:** dispatch agent.
-
-```
-Agent: orc-stack-analyzer
-Inputs:
-  branch:    <current_branch>
-  base:      <base>
-  budget:    <resolved_budget>
-  repo:      <repo_name>           # workspace-only
-  repoPath:  <repo_path>           # workspace-only
-```
-
-Read the returned JSON. If `unsplittable: true`, surface the agent's rationale and exit with the suggestion: "open big with reason via `/orc:ship`." Don't try to force a split.
-
-### Phase 4 — Preview & confirm
-
-**Persist before the gate**: write the slice + rebase plan to `${ORC_STATE_DIR}/<sanitized-branch>/files/stack-plan.json` (stamped `headSha` + `generatedAt`, per `orc:state-protocol`) — an interrupted run restacks or re-previews from the file without re-dispatching `orc-stack-analyzer`.
-
-Render the preview headline, then ask with the stack table as the **Approve** option's `preview` (`orc:gates` §3) — no separate fence; tables never go inside callouts. The table below is the preview payload:
-
-```markdown
-> **📋 Preview — stack plan**
->
-> 3 PRs from feat/export, base = origin/main — 315 LOC total (avg 105 LOC/PR, all under 300 budget).
-```
-
-```
-| # | Branch                                       | Subject                                      | LOC | Commits |
-|---|----------------------------------------------|----------------------------------------------|-----|---------|
-| 1 | feat/export/01-refactor-extract-row-stream   | refactor: extract row-stream interface       |  80 | 2       |
-| 2 | feat/export/02-feat-wire-export-job          | feat(api): wire export job through stream    | 140 | 1       |
-| 3 | feat/export/03-feat-download-button          | feat(ui): download button + progress         |  95 | 1       |
-```
-
-`--smart` only — analyzer warnings go in a **⚠️ Caution** callout after the fence:
-
-```markdown
-> **⚠️ Caution**
->
-> - Commit e4f5g6h modifies one line in ExportJob.ts (slice 2). Proposed as-is.
-```
-
-`AskUserQuestion` (header `Stack plan`):
-
-1. **Approve (Recommended)** — execute the rebase plan. `preview`: the stack table.
-2. **Edit** — open the slice JSON in `$EDITOR`; re-validate after save.
-3. **Cancel.**
-
-### Phase 5 — Execute
-
-Backup before any reshape (non-negotiable):
-
-```bash
-git branch "${current_branch}-pre-stack-backup"
-```
-
-Apply the rebase plan. For each slice in order:
-
-```bash
-git checkout "$base_ref"
-git checkout -b "$slice_branch"
-for sha in "${cherry_pick[@]}"; do
-  git cherry-pick --no-edit "$sha" || exit 1
-done
-```
-
-On cherry-pick failure, surface the danger callout with the quick abort commands fenced below (for full teardown of a partial stack, the `orc:stack-pr` skill's Recovery section applies):
-
-```markdown
-> **🛑 Cherry-pick of <sha> failed**
->
-> Your original branch is safe in `${current_branch}-pre-stack-backup`.
-```
-
-```
-git cherry-pick --abort && git reset --hard ${current_branch}-pre-stack-backup
-```
-
-Push and open PRs:
-
-- **`gh-stack` path:**
-  ```bash
-  gs push                                   # pushes every layer
-  gs submit --base "$base"                  # creates the chained PRs
-  ```
-  Capture each created URL via `gh pr list --json number,url,headRefName --limit $N` filtered to the new branch names.
-
-- **plain-gh fallback:**
-  ```bash
-  for i in 1..N; do
-    prev=$([ $i -eq 1 ] && echo "$base" || echo "$slice_branch_$((i-1))")
-    git push -u origin "$slice_branch_$i"
-    gh pr create --base "$prev" --head "$slice_branch_$i" \
-      --title "[$i/$N] $subject_i" \
-      --body "$body_placeholder_i" \
-      ${ARG_DRAFT:+--draft}
-  done
-  ```
-
-If any creation fails, print the recovery script (per `stack-pr` skill) and stop.
-
-### Phase 6 — Two-pass body rewrite + metadata writeback
-
-Once every PR exists, build the cross-link table (per `stack-pr` skill template) with all sibling URLs and rewrite each PR body via `gh pr edit <url> --body "$updated_body"`. The `(this)` marker shifts per PR.
-
-Persist to `${ORC_STATE_DIR}/orc.json` — append per-PR entries to the active session's `linkedPRs[]`:
-
-```bash
-stackId="${SESSION_ID}-${REPO_NAME:-_}"      # workspace-aware
-for i in 1..N; do
-  jq --arg branch "$BRANCH" \
-     --arg repo "${REPO_NAME:-_}" \
-     --arg url "${pr_urls[$i]}" \
-     --arg stackId "$stackId" \
-     --argjson pos "$i" \
-     --arg parent "$([ $i -eq 1 ] && echo '' || echo "${pr_urls[$((i-1))]}")" \
-     '(.sessions[] | select(.branch == $branch) | .linkedPRs) += [{
-        repo: $repo,
-        url: $url,
-        stackId: $stackId,
-        stackPosition: $pos,
-        stackedOn: (if $parent == "" then null else $parent end)
-      }]' "$ORC_STATE_DIR/orc.json" > tmp && mv tmp "$ORC_STATE_DIR/orc.json"
-done
-```
-
-If the active session does not yet exist (the user invoked `/orc:stack-pr` standalone, no prior `/orc:flow`/`/orc:ship`), register one and record the stack:
-
-```bash
-orc-state init --command stack-pr --total-phases 7
-orc-state phase set 6
-# one call per stacked PR:
-orc-state link-pr --repo <r> --url <u> --number <n> --stack-id <id> --stack-position <p> [--stacked-on <u2>]
-```
-
-(Schema per `orc:state-protocol` — never hand-write the registry entry.)
-
-### Phase 7 — Reviewer hint + summary
-
-Echo all PR URLs in stack order, then:
-
-```
-Stack created. Reviewers should:
-  1. Review and approve PR #1 first — stacks merge bottom-up, and each
-     merge retargets the next PR's base.
-  2. Each subsequent PR includes only its incremental diff.
-
-If you need to update a middle PR, push to its branch — orc will republish children automatically on the next /orc:address.
-
-Backup branch: ${current_branch}-pre-stack-backup (delete with `git branch -D` once you trust the stack).
-```
-
-## When to invoke
-
-- `/orc:ship` size gate fires → user picks "Stack it" → this command runs inline.
-- After realizing mid-implementation that the branch grew past the budget — run standalone before opening the PR.
-- Reviving a stale branch with multiple commits that belong in separate PRs.
-
-Don't invoke for branches with one commit, or for production hot-fixes where review-cycle time is the dominant cost (use `/orc:ship` with the `Size-budget-override:` trailer instead).
+- Never auto-install `gh-stack`; the user picks install, plain-gh fallback or cancel.
+- Back up before any reshape; the backup branch is non-negotiable.
+- A precondition failure stops the run with the failing check and repo. Never "fix it for them".
+- If the analyzer reports `unsplittable: true`, stop; never force a split.
+- The registry entry goes through `orc-state link-pr`; never hand-write it (`orc:state-protocol`).
+- Tables ride the Approve option's `preview`, never inside a callout (`orc:gates` §3).
 
 ## Output
 
-- N pushed branches (`<branch>/01-<slug>`, `<branch>/02-<slug>`, ...).
-- N created PRs, chained, with cross-link tables in their bodies.
-- A backup branch (`<branch>-pre-stack-backup`) preserving the original state.
-- Updated `${ORC_STATE_DIR}/orc.json` with `linkedPRs[]` populated with stack metadata.
-- A reviewer hint explaining bottom-up merge order (full convention: the stack-pr skill's `references/STACKED-PRS.md`).
+- N pushed branches: `<branch>/01-<slug>`, `<branch>/02-<slug>`, ...
+- N chained PRs with cross-link tables in their bodies.
+- A backup branch, `<branch>-pre-stack-backup`, preserving the original state.
+- `${ORC_STATE_DIR}/orc.json` with `linkedPRs[]` carrying the stack metadata.
+- A reviewer hint on bottom-up merge order (full convention: `orc:stack-pr` skill, `references/STACKED-PRS.md`).

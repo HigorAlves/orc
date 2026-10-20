@@ -21,128 +21,70 @@ allowed-tools:
 
 # /orc:plan
 
-Turn a feature or refactor request into a written, TDD-shaped implementation plan. Persist it to `.orc/<branch>/files/plan.md` so the work can pause and resume.
+Turn a feature or refactor request into a written, TDD-shaped plan at `.orc/<branch>/files/plan.md`, so the work can pause and resume.
 
 ## Arguments
 
 - `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`); ladder and hard-outward exemption in `orc:gates` §6.
-
-- `--grill` — after drafting the plan, invoke `orc:grilling` to stress-test the design before committing.
-- `--issues` — after the plan is approved, run `orc:to-issues` to break it into independently grabbable issues.
-- `--jira <KEY>` — link a Jira ticket key (e.g. `PROJ-123`) to this session silently. Suppresses the Phase 1 link prompt. Validate against `^[A-Z][A-Z0-9_]*-\d+$`.
-- `--repos <list>`, `--repo <name>`, `--all-repos`, `--this-repo` — workspace-mode repo selection. See `orc:workspace-mode` for precedence.
+- `--grill` — after the draft, invoke `orc:grilling` to stress-test the design before committing.
+- `--issues` — after approval, run `orc:to-issues` to break the plan into independently grabbable issues.
+- `--jira <KEY>` — link a Jira ticket (e.g. `PROJ-123`) silently; suppresses the P1 link prompt.
+- `--repos <list>`, `--repo <name>`, `--all-repos`, `--this-repo` — workspace-mode repo selection; precedence per `orc:workspace-mode`.
 - The feature description is the rest of the argument string.
 
-## Workflow
+## Preconditions
 
-### Phase 0 — Detect PRD-shaped input (optional)
+> **🛑 Outward write**
+>
+> P5 (`--issues`) creates issues on the project tracker through `orc:to-issues`.
 
-If the feature description is long-form, references a Jira ticket / linked doc, or reads more like a brief than a settled spec — dispatch the `orc-prd-analyzer` subagent via `Task` first. Pass it the input + the URL if there is one. The agent returns a structured analysis (extracted goals, ambiguities, P0/P1/P2 clarifying questions, recommendation).
+- `--jira <KEY>` must match `^[A-Z][A-Z0-9_]*-\d+$`; a mismatch stops the run in P1.
+- Brief-shaped and refactor-shaped input are exclusive: one pre-phase runs, never both.
+- The plan gate (P4) asks at every autopilot level when `/orc:plan` runs standalone.
 
-After the analyzer returns, print the Gate headline (`**⛔ Gate — PRD analysis**`, one line on P0/P1/P2 counts, per `orc:callouts`), then `AskUserQuestion`:
-- "Proceed to plan — questions are P1/P2 only"
-- "Hold — answer P0 questions with PM first" (exit; don't waste planning effort)
-- "Run `/orc:rfc` first — design space needs RFC treatment"
+## Phases
 
-If the input is short and clear, skip Phase 0 and go straight to Phase 1.
+Modules live in `orc:phases` (`references/plan/`). Entering a phase, Read exactly its module.
 
-### Phase 0b — Detect refactor-shaped input (optional)
+| Phase | Module | Skipped when |
+|---|---|---|
+| 0 Detect context | resident, below | never |
+| PRD-shaped input | `orc:plan/PRD` | input is short and clear, or refactor-shaped |
+| Refactor-shaped input | `orc:plan/REFACTOR` | input is not refactor-shaped |
+| 1 Initialize workspace | `orc:plan/P1` | never |
+| 1b Prime code discovery | `orc:plan/DISCOVERY` | `graphify` absent (skip silently) |
+| 2 Draft the plan | `orc:plan/P2` | never |
+| 3 Stress-test the design | `orc:plan/P3` | no `--grill` |
+| 4 Confirm, install the slice ledger | `orc:plan/P4` | never |
+| 5 Decompose into issues | `orc:plan/P5` | no `--issues` |
 
-If the request is refactor-shaped — the user asks to refactor, restructure, pay down tech debt, or improve architecture, or `--type=refactor` was forwarded (e.g. from `/orc:flow`) — dispatch the `orc-refactor-architect` subagent via `Task` first. Pass it the request plus any named modules/paths. The agent compares documented intent (ADRs, `GLOSSARY.md`) against the implementation and returns leverage-ranked refactor candidates with cost-vs-friction estimates.
+### Phase 0 — Detect context
 
-After the architect returns, print the Gate headline (`**⛔ Gate — refactor candidates**`, one line on candidate count + top leverage pick, per `orc:callouts`), then `AskUserQuestion` listing the ranked candidates (plus "Different scope — describe it"). The chosen candidate becomes the scope Phase 2 drafts the plan around.
+!`orc-workspace-detect --banner`
 
-Phase 0 and 0b are exclusive — input is brief-shaped or refactor-shaped, not both. If neither fits, go straight to Phase 1.
+1. Read the banner above; `ORC_*` vars are exported. Do not re-run detection.
+2. In workspace mode, resolve `targetRepos` from the repo flags or via `AskUserQuestion`.
+3. If the input is brief-shaped, Read `orc:plan/PRD` and run it before P1.
+4. If the input is refactor-shaped, Read `orc:plan/REFACTOR` and run it before P1.
+5. Otherwise go straight to P1.
 
-### Phase 1 — Initialize workspace
+Brief-shaped: long-form text, a Jira ticket or linked doc, or a brief rather than a settled spec. Refactor-shaped: the user asks to refactor, restructure, pay down tech debt or improve architecture, or `--type=refactor` arrived from `/orc:flow`.
 
-0. **Detect context** — injected below (`ORC_*` vars are exported for any Bash you run — do not re-run detection):
+NOTE: the workspace prompt has the same shape as `/orc:flow` Phase 1. Iron rule: no silent broadcast.
 
-   !`orc-workspace-detect --banner`
+## Iron rules
 
-   In workspace mode, resolve `targetRepos` from `--repos`/`--repo`/`--all-repos`/`--this-repo` or via `AskUserQuestion` (same prompt shape as `/orc:flow` Phase 1). Iron rule: no silent broadcast.
-1. Determine the current branch: in repo mode `git branch --show-current`; in workspace mode prompt the user for the branch name (no cwd repo to read from), or accept it from a parent flow's checkpoint when called from `/orc:flow`.
-2. Sanitize: `feat/142-foo` → `feat-142-foo`.
-3. Create `${ORC_STATE_DIR}/<sanitized-branch>/files/` if it doesn't exist. In workspace mode, also create `<workspaceRoot>/<repo>/.orc/<sanitized-branch>/` per target repo with a `workspace-link.json` back-pointer.
-4. **Resolve the Jira link.**
-   - If `--jira <KEY>` was passed: validate against `^[A-Z][A-Z0-9_]*-\d+$`. Reject and stop on mismatch.
-   - Else if the key is a settled decision (`orc-state decision get jiraTicket` — a parent flow/start already resolved it) or the tracker layer declares no Jira (`orc:tracker-config` — record `jiraTicket=none` inferred): use it silently, echo the settled-decision line, don't ask.
-   - Otherwise: ask via `AskUserQuestion` — *"Link a Jira ticket to this session?"* with options:
-     - `Paste a key` (then prompt for the key, validate the same way)
-     - `Skip — I'll bind later via /orc:jira bind`
-     - `No ticket — this work has no tracker entry`
-   - When a key is resolved, set `JIRA_TICKET=<KEY>`. Otherwise leave `JIRA_TICKET=null`.
-5. Register state: `orc-state init --command plan --total-phases 4 [--jira <KEY>]` (5 with `--issues`, 6 with `--grill --issues`; workspace mode adds `--scope workspace --repos <targetRepos>`). Defer to `orc:state-protocol` for schema and rules.
-6. Write `checkpoint.md` with frontmatter including `jiraTicket: <KEY>` if set, and (workspace mode) `repos: [<list>]`.
-
-### Phase 1b — Prime code discovery (optional, non-blocking)
-
-Follow `orc:code-discovery`: if `graphify` is installed, verify a fresh code graph exists before drafting — build it if missing (`graphify extract . --code-only`, local AST, no key, seconds) or refresh it if `graph.json`'s `built_at_commit` differs from the current branch (`graphify update .`). This lets Phase 2 (`orc:writing-plans`) and any dispatched `orc-prd-analyzer` map file touchpoints and blast-radius by query instead of grepping the tree. Add `graphify-out/` to `.git/info/exclude`. In workspace mode, prime one per target repo. If `graphify` is absent or the build fails, skip silently — planning falls back to Glob/Grep and is unaffected.
-
-### Phase 2 — Draft the plan
-
-Invoke `orc:writing-plans`. Follow that skill exactly. Write the output to `${ORC_STATE_DIR}/<branch>/files/plan.md`. Update `checkpoint.md` (phase=2, last_artifact=plan.md).
-
-**Per-slice LOC budget contract (all modes)** — every slice MUST carry an `est_loc: <int>` field as part of its header. The estimate is the implementer's **contract**, not a precise prediction:
-
-- Heuristic for the planner: `est_loc ≈ (new_files * 80) + (modified_files * 30) + boilerplate_test_lines`. Adjust for known-large files. When a Graphify graph exists (primed in Phase 1b), sharpen `modified_files` with `graphify affected "<symbol>"` blast-radius per `orc:writing-plans`, and flag high-fan-in changes as `ships_as_stack: true` before implementation.
-- If a slice's estimate exceeds `${ORC_PR_LOC_BUDGET:-300}`, **split the slice further** OR mark it `ships_as_stack: true` to signal that the implementer invokes `/orc:stack-pr` at ship time.
-- During Phase 5 (implement), if a slice's actual diff exceeds `est_loc * 1.5`, the implementer **escalates** rather than balloons the slice silently. This is enforced by `orc-implementer`'s escalation conditions.
-
-Defer to `orc:pr-size-budget` for the budget resolution order and exclusion list.
-
-**Workspace mode plan template additions** — when `targetRepos` has 2+ entries, the plan MUST include:
-
-1. **Repo touchpoints** — a section listing each target repo and the changes it owns:
-   ```markdown
-   ## Repo touchpoints
-   - api: new POST /export endpoint with row-streaming
-   - ui:  download button + progress state + error toast
-   ```
-2. **Cross-repo contract** — when slices span repos, freeze the API/wire-format shape both sides must respect:
-   ```markdown
-   ## Cross-repo contract
-   - HTTP: POST /api/export, body `{ filterId: string }`, returns 202 + Location header
-   - Stream: chunked CSV with header row first; ETA in custom `X-Stream-Eta` header
-   ```
-   This contract is treated as **frozen** during Phase 5 — implementers must not unilaterally change it.
-3. **Merge order** (optional) — when there's a deploy dependency:
-   ```markdown
-   ## Merge order: api → ui
-   ```
-4. **Per-slice `repo:` tag** — each slice declares which repo owns it:
-   ```markdown
-   ### Slice 3 — POST /export endpoint
-   - repo: api
-   - files owned: src/routes/export.ts, test/export.test.ts
-   - est_loc: 140
-   - …
-   ```
-   The Phase 5 dispatcher reads `repo:` to fan out implementers per repo, and `est_loc:` to enforce the per-slice budget contract.
-
-### Phase 3 (optional, with `--grill`) — Stress-test the design
-
-Invoke `orc:grilling`. The skill drives an interview that exposes hidden assumptions. Update `plan.md` with answers. Bump `checkpoint.md`.
-
-### Phase 4 — Confirm with user + install the slice ledger
-
-(This gate asks at **every** autopilot level when `/orc:plan` runs standalone — the plan is the command's deliverable. Inside `/orc:flow` at `full`, the flow's contract gate IS the approval.)
-
-Print the Gate headline (`**⛔ Gate — plan review**`), then `AskUserQuestion` (header `Plan`) with two options: `Looks good — proceed (Recommended)` — its `preview` is the slice table (`#`, title, `est_loc`, `parallel_group`, `depends_on`), per `orc:gates` §3 — / `Iterate — revise plan` (what to change rides the notes). If iterate, return to Phase 2.
-
-On approval, **generate the slice ledger**: parse the approved plan's slice headers (`est_loc`, `repo`, `ships_as_stack`, `touchpoints`, `parallel_group`, `depends_on`, `acceptance` — per `orc:writing-plans`) into a `slices.json` (shape per `orc:state-protocol` `references/schema.md`, every slice `status: "pending"`, `planSha256` = sha of plan.md) and install it: `orc-state slice init <file>`. Consumers (`/orc:flow` Phase 5, `/orc:fan-out`, `orc-implementer`) read the ledger, not the prose; "all slices done" becomes `orc-state slice list --status pending,red,escalated` exiting clean. On plan re-approval after iteration, regenerate — statuses of slices whose `title` still matches are preserved.
-
-### Phase 5 (optional, with `--issues`) — Decompose
-
-Invoke `orc:to-issues` to break the approved plan into vertical-slice issues on the project tracker. Save the issue map to `.orc/<branch>/files/issues.md`. Bump `checkpoint.md` to phase=done.
+- No silent broadcast in workspace mode: every target repo is an explicit choice.
+- Every slice carries `est_loc: <int>`; over `${ORC_PR_LOC_BUDGET:-300}`, split it or mark `ships_as_stack: true`.
+- The cross-repo contract is frozen during flow Phase 5; implementers never change it unilaterally.
+- The slice ledger (`slices.json`), not the prose, is what `/orc:flow` Phase 5, `/orc:fan-out` and `orc-implementer` read.
+- The P4 plan gate is the deliverable's approval; no autopilot level skips it standalone.
 
 ## Output
 
-- `.orc/<branch>/files/plan.md` — the approved plan
-- `.orc/<branch>/files/checkpoint.md` — current phase + status
-- (with `--issues`) `.orc/<branch>/files/issues.md`
-- Updated `.orc/orc.json` registry entry
-
-## Resume
-
-If interrupted, `/orc:resume` reads the checkpoint and jumps to the next pending phase.
+- `.orc/<branch>/files/plan.md` — the approved plan.
+- `.orc/<branch>/files/checkpoint.md` — current phase and status.
+- `slices.json`, installed via `orc-state slice init`.
+- (with `--issues`) `.orc/<branch>/files/issues.md`.
+- Updated `.orc/orc.json` registry entry.
+- Interrupted: `/orc:resume` reads the checkpoint and jumps to the next pending phase.
