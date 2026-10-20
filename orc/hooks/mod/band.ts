@@ -1,5 +1,6 @@
 import type { GuardSummary } from './guard/measure'
 import type { ProgressModel } from './progress/model'
+import type { Els } from './pane'
 
 // The one orc row above the prompt: every feature offers a row, the highest
 // priority wins. Pure — register.ts draws it.
@@ -20,4 +21,14 @@ export function pickBand(rows: (BandRow | null | undefined)[]): BandRow | null {
     if (row) return row
   }
   return null
+}
+
+// One terminal band line: the text truncates at the end and the buttons never
+// shrink, so a docked pane's narrow body never wraps the row or cuts a label.
+export function bandLine(els: Els, text: string, color: string | undefined, buttons: unknown[]) {
+  const { Box, Text } = els
+  return Box({ flexDirection: 'row', columnGap: 2, children: [
+    Box({ flexShrink: 1, minWidth: 0, children: [Text({ wrap: 'truncate-end', ...(color ? { color } : {}), children: [text] })] }),
+    Box({ flexShrink: 0, flexDirection: 'row', columnGap: 2, children: buttons as never }),
+  ] })
 }

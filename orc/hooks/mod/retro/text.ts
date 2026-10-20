@@ -1,6 +1,7 @@
 // Terminal drawing of the retro band row: pure, takes the resolved element table.
 import type { BandRow } from '../band'
 import type { Els } from '../pane'
+import { bandLine } from '../band'
 
 export type RetroRow = Extract<BandRow, { kind: 'retro' }>
 export type RetroActions = { save: () => void; edit: () => void; skip: () => void }
@@ -9,11 +10,7 @@ export const retroLine = (r: RetroRow): string => `✎ retro "${r.rule}" · seen
 export const retroAlt = retroLine
 
 export function retroText(els: Els, r: RetroRow, a: RetroActions) {
-  const { Box, Text } = els
-  return Box({ flexDirection: 'row', columnGap: 2, children: [
-    Text({ color: 'cyan', children: [retroLine(r)] }),
-    ...retroButtons(els, a),
-  ] })
+  return bandLine(els, retroLine(r), 'cyan', retroButtons(els, a))
 }
 
 // The same three buttons beside the terminal line or the desktop card.

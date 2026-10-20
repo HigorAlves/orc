@@ -1,6 +1,7 @@
 // The red-CI band row: terminal text, or one SVG strip on rich surfaces. The
 // buttons stay real Buttons beside it (register.ts places them).
 import type { Els } from '../pane'
+import { bandLine } from '../band'
 import { doc, rect, text, textWidth } from '../draw/svg'
 import type { BandRow } from '../band'
 
@@ -10,12 +11,10 @@ export type CiActions = { diagnose: () => void; dismiss: () => void }
 export const ciLine = (row: CiRow) => `CI red on #${row.pr}: ${row.failing.join(', ')}`
 
 export function ciText(els: Els, row: CiRow, actions: CiActions) {
-  const { Box, Text, Button } = els
-  return Box({ flexDirection: 'row', columnGap: 2, children: [
-    Text({ color: 'red', children: ['⛔ ' + ciLine(row)] }),
-    Button({ key: 'ci-diagnose', label: 'Diagnose', onPress: actions.diagnose }),
-    Button({ key: 'ci-dismiss', label: 'Dismiss', onPress: actions.dismiss }),
-  ] })
+  return bandLine(els, '⛔ ' + ciLine(row), 'red', [
+    els.Button({ key: 'ci-diagnose', label: 'Diagnose', onPress: actions.diagnose }),
+    els.Button({ key: 'ci-dismiss', label: 'Dismiss', onPress: actions.dismiss }),
+  ])
 }
 
 export const ciAlt = (row: CiRow) => ciLine(row)

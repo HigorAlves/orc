@@ -5,7 +5,7 @@
 import type { EngineInterface, On, PluginOptions, RenderSurface } from 'claude-code'
 import { statusInfo } from './api'
 import { COMPANIONS_NONE, companionsOf, type Companions } from './companions'
-import { pickBand, type BandRow } from './band'
+import { bandLine, pickBand, type BandRow } from './band'
 import { ciAlt, ciSvg, ciText } from './band/ci'
 import { fitSvg, px } from './draw/svg'
 import { classify } from './guard/classify'
@@ -1095,7 +1095,7 @@ function draw_band_row($: EngineInterface, e: { surface: RenderSurface | null; p
     const source = row.detail && isRich(e.surface) && 'Svg' in els ? guardSvg(row.detail, e.props.bodyColumns) : null
     return source && 'Svg' in els
       ? els.Svg({ source, alt: row.summary, width: px(e.props.bodyColumns) })
-      : els.Text({ color: 'yellow', children: ['⚠ ' + row.summary] })
+      : bandLine(els, '⚠ ' + row.summary, 'yellow', [])
   }
   if (row.kind === 'cache') {
     const warm = warmBox.deadline == null ? () => { $.prompt.fill({ text: '/orc keepwarm 1h' }).catch(() => undefined) } : null
@@ -1143,11 +1143,9 @@ function draw_band_row($: EngineInterface, e: { surface: RenderSurface | null; p
     const next = m.next
     const go = next ? [els.Button({ key: 'orc-next', hotkey: '1', label: next.length > BUTTON_MAX ? next.slice(0, BUTTON_MAX - 1) + '…' : next, onPress: () => { $.prompt.fill({ text: next }).catch(() => undefined) } })] : []
     const source = isRich(e.surface) && 'Svg' in els ? fitSvg(progressSvg(m, px(e.props.bodyColumns))) : null
-    const drawn = source && 'Svg' in els
-      ? els.Svg({ source, alt: progressAlt(m), height: 28 })
-      : els.Text({ children: [progressText(m, e.props.bodyColumns)] })
     const again = row.replay ? [els.Button({ key: 'orc-replay', hotkey: 'r', label: 'Replay', onPress: () => { open_replay($).catch(() => undefined) } })] : []
-    return els.Box({ flexDirection: 'row', columnGap: 2, children: [drawn, ...go, ...again] })
+    if (!(source && 'Svg' in els)) return bandLine(els, progressText(m, e.props.bodyColumns), undefined, [...go, ...again])
+    return els.Box({ flexDirection: 'row', columnGap: 2, children: [els.Svg({ source, alt: progressAlt(m), height: 28 }), ...go, ...again] })
   }
   return els.Text({ children: [] })
 }

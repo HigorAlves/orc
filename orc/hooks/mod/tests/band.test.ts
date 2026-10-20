@@ -1,5 +1,5 @@
 import { expect, test } from 'claude-code/testing'
-import { PRIORITY, pickBand, type BandRow } from '../band'
+import { PRIORITY, bandLine, pickBand, type BandRow } from '../band'
 import { ciBox } from '../state'
 
 const ci: BandRow = { kind: 'ci', pr: 12, failing: ['lint'] }
@@ -48,4 +48,15 @@ test('a survey takes the band: orc yields even with a red CI row', async ($, on)
   expect(await ui.drawn()).toEqual({ type: 'engine', ref: 0 })
   await ui.unmount()
   ciBox.alert = null
+})
+
+test('bandLine truncates its text and never shrinks its buttons (narrow docked widths)', () => {
+  const el = (type: string) => (props: Record<string, unknown>) => ({ type, props })
+  const els = { Box: el('Box'), Text: el('Text'), Button: el('Button') } as never
+  const btn = { type: 'Button', props: { label: 'Save rule' } }
+  const row = bandLine(els, '✎ retro "a long rule"', 'cyan', [btn as never]) as { props: { children: { props: Record<string, unknown> }[] } }
+  const [cell, buttons] = row.props.children
+  expect(cell.props).toMatchObject({ flexShrink: 1, minWidth: 0 })
+  expect((cell.props.children as { props: Record<string, unknown> }[])[0].props).toMatchObject({ wrap: 'truncate-end', color: 'cyan' })
+  expect(buttons.props).toMatchObject({ flexShrink: 0 })
 })
