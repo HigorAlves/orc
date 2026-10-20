@@ -75,6 +75,13 @@ Running orc from a parent directory of sibling git repos; one flow spans them wi
 **Tracker layer**:
 `docs/agents/issue-tracker.md`, `triage-labels.md`, and `domain.md`, written once by `/orc:setup` and read by every tracker-aware surface through `orc:tracker-config`.
 
+**Intake**:
+`/orc:triage`: the one entry point for an incoming report (tracker item, Sentry issue, pasted text). It runs the validity check before anyone works on the report.
+_Avoid_: inbox, report handler
+
+**Validity check**:
+Five questions a report must pass before work: real, not a duplicate, not already done, in scope, enough detail. Adds a severity.
+
 **Retro**:
 `/orc:retro`: the look back after a session that changes the environment (checks, standards, pointers, access), not the code.
 

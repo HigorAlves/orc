@@ -32,13 +32,14 @@ was built and proven.
 
 | Situation | Entry point |
 |---|---|
-| Bug report, failing test, weird behavior | `/orc:debug` (root cause before fix) |
+| Report in (ticket, Sentry, paste): is it real? | `/orc:triage` |
+| Confirmed bug, failing test, weird behavior | `/orc:debug` (root cause before fix) |
 | Production is on fire RIGHT NOW | `/orc:incident` → later `/orc:postmortem` |
 | CI red on an open PR | `/orc:ci` |
 | Someone's PR needs review | `/orc:code-review` |
 | Reviewers commented on YOUR PR | `/orc:address` |
-| PRD/spec/brief landed | `/orc:plan` (it triages; dispatches analysis as needed) |
-| "Where's the rot?" / refactor appetite | `/orc:plan` with the refactor framing (dispatches orc-refactor-architect) |
+| PRD/spec/brief landed | `/orc:plan` (dispatches analysis as needed) |
+| "Where's the rot?" / refactor appetite | `/orc:plan`, refactor framing (orc-refactor-architect) |
 | Chunk of work too big for one session | `/orc:wayfinder` |
 | Issue backlog needs herding | `/orc:triage` |
 | Feature needs a Jira Epic→Story→Task build-out | `/orc:jira-breakdown` |
@@ -46,7 +47,7 @@ was built and proven.
 | Need a narrated video of what shipped | `/orc:explain` (after `/orc:qa`) |
 | Cut a release (user project) | `/orc:release` |
 | New package/service/app shell | `/orc:scaffold` |
-| Interrupted mid-anything | `/orc:resume` (see `/orc:status` for what's live) |
+| Interrupted mid-anything | `/orc:resume` (`/orc:status` lists what's live) |
 | A build just finished (or went sideways) | `/orc:retro` — improve the environment, not the code |
 
 ## Sharpening (before committing to build)
@@ -62,9 +63,8 @@ was built and proven.
 
 `orc:tdd` · `orc:systematic-debugging` · `orc:verification-before-completion` ·
 `orc:codebase-design` · `orc:domain-modeling` · `orc:review-contract` ·
-`orc:pr-size-budget` · `orc:callouts` · `orc:gates` · `orc:writing-for-agents` — doctrine the
-commands and agents already preload; invoke directly only when working outside
-the commands.
+`orc:pr-size-budget` · `orc:callouts` · `orc:gates` · `orc:writing-for-agents` — preloaded by
+commands and agents; invoke directly only outside them.
 
 ## Phase boundaries (continue here or clear?)
 
