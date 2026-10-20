@@ -10,6 +10,9 @@ All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tag
 ### Changed
 - CLI: Go toolchain 1.25.8 → 1.27.3, modules refreshed (x/term, x/sys, x/text, bubbletea deps), golangci-lint v2.15.0 and govulncheck v1.9.0 in CI. No plugin change.
 
+### Fixed
+- Website: the page no longer jumps to the cockpit section on load. The command palette scrolled its first item into view on mount. No plugin change.
+
 ## [0.27.0] - 2026-10-20
 
 The precision train: every orc file is written to a controlled-language standard adapted from ASD-STE100 and S1000D (issue #115), the largest surfaces are split into phase modules, and the Claude Code plugin practices orc was missing (routing fields, fail-closed hooks, a measured eval suite) are in.

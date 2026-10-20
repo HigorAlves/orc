@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Section } from "@/components/section"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from "@/components/ui/command"
 import { situations } from "@/content/site"
@@ -11,6 +12,12 @@ const notes = [
 ]
 
 export function Commands() {
+  // cmdk highlights the first item on mount and calls scrollIntoView on it,
+  // which scrolls the whole page down to the palette. Keep the highlight
+  // empty until the visitor engages, so there is nothing to scroll to.
+  const [value, setValue] = useState("")
+  const [engaged, setEngaged] = useState(false)
+  const engage = () => setEngaged(true)
   return (
     <Section
       id="commands"
@@ -19,7 +26,13 @@ export function Commands() {
       lede={<>Every situation a working day throws at you has one entry point. Type the situation, or ask <code className="font-mono">/orc:map</code> inside Claude Code.</>}
     >
       <div className="mt-9 grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] items-start gap-10 max-lg:grid-cols-1">
-        <Command className="h-auto rounded-[14px]! border shadow-[0_20px_40px_-32px_rgba(20,30,15,.35)]">
+        <Command
+          value={value}
+          onValueChange={(v) => engaged && setValue(v)}
+          onPointerEnter={engage}
+          onFocus={engage}
+          className="h-auto rounded-[14px]! border shadow-[0_20px_40px_-32px_rgba(20,30,15,.35)]"
+        >
           <CommandInput placeholder="CI is red, prod is down, review a PR…" aria-label="Describe the situation" />
           <CommandList className="max-h-96">
             <CommandEmpty>No match. Try /orc:map inside Claude Code.</CommandEmpty>
