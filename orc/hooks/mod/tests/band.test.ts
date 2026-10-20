@@ -56,6 +56,7 @@ test('bandLine truncates its text and never shrinks its buttons (narrow docked w
   const btn = { type: 'Button', props: { label: 'Save rule' } }
   const row = bandLine(els, '✎ retro "a long rule"', 'cyan', [btn as never]) as { props: { children: { props: Record<string, unknown> }[] } }
   const [cell, buttons] = row.props.children
+  expect((row as unknown as { props: Record<string, unknown> }).props.paddingRight).toBe(4)
   expect(cell.props).toMatchObject({ flexShrink: 1, minWidth: 0 })
   expect((cell.props.children as { props: Record<string, unknown> }[])[0].props).toMatchObject({ wrap: 'truncate-end', color: 'cyan' })
   expect(buttons.props).toMatchObject({ flexShrink: 0 })

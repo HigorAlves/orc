@@ -27,7 +27,8 @@ export function pickBand(rows: (BandRow | null | undefined)[]): BandRow | null {
 // shrink, so a docked pane's narrow body never wraps the row or cuts a label.
 export function bandLine(els: Els, text: string, color: string | undefined, buttons: unknown[]) {
   const { Box, Text } = els
-  return Box({ flexDirection: 'row', columnGap: 2, children: [
+  // paddingRight keeps the buttons clear of the engine's own band control at the right edge.
+  return Box({ flexDirection: 'row', columnGap: 2, paddingRight: 4, children: [
     Box({ flexShrink: 1, minWidth: 0, children: [Text({ wrap: 'truncate-end', ...(color ? { color } : {}), children: [text] })] }),
     Box({ flexShrink: 0, flexDirection: 'row', columnGap: 2, children: buttons as never }),
   ] })
