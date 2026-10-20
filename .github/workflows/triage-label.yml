@@ -1,0 +1,25 @@
+name: Triage label
+
+# Every new issue gets `needs-triage`, so nothing skips the queue that
+# /orc:triage reads. The issue forms already add it; this catches issues
+# opened any other way (API, a blank template from a fork, an integration).
+
+on:
+  issues:
+    types: [opened]
+
+permissions: {}
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Add needs-triage
+        run: gh issue edit "$NUMBER" --add-label needs-triage
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}

@@ -1,0 +1,43 @@
+name: Bug
+description: An orc command, skill, agent, or hook did the wrong thing in a real session.
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Issues are judged against [`SCOPE.md`](https://github.com/HigorAlves/orc/blob/main/SCOPE.md): a bug report describes something that went wrong in a real session, with the surface, the harness, and the model named. Problems with the `orc` CLI installer go here too; say so in the surface field.
+  - type: input
+    id: surface
+    attributes:
+      label: Surface
+      description: Which command, skill, agent, hook, or CLI verb, e.g. `/orc:flow`, `orc:tdd`, `orc-implementer`, `pre-git-guard.sh`, `orc doctor`.
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: orc and Claude Code versions
+      description: e.g. orc 0.26.0 (`claude plugin details orc`), Claude Code 2.1.290, macOS. Say whether orc runs from the marketplace or `--plugin-dir`.
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model and effort
+      description: e.g. Opus, high effort. Roughly how full was the context when it happened, and was `interaction_policy` manual, guided, or auto?
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you ran and what orc did. Paste the relevant part of the session, redacted. If a hook fired, include its prompt text.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: What orc should have done instead, and which line of the command, skill, or agent file (if any) says so.
+    validations:
+      required: true
