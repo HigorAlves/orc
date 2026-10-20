@@ -2,7 +2,11 @@
 // hooks, which stay the safety floor. Nothing here replaces a guard — when
 // mods can't load (Claude Code < 2.1.287, --safe-mode, disableAllHooks, an
 // org policy) or `mod_enabled` is false, orc behaves exactly as without it.
-import type { EngineInterface, On, PluginOptions } from 'claude-code'
+import type { EngineInterface, On, PluginOptions, RenderSurface } from 'claude-code'
+import { pickBand, type BandRow } from './band'
+import { ciAlt, ciSvg, ciText } from './band/ci'
+import { fitSvg, px } from './draw/svg'
+import { isRich } from './draw/surface'
 import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine, summarizeChecks, type CiRecord } from './ci'
 import {
   EMPTY, cutDiff, diffSlice, digestOf, hintFor, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, plumbingLine, policyOf, profileOf, spinnerSuffix, summaryText, type SectionId, type Snapshot,
@@ -10,7 +14,7 @@ import {
 import { parseFeatures, type Features } from './config'
 import { gateBadge } from './gates'
 import { LEDGER_INITIAL, dropAgent, recordStep, tagAgent } from './ledger'
-import { PANE, drawPane } from './pane'
+import { PANE, drawPane, type Els } from './pane'
 import { modelFor, parseProfile, type Profile } from './profiles'
 import { DETAILS_INITIAL, LIVE_INITIAL, SECTIONS_INITIAL, ciBox, isOrcStateWrite } from './state'
 
@@ -36,7 +40,7 @@ export function register(on: On, options: PluginOptions) {
   register_surfaces(on)
   register_toolrows(on)
   register_gates(on)
-  register_ci_band(on)
+  register_band(on, features)
   register_steps(on, features)
 }
 
@@ -249,19 +253,39 @@ async function ci_tick($: EngineInterface): Promise<void> {
   }
 }
 
-// The band above the prompt carries the one actionable alert: red CI.
-function register_ci_band(on: On) {
+// The one band above the prompt: orc offers rows, pickBand keeps the
+// highest-priority one. No orc row (or a survey) leaves the engine's drawing alone.
+function register_band(on: On, _features: Features) {
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (!ciBox.alert) return next(e)
-    const { Box, Text, Button } = $.ui.resolve(e)
-    const alert = ciBox.alert
-    return Box({ flexDirection: 'row', columnGap: 2, children: [
-      Text({ color: 'red', children: [`⛔ CI red on #${alert.pr}: ${alert.summary.failing.join(', ')}`] }),
-      Button({ key: 'ci-diagnose', label: 'Diagnose', onPress: () => { $.prompt.fill({ text: '/orc:ci ' + alert.pr }) } }),
-      Button({ key: 'ci-dismiss', label: 'Dismiss', onPress: () => { ciBox.alert = null; $.ui.invalidate('ui.render') } }),
-      await next(e),
-    ] })
+    if (e.props.hasSurvey) return next(e)
+    const ci: BandRow | null = ciBox.alert ? { kind: 'ci', pr: ciBox.alert.pr, failing: ciBox.alert.summary.failing } : null
+    // guard, sentinel, retro, cache and progress rows join here in later slices
+    const row = pickBand([ci])
+    if (!row) return next(e)
+    const below = await next(e)
+    const els = $.ui.resolve(e)
+    const mine = draw_band_row($, e, els, row)
+    return els.Box({ flexDirection: 'column', children: [mine, below] })
   })
+}
+
+// One row, drawn for the surface: SVG strip + real Buttons on rich surfaces, text elsewhere.
+function draw_band_row($: EngineInterface, e: { surface: RenderSurface | null; props: { bodyColumns: number } }, els: Els, row: BandRow) {
+  if (row.kind === 'ci') {
+    const actions = {
+      diagnose: () => { $.prompt.fill({ text: '/orc:ci ' + row.pr }) },
+      dismiss: () => { ciBox.alert = null; $.ui.invalidate('ui.render') },
+    }
+    if (isRich(e.surface) && 'Svg' in els) {
+      return els.Box({ flexDirection: 'row', columnGap: 2, children: [
+        els.Svg({ source: fitSvg(ciSvg(row, px(e.props.bodyColumns))) ?? '', alt: ciAlt(row), height: 28 }),
+        els.Button({ key: 'ci-diagnose', label: 'Diagnose', onPress: actions.diagnose }),
+        els.Button({ key: 'ci-dismiss', label: 'Dismiss', onPress: actions.dismiss }),
+      ] })
+    }
+    return ciText(els, row, actions)
+  }
+  return els.Text({ children: [] })
 }
 
 // --- /orc cockpit -----------------------------------------------------------
