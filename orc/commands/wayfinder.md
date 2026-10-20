@@ -23,116 +23,67 @@ allowed-tools:
 
 # /orc:wayfinder
 
-A loose idea has arrived — too big for one agent session, and wrapped in fog: the way from here to the **destination** isn't visible yet. Wayfinding is about finding that way, not charging at the destination. This command charts the way as a **shared map** on the repo's issue tracker, then works its **decision tickets** — questions whose resolution is a decision, not slices of a build to execute — one per session until the route is clear.
+Chart a loose idea too big for one session as a shared map of decision tickets, then resolve one decision per session.
 
-## Where this sits
+The way from here to the **destination** is not visible yet. Wayfinding finds that way instead of charging at the destination. The map lives on the repo's issue tracker; its **decision tickets** are questions whose resolution is a decision, not slices of a build.
 
-- **`/orc:plan`** — the work fits one session: draft a TDD-shaped plan now.
-- **`/orc:wayfinder`** — the work spans many sessions and the open questions are *decisions*: chart them, resolve one at a time.
-- **`orc:to-issues`** — the deciding is done: slice the settled plan into tracer-bullet implementation issues.
+Where this sits:
 
-A finished map typically hands off to `/orc:plan` or `orc:to-issues` — the destination is often exactly the spec they consume.
+- `/orc:plan` — the work fits one session: draft a TDD-shaped plan now.
+- `/orc:wayfinder` — the work spans many sessions and the open questions are decisions: chart, then resolve one at a time.
+- `orc:to-issues` — the decisions are final: slice the settled plan into tracer-bullet implementation issues.
 
-## Phase 0 — Read the tracker layer
+A finished map hands off to `/orc:plan` or `orc:to-issues`. The destination is often the spec they consume.
 
-Run the `orc:tracker-config` read protocol, then consult issue-tracker.md's **"Wayfinding operations"** section — where the map, child tickets, blocking edges, frontier query, claim, and resolve physically live is tracker-specific (GitHub sub-issues + native dependencies; Jira links via `acli`; local markdown files). The skill owns the missing-config gate (one canonical ask; a defaults answer is a settled decision for the session).
+## Arguments
 
-## Principles
+- `chart <loose idea>` — Mode A: chart the map and its first tickets on the tracker.
+- `work <map ref> [ticket ref]` — Mode B: resolve one ticket. Without a ticket ref, pick the next frontier ticket.
 
-**Plan, don't do.** Each ticket resolves a decision; the map is done when nothing is left to decide before someone goes and does the thing. The pull to just do the work is usually the signal you've reached the edge of the map and it's time to hand off. An effort can override this in its map **Notes** — absent that, produce decisions, not deliverables.
+## Preconditions
 
-**Refer by name.** Every map and ticket has a name — its title. In everything the human reads, refer to it by name with the link riding inside (`[Pick the session store](url)`), never a bare `#42`. A wall of numbers is illegible.
+> **🛑 Tracker writes**
+>
+> Map creation, ticket batches and resolutions write to the tracker. A preview gate precedes every write.
 
-**One ticket per session.** Never resolve more than one ticket per session — except research tickets, which run as background subagents.
+> **⚠️ Caution**
+>
+> Other sessions work the tracker concurrently. An unclaimed ticket is fair game; claim it before any work.
 
-## The map
+- The tracker layer must be readable (`orc:tracker-config`). Phase 0 runs its missing-config gate.
 
-A single tracker item (labelled `wayfinder:map`, or the tracker doc's equivalent) — the canonical artifact, loaded once per session at low resolution. It is an **index**, not a store: a decision lives in exactly one place — its ticket — and the map only gists and links it. Open tickets are not listed in the body; they're found by the tracker's frontier query.
+## Phases
 
-```markdown
-## Destination
+Modules live in `orc:phases` (`references/wayfinder/`). Entering a mode, Read exactly its module.
 
-<what reaching the end looks like — the spec, decision, or change this effort
-is finding its way to. One or two lines; every session orients to it first.>
+| Phase | Module | Skipped when |
+|---|---|---|
+| 0 Detect context | resident, below | never |
+| MAP Map and ticket reference | `orc:wayfinder/MAP` | never |
+| A Chart the map | `orc:wayfinder/A` | `work` |
+| B Work through the map | `orc:wayfinder/B` | `chart` |
 
-## Notes
+### Phase 0 — Detect context
 
-<domain; skills every session should consult; standing preferences>
+1. Run the `orc:tracker-config` read protocol.
+2. Read the "Wayfinding operations" section of `issue-tracker.md`.
+3. Read `orc:wayfinder/MAP`.
+4. If the argument is `chart`, Read `orc:wayfinder/A`.
+5. If the argument is `work`, Read `orc:wayfinder/B`.
 
-## Decisions so far
-
-- [<closed ticket title>](link) — <one-line gist of the answer>
-
-## Not yet specified
-
-<fog of war — see below>
-
-## Out of scope
-
-<work ruled beyond the destination — see below>
-```
-
-### Tickets
-
-Each ticket is a child of the map; its body is one question sized to a single fresh-context session:
-
-```markdown
-## Question
-
-<the decision or investigation this ticket resolves>
-```
-
-Each carries a `wayfinder:<type>` label — and `wayfinder:` labels are the *only* labels a map and its tickets carry, never a triage label like `ready-for-agent`: they are decisions, not implementation work. A session **claims** a ticket by assigning it *before any work* — the assignee IS the claim; open + unassigned = unclaimed. Blocking uses the tracker's **native** dependency relationship so the frontier renders visually in the tracker's own UI (fallback conventions per the tracker doc). A ticket is **unblocked** when every blocker is closed; the **frontier** is the open, unblocked, unclaimed children — the edge of the known. Answers are recorded on resolution, never pre-written into the body; assets are linked, not pasted.
-
-### Ticket types
-
-Every ticket is **HITL** (worked live with a human — the agent never stands in for the human's side; a grilling that answers its own questions has broken this) or **AFK** (agent-driven):
-
-- **Research** (AFK) — surface a fact a decision waits on, from docs/APIs/knowledge bases outside the working directory. Resolved via `orc:research` as a background subagent.
-- **Prototype** (HITL) — raise the fidelity of the discussion with a cheap concrete artifact to react to, via `orc:prototype`. Link the artifact as an asset.
-- **Grilling** (HITL) — conversation; the default type. Always `orc:grilling` + `orc:domain-modeling`.
-- **Task** (HITL or AFK) — manual work that must happen before a decision *can* be made (sign up for the service, provision access, move the data so its shape is visible). The one type that *does* rather than decides — earning its place by unblocking a decision, not delivering the destination. AFK where the agent can drive; otherwise hand the human a precise checklist. The answer records what was done and the facts later tickets depend on.
-
-### Fog of war
-
-The map is *deliberately* incomplete: don't chart what you can't yet see. **Not yet specified** holds the dim view — decisions you can tell are coming but can't pin down because they hang on open questions. Resolving a ticket clears fog, graduating what's now specifiable into fresh tickets. The test is whether you can state the question precisely **now** — not whether you can answer it: sharp question → ticket (even if blocked); fuzzy → fog, uncut (one patch may graduate into several tickets, or none).
-
-### Out of scope
-
-The destination fixes the scope; work beyond it isn't fog and never graduates. When an existing ticket turns out to sit past the destination, **close it** and leave one line in **Out of scope** — gist, why, link to the closed ticket. It stays out of Decisions-so-far, which records only the route actually walked.
-
-## Mode A — Chart the map
-
-Invoked with a loose idea.
-
-1. **Name the destination.** Run `orc:grilling` + `orc:domain-modeling` to pin down what this map is finding its way to. The destination fixes the scope, so it's settled first.
-2. **Map the frontier.** Grill again, **breadth-first** — fan out across the whole space, surfacing the open decisions and the first takeable steps. **If this surfaces no fog** — the way is already clear, the journey fits one session — print the Gate headline (`**⛔ Gate — no map needed**`, per `orc:callouts`) and `AskUserQuestion`: hand off to `/orc:plan` / slice via `orc:to-issues` / chart anyway.
-3. **Preview.** Print `**📋 Preview — map + tickets**`: the map body, every ticket title + type + question, and the blocking edges. `AskUserQuestion` to confirm before creating anything on the tracker.
-4. **Create.** Create the map, then the specifiable tickets as children, then wire blocking edges in a **second pass** (items need ids before they can reference each other) — all per the tracker doc's wayfinding operations. Write cross-references in that pass too, with real ids: a placeholder `#<n>` auto-links to an unrelated issue. Everything not yet specifiable stays in the fog section.
-5. **Fire the research subagents.** For each research ticket, dispatch `orc:research` in the background to resolve it in parallel, capturing findings on a throwaway `research/<name>` branch linked from the ticket. Push the branch but open no PR — it is never merged.
-6. **Stop.** Charting is one session's work; it hand-resolves nothing.
-
-## Mode B — Work through the map
-
-Invoked with a map reference; a ticket reference is optional — without one, *you* pick the next decision.
-
-1. **Load the map** — the low-res view, not every ticket body.
-2. **Choose and claim.** The named ticket, else the first frontier ticket in map order. Claim it (assign) before any work — other sessions may be working the tracker concurrently, and the claim is what makes them skip it.
-3. **Resolve it** as the type its `wayfinder:<type>` label names (read the label — the body never states the type), zooming as needed: fetch related or closed ticket bodies on demand; invoke the skills the map's Notes name; default to `orc:grilling` + `orc:domain-modeling`.
-4. **Record.** Post the answer as a resolution comment, close the ticket, and append a gist + link to the map's Decisions-so-far. Preview tracker writes before posting.
-5. **Advance the frontier.** Create newly-surfaced tickets (create-then-wire); graduate fog the answer made specifiable, clearing each graduated patch from Not-yet-specified so it lives only as its ticket; rule mis-scoped tickets out of scope; update or delete tickets the decision invalidated.
-
-Then stop — one decision per session. Close with `**➡️ Next**`: the new frontier, one line.
+NOTE: where the map, child tickets, blocking edges, frontier query, claim and resolve live is tracker-specific: GitHub sub-issues plus native dependencies; Jira links via `acli`; local markdown files. `orc:tracker-config` owns the missing-config gate: one canonical ask; a defaults answer is a settled decision for the session.
 
 ## Iron rules
 
-- Claim before work — an unclaimed ticket is fair game for concurrent sessions; never work one you haven't assigned.
+- Claim before work. Never work a ticket you have not assigned.
 - One non-research ticket per session, even when the next one looks quick.
-- No tracker write without a preview — map creation, ticket batches, resolutions.
-- The map never restates a decision — gist + link only.
+- No tracker write without a preview: map creation, ticket batches, resolutions.
+- The map never restates a decision: gist plus link only.
+- Plan, don't do. Each ticket resolves a decision; only a map **Notes** override allows deliverables.
+- Refer by name with the link inside: `[Pick the session store](url)`, never a bare `#42`.
 
 ## Output
 
-- The map + decision tickets on the configured tracker (with blocking edges)
-- Per work session: one resolved ticket, an updated Decisions-so-far, a refreshed frontier
-- No `.orc/` session state — **the map is the checkpoint**: resuming means re-invoking `/orc:wayfinder` with the map, so state lives where every collaborator (and concurrent session) can see it.
+- The map and decision tickets on the configured tracker, with blocking edges.
+- Per work session: one resolved ticket, an updated Decisions-so-far, a refreshed frontier.
+- No `.orc/` session state. The map is the checkpoint: resume by re-invoking `/orc:wayfinder` with the map.
