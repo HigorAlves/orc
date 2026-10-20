@@ -1,6 +1,7 @@
 ---
 name: ci-routing
-description: The canonical route-on-verdict protocol for a red CI diagnosis — fixable/flake/infra/needs-debug handling, the single-render rule, and the fix-then-re-watch loop. Use after orc-ci-investigator returns; /orc:ci Phase 3 and /orc:flow's post-open CI gate delegate here.
+description: The canonical route-on-verdict protocol for a red CI diagnosis — fixable/flake/infra/needs-debug handling, the single-render rule, and the fix-then-re-watch loop
+when_to_use: Use after orc-ci-investigator returns; /orc:ci Phase 3 and /orc:flow's post-open CI gate delegate here.
 ---
 
 # CI Routing

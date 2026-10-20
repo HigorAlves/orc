@@ -1,6 +1,7 @@
 ---
 name: grilling
-description: Round-based interview engine under orc's grill entry points (orc:grill-me, /orc:plan --grill, /orc:rfc --grill, /orc:flow medium+ scope). Use when stress-testing a plan or design decision-by-decision, or when a session must end with nothing left silently assumed.
+description: Round-based interview engine under orc's grill entry points (orc:grill-me, /orc:plan --grill, /orc:rfc --grill, /orc:flow medium+ scope)
+when_to_use: Use when stress-testing a plan or design decision-by-decision, or when a session must end with nothing left silently assumed.
 license: MIT
 metadata:
   author: Matt Pocock

@@ -56,70 +56,11 @@ Write PR descriptions terse and exact. Reviewers don't need a tour of your diff 
 
 ## GitHub markdown craft
 
-Terse ≠ plain. Use the renderer to carry signal with fewer words:
-
-- **Auto-links do the work**: bare `#123`, `org/repo#45`, and 7+-char commit shas render as rich links — never paste a URL where a ref auto-links, never write "see PR number 45".
-- **Permalinks over prose**: pointing at code? A line permalink (press `y` on the file view) renders an inline code preview — beats describing the location.
-- **Fenced code with a language tag**, always — unhighlighted blocks waste the reviewer's eyes.
-- **`<details><summary>…</summary></details>` for evidence bulk**: QA artifact lists, benchmark output, long logs. The summary line carries the verdict; the bulk collapses.
-- **Tables only for enumerable facts** (flag → effect, before → after) — never for prose in cells.
-- **Task lists (`- [ ]`)** only when the repo's PR template requires them — otherwise they're checkbox theater.
-- **`[!NOTE]`/`[!WARNING]` callouts** per `orc:callouts` — GitHub-bound output only, and only when the line genuinely must not be missed.
+Terse ≠ plain. Read [GITHUB-MARKDOWN.md](references/GITHUB-MARKDOWN.md) when the body carries evidence bulk, code locations, or callouts — auto-links, permalinks, `<details>`, tables, task lists.
 
 ## Examples
 
-### Bug fix — title is self-explanatory, no Why section
-
-```
-fix(billing): guard against zero-cap users in usage display
-
-## How tested
-Tests: 142 pass. Manual: opened /billing as a free-tier user with cap=0,
-output now reads "$0 of $0" (was "$NaN of $undefined").
-
-Closes #482
-```
-
-### Feature — Why required, links plan + QA
-
-```
-feat(reports): add CSV export
-
-## Why
-Customer-requested in support tickets #311, #389, #412. Plan at
-.orc/feat-csv-export/files/plan.md.
-
-## How tested
-Tests: 47 pass. Browser QA: .orc/feat-csv-export/files/qa/steps.md
-(golden path, empty report, 1k-row report, permission-denied).
-
-Closes #311
-```
-
-### Refactor with breaking change + risk
-
-```
-refactor(auth): replace JWT validation with opaque session lookup
-
-## Why
-ADR-0007 — compliance flagged JWT non-revocability after incident #142.
-
-## What changed
-- Authenticated middleware now hits Redis on every request instead of
-  parsing the JWT in-process.
-- Old JWT path remains for 30 days, flag-gated by USE_OPAQUE_SESSIONS.
-
-## How tested
-Tests: 312 pass. Staging load test: p99 latency +3ms (within budget).
-
-## Notes
-- Door: one-way once the 30-day window closes · Blast radius: every authenticated request.
-- Hard dependency on session service availability — outage = no auth.
-  Runbook update in #318.
-- Breaking change at end of 30-day window; tracked via #319.
-
-Closes ENG-712
-```
+Read [EXAMPLES.md](references/EXAMPLES.md) for three shaped bodies — title-only bug fix, feature with Why + QA link, refactor with breaking change + merge-danger line — when unsure how terse the result reads.
 
 ## Auto-Clarity
 

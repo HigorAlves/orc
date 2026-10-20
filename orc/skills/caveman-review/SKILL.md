@@ -1,6 +1,7 @@
 ---
 name: caveman-review
-description: "Ultra-compressed code review comments — one line per finding: location, problem, fix. Use when the user says \"review this PR\", \"code review\", \"review the diff\", \"/review\", or invokes /caveman-review."
+description: "Ultra-compressed code review comments — one line per finding: location, problem, fix"
+when_to_use: Use when the user says "review this PR", "code review", "review the diff", "/review", or invokes /caveman-review.
 ---
 
 Write code review comments terse and actionable. One line per finding. Location, problem, fix. No throat-clearing.

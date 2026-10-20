@@ -1,5 +1,6 @@
 ---
-description: "Cut a semver release for the current repo — bump computed from conventional commits, evidence preview, tag + GitHub release. Use when releasing a version, tagging, or publishing release notes."
+description: Cut a semver release for the current repo — bump computed from conventional commits, evidence preview, tag + GitHub release
+when_to_use: Use when releasing a version, tagging, or publishing release notes.
 argument-hint: "[--dry-run] [--tag-only]"
 allowed-tools:
   - Bash(orc-state:*)

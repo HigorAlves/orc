@@ -1,6 +1,6 @@
 ---
 name: orc-pr-reviewer
-description: Investigator role — reviews someone else's open GitHub PR end-to-end and returns structured findings per the orc:review-contract schema; never posts, never edits. Fetches diff via gh CLI, walks every changed file. Dispatched by /orc:code-review (the posting layer converts findings into inline GitHub PR comments) and /orc:fan-out for multi-PR review.
+description: Investigator role — reviews someone else's open GitHub PR and returns structured findings per orc:review-contract; never posts, never edits. Dispatched by /orc:code-review and /orc:fan-out.
 tools: Read, Glob, Grep, Bash(gh pr view:*), Bash(gh pr diff:*)
 model: sonnet
 effort: high

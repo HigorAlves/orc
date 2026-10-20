@@ -1,6 +1,7 @@
 ---
 name: phases
-description: Per-phase playbooks for orc commands, loaded one phase at a time. Use only from a command — entering phase N, Read exactly references/<command>/PHASE-<N>-*.md; never ahead, never from memory.
+description: Per-phase playbooks for orc commands, loaded one phase at a time
+when_to_use: Use only from a command — entering phase N, Read exactly references/<command>/PHASE-<N>-*.md; never ahead, never from memory.
 ---
 
 # Phases

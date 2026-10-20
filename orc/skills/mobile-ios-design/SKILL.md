@@ -1,6 +1,7 @@
 ---
 name: mobile-ios-design
-description: iOS Human Interface Guidelines and SwiftUI patterns for native apps. Use when designing iOS interfaces, building SwiftUI views, or aligning apps with Apple's design principles.
+description: iOS Human Interface Guidelines and SwiftUI patterns for native apps
+when_to_use: Use when designing iOS interfaces, building SwiftUI views, or aligning apps with Apple's design principles.
 ---
 
 # iOS Mobile Design

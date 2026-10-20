@@ -1,6 +1,7 @@
 ---
 name: git-commit
-description: "Execute git commit with conventional-commit analysis, intelligent staging, and message generation from the diff. Use when the user asks to commit changes, create a git commit, or mentions /commit."
+description: Execute git commit with conventional-commit analysis, intelligent staging, and message generation from the diff
+when_to_use: Use when the user asks to commit changes, create a git commit, or mentions /commit.
 license: MIT
 allowed-tools: Bash
 ---

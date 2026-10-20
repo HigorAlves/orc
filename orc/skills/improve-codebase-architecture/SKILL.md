@@ -1,6 +1,7 @@
 ---
 name: improve-codebase-architecture
-description: Find architecture-deepening opportunities in a codebase. Use when the user wants to improve architecture, find refactors, consolidate coupled modules, or make a codebase more testable and AI-navigable.
+description: Find architecture-deepening opportunities in a codebase
+when_to_use: Use when the user wants to improve architecture, find refactors, consolidate coupled modules, or make a codebase more testable and AI-navigable.
 license: MIT
 metadata:
   author: Matt Pocock

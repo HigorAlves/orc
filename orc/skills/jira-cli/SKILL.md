@@ -1,6 +1,7 @@
 ---
 name: jira-cli
-description: "Atlassian CLI (acli) reference for Jira work items — create, sub-task, link, view, JQL search, transition. Use to file/move/link a Jira ticket from the terminal or when /orc:jira is invoked."
+description: Atlassian CLI (acli) reference for Jira work items — create, sub-task, link, view, JQL search, transition
+when_to_use: Use to file/move/link a Jira ticket from the terminal or when /orc:jira is invoked.
 ---
 
 # Jira CLI (acli)

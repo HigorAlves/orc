@@ -8,7 +8,7 @@
 #
 # Hard failures: an unapproved word anywhere; a file absent from the baseline
 # (new) that exceeds a cap. Ratchet: a file in the baseline may not exceed its
-# recorded long-step, non-imperative, passive, byte or description counts.
+# recorded long-step, non-imperative, passive, body-byte or description counts.
 # Prose only — fenced code and frontmatter are skipped. Heuristics, not grammar:
 # the counts are a ratchet, not a verdict. Run from the repo root.
 set -euo pipefail
@@ -129,7 +129,7 @@ done <<< "$unapproved"
 tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
 for f in "${files[@]}"; do
   read -r long notimp passive < <(metrics "$f")
-  bytes=$(wc -c < "$f" | tr -d ' ')
+  bytes=$(prose "$f" | wc -c | tr -d ' ')   # body only: frontmatter is budgeted by desc, code is skipped
   desc=$(desc_len "$f")
   printf '%s %s %s %s %s %s %s\n' "$f" "$(kind_of "$f")" "$long" "$notimp" "$passive" "$bytes" "$desc" >> "$tmp"
 done

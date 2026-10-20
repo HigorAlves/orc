@@ -38,34 +38,9 @@ These never count:
 - **Build artifacts** — `**/dist/**`, `**/build/**`, `**/.next/**`.
 - **Generated browser-QA proof** — `e2e/specs/**`, `e2e/tests/**` (Playwright plans + tests written by `/orc:qa`'s planner/generator; reviewers see them, the budget doesn't count them).
 
-## Migrations
+## Migrations and per-repo config
 
-Migrations (`**/migrations/**/*.sql`, `prisma/migrations/**`, `db/migrate/**`) are **excluded by default**, on the theory that auto-generated migration scaffolds shouldn't trigger the gate when the actual code change is small. Override per-repo:
-
-```json
-// <repo_root>/.orc/pr-budget.json
-{
-  "budget": 300,
-  "exclude_migrations": false,
-  "additional_excludes": ["**/vendor/**", "docs/api-reference/**"]
-}
-```
-
-If migrations are excluded, the gate prompt always **surfaces the count + LOC of excluded migration files** so the user can object if a 600-LOC migration deserves the conversation.
-
-## Per-repo override file
-
-Path: `<repo_root>/.orc/pr-budget.json`. Optional. Schema:
-
-```json
-{
-  "budget": 300,
-  "exclude_migrations": true,
-  "additional_excludes": ["glob/**", "another/glob/**"]
-}
-```
-
-All keys optional. Missing keys fall through to defaults. `additional_excludes` are pathspec globs (do NOT prepend `:(exclude,glob)` — the helper does it).
+Migrations (`**/migrations/**/*.sql`, `prisma/migrations/**`, `db/migrate/**`) are **excluded by default**; the gate prompt always surfaces the count + LOC of excluded migration files. Read [CONFIG.md](references/CONFIG.md) when a repo needs `<repo_root>/.orc/pr-budget.json` — the schema for `budget`, `exclude_migrations`, `additional_excludes`.
 
 ## The gate prompt (canonical)
 
@@ -108,19 +83,7 @@ When the user picks **"Open as one big PR"**, prompt for a one-line reason via f
 Size-budget-override: <reason>
 ```
 
-Examples of acceptable reasons:
-
-- `Auto-generated migration; logic change is 12 LOC.`
-- `Vendored upstream library; manual review of vendor diff is the wrong unit.`
-- `Hot-fix for prod incident #1842 — review tomorrow morning.`
-
-Examples of **not** acceptable (the reviewer will roll their eyes):
-
-- `It's fine`
-- `Doesn't matter`
-- (empty)
-
-The skill doesn't lint the reason text — that's a social contract between the engineer and the reviewer. But surfacing the trailer in the PR body makes the override visible.
+Acceptable and unacceptable reasons, with why the trailer stays unlinted: [OVERRIDE-EXAMPLES.md](references/OVERRIDE-EXAMPLES.md).
 
 ## The CLI (`bin/orc-pr-size`, on PATH while orc is enabled)
 
@@ -135,17 +98,7 @@ orc-pr-size gate --base "origin/$base" ${ARG_MAX_LOC:+--max-loc "$ARG_MAX_LOC"}
 # "The gate prompt" section above, then AskUserQuestion as above.
 ```
 
-Subcommands:
-
-| Subcommand | Returns |
-|---|---|
-| `gate [--base <ref>] [--max-loc <N>]` | One-shot: loc + budget + verdict + breakdown + exclusions. |
-| `loc [--base <ref>]` | Integer — net `additions+deletions`, post-exclusion. |
-| `breakdown [--base <ref>]` | Markdown table — top-10 contributors by LOC. |
-| `excluded [--base <ref>]` | One-line summary of what was excluded. |
-| `budget [--max-loc <N>]` | Integer — resolved budget (`--max-loc` > env > config > default). |
-
-For sourcing from hook scripts, `lib/pr-size-budget.sh` still exposes the same logic as functions: `orc_pr_loc`, `orc_pr_loc_breakdown`, `orc_pr_excluded_summary`, `orc_pr_budget`.
+Other subcommands (`loc`, `breakdown`, `excluded`, `budget`) and the `lib/pr-size-budget.sh` functions for hook scripts: [CLI.md](references/CLI.md).
 
 ## Workspace mode
 

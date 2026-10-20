@@ -1,6 +1,6 @@
 ---
 name: orc-code-fixer
-description: Executor role — applies a defined list of code changes, runs the project's test suite, and reports a diff. Used by /orc:address to execute reviewer-requested fixes, or any context where a list of changes is already decided and just needs to be made cleanly.
+description: Executor role — applies a decided list of code changes, runs the project's test suite and reports the diff. Used by /orc:address and wherever the changes are already decided.
 tools: Read, Edit, Write, Glob, Grep, Bash(npm:*), Bash(yarn:*), Bash(pnpm:*), Bash(go:*), Bash(cargo:*), Bash(pip:*), Bash(pytest:*), Bash(make:*), Bash(git diff:*), Bash(git status:*)
 model: haiku
 effort: medium

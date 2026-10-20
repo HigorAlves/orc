@@ -1,6 +1,7 @@
 ---
 name: state-protocol
-description: The canonical .orc/ state contract — orc.json session schema, checkpoint frontmatter + resume-digest shape, the orc-state CLI, read-for-data vs route-from-state, and the resumed-session startup sequence. Use when registering, checkpointing, reading, or resuming .orc/ session state.
+description: The canonical .orc/ state contract — orc.json session schema, checkpoint frontmatter + resume-digest shape, the orc-state CLI, read-for-data vs route-from-state, and the resumed-session startup sequence
+when_to_use: Use when registering, checkpointing, reading, or resuming .orc/ session state.
 ---
 
 # State Protocol

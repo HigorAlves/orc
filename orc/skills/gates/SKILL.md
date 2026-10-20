@@ -1,6 +1,7 @@
 ---
 name: gates
-description: The canonical AskUserQuestion conventions for every orc gate — class-tagged header chips, Recommended-first options, side-by-side `preview` for preview-then-confirm, multiSelect chunking, notes as the rewrite channel, and the --auto ladder. Use when about to render an orc gate.
+description: The canonical AskUserQuestion conventions for every orc gate — class-tagged header chips, Recommended-first options, side-by-side `preview` for preview-then-confirm, multiSelect chunking, notes as the rewrite channel, and the --auto ladder
+when_to_use: Use when about to render an orc gate.
 ---
 
 # Gates

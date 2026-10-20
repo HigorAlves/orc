@@ -1,6 +1,7 @@
 ---
 name: rfc-writing
-description: Author RFCs — design docs that propose a non-trivial change before implementation, surface alternatives, and invite critique, in docs/rfcs/NNNN-*.md. Use for "write an RFC" or a multi-team feature.
+description: Author RFCs — design docs that propose a non-trivial change before implementation, surface alternatives, and invite critique, in docs/rfcs/NNNN-*.md
+when_to_use: Use for "write an RFC" or a multi-team feature.
 ---
 
 # RFC Writing

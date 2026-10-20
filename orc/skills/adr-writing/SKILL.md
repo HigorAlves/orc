@@ -1,6 +1,7 @@
 ---
 name: adr-writing
-description: Author and update Architecture Decision Records (ADRs) — the durable record of a decision and its trade-offs, in docs/adr/NNNN-*.md. Use to lock in an architectural decision or to supersede an ADR.
+description: Author and update Architecture Decision Records (ADRs) — the durable record of a decision and its trade-offs, in docs/adr/NNNN-*.md
+when_to_use: Use to lock in an architectural decision or to supersede an ADR.
 ---
 
 # ADR Writing

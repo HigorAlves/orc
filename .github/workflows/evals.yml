@@ -2,6 +2,9 @@ name: evals
 
 # Behavioral evals (`claude plugin eval`) — real model calls, so never on PRs:
 # nightly + on demand. Zero-cost graders only (tool_used / regex / tool_order), one arm.
+# 21 cases: routing per command family, two negatives, guardrail/state fixtures, one
+# authoring-standard regression. Ablation stays `none`: under with-without the Skill
+# graders are indicators, not scores, so routing cases would have nothing to pass.
 # Guardrail/state cases need Bash + git fixtures: --scaffold + an explicit tool grant.
 on:
   schedule:
@@ -39,7 +42,7 @@ jobs:
         run: >
           claude plugin eval ./orc
           --ablation none --runs 2 --threshold 0.8
-          --max-cost-usd 8 --model claude-sonnet-5-5
+          --max-cost-usd 20 --model claude-sonnet-5-5
           --scaffold --allow-tools Bash Write Edit
           --trust-plugin --json evals-result.json
       - uses: actions/upload-artifact@v7

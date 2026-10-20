@@ -1,6 +1,7 @@
 ---
 name: wizard
-description: "Generate an interactive bash wizard walking a human through work only they can perform — credentials, secrets, one-off migrations. Use when provisioning infrastructure or third-party credentials, or when orc-env-provisioner escalates a human-only condition; never for steps the agent can do itself."
+description: Generate an interactive bash wizard walking a human through work only they can perform — credentials, secrets, one-off migrations
+when_to_use: Use when provisioning infrastructure or third-party credentials, or when orc-env-provisioner escalates a human-only condition; never for steps the agent can do itself.
 license: MIT
 metadata:
   author: Matt Pocock

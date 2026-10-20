@@ -137,52 +137,13 @@ Ready to implement <feature-name>
 
 ## Quick Reference
 
-| Situation | Action |
-|-----------|--------|
-| Repo mode | `<repo-root>/.orc/.worktrees/<branch>` |
-| Workspace mode (repo + branch given) | `<workspace-root>/.orc/.worktrees/<repo>/<branch>` |
-| `.orc/` not ignored | Add `.orc/` to .gitignore + commit, then proceed |
-| Tests fail during baseline | Report failures + ask |
-| No package.json/Cargo.toml | Skip dependency install |
+Situation → action table, a worked transcript, and the calling skills: [EXAMPLES.md](references/EXAMPLES.md). Read it on a first run or when a caller passes an unusual repo/branch pair.
 
 ## Common Mistakes
 
-### Skipping ignore verification
+Problem/fix pairs: [COMMON-MISTAKES.md](references/COMMON-MISTAKES.md). Read it when a step fails.
 
-- **Problem:** Worktree contents get tracked, pollute git status
-- **Fix:** Always confirm `.orc/` is ignored before creating the worktree
-
-### Creating worktrees outside `.orc/`
-
-- **Problem:** Worktrees under `$HOME`, `.worktrees/`, or a sibling dir scatter state, escape cleanup, and violate orc convention
-- **Fix:** Always use `.orc/.worktrees/` — repo root in repo mode, workspace root in workspace mode
-
-### Proceeding with failing tests
-
-- **Problem:** Can't distinguish new bugs from pre-existing issues
-- **Fix:** Report failures, get explicit permission to proceed
-
-### Hardcoding setup commands
-
-- **Problem:** Breaks on projects using different tools
-- **Fix:** Auto-detect from project files (package.json, etc.)
-
-## Example Workflow
-
-```
-You: I'm using the using-git-worktrees skill to set up an isolated workspace.
-
-[Resolve repo root: /Users/dev/myproject]
-[Verify ignored - git check-ignore confirms .orc/ is ignored]
-[Create worktree: git worktree add /Users/dev/myproject/.orc/.worktrees/feature-auth -b feature/auth]
-[Run npm install]
-[Run npm test - 47 passing]
-
-Worktree ready at /Users/dev/myproject/.orc/.worktrees/feature-auth
-Tests passing (47 tests, 0 failures)
-Ready to implement auth feature
-```
-
+## Red Flags
 ## Red Flags
 
 **Never:**
@@ -197,14 +158,3 @@ Ready to implement auth feature
 - Confirm `.orc/` is ignored before creating the worktree
 - Auto-detect and run project setup
 - Verify clean test baseline
-
-## Integration
-
-**Called by:**
-- **brainstorming** (Phase 4) - REQUIRED when design is approved and implementation follows
-- **subagent-driven-development** - REQUIRED before executing any tasks
-- **executing-plans** - REQUIRED before executing any tasks
-- Any skill needing isolated workspace
-
-**Pairs with:**
-- **finishing-a-development-branch** - REQUIRED for cleanup after work complete

@@ -1,5 +1,6 @@
 ---
-description: "Run-once repo interview that writes the tracker layer (docs/agents/issue-tracker.md, triage-labels.md, domain.md) with recommended answers. Use when configuring a repo for orc's tracker-aware surfaces or when switching trackers."
+description: Run-once repo interview that writes the tracker layer (docs/agents/issue-tracker.md, triage-labels.md, domain.md) with recommended answers
+when_to_use: Use when configuring a repo for orc's tracker-aware surfaces or when switching trackers.
 argument-hint: "[--tracker github|jira|local]"
 license: MIT
 metadata:

@@ -1,6 +1,7 @@
 ---
 name: to-prd
-description: Turn the current conversation context into a PRD and publish it to the project issue tracker. Use when user wants to create a PRD from the current context.
+description: Turn the current conversation context into a PRD and publish it to the project issue tracker
+when_to_use: Use when user wants to create a PRD from the current context.
 license: MIT
 metadata:
   author: Matt Pocock

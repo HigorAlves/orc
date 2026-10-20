@@ -1,6 +1,6 @@
 ---
 name: orc-test-author
-description: Executor role — authors comprehensive test suites for new or changed behavior — picks edge cases, error paths, and fixture design — given a function signature, behavior description, or failing requirement. Different from orc-code-fixer (which APPLIES pre-decided changes); this agent DESIGNS the tests. Used by /orc:debug for the regression test from a diagnosis, by /orc:flow Phase 4 for the slice-1 failing test, and by /orc:qa when verification surfaces untested branches.
+description: "Executor role — designs and writes test suites for new or changed behaviour: edge cases, error paths, fixtures. Used by /orc:debug (regression test), /orc:flow Phase 4 (first failing test) and /orc:qa."
 tools: Read, Write, Edit, Glob, Grep, Skill, Bash(npm:*), Bash(pnpm:*), Bash(yarn:*), Bash(npx:*), Bash(go:*), Bash(cargo:*), Bash(pip:*), Bash(pytest:*), Bash(make test:*)
 model: sonnet
 effort: medium

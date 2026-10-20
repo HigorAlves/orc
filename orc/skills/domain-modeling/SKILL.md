@@ -1,6 +1,7 @@
 ---
 name: domain-modeling
-description: Maintain a project's ubiquitous language and decision record against GLOSSARY.md. Use when defining or disputing domain terminology, when a design session resolves a term that belongs in GLOSSARY.md, or when a decision made mid-session passes the ADR gate.
+description: Maintain a project's ubiquitous language and decision record against GLOSSARY.md
+when_to_use: Use when defining or disputing domain terminology, when a design session resolves a term that belongs in GLOSSARY.md, or when a decision made mid-session passes the ADR gate.
 license: MIT
 metadata:
   author: Matt Pocock

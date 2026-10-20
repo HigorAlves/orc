@@ -1,5 +1,6 @@
 ---
-description: "Diagnose and fix a red CI run — dispatches orc-ci-investigator, then routes on its verdict: auto-fix via orc-code-fixer, flake re-run, infra escalation, or /orc:debug hand-off. Use when CI is red, PR checks fail, or after a push with --watch."
+description: "Diagnose and fix a red CI run — dispatches orc-ci-investigator, then routes on its verdict: auto-fix via orc-code-fixer, flake re-run, infra escalation, or /orc:debug hand-off"
+when_to_use: Use when CI is red, PR checks fail, or after a push with --watch.
 argument-hint: "[--auto[=guided|full]] [<pr-number>|<branch>] [--run <id>] [--watch]"
 allowed-tools:
   - Bash(orc-state:*)

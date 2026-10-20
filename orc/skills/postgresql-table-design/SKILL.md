@@ -1,6 +1,7 @@
 ---
 name: postgresql-table-design
-description: 'Design or review a PostgreSQL-specific schema: data types, indexing, constraints, partitioning, RLS, performance patterns, and advanced features. Use when modeling or auditing PG tables.'
+description: "'Design or review a PostgreSQL-specific schema: data types, indexing, constraints, partitioning, RLS, performance patterns, and advanced features"
+when_to_use: Use when modeling or auditing PG tables.'
 ---
 
 # PostgreSQL Table Design

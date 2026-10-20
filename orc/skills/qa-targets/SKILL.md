@@ -1,6 +1,7 @@
 ---
 name: qa-targets
-description: Resolve WHERE browser QA runs — named targets in .orc/targets.json (local, staging, preview), the Target gate, credential references (literal | op:// | env:), guard rule. Use before env provisioning in /orc:qa, /orc:flow Phase 6, /orc:evidence.
+description: Resolve WHERE browser QA runs — named targets in .orc/targets.json (local, staging, preview), the Target gate, credential references (literal | op:// | env:), guard rule
+when_to_use: Use before env provisioning in /orc:qa, /orc:flow Phase 6, /orc:evidence.
 ---
 
 # QA targets

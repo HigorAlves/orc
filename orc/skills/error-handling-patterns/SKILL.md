@@ -1,6 +1,7 @@
 ---
 name: error-handling-patterns
-description: Error handling patterns across languages — exceptions, Result types, propagation, graceful degradation. Use when implementing error handling, designing APIs, or improving reliability.
+description: Error handling patterns across languages — exceptions, Result types, propagation, graceful degradation
+when_to_use: Use when implementing error handling, designing APIs, or improving reliability.
 ---
 
 # Error Handling Patterns

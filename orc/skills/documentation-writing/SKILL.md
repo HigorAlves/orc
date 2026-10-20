@@ -1,6 +1,7 @@
 ---
 name: documentation-writing
-description: Diátaxis documentation expert. Use when writing high-quality software documentation guided by the Diátaxis framework — tutorials, how-tos, reference, and explanation.
+description: Diátaxis documentation expert
+when_to_use: Use when writing high-quality software documentation guided by the Diátaxis framework — tutorials, how-tos, reference, and explanation.
 ---
 
 # Diátaxis Documentation Expert

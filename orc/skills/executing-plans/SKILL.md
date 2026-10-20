@@ -1,6 +1,7 @@
 ---
 name: executing-plans
-description: Execute a written implementation plan batch-by-batch — load it, review critically, implement task by task, and stop for review between batches. Use when you have a written implementation plan to execute in a separate session with review checkpoints.
+description: Execute a written implementation plan batch-by-batch — load it, review critically, implement task by task, and stop for review between batches
+when_to_use: Use when you have a written implementation plan to execute in a separate session with review checkpoints.
 license: MIT
 metadata:
   author: Jesse Vincent

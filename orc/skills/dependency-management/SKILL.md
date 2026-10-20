@@ -1,6 +1,7 @@
 ---
 name: dependency-management
-description: Audit, survey, and upgrade project dependencies safely — majors escalated, never auto-applied. Use when auditing dependencies for vulnerabilities, checking outdated packages, bumping a dependency, or when /orc:deps is invoked.
+description: Audit, survey, and upgrade project dependencies safely — majors escalated, never auto-applied
+when_to_use: Use when auditing dependencies for vulnerabilities, checking outdated packages, bumping a dependency, or when /orc:deps is invoked.
 ---
 
 # Dependency Management

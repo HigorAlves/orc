@@ -1,6 +1,6 @@
 ---
 name: orc-prd-analyzer
-description: Investigator role — analyzes incoming PRDs / specs / feature briefs — extracts structured requirements, identifies ambiguities, surfaces missing edge cases, and generates clarifying questions for the PM or stakeholder. Produces a structured analysis report; the engineer decides how to act on the gaps. Dispatched by /orc:flow Phase 1 (triage) when input is a PRD or links to one, and by /orc:plan when the input reads more like a brief than a settled spec.
+description: Investigator role — analyses a PRD, spec or brief into structured requirements, ambiguities, missing edge cases and clarifying questions. Dispatched by /orc:flow triage and /orc:plan when the input reads like a brief.
 tools: Read, Glob, Grep, WebFetch, Bash(gh issue view:*), Bash(graphify:*)
 model: opus
 effort: high

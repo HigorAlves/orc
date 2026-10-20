@@ -1,6 +1,7 @@
 ---
 name: postgresql-optimization
-description: 'Write or review PostgreSQL-specific SQL: JSONB, arrays, custom/range/geometric types, indexing, full-text search, window functions, extensions, and RLS. Use for PG-unique features and code review.'
+description: "'Write or review PostgreSQL-specific SQL: JSONB, arrays, custom/range/geometric types, indexing, full-text search, window functions, extensions, and RLS"
+when_to_use: Use for PG-unique features and code review.'
 ---
 
 # PostgreSQL Development & Review Assistant

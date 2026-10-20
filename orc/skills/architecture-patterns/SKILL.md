@@ -1,6 +1,7 @@
 ---
 name: architecture-patterns
-description: Implement Clean, Hexagonal (Ports & Adapters), and Domain-Driven architecture patterns. Use when designing service layers, refactoring monoliths into bounded contexts, or fixing layer dependency cycles.
+description: Implement Clean, Hexagonal (Ports & Adapters), and Domain-Driven architecture patterns
+when_to_use: Use when designing service layers, refactoring monoliths into bounded contexts, or fixing layer dependency cycles.
 ---
 
 # Architecture Patterns

@@ -1,5 +1,6 @@
 ---
-description: "Turn a feature brief, PRD, or existing Epic into a full Jira hierarchy behind a preview gate. Use when building out a Jira epic/backlog, breaking a feature into Jira tickets, or enforcing the Epic→Story→Task structure."
+description: Turn a feature brief, PRD, or existing Epic into a full Jira hierarchy behind a preview gate
+when_to_use: Use when building out a Jira epic/backlog, breaking a feature into Jira tickets, or enforcing the Epic→Story→Task structure.
 argument-hint: "[<brief> | <prd-path> | --epic <KEY>] [--project <KEY>] [--team-size <n>] [--dry-run]"
 allowed-tools:
   - Bash(orc-state:*)

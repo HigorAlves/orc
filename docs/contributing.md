@@ -114,6 +114,10 @@ Guardrail/state cases (`commit-no-attribution`, `branch-first-on-main`, `plan-re
 
 A routing case that drops to 0 after a description change means the skill stopped triggering on natural phrasing — fix the `description`, not the grader.
 
+### Context cost and skill-doctor
+
+Every component's `description` (and `when_to_use`) is loaded into every session. `bash scripts/ci/verify-context-cost.sh --print` gives the current total and CI ratchets it (it may only fall). Once per release, run `/skill-doctor` in an interactive session and paste its report into the release PR: it lists each skill's token cost and 7-day usage and flags skills never invoked; a skill flagged twice in a row is a candidate for `docs/agents/out-of-scope.md` or for merging into the skill that does fire. `claude plugin details orc` gives the harness's own always-on projection for the installed plugin.
+
 ## Commit hygiene
 
 - Conventional Commits format (enforced by `orc:git-commit` skill): `feat(skills): ...`, `fix(commands): ...`, `chore(hooks): ...`.

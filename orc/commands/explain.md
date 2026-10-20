@@ -1,5 +1,6 @@
 ---
-description: Build a narrated "what was made" walkthrough from a QA packet — golden-path demo clips (Playwright, overlays off) + animate motion graphics + local kokoro-js voice, assembled by orc-explain; one preview gate before render; delivered via the evidence-publish gates. Use after /orc:qa passes or on any .orc evidence packet.
+description: Build a narrated "what was made" walkthrough from a QA packet — golden-path demo clips (Playwright, overlays off) + animate motion graphics + local kokoro-js voice, assembled by orc-explain; one preview gate before render; delivered via the evidence-publish gates
+when_to_use: Use after /orc:qa passes or on any .orc evidence packet.
 argument-hint: "[--qa-dir <dir>] [--target <name>] [--style <animate-style>] [--voice <kokoro-voice>] [--auto[=guided|full]]"
 allowed-tools:
   - Bash(orc-state:*)

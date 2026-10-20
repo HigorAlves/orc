@@ -1,6 +1,7 @@
 ---
 name: release-management
-description: "Cut a semver release from conventional commits — bump, grouped changelog, annotated tag, GitHub release. Use when releasing, tagging a version, bumping semver, or writing release notes."
+description: Cut a semver release from conventional commits — bump, grouped changelog, annotated tag, GitHub release
+when_to_use: Use when releasing, tagging a version, bumping semver, or writing release notes.
 ---
 
 # Release management
