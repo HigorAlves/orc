@@ -9,6 +9,9 @@ disable-model-invocation: true
 Which orc thing do I reach for? Answer from this map — recommend ONE entry
 point (➡️), name the runner-up only when the choice is genuinely close.
 
+Before stating what a command or skill does, or recommending one of its steps
+be skipped, read its file: the summaries here are for orientation only.
+
 ## The main flow (idea → shipped)
 
 Step-by-step, human at every gate:
@@ -44,6 +47,7 @@ was built and proven.
 | Cut a release (user project) | `/orc:release` |
 | New package/service/app shell | `/orc:scaffold` |
 | Interrupted mid-anything | `/orc:resume` (see `/orc:status` for what's live) |
+| A build just finished (or went sideways) | `/orc:retro` — improve the environment, not the code |
 
 ## Sharpening (before committing to build)
 

@@ -3,14 +3,14 @@ name: tdd
 description: Test-driven development with the red-green-refactor loop. Use when building features or fixing bugs via TDD, requesting integration tests, or asking for test-first development.
 license: MIT
 metadata:
-  source: Derived from https://github.com/mattpocock/skills (audit pin 2ffb184)
+  source: Derived from https://github.com/mattpocock/skills (audit pin 5beb35b)
 ---
 
 # Test-Driven Development
 
 TDD is the red → green → refactor loop. This skill is the reference that makes that loop produce tests worth keeping: what a good test is, where tests go, the named anti-patterns, and the rules of the loop. This is orc iron rule #2 — the failing test comes before the production code, every cycle.
 
-When exploring the codebase, use the project's domain glossary (and `CONTEXT.md` if it exists) so test names and interface vocabulary match the project's language, and respect ADRs in the area you're touching.
+When exploring the codebase, use the project's domain glossary (and `GLOSSARY.md` if it exists) so test names and interface vocabulary match the project's language, and respect ADRs in the area you're touching.
 
 ## What a good test is
 
@@ -24,7 +24,7 @@ A **seam** is the public boundary you test at: the interface where you observe b
 
 **Test only at pre-agreed seams.** Before writing any test, write down the seams under test and confirm them with the user. No test is written at an unconfirmed seam. You can't test everything — agreeing the seams up front is how testing effort lands on critical paths and complex logic instead of every possible edge case.
 
-Ask: "What should the public interface look like, and which seams should we test?"
+Ask: "What should the public interface look like, and which seams should we test?" Give each proposed seam a one-line note on what it catches and what it misses — the user is choosing where testing effort lands, so show them the trade.
 
 When the shape of the interface is itself in question — how deep the module is, where the seam belongs — consult `orc:codebase-design` for the module/interface/depth/seam vocabulary, plus [references/deep-modules.md](references/deep-modules.md) (small interface, deep implementation) and [references/interface-design.md](references/interface-design.md) (designing for testability).
 

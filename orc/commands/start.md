@@ -47,7 +47,7 @@ In workspace mode, resolve `targetRepos` from `--repos`/`--repo`/`--all-repos`/`
 
 Invoke `orc:using-git-worktrees`. Create an isolated worktree off the current default branch (typically `main`). Switch the session to that worktree. The PreToolUse hook will refuse subsequent commits to `main`/`master`/`develop`, so you must be on a feature branch from this point.
 
-If `--jira <KEY>` was passed: invoke `orc:jira-cli` and run `acli jira workitem view "$KEY" --fields "summary" --json | jq -r '.fields.summary'`. Slugify (lowercase, replace non-`[a-z0-9-]` with `-`, collapse repeats, trim leading/trailing `-`). Suggest `feat/<KEY>-<slug>` as the branch name to `orc:using-git-worktrees`. The user can accept or override.
+If `--jira <KEY>` was passed: invoke `orc:jira-cli` and run `acli jira workitem view "$KEY" --fields "summary" --json | jq -r '.fields.summary'`. State the fetched title back to the user before anything else — a wrong key is cheapest to catch here; if the key resolves to nothing or to several items, stop and ask. Slugify (lowercase, replace non-`[a-z0-9-]` with `-`, collapse repeats, trim leading/trailing `-`). Suggest `feat/<KEY>-<slug>` as the branch name to `orc:using-git-worktrees`. The user can accept or override.
 
 **Workspace mode**: repeat the worktree+branch step for **every repo** in `targetRepos`. Default worktree path is `${ORC_WORKSPACE_ROOT}/.orc/.worktrees/<repo>/<sanitized-branch>/` (the worktrees skill recognizes workspace mode and prefers this location).
 

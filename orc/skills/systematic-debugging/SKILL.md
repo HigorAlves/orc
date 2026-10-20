@@ -4,7 +4,7 @@ description: "Root-cause-first debugging discipline — build a red-capable feed
 license: MIT
 metadata:
   author: Jesse Vincent
-  source: Derived from https://github.com/obra/superpowers; techniques merged from https://github.com/mattpocock/skills @ 2ffb184
+  source: Derived from https://github.com/obra/superpowers; techniques merged from https://github.com/mattpocock/skills @ 5beb35b
 ---
 
 # Systematic Debugging
@@ -21,7 +21,11 @@ This is orc iron rule #4. If you haven't completed Phase 1, you cannot propose f
 
 When running under `/orc:debug`, the phases below map onto the command's resumable session: the diagnosis persists to `.orc/<branch>/files/diagnosis.md` and checkpoints let `/orc:resume` continue an interrupted investigation.
 
-Before exploring the codebase, read the project's context docs (`CONTEXT.md` if it exists) and ADRs in the area you're touching.
+Before exploring the codebase, read the project's glossary (`GLOSSARY.md` if it exists) and ADRs in the area you're touching.
+
+## Redact
+
+This skill has you show commands, outputs and captured artifacts. **Redact every secret first**: write `<REDACTED>` in its place. Build loops against env vars so the credential stays in the environment rather than in what you show. Captured artifacts carry auth headers — quote only the lines that carry the signal. If the redacted output is not enough to diagnose the bug, say so and ask the user.
 
 ## Phase 1 — Build a feedback loop
 
@@ -54,11 +58,11 @@ A 30-second flaky loop is barely better than no loop; a 2-second deterministic o
 
 **Non-deterministic bugs:** the goal is not a clean repro but a **higher reproduction rate**. Loop the trigger 100×, parallelise, add stress, narrow timing windows. A 50%-flake bug is debuggable; 1% is not — keep raising the rate.
 
-**When you genuinely cannot build a loop:** stop and say so explicitly. List what you tried. Ask the user for (a) access to the reproducing environment, (b) a captured artifact (HAR file, log dump, core dump, recording with timestamps), or (c) permission to add temporary production instrumentation. Do NOT proceed to hypothesise without a loop.
+**When you genuinely cannot build a loop:** stop and say so explicitly. List what you tried. Ask the user for (a) access to the reproducing environment, (b) a redacted captured artifact (HAR file, log dump, core dump, recording with timestamps), or (c) permission to add temporary production instrumentation. Do NOT proceed to hypothesise without a loop.
 
 ### Completion criterion — one red-capable command
 
-Phase 1 is done when you can name **one command** — a script path, a test invocation, a curl — that you have **already run at least once** (paste the invocation and its output), and that is:
+Phase 1 is done when you can name **one command** — a script path, a test invocation, a curl — that you have **already run at least once** (show the invocation and its output, redacted), and that is:
 
 - [ ] **Red-capable** — drives the actual bug code path and asserts the **user's exact symptom**, so it goes red on this bug and green once fixed. Not "runs without erroring".
 - [ ] **Deterministic** — same verdict every run (flaky bugs: a pinned, high reproduction rate).
@@ -117,7 +121,7 @@ Write the regression test **before the fix** (invoke `orc:tdd`) — but only if 
 If a correct seam exists:
 
 1. Turn the minimised repro into a failing test at that seam.
-2. Watch it fail.
+2. Watch it fail. If you forced the red by mutating code or a fixture, `diff` against a pristine copy to prove the mutation landed before you trust the red.
 3. Apply ONE fix addressing the root cause — no "while I'm here" improvements, no bundled refactoring.
 4. Watch it pass.
 5. Re-run the Phase 1 loop against the original (un-minimised) scenario.

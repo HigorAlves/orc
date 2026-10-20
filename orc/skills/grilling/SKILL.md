@@ -4,20 +4,28 @@ description: Round-based interview engine under orc's grill entry points (orc:gr
 license: MIT
 metadata:
   author: Matt Pocock
-  source: Vendored from https://github.com/mattpocock/skills @ 2ffb184
+  source: Vendored from https://github.com/mattpocock/skills @ 5beb35b
 ---
 
 Interview the user relentlessly until you reach a shared understanding. Map this as a **design tree**: every decision branches into the decisions that hang off it.
 
 Work the tree in **rounds**. The **frontier** is every decision whose prerequisites are already settled — the questions you can ask _now_ without guessing at answers you haven't heard yet. Ask the whole frontier in one round: number each question and give your recommended answer. Then wait for the user's answers before the next round.
 
-Each question should be formatted like so:
+Format a round like so — a `---` rule between consecutive questions:
 
 ```
 ❓ **Q1** - **<question title>**: <question body, might be multiple paragraphs, including multiple choices>
 
 ➡️ <your recommended answer>
+
+---
+
+❓ **Q2** - **<question title>**: <question body>
+
+➡️ <your recommended answer>
 ```
+
+Word each question so "yes" accepts your recommended answer — the user should be able to clear a round with a list of yeses.
 
 Each round the user answers reshapes the tree — settled decisions push the frontier outward and unblock questions that depended on them. Recompute the frontier and ask the next round. A question whose answer depends on another question still open in this round belongs to a _later_ round, not this one.
 

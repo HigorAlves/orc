@@ -4,7 +4,7 @@ argument-hint: "[chart <loose idea> | work <map ref> [ticket ref]]"
 license: MIT
 metadata:
   author: Matt Pocock
-  source: Adapted from https://github.com/mattpocock/skills @ 2ffb184
+  source: Adapted from https://github.com/mattpocock/skills @ 5beb35b
 allowed-tools:
   - Read
   - Write
@@ -82,7 +82,7 @@ Each ticket is a child of the map; its body is one question sized to a single fr
 <the decision or investigation this ticket resolves>
 ```
 
-Each carries a `wayfinder:<type>` label. A session **claims** a ticket by assigning it *before any work* — the assignee IS the claim; open + unassigned = unclaimed. Blocking uses the tracker's **native** dependency relationship so the frontier renders visually in the tracker's own UI (fallback conventions per the tracker doc). A ticket is **unblocked** when every blocker is closed; the **frontier** is the open, unblocked, unclaimed children — the edge of the known. Answers are recorded on resolution, never pre-written into the body; assets are linked, not pasted.
+Each carries a `wayfinder:<type>` label — and `wayfinder:` labels are the *only* labels a map and its tickets carry, never a triage label like `ready-for-agent`: they are decisions, not implementation work. A session **claims** a ticket by assigning it *before any work* — the assignee IS the claim; open + unassigned = unclaimed. Blocking uses the tracker's **native** dependency relationship so the frontier renders visually in the tracker's own UI (fallback conventions per the tracker doc). A ticket is **unblocked** when every blocker is closed; the **frontier** is the open, unblocked, unclaimed children — the edge of the known. Answers are recorded on resolution, never pre-written into the body; assets are linked, not pasted.
 
 ### Ticket types
 
@@ -108,8 +108,8 @@ Invoked with a loose idea.
 1. **Name the destination.** Run `orc:grilling` + `orc:domain-modeling` to pin down what this map is finding its way to. The destination fixes the scope, so it's settled first.
 2. **Map the frontier.** Grill again, **breadth-first** — fan out across the whole space, surfacing the open decisions and the first takeable steps. **If this surfaces no fog** — the way is already clear, the journey fits one session — print the Gate headline (`**⛔ Gate — no map needed**`, per `orc:callouts`) and `AskUserQuestion`: hand off to `/orc:plan` / slice via `orc:to-issues` / chart anyway.
 3. **Preview.** Print `**📋 Preview — map + tickets**`: the map body, every ticket title + type + question, and the blocking edges. `AskUserQuestion` to confirm before creating anything on the tracker.
-4. **Create.** Create the map, then the specifiable tickets as children, then wire blocking edges in a **second pass** (items need ids before they can reference each other) — all per the tracker doc's wayfinding operations. Everything not yet specifiable stays in the fog section.
-5. **Fire the research subagents.** For each research ticket, dispatch `orc:research` in the background to resolve it in parallel, linking findings from the ticket.
+4. **Create.** Create the map, then the specifiable tickets as children, then wire blocking edges in a **second pass** (items need ids before they can reference each other) — all per the tracker doc's wayfinding operations. Write cross-references in that pass too, with real ids: a placeholder `#<n>` auto-links to an unrelated issue. Everything not yet specifiable stays in the fog section.
+5. **Fire the research subagents.** For each research ticket, dispatch `orc:research` in the background to resolve it in parallel, capturing findings on a throwaway `research/<name>` branch linked from the ticket. Push the branch but open no PR — it is never merged.
 6. **Stop.** Charting is one session's work; it hand-resolves nothing.
 
 ## Mode B — Work through the map
@@ -118,7 +118,7 @@ Invoked with a map reference; a ticket reference is optional — without one, *y
 
 1. **Load the map** — the low-res view, not every ticket body.
 2. **Choose and claim.** The named ticket, else the first frontier ticket in map order. Claim it (assign) before any work — other sessions may be working the tracker concurrently, and the claim is what makes them skip it.
-3. **Resolve it** — zoom as needed: fetch related or closed ticket bodies on demand; invoke the skills the map's Notes name; default to `orc:grilling` + `orc:domain-modeling`.
+3. **Resolve it** as the type its `wayfinder:<type>` label names (read the label — the body never states the type), zooming as needed: fetch related or closed ticket bodies on demand; invoke the skills the map's Notes name; default to `orc:grilling` + `orc:domain-modeling`.
 4. **Record.** Post the answer as a resolution comment, close the ticket, and append a gist + link to the map's Decisions-so-far. Preview tracker writes before posting.
 5. **Advance the frontier.** Create newly-surfaced tickets (create-then-wire); graduate fog the answer made specifiable, clearing each graduated patch from Not-yet-specified so it lives only as its ticket; rule mis-scoped tickets out of scope; update or delete tickets the decision invalidated.
 
