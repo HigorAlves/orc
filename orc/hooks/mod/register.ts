@@ -21,13 +21,14 @@ import { parseFeatures, type Features } from './config'
 import { gateBadge } from './gates'
 import { LEDGER_INITIAL, dropAgent, finishAgent, recordStep, setStep, tagAgent } from './ledger'
 import { PANE, drawPane, type Els } from './pane'
+import { MAX_PROBED, countDependents, parseAffected, parseNames } from './radius/model'
 import { modelFor, parseProfile, type Profile } from './profiles'
 import { costOf } from './prices'
 import { agentRows, progressModel } from './progress/model'
 import { TOUCHED_INITIAL, applyNumstat, markCommitted, parseNumstat, relPath, touch, touchedRows, type TouchKind } from './touched/model'
 import { progressText } from './progress/text'
 import { progressAlt, progressSvg } from './progress/svg'
-import { DETAILS_INITIAL, LIVE_INITIAL, SECTIONS_INITIAL, ciBox, guardBox, isOrcStateWrite } from './state'
+import { DETAILS_INITIAL, LIVE_INITIAL, RADIUS_INITIAL, SECTIONS_INITIAL, ciBox, guardBox, isOrcStateWrite } from './state'
 
 // State refs: literals in this file, as the engine's scan requires.
 const SNAPSHOT_REF = { plugin: 'orc', key: 'snapshot' } as const
@@ -36,6 +37,7 @@ const LIVE_REF = { plugin: 'orc', key: 'live' } as const
 const DETAILS_REF = { plugin: 'orc', key: 'details' } as const
 const LEDGER_REF = { plugin: 'orc', key: 'ledger' } as const
 const TOUCHED_REF = { plugin: 'orc', key: 'touched' } as const
+const RADIUS_REF = { plugin: 'orc', key: 'radius' } as const
 
 let alertsSound = false
 
@@ -532,8 +534,15 @@ function draw_band_row($: EngineInterface, e: { surface: RenderSurface | null; p
 // ladder beside the slice ledger. Where nothing can draw (VS Code, claude -p)
 // it answers with a text summary.
 function register_cockpit(on: On, fallbackProfile: Profile) {
-  on('command.run', { command: 'orc' }, async ($) => {
+  on('command.run', { command: 'orc' }, async ($, e) => {
     await refresh($).catch(() => undefined)
+    // `/orc radius` opens the cockpit with the ship-radius section already expanded.
+    if (e.args.trim() === 'radius') {
+      try {
+        await $.state.set(SECTIONS_REF, { ...((await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL), radius: true })
+        await load_details($, 'radius')
+      } catch { /* the pane opens with the section as it was */ }
+    }
     const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
     // A plain `claude -p` run has no surface (ui.open still reports "placed").
     if ((await $.session.surfaces()).length) {
@@ -554,8 +563,9 @@ function register_cockpit(on: On, fallbackProfile: Profile) {
     const ledger = (await $.state.get(LEDGER_REF)).value ?? LEDGER_INITIAL
     const now = await $.clock.now().catch(() => 0)
     const agents = agentRows(ledger, costOf, now)
+    const radius = (await $.state.get(RADIUS_REF)).value ?? RADIUS_INITIAL
     const touched = touchedRows((await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL, now)
-    const model = { snap, sections, details, agents, touched, rich: isRich(e.surface), ciAlert: ciBox.alert, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
+    const model = { snap, sections, details, agents, touched, radius, rich: isRich(e.surface), ciAlert: ciBox.alert, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
     return drawPane($.ui.resolve(e), model, {
       resume: () => { $.prompt.fill({ text: snap.session ? '/orc:resume' : '/orc:flow ' }) },
       toggle: (id: SectionId) => async () => {
@@ -615,6 +625,7 @@ function refresh($: EngineInterface): Promise<void> {
       if (!open.digest && !open.diff) await $.state.set(DETAILS_REF, DETAILS_INITIAL)
       if (open.digest) await load_details($, 'digest')
       if (open.diff) await load_details($, 'diff')
+      if (open.radius) await load_details($, 'radius')
     } while (dirty)
   })().finally(() => { inflight = null })
   return inflight
@@ -634,6 +645,30 @@ async function load_details($: EngineInterface, id: SectionId): Promise<void> {
   const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
   if (id === 'digest') await load_digest($, snap)
   if (id === 'diff') await load_diff($, snap)
+  if (id === 'radius') await load_radius($)
+}
+
+// Ship radius, read when its section opens: size against budget, the changed files, and
+// (only when a Graphify graph answers) the other nodes that depend on them.
+async function load_radius($: EngineInterface): Promise<void> {
+  const g = await git_facts($)
+  const cwd = g.root || undefined
+  const run = (argv: string[]) => $.process.run(argv, { timeoutMs: 10000, ...(cwd ? { cwd } : {}) }).then(r => (r.exitCode === 0 ? r.stdout : null), () => null)
+  const bin = $.plugin.root + '/bin/orc-pr-size'
+  const [loc, budget, names] = await Promise.all([run([bin, 'loc']), run([bin, 'budget']), run(['git', 'diff', '--name-only', g.mergeBase + '...HEAD'])])
+  const files = parseNames(names ?? '')
+  const size = Number(loc), cap = Number(budget)
+  if (loc == null || budget == null || !Number.isFinite(size) || !(cap > 0)) {
+    await $.state.set(RADIUS_REF, { loc: 0, budget: 0, files: files.length, dependents: null })
+    return
+  }
+  let dependents: number | null = null
+  const probe = files.length ? await run(['graphify', 'affected', files[0], '--depth', '1']) : null
+  if (probe != null) {
+    const rest = await Promise.all(files.slice(1, MAX_PROBED).map(f => run(['graphify', 'affected', f, '--depth', '1'])))
+    dependents = countDependents([probe, ...rest].map(o => parseAffected(o ?? '')), files)
+  }
+  await $.state.set(RADIUS_REF, { loc: size, budget: cap, files: files.length, dependents })
 }
 
 // checkpoint.md's digest, read once per open; '' is drawn as "no digest".

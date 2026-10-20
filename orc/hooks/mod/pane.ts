@@ -12,6 +12,9 @@ import { touchedText } from './touched/text'
 import type { TouchedRow } from './touched/model'
 import { AGENT_H, agentAlt, agentLabel, agentSvg } from './progress/svg'
 import type { CiAlert } from './state'
+import type { Radius } from './radius/model'
+import { RADIUS_H, radiusAlt, radiusSvg } from './radius/svg'
+import { radiusText } from './radius/text'
 
 export const PANE = 'orc-cockpit'
 
@@ -27,6 +30,7 @@ export type PaneModel = {
   rich: boolean
   agents: AgentRow[]
   touched: TouchedRow[]
+  radius: Radius | null
 }
 export type PaneActions = { resume: () => void; toggle: (id: SectionId) => () => void; renderReport: () => void; settle: (key: string, value: string) => void }
 
@@ -102,6 +106,15 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
       ? [Svg({ source: touchedSource, alt: touchedAlt(model.touched), width: px(model.bodyColumns), height: touchedHeight(model.touched) })]
       : touchedText(els, model.touched))
 
+  const radiusSource = model.rich && Svg && model.radius ? radiusSvg(model.radius, model.bodyColumns) : null
+  const radius = section('radius', 'b', () => !model.radius
+    ? [line('Loading…', { dimColor: true })]
+    : model.radius.budget <= 0
+    ? [line('No size reading — is there a base branch to compare against?', { dimColor: true })]
+    : radiusSource && Svg
+      ? [Svg({ source: radiusSource, alt: radiusAlt(model.radius), width: px(model.bodyColumns), height: RADIUS_H })]
+      : [radiusText(els, model.radius)])
+
   const policy = policyOf(snap) ?? 'manual'
   const decisions = section('decisions', 'd', () => [
     ...(Select ? [Select({ key: 'policy', label: 'Autopilot', options: POLICIES.map(p => ({ value: p })), value: policy,
@@ -129,6 +142,6 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
   ] })
 
   // Sections sit tight (one row each while collapsed); the gap only separates the strip, the body, the sections and the footer.
-  const sections = Box({ flexDirection: 'column', children: [qa, pr, agents, touched, decisions, digest, diff] })
+  const sections = Box({ flexDirection: 'column', children: [qa, pr, radius, agents, touched, decisions, digest, diff] })
   return Box({ flexDirection: 'column', rowGap: 1, children: [header, body, sections, footer] })
 }

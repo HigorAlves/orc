@@ -2,12 +2,13 @@
 // contract (types/index.d.ts) declares. Pure — the engine follows `$` only
 // inside register.ts and wants state refs written as literals there, so the
 // refs, the loader and the triggers all live in register.ts.
-import type { OrcDetails, OrcLive, OrcSections } from '../../types'
+import type { OrcDetails, OrcLive, OrcRadius, OrcSections } from '../../types'
 import type { CiSummary } from './ci'
 import type { GuardSummary } from './guard/measure'
 export { LEDGER_INITIAL } from './ledger'
 
-export const SECTIONS_INITIAL: OrcSections = { qa: false, pr: false, agents: false, decisions: false, digest: false, diff: false, touched: false }
+export const SECTIONS_INITIAL: OrcSections = { qa: false, pr: false, agents: false, decisions: false, digest: false, diff: false, touched: false, radius: false }
+export const RADIUS_INITIAL: OrcRadius | null = null
 export const LIVE_INITIAL: OrcLive = { agent: null, since: null }
 export const DETAILS_INITIAL: OrcDetails = { digest: null, diff: null, diffTruncated: false }
 

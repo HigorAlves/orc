@@ -153,7 +153,7 @@ export function headerCells(snap: Snapshot, profile: Profile): Cell[] {
 export const layoutFor = (placement: 'dock' | 'inline', bodyColumns: number): 'row' | 'column' =>
   bodyColumns >= 72 || (placement === 'dock' && bodyColumns >= 64) ? 'row' : 'column'
 
-export type SectionId = 'qa' | 'pr' | 'agents' | 'decisions' | 'digest' | 'diff' | 'touched'
+export type SectionId = 'qa' | 'pr' | 'agents' | 'decisions' | 'digest' | 'diff' | 'touched' | 'radius'
 
 // Which sections need a look: a failing QA verdict, an over-budget diff or red CI.
 export function attention(snap: Snapshot, ciRed: boolean): Set<SectionId> {
@@ -164,7 +164,7 @@ export function attention(snap: Snapshot, ciRed: boolean): Set<SectionId> {
 }
 
 export const sectionLabel = (id: SectionId, open: boolean, flagged: boolean) =>
-  `${open ? '▾' : '▸'} ${({ qa: 'QA', pr: 'PR', agents: 'Agents', decisions: 'Decisions', digest: 'Digest', diff: 'Diff', touched: 'Touched' })[id]}${flagged ? ' !' : ''}`
+  `${open ? '▾' : '▸'} ${({ qa: 'QA', pr: 'PR', agents: 'Agents', decisions: 'Decisions', digest: 'Digest', diff: 'Diff', touched: 'Touched', radius: 'Radius' })[id]}${flagged ? ' !' : ''}`
 
 // The '## Resume digest' section of checkpoint.md, or null when there is none.
 export function digestOf(markdown: string): string | null {
