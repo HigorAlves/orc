@@ -1,5 +1,13 @@
 # Detection — rung specifics and inference tables
 
+## The ladder — rungs in precedence order (moved from SKILL.md)
+
+1. **Existing compose** — `compose.yaml|compose.yml|docker-compose.yml|docker-compose.yaml` (+ overrides, `dev` profiles). This IS the project's runnable setup guideline. Use as-is; NEVER edit it — meet extra port/env needs with an orc-owned override file in `.orc/<branch>/files/docker/`.
+2. **Devcontainer** — `.devcontainer/devcontainer.json` (or root variant). If it names `dockerComposeFile` → resolve to rung 1 with that file. Else wrap its image/Dockerfile in a generated compose honoring `forwardPorts`, `containerEnv`, `postCreateCommand` (as a one-shot).
+3. **Dockerfile** — `Dockerfile` / `Dockerfile.dev`. Generate a compose: app builds from it (prefer a `dev`/`development` stage when multi-stage), plus inferred backing services.
+4. **Nothing** — generate from analysis (`references/generation.md`). Default is **hybrid**: containers for backing services only (inferred from `.env.example`/config — `DATABASE_URL`→postgres, `REDIS_URL`→redis, …), app on the host via its dev script wired to them. Fastest and least invented; macOS bind-mount I/O makes containerized node dev servers *slower*. `--containerize-app` forces a full app container.
+
+
 ## Rung 1 — existing compose
 
 Filename precedence (first found wins): `compose.yaml`, `compose.yml`, `docker-compose.yml`, `docker-compose.yaml`. Then layer, when present:

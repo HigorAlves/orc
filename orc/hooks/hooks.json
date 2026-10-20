@@ -76,43 +76,50 @@
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-git-guard.sh\"",
             "async": false,
-            "if": "Bash(git commit*)"
+            "if": "Bash(git commit*)",
+            "onFailure": "block"
           },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-git-guard.sh\"",
             "async": false,
-            "if": "Bash(git push*)"
+            "if": "Bash(git push*)",
+            "onFailure": "block"
           },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-git-guard.sh\"",
             "async": false,
-            "if": "Bash(git reset*)"
+            "if": "Bash(git reset*)",
+            "onFailure": "block"
           },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-git-guard.sh\"",
             "async": false,
-            "if": "Bash(git clean*)"
+            "if": "Bash(git clean*)",
+            "onFailure": "block"
           },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-git-guard.sh\"",
             "async": false,
-            "if": "Bash(git branch*)"
+            "if": "Bash(git branch*)",
+            "onFailure": "block"
           },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-git-guard.sh\"",
             "async": false,
-            "if": "Bash(gh pr *)"
+            "if": "Bash(gh pr *)",
+            "onFailure": "block"
           },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-git-guard.sh\"",
             "async": false,
-            "if": "Bash(gh issue *)"
+            "if": "Bash(gh issue *)",
+            "onFailure": "block"
           }
         ]
       }

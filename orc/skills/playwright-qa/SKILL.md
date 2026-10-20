@@ -1,6 +1,7 @@
 ---
 name: playwright-qa
-description: Driver P of orc:browser-qa — browser QA with Playwright Test and the stock planner/generator/healer agents against a resolved QA target; yields a stitched step-tagged video, traces, and qa-manifest.json. Use when browser-qa selects the playwright driver; falls back to agent-browser.
+description: Driver P of orc:browser-qa — browser QA with Playwright Test and the stock planner/generator/healer agents against a resolved QA target; yields a stitched step-tagged video, traces, and qa-manifest.json
+when_to_use: Use when browser-qa selects the playwright driver; falls back to agent-browser.
 ---
 
 # Playwright QA (Driver P)

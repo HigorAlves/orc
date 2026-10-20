@@ -1,6 +1,7 @@
 ---
 name: prd-writing
-description: Author Product Requirements Documents (PRDs) from scratch — interview-driven, templated, published to docs/prds/NNNN-*.md. Use for "write a PRD for X", an unsettled new feature, or /orc:prd.
+description: Author Product Requirements Documents (PRDs) from scratch — interview-driven, templated, published to docs/prds/NNNN-*.md
+when_to_use: Use for "write a PRD for X", an unsettled new feature, or /orc:prd.
 ---
 
 # PRD Writing
@@ -40,80 +41,17 @@ If the user hasn't already answered these in conversation, ask before drafting. 
 
 Every PRD uses this shape. Delete sections that genuinely have no content; **never leave `TBD` or stub placeholder text.** A section that's empty is a lie about being thought through.
 
-```markdown
-# PRD NNNN — <Feature title in noun phrase>
-
-- **Status:** Draft | In Review | Approved | Shipped | Archived
-- **Author:** <name>
-- **Created:** YYYY-MM-DD
-- **Last updated:** YYYY-MM-DD
-- **Stakeholders:** <PM, design, eng lead, others>
-- **Linked tickets:** <Jira/Linear keys, if any>
-- **Linked RFCs/ADRs:** <NNNN refs, if any>
-
-## Problem
-
-What user pain or business need does this address? Quote a real signal — support volume, churn cohort, lost-deal reason, customer ask. 1–3 paragraphs. If the problem isn't real to the reader by the end of this section, the PRD has already failed.
-
-## Audience & jobs-to-be-done
-
-Who specifically benefits, and what job are they trying to get done? Use a persona name if your team has them; otherwise describe the role and context. If multiple audiences, list each with the job they care about.
-
-## Success metrics
-
-How will we know in 90 days this worked?
-
-- **Primary:** <one measurable metric with a target — e.g. "CSV export adoption ≥ 30% of weekly active reporting users by 2026-Q3">
-- **Secondary (optional):** <one or two supporting metrics>
-- **Counter-metric (optional):** <a metric that should NOT regress — e.g. "report page load p95 ≤ 1.2s">
-
-## User stories / acceptance criteria
-
-The minimum behavior set, framed as user-visible outcomes:
-
-- As a <user>, I can <action>, so that <outcome>.
-- As a <user>, I can <action>, so that <outcome>.
-- ...
-
-For each, include 1–3 acceptance bullets a tester (or QA agent) could check.
-
-## In scope
-
-Concrete capabilities this PRD commits to delivering. Bulleted, specific.
-
-## Out of scope
-
-Capabilities explicitly excluded — both to bound the work and to head off "but what about…" scope creep in review.
-
-## Risks & open questions
-
-Things that could derail the work or that the author needs answered before implementation:
-
-- **Risk:** <what could go wrong, how likely, how bad>
-- **Open question:** <what we don't know yet; preferred answer if any; who owns answering>
-
-## Rollout & measurement
-
-How does this get to users?
-
-- **Rollout strategy:** <flag, percentage rollout, beta cohort, big-bang>
-- **Instrumentation:** <events / metrics that need to exist BEFORE launch to measure success>
-- **Kill criteria:** <what signal would cause us to roll back / pause>
-
-## Appendix (optional)
-
-- Mockups, prior art, competitor analysis, supporting research.
-```
+Template body: [TEMPLATE.md](references/TEMPLATE.md) — read it at step 4, when drafting.
 
 ## What to do as the model
 
 1. **Confirm a PRD is warranted** — apply the "all of these are true" test above. If borderline, surface the call to the user (PRD / smaller-issue / nothing).
 2. **Run the interview** if input is sparse — go through the seven checklist questions, but skip any already answered in context. Batch into 2–3 `AskUserQuestion` calls; don't drip one at a time.
 3. **Find the next sequence number** in `docs/prds/` (see the numbering convention in `orc:doc-writing`).
-4. **Draft from the template.** Fill every section with real content. **Delete sections that genuinely have no content** (e.g. no counter-metric, no appendix) rather than writing `TBD`.
+4. **Draft from [TEMPLATE.md](references/TEMPLATE.md).** Fill every section with real content. **Delete sections that genuinely have no content** (e.g. no counter-metric, no appendix) rather than writing `TBD`.
 5. **Show the draft to the user for review** before committing (review gates in `orc:doc-writing`).
 6. **Commit** via `orc:git-commit`. Suggested message: `docs(prd): NNNN — <kebab title>`.
-7. **Cross-link.** If the PRD relates to existing tickets, RFCs, ADRs — link FROM those to the PRD (the link should be the entry point, not the reverse).
+7. **Cross-link.** If the PRD relates to existing tickets, RFCs, ADRs — link FROM those to the PRD (the link is the entry point, not the reverse).
 
 ## Tone
 
@@ -126,4 +64,4 @@ Plain prose, written by a product-minded engineer for product-and-engineering re
 - **PRDs written after the feature shipped.** The "Why" gets sanitized in hindsight; future-you can't tell what was real motivation vs. retrofitted justification.
 - **PRDs that read like specs.** If half the content is API shapes and database tables, you're writing a TRD or RFC — promote it accordingly.
 - **PRDs without "Out of scope".** Without explicit exclusions, every reviewer will paste in their pet feature and the work doubles.
-- **One-line problem statements.** "Users want CSV export" is not a problem statement; it's a solution. The PRD should articulate *the problem CSV export solves*.
+- **One-line problem statements.** "Users want CSV export" is not a problem statement; it's a solution. The PRD articulates *the problem CSV export solves*.

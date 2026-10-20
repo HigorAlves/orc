@@ -38,74 +38,7 @@ Posting-layer obligations from the contract, restated as duties (not schema):
 
 ## Posting backend selection
 
-Two paths produce identical end-result on GitHub. The orchestrator picks at runtime.
-
-### Default: `gh api` (atomic batched POST)
-
-One call posts everything atomically (all comments + overall body + event). Requires only `gh` CLI authenticated — already in orc's tool-check.
-
-```bash
-gh api repos/${OWNER}/${REPO}/pulls/${PR}/reviews \
-  --method POST \
-  --input - <<EOF
-{
-  "event": "REQUEST_CHANGES",
-  "body": "Overall framing paragraph for the review.",
-  "comments": [
-    {
-      "path": "src/auth.ts",
-      "line": 42,
-      "side": "RIGHT",
-      "body": "null deref when token absent — guard with early return.\n\n\`\`\`suggestion\nconst token = parseToken(req);\nif (!token) return res.status(401).end();\n\`\`\`"
-    },
-    {
-      "path": "src/api.ts",
-      "start_line": 118,
-      "line": 120,
-      "side": "RIGHT",
-      "body": "user input flows into raw SQL — parameterize via \`$1\`/\`$2\`."
-    }
-  ]
-}
-EOF
-```
-
-Capture the returned review URL from `.html_url` for echoing to the user.
-
-### Fallback: GitHub MCP (3-call protocol)
-
-When `mcp__plugin_github_github__pull_request_review_write` is available in the session (i.e. the user has the official GitHub MCP plugin installed), prefer it — per-comment dispatch can be more flexible if a future iteration wants per-comment validation.
-
-```
-Call 1 — create pending review (no event, holds empty body):
-  mcp__plugin_github_github__pull_request_review_write
-    method: "create"
-    owner: <owner>, repo: <repo>, pullNumber: <pr>
-
-Call 2 — loop, once per finding:
-  mcp__plugin_github_github__add_comment_to_pending_review
-    subjectType: "LINE"
-    path: <path>
-    line: <line>
-    side: "RIGHT"
-    startLine: <start_line> | omit
-    body: <body with optional suggestion block>
-
-Call 3 — submit pending with overall body + event:
-  mcp__plugin_github_github__pull_request_review_write
-    method: "submit_pending"
-    event: "REQUEST_CHANGES" | "COMMENT" | "APPROVE"
-    body: <overall framing paragraph>
-```
-
-The orchestrator's selection logic:
-
-```
-if "mcp__plugin_github_github__pull_request_review_write" in available_tools:
-    use_mcp_path()
-else:
-    use_gh_api_path()
-```
+Two paths produce identical end-result on GitHub. The orchestrator picks at runtime: `gh api repos/…/pulls/…/reviews` (one atomic POST — default) or the GitHub MCP 3-call protocol when `mcp__plugin_github_github__pull_request_review_write` is available. Read [BACKENDS.md](references/BACKENDS.md) for the payload shape, the MCP call sequence, and the selection logic.
 
 ## Suggestion block rules
 
@@ -116,18 +49,7 @@ GitHub renders a triple-backtick `suggestion` block inside a comment body as a o
 - **Mental compile:** The suggested code must be syntactically valid in the target language and reference only symbols visible at the comment's line. No imports the author has to add separately.
 - **No refactor smuggling:** Don't suggest renames, file moves, or stylistic rewrites as committable suggestions. Those go in prose.
 
-Format inside the comment `body`:
-
-````
-Brief prose description of the problem.
-
-```suggestion
-const token = parseToken(req);
-if (!token) return res.status(401).end();
-```
-
-Optional follow-up prose (caveat, edge case, etc.).
-````
+Format and per-kind templates: [COMMENT-TEMPLATES.md](references/COMMENT-TEMPLATES.md) — read when writing a comment body.
 
 If `suggestion_code` is set on a finding but doesn't meet the rules above, drop it from the suggestion block and keep the prose only.
 
@@ -160,54 +82,4 @@ This is the single most important UX rule. Auto-posting reviews is a trust-erodi
 
 ## Tone
 
-The comment body should follow `orc:caveman-review` discipline — terse, actionable, signal-only. The overall review body is hard-capped at **2 sentences (~40 words)**: one clause framing the PR + finding counts by severity (e.g. "CSV export for /reports. 2 bugs, 1 untested branch, 2 nits."). It never restates inline comments, never praises, never hedges — the inline comments carry all detail. No throat-clearing, no praise per finding. One line per problem in the comment body, suggestion block underneath if applicable.
-
-## Comment-body templates
-
-### Bug with concrete fix (suggestion block fits)
-
-````
-Null deref when `req.headers.authorization` is missing — `parseToken()` returns null and the next line accesses `.userId` unconditionally. 500 to client, no log.
-
-```suggestion
-const token = parseToken(req);
-if (!token) return res.status(401).end();
-```
-````
-
-### Bug without concrete fix (prose only)
-
-```
-Race condition: `cycleParticipants.id` is read in line 507 then mutated in line 512 by a concurrent worker. The intermediate state can leak into the cycleDetails projection. Either lock the row in the outer transaction or refetch after mutation.
-```
-
-### Test gap (no suggestion possible)
-
-```
-`evaluateeAllowedByStepFilter` has no test for `participants: []` (array, not object). `typeof [] === 'object'` passes the guard; `p.blacklistedUsers` is undefined; `safeIds(undefined)` returns []; the filter silently allows everyone. Add a test case with `participants: []` to pin the fail-open behavior, OR add an `Array.isArray(p)` guard.
-```
-
-### Question (low confidence, asking author)
-
-```
-q: This new `getWorkflowOverview` endpoint duplicates the admin router's. Is the intent to migrate one to the other, or are they meant to diverge? If the latter, worth a comment explaining the split.
-```
-
-## Getting help
-
-```bash
-# Inspect what the gh api invocation will look like (dry-run alternative)
-echo "$PAYLOAD_JSON" | jq .
-
-# After posting, fetch the posted review for verification
-gh api repos/${OWNER}/${REPO}/pulls/${PR}/reviews/${REVIEW_ID}
-
-# List all reviews on a PR
-gh pr view ${PR} --json reviews
-```
-
-## References
-
-- GitHub REST API — Reviews: https://docs.github.com/en/rest/pulls/reviews
-- Suggestion block format: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/incorporating-feedback-in-your-pull-request#applying-suggested-changes
-- Sibling skills: `orc:gh-cli` (the gh CLI / API surface), `orc:caveman-review` (tone discipline that comment bodies should follow).
+The comment body follows `orc:caveman-review` discipline — terse, actionable, signal-only. The overall review body is hard-capped at **2 sentences (~40 words)**: one clause framing the PR + finding counts by severity (e.g. "CSV export for /reports. 2 bugs, 1 untested branch, 2 nits."). It never restates inline comments, never praises, never hedges — the inline comments carry all detail. No throat-clearing, no praise per finding. One line per problem in the comment body, suggestion block underneath if applicable.

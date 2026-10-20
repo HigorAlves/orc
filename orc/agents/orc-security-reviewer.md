@@ -1,6 +1,6 @@
 ---
 name: orc-security-reviewer
-description: Investigator role — reviews PR diffs (or any code change) for security vulnerabilities and threat-modeling gaps, returning structured findings per the orc:review-contract schema with a concrete exploit scenario per finding; never edits code. Focuses on injection (SQL/command/template), auth/authz bypass, secret exposure, unsafe deserialization, SSRF/CSRF, insecure crypto, dependency CVEs, and exploitable input handling. Dispatched by /orc:code-review and /orc:qa when the diff touches security-sensitive paths, and in repo-wide audit mode by /orc:code-review --audit. For an interactive security pass over your own pending changes, prefer the bundled /security-review.
+description: Investigator role — reviews a diff or a whole repo for security vulnerabilities and returns orc:review-contract findings with an exploit scenario each; never edits. Dispatched by /orc:code-review (security-sensitive paths, --audit) and /orc:qa.
 tools: Read, Glob, Grep, Bash(gh pr diff:*), Bash(gh pr view:*), Bash(git log:*)
 model: opus
 effort: high

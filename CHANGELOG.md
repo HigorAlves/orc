@@ -2,6 +2,25 @@
 
 All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tags; the CLI releases separately under plain `vX.Y.Z` tags. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); each entry links the PR that landed it. The `plugin-release` workflow publishes a version's section as its GitHub Release notes when the tag is pushed.
 
+## [0.27.0] - 2026-10-20
+
+The precision train: every orc file is written to a controlled-language standard adapted from ASD-STE100 and S1000D (issue #115), the largest surfaces are split into phase modules, and the Claude Code plugin practices orc was missing (routing fields, fail-closed hooks, a measured eval suite) are in.
+
+### Added
+- Authoring standard (`orc/skills/skill-writing/references/AUTHORING-STANDARD.md`, ADR 0007): glossary as restricted vocabulary, a fixed unapproved-word list, 15-word verb-first procedural steps, notices before the step they guard, a fixed task anatomy for commands, size caps, phase modules with a code. `scripts/ci/verify-ste.sh` enforces it as a ratchet (`--report`, `--where`, `--update`); `verify-context-cost.sh` ratchets the always-on description total.
+- `orc:phases` (generalised from `flow-phases`): per-command phase modules under `references/<command>/PHASE-<N>-<NAME>.md`, headed by `<!-- orc:<command>/P<N> -->`, loaded one at a time.
+- `when_to_use` frontmatter on 60 skills and commands, with `description` reduced to what the surface does; agent descriptions capped near 250 characters. Always-on description total 30,435 → 27,419 characters.
+- Guard hooks fail closed: the `pre-git-guard` dispatcher now asks (never allows) when `jq` is missing, a check script is missing, crashes, or returns unreadable output; `verify-guard-hooks.sh` covers both. `onFailure: "block"` on every PreToolUse guard additionally lets the harness block when the dispatcher itself cannot run, on Claude Code versions that honour the key (hooks.md); older clients ignore it, and the in-script behaviour holds either way.
+- Eval suite 7 → 21 cases: a routing case per command family, two negatives, and a fail-fast regression on the rewritten `code-review`.
+- ADR 0008 (commands stay flat files; `code-review`, `cleanup`, `incident` piloted as skill directories with modules beside them) and a skill-doctor step in contributing.md.
+- `orc:agent-browser` gains `references/QA-RECIPES.md` and `references/STEPS-TEMPLATE.md`, disclosed from the QA validator.
+
+### Changed
+- Ten commands rewritten under the standard, each entry at most 6 KB with phases as modules: `code-review` (17 KB → 4 KB), `cleanup`, `incident`, `triage`, `qa`, `plan`, `stack-pr`, `wayfinder`, `retro`, `ship`. Behaviour, gates, templates and iron rules unchanged.
+- `orc-qa-validator` (14.6 KB → 5.8 KB) and `orc-implementer` (13 KB → 6.8 KB) rewritten under the standard.
+- Sixteen skills over 6 KB gained a `references/` directory (progressive disclosure, no behaviour change).
+- 75 hedged sentences across skills and agents reworded (should → must or a condition; might → can).
+
 ## [0.26.0] - 2026-10-20
 
 The mattpocock/skills alignment train: the vendored skills resynced at upstream `5beb35b`, a retro loop after every build, and the maintainer discipline the upstream repo runs on.

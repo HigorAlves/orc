@@ -1,6 +1,7 @@
 ---
 name: domain-modeling
-description: Maintain a project's ubiquitous language and decision record against GLOSSARY.md. Use when defining or disputing domain terminology, when a design session resolves a term that belongs in GLOSSARY.md, or when a decision made mid-session passes the ADR gate.
+description: Maintain a project's ubiquitous language and decision record against GLOSSARY.md
+when_to_use: Use when defining or disputing domain terminology, when a design session resolves a term that belongs in GLOSSARY.md, or when a decision made mid-session passes the ADR gate.
 license: MIT
 metadata:
   author: Matt Pocock
@@ -67,7 +68,7 @@ When the user states how something works, check whether the code agrees. If you 
 
 When a term is resolved, update `GLOSSARY.md` right there. Don't batch these up — capture them as they happen. Use the format in [GLOSSARY-FORMAT.md](./references/GLOSSARY-FORMAT.md).
 
-`GLOSSARY.md` should be totally devoid of implementation details. Do not treat `GLOSSARY.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else.
+`GLOSSARY.md` carries no implementation details. Do not treat `GLOSSARY.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else.
 
 ### Offer ADRs sparingly
 

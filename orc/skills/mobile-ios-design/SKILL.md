@@ -1,6 +1,7 @@
 ---
 name: mobile-ios-design
-description: iOS Human Interface Guidelines and SwiftUI patterns for native apps. Use when designing iOS interfaces, building SwiftUI views, or aligning apps with Apple's design principles.
+description: iOS Human Interface Guidelines and SwiftUI patterns for native apps
+when_to_use: Use when designing iOS interfaces, building SwiftUI views, or aligning apps with Apple's design principles.
 ---
 
 # iOS Mobile Design
@@ -253,7 +254,7 @@ struct FeatureCard: View {
 
 - **Layout Breaking**: Use `.fixedSize()` sparingly; prefer flexible layouts
 - **Performance Issues**: Use `LazyVStack`/`LazyHStack` for long scrolling lists
-- **Navigation Bugs**: Ensure `NavigationLink` values are `Hashable`
+- **Navigation Bugs**: Verify `NavigationLink` values are `Hashable`
 - **Dark Mode Problems**: Avoid hardcoded colors; use semantic or asset catalog colors
 - **Accessibility Failures**: Test with VoiceOver enabled
 - **Memory Leaks**: Watch for strong reference cycles in closures

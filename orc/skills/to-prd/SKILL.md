@@ -1,6 +1,7 @@
 ---
 name: to-prd
-description: Turn the current conversation context into a PRD and publish it to the project issue tracker. Use when user wants to create a PRD from the current context.
+description: Turn the current conversation context into a PRD and publish it to the project issue tracker
+when_to_use: Use when user wants to create a PRD from the current context.
 license: MIT
 metadata:
   author: Matt Pocock
@@ -9,13 +10,13 @@ metadata:
 
 This skill takes the current conversation context and codebase understanding and produces a PRD. Do NOT interview the user — just synthesize what you already know. (For an interview-driven PRD authored from scratch and published to `docs/prds/NNNN-*.md`, use `orc:prd-writing` instead — see `orc:doc-writing` for the split.)
 
-The issue tracker and triage label vocabulary should have been provided to you — run `/orc:setup` if not.
+The issue tracker and triage label vocabulary come from the tracker layer — if absent, run `/orc:setup`.
 
 ## Process
 
 1. Explore the repo to understand the current state of the codebase, if you haven't already. Use the project's domain glossary vocabulary throughout the PRD, and respect any ADRs in the area you're touching.
 
-2. Sketch out the seams at which you're going to test the feature. Existing seams should be preferred to new ones. Use the highest seam possible. If new seams are needed, propose them at the highest point you can. The fewer seams across the codebase, the better — the ideal number is one.
+2. Sketch out the seams at which you're going to test the feature. Prefer existing seams to new ones. Use the highest seam possible. If new seams are needed, propose them at the highest point you can. The fewer seams across the codebase, the better — the ideal number is one.
 
 Check with the user that these seams match their expectations.
 
@@ -33,7 +34,7 @@ The solution to the problem, from the user's perspective.
 
 ## User Stories
 
-A LONG, numbered list of user stories. Each user story should be in the format of:
+A LONG, numbered list of user stories. Each user story uses the format:
 
 1. As an <actor>, I want a <feature>, so that <benefit>
 
@@ -41,7 +42,7 @@ A LONG, numbered list of user stories. Each user story should be in the format o
 1. As a mobile bank customer, I want to see balance on my accounts, so that I can make better informed decisions about my spending
 </user-story-example>
 
-This list of user stories should be extremely extensive and cover all aspects of the feature.
+This list of user stories is extremely extensive and covers all aspects of the feature.
 
 ## Implementation Decisions
 

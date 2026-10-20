@@ -1,6 +1,7 @@
 ---
 name: nestjs-best-practices
-description: NestJS best practices and architecture patterns for production apps. Use when writing, reviewing, or refactoring NestJS code — modules, dependency injection, security, and performance.
+description: NestJS best practices and architecture patterns for production apps
+when_to_use: Use when writing, reviewing, or refactoring NestJS code — modules, dependency injection, security, and performance.
 license: MIT
 metadata:
   author: Kadajett

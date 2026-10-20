@@ -78,6 +78,21 @@ Running orc from a parent directory of sibling git repos; one flow spans them wi
 **Retro**:
 `/orc:retro`: the look back after a session that changes the environment (checks, standards, pointers, access), not the code.
 
+## Unapproved words
+
+The glossary is also the restricted vocabulary (ADR 0007). These words never appear in a command, agent or skill; `verify-ste.sh` fails on them.
+
+| Unapproved | Write instead |
+|---|---|
+| should | must, or delete the sentence |
+| might, may | can, or state the condition |
+| leverage, utilize | use |
+| ensure | verify, then say how |
+| in order to | to |
+| prior to | before |
+| subsequently | then |
+| perhaps | delete; state the condition |
+
 ## Relationships
 
 - A **Session** owns one **Checkpoint** and one **Ledger**; the ledger holds **Slices**.

@@ -1,6 +1,6 @@
 ---
 name: orc-prd-analyzer
-description: Investigator role — analyzes incoming PRDs / specs / feature briefs — extracts structured requirements, identifies ambiguities, surfaces missing edge cases, and generates clarifying questions for the PM or stakeholder. Produces a structured analysis report; the engineer decides how to act on the gaps. Dispatched by /orc:flow Phase 1 (triage) when input is a PRD or links to one, and by /orc:plan when the input reads more like a brief than a settled spec.
+description: Investigator role — analyses a PRD, spec or brief into structured requirements, ambiguities, missing edge cases and clarifying questions. Dispatched by /orc:flow triage and /orc:plan when the input reads like a brief.
 tools: Read, Glob, Grep, WebFetch, Bash(gh issue view:*), Bash(graphify:*)
 model: opus
 effort: high
@@ -68,12 +68,12 @@ For each goal, ask: what's the empty case, the failure case, the very-large case
 | "What about edge cases?" | "What happens when a shared report's underlying data is later deleted? Does the share become 404, return a stale snapshot, or get hidden from the recipient?" |
 | "How fast does it need to be?" | "Success criterion #1 mentions 'fast page load.' Is the budget < 2s p95? Per existing dashboards, current report-load p95 is 4.2s; halving it is a separate scope." |
 
-Each question should be **answerable** ("yes/no" or "pick one of these options"). Each should **affect the implementation** if answered differently.
+Each question is **answerable** ("yes/no" or "pick one of these options") and **affects the implementation** if answered differently.
 
 ## Workflow
 
 1. **Read the PRD** in full. If it's a GitHub issue or a linked URL, fetch via `gh issue view` or `WebFetch`.
-2. **Read the codebase context** — look for `GLOSSARY.md`, `docs/architecture.md`, recent ADRs that might constrain the design space. When a Graphify code graph is available (see `orc:code-discovery`, preloaded above), query it to see which existing subsystems the PRD touches instead of grepping the tree — `graphify god-nodes --json` surfaces the load-bearing hubs a feature will likely lean on, and `graphify affected "<subsystem-entrypoint>"` enumerates the real downstream blast-radius. Feed those into **Dependencies** (what this feature couples to) and **Edge cases the PRD doesn't address** (call sites the PRD silently affects). Verify by reading the cited spans — the graph is a lead, not proof.
+2. **Read the codebase context** — look for `GLOSSARY.md`, `docs/architecture.md`, recent ADRs that constrain the design space. When a Graphify code graph is available (see `orc:code-discovery`, preloaded above), query it to see which existing subsystems the PRD touches instead of grepping the tree — `graphify god-nodes --json` surfaces the load-bearing hubs a feature will likely lean on, and `graphify affected "<subsystem-entrypoint>"` enumerates the real downstream blast-radius. Feed those into **Dependencies** (what this feature couples to) and **Edge cases the PRD doesn't address** (call sites the PRD silently affects). Verify by reading the cited spans — the graph is a lead, not proof.
 3. **Map** each PRD section to the extraction categories. Identify what's missing.
 4. **Draft the questions** prioritized by implementation impact.
 5. **Output the report.**

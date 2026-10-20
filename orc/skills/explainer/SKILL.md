@@ -1,6 +1,7 @@
 ---
 name: explainer
-description: "Build the narrated what-was-made walkthrough for a QA packet: script from plan + acceptance, demo pass, segments.json, animate graphics, kokoro narration, orc-explain assemble. Use from /orc:explain and the flow explainer gate. Not for QA itself."
+description: "Build the narrated what-was-made walkthrough for a QA packet: script from plan + acceptance, demo pass, segments.json, animate graphics, kokoro narration, orc-explain assemble"
+when_to_use: Use from /orc:explain and the flow explainer gate. Not for QA itself.
 ---
 
 # Explainer

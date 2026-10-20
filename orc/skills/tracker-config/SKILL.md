@@ -1,6 +1,7 @@
 ---
 name: tracker-config
-description: The shared read-protocol and missing-config gate for the repo's tracker layer (docs/agents/issue-tracker.md, triage-labels.md, domain.md). Use when a command needs the configured tracker, its labels, or the Jira-enabled answer — /orc:setup writes the files; this skill reads them.
+description: The shared read-protocol and missing-config gate for the repo's tracker layer (docs/agents/issue-tracker.md, triage-labels.md, domain.md)
+when_to_use: Use when a command needs the configured tracker, its labels, or the Jira-enabled answer — /orc:setup writes the files; this skill reads them.
 ---
 
 # Tracker Config

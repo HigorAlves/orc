@@ -47,7 +47,7 @@ Hard bugs and unexpected failures get the systematic-debugging discipline. NO FI
 
 Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection).
 
-In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. The default is the symptom-repo (the repo where the bug surfaces) plus any sibling repos the user suspects might be the actual cause — the investigator reads across all of them. Iron rule: no silent broadcast — confirm.
+In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. The default is the symptom-repo (the repo where the bug surfaces) plus any sibling repos the user suspects as the actual cause — the investigator reads across all of them. Iron rule: no silent broadcast — confirm.
 
 ### Phase 1 — Initialize workspace + link
 
@@ -60,7 +60,7 @@ In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. Th
 
 ### Phase 2 — Investigate (no fixes)
 
-**Prime code discovery first (optional, non-blocking).** Follow `orc:code-discovery`: if `graphify` is installed, ensure a fresh graph on the buggy branch before dispatching — build if missing (`graphify extract . --code-only`) or refresh if stale (`graphify update .`), so the investigator queries the graph from turn one instead of discovering staleness mid-investigation. Skip silently if graphify is absent or the build fails.
+**Prime code discovery first (optional, non-blocking).** Follow `orc:code-discovery`: if `graphify` is installed, verify the graph on the buggy branch is fresh before dispatching — build if missing (`graphify extract . --code-only`) or refresh if stale (`graphify update .`), so the investigator queries the graph from turn one instead of discovering staleness mid-investigation. Skip silently if graphify is absent or the build fails.
 
 Dispatch the `orc-debug-investigator` subagent via `Task`. Pass it:
 - The bug description / failing test name from arguments.

@@ -1,150 +1,144 @@
 # Contributing to orc
 
-orc is a personal plugin, but the conventions here keep future-you sane. Read them before adding anything.
+orc is curated: what is accepted is in [SCOPE.md](../SCOPE.md), what was already rejected in [agents/out-of-scope.md](agents/out-of-scope.md). Read both before opening an issue. The conventions below keep the plugin consistent; CI enforces most of them.
 
-## Iron rules (mirror `skills/using-orc/SKILL.md`)
+## The rules that bite contributors
 
-1. No commits to `main`/`master`/`develop` — the PreToolUse hook downgrades them to a confirm prompt; approve only with explicit user consent. (The full 8-rule list lives in `skills/using-orc/SKILL.md`; these five are the ones that bite contributors.)
-2. New skills get a failing test before they ship (the test is "does invoking this skill produce the expected behavior?" — usually a manual smoke test for skills).
-3. Don't claim a feature works without verifying. The plugin must `claude --plugin-dir` load cleanly.
-4. Don't fix a bug in a skill without finding the root cause first. Don't paper over.
-5. No AI attribution in commits, PRs, or skill bodies.
+1. No commits to `main`, `master` or `develop`. Branch first; the hook asks otherwise.
+2. A new surface ships with a check that proves it fires: an eval case for a routing change, a fixture for a script, a manual smoke run for a skill body.
+3. Never claim a surface works without running it. The plugin must load with `claude --plugin-dir ./orc`.
+4. Fix the cause, never the symptom.
+5. No AI attribution in commits, PRs or skill bodies. The hook refuses it.
+6. Every PR is independent and targets `main` ([ADR 0001](adr/0001-independent-prs-over-stacked-chains.md)). A change that cannot be split carries a `Size-budget-override:` trailer.
 
-## Adding a new skill
+## How orc's files are written
 
-1. Create `skills/<kebab-case-name>/SKILL.md`.
-2. Frontmatter required:
+Every command, agent and skill follows the **authoring standard** in [`orc/skills/skill-writing/references/AUTHORING-STANDARD.md`](../orc/skills/skill-writing/references/AUTHORING-STANDARD.md) ([ADR 0007](adr/0007-controlled-language-authoring-standard.md)). The short version:
+
+| Rule | Means |
+|---|---|
+| Restricted vocabulary | Use the term in [GLOSSARY.md](../GLOSSARY.md); never a synonym it lists under *Avoid*. |
+| No unapproved words | should, might, perhaps, ensure, in order to, prior to, subsequently, leverage as a verb. The lint fails on them. |
+| Steps of 15 words, one action, verb first | "Run the suite." A condition can open the step: "If the diff is empty, stop." Paths, flags and reasons go in a `NOTE:` line below. |
+| Notices before the step | `🛑` for irreversible or outward actions, `⚠️ Caution` for damage to the tree, `💡 Insight` for a fact the step depends on. |
+| Size caps | Command entry 6 KB, agent 8 KB, skill 6 KB without `references/`. |
+| Phase modules | A command keeps Phase 0 and the phase index resident; each later phase is a module under `orc/skills/phases/references/<command>/PHASE-<N>-<NAME>.md`, headed by `<!-- orc:<command>/P<N> -->`. |
+
+`scripts/ci/verify-ste.sh` enforces this as a ratchet against `scripts/ci/precision-baseline.json`: unapproved words fail outright; for an existing file the long-step, non-imperative, passive, byte and description counts may only fall; a new file meets every cap. Useful invocations:
+
+```bash
+bash scripts/ci/verify-ste.sh --report              # worst files first
+bash scripts/ci/verify-ste.sh --where orc/commands/qa.md   # the offending lines in one file
+bash scripts/ci/verify-ste.sh --update              # tighten the baseline after a rewrite; commit it
+```
+
+## Adding a skill
+
+New surfaces are skill directories, not flat command files ([ADR 0008](adr/0008-commands-as-skills.md)).
+
+1. Create `orc/skills/<kebab-name>/SKILL.md`. The directory name and `name:` match.
+2. Write the frontmatter:
+
    ```yaml
    ---
-   name: <kebab-case-name>
-   description: One sentence — when should the model invoke this skill?
+   name: <kebab-name>
+   description: What the skill does, third person, one sentence.
+   when_to_use: Use when <trigger>, <trigger>; not for <boundary>.
    ---
    ```
-3. The body is the instructions the model follows when the skill triggers.
-4. For "rich" skills, add supporting files in the same directory: `references/*.md` for progressive-disclosure detail, `rules/*.md` for granular rules, `scripts/*` for executables.
-5. The skill's `description:` frontmatter is its only trigger surface — Claude Code loads every description automatically; there is no catalog table to update. Spend the effort making the description say *when* to invoke it.
-6. Reload: `/reload-plugins` inside Claude Code.
 
-## Adding a new command
+   `description` says what; `when_to_use` carries the triggers and the boundary. Both load into every session, so together they stay under 200 characters. Quote a value that contains `: `.
+3. Write the body under the standard: steps first, the reference every branch needs next, the rest disclosed into `references/<TOPIC>.md` and linked from SKILL.md with a one-line pointer saying when to read it.
+4. For a user-facing surface (what used to be a command), add `argument-hint`, `allowed-tools` (least privilege, verb-level: `Bash(gh pr view:*)`), and keep the task anatomy: title, Arguments, Preconditions, Phases with Phase 0 resident, Iron rules, Output. Keep it model-invocable unless no routing case ever needs it; `disable-model-invocation: true` hides it from the model, and orc's routing evals reach surfaces through the model.
+5. If it is a user-facing surface, add it to `orc/skills/map/SKILL.md` (the router) and to the table in [commands.md](commands.md).
+6. Vendored or derived from elsewhere? Add the provenance frontmatter from `orc:skill-writing` and the licence to [THIRD-PARTY-LICENSES.md](../THIRD-PARTY-LICENSES.md).
+7. Add a routing eval case under `orc/evals/route-<name>/` (prompt plus a `tool_used: Skill` grader).
+8. Reload with `/reload-plugins` and run it once.
 
-1. Create `commands/<kebab-case-name>.md` (no extension confusion — Markdown only).
-2. Frontmatter required:
-   ```yaml
-   ---
-   description: One-line summary shown in /orc: autocomplete
-   argument-hint: "<expected-args-format>"
-   allowed-tools:
-     - Read
-     - Glob
-     - Grep
-     - Skill
-     - Bash(git:*)         # be specific
-     - Bash(gh pr view:*)  # whitelist the verb
-   ---
-   ```
-3. The body describes the workflow as numbered phases. Each phase invokes a skill, dispatches a `Task`, or asks the user via `AskUserQuestion`.
-4. **State-aware commands** must write to `.orc/<sanitized-branch>/files/` after every phase. Update `checkpoint.md` and the central `.orc/orc.json` registry.
-5. No catalog table to update — the command's `description:` frontmatter is what surfaces in `/orc:` autocomplete.
-6. Reload.
+## Adding a command (legacy flat file)
 
-## Adding a new subagent
+Only for a change to an existing command under `orc/commands/`. The frontmatter is the same as a skill's minus `name:`; the body follows the task anatomy; phases past Phase 0 live in `orc:phases`. Every command appears in `orc:map` (CI checks this).
 
-1. Create `agents/orc-<role>.md`. The `orc-` prefix is required (avoids namespace collisions with user-level agents).
-2. Frontmatter required:
+## Adding a subagent
+
+1. Create `orc/agents/orc-<role>.md`. The `orc-` prefix is required.
+2. Frontmatter:
+
    ```yaml
    ---
    name: orc-<role>
-   description: When should this agent be dispatched?
-   tools: Read, Glob, Grep, Bash(git log:*)   # least privilege
-   model: opus | sonnet | haiku                # opus for deep reasoning, sonnet for execution, haiku for cheap checks
+   description: <Role> role — what it does and who dispatches it. Under 260 characters.
+   tools: Read, Glob, Grep, Bash(git log:*)        # allowlist, least privilege
+   disallowedTools: Write, Edit, NotebookEdit      # investigators never write
+   model: opus | sonnet | haiku
+   effort: low | medium | high
    color: red | blue | green | purple | orange | cyan
-   maxTurns: 15-50
-   disallowedTools: Write, Edit, NotebookEdit  # for read-only investigator agents (permissionMode is IGNORED for plugin agents — don't use it)
+   maxTurns: 15-80
+   skills:                                         # preload the doctrine it runs under
+     - orc:tdd
    ---
    ```
-3. The body describes the role, what it looks for, output format, tone.
-4. Tools whitelist: never grant blanket `Bash`. Use `Bash(npm:*)`, `Bash(gh pr view:*)`, etc.
-5. The agent is invoked via `Task` from a command — not directly by the user.
+
+3. The body stays under 8 KB: role, inputs, workflow steps, what it does not do, output contract, iron rules, tone. Reference material lives in a skill the agent preloads, under that skill's `references/`.
+4. A command dispatches it via `Task`; a user never invokes it directly.
 
 ## Adding a hook
 
-1. Add a script to `hooks/scripts/<event>-<purpose>.sh`. Make it executable (`chmod +x`).
-2. Wire it in `hooks/hooks.json` — add an `"if"` permission-rule filter so the script only spawns for the commands it guards:
-   ```json
-   "PreToolUse": [
-     {
-       "matcher": "Bash",
-       "hooks": [
-         { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/<your-script>.sh", "async": false, "if": "Bash(git commit*)" }
-       ]
-     }
-   ]
-   ```
-3. Use `${CLAUDE_PLUGIN_ROOT}` for all paths — keeps the plugin relocatable.
-4. The script reads tool input as JSON on stdin and always exits 0. Decisions go on stdout as JSON: PreToolUse hooks emit `{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "allow|deny|ask", "permissionDecisionReason": "…"}}`; SessionStart hooks emit `hookSpecificOutput.additionalContext` (model-facing) and/or top-level `systemMessage` (user-facing). See existing scripts for the contract.
-5. Let jq own the JSON encoding (`jq -n --arg …`) — no hand-rolled escaping.
+1. Add `orc/hooks/scripts/<event>-<purpose>.sh`, executable.
+2. Wire it in `orc/hooks/hooks.json` with an `"if"` permission-rule filter so it spawns only for the commands it guards, and `"onFailure": "block"` for any PreToolUse guard, so a missing or slow script blocks instead of allowing.
+3. Use `${CLAUDE_PLUGIN_ROOT}` for every path.
+4. Read tool input as JSON on stdin; exit 0; put decisions on stdout as JSON (`hookSpecificOutput.permissionDecision` for PreToolUse, `additionalContext` or `systemMessage` for SessionStart). Let `jq -n --arg …` own the encoding.
+5. Add cases to `scripts/ci/verify-guard-hooks.sh` for a guard, or `verify-hooks.sh` for wiring.
 
-## File-naming conventions
-
-- All files: kebab-case (`my-skill.md`, not `MySkill.md` or `my_skill.md`).
-- Subagents: `orc-<role>.md`.
-- Skills: directory named after the skill, contains `SKILL.md` and supporting files.
-- Commands: `<command-name>.md` directly under `commands/`.
-
-## Testing locally
+## Before you push
 
 ```bash
-claude --plugin-dir /Users/higoralves/Developer/system/orc
-# inside Claude Code:
-/reload-plugins
-/orc:                  # autocomplete should list all 22 commands
+for s in scripts/ci/verify-*.sh scripts/ci/shellcheck.sh; do bash "$s" || break; done
+claude plugin validate ./orc --strict
 ```
 
-### Behavioral evals
+What they check: references resolve (`verify-refs`), counts match across README, marketplace and architecture (`verify-counts`), frontmatter conventions, hook wiring and fail-closed guards, the guard regexes (55 cases), the authoring standard and the always-on cost ratchets, the changelog, install pins, the statusline and QA fixtures. Then add a line under `## [Unreleased]` in [CHANGELOG.md](../CHANGELOG.md) for any behaviour change.
 
-`orc/evals/` holds `claude plugin eval` cases — one per directory: `prompt.md` (frontmatter: limits, `allowed_tools`) + `graders/*.md`. Keep graders zero-cost (`tool_used`, `regex`, `tool_order`, `file_exists`) so the nightly `evals` workflow stays cheap. Each run is a real model call on your account:
+### Behavioural evals
+
+`orc/evals/` holds `claude plugin eval` cases, one directory each: `prompt.md` (frontmatter: limits, `allowed_tools`) plus `graders/*.md`. Graders stay deterministic (`tool_used`, `regex`, `tool_order`, `file_exists`) so the nightly workflow stays cheap. Each run is a real model call on your account:
 
 ```bash
-cd orc && claude plugin eval . --case route-debug --runs 1 --ablation none   # one case, one run
-claude plugin eval . --ablation none --runs 2 --threshold 0.8 \
-  --scaffold --allow-tools Bash Write Edit                                     # the suite
+claude plugin eval ./orc --case route-debug --runs 1 --ablation none           # one case
+claude plugin eval ./orc --case 'route-*' --runs 1 --ablation none -j 4        # all routing cases
+claude plugin eval ./orc --ablation none --runs 2 --threshold 0.8 \
+  --scaffold --allow-tools Bash Write Edit --trust-plugin                      # the suite, as CI runs it
 ```
 
-Guardrail/state cases (`commit-no-attribution`, `branch-first-on-main`, `plan-registers-state`) build a git fixture via `scaffold.sh` and need the Bash grant. Bash-granting runs refuse to start on a machine whose `~/.docker` credential store contains a symlink — run those in CI (or fix the store layout).
+Guardrail and state cases build a git fixture via `scaffold.sh` and need the Bash grant. A routing case that drops to 0 after a description change means the surface stopped triggering on natural phrasing: fix `when_to_use`, not the grader. Ablation stays `none` in CI because under with-without the `Skill` graders become indicators rather than scores.
 
-A routing case that drops to 0 after a description change means the skill stopped triggering on natural phrasing — fix the `description`, not the grader.
+### Context cost and skill-doctor
+
+Every `description` and `when_to_use` loads into every session. `bash scripts/ci/verify-context-cost.sh --print` prints the total; CI ratchets it. Once per release, run `/skill-doctor` in an interactive session and paste its report into the release PR: it lists each skill's token cost and seven-day usage and flags skills never invoked. A skill flagged twice in a row is a candidate for the out-of-scope KB or for merging into the skill that does fire. `claude plugin details orc` prints the harness's own projection for the installed plugin.
 
 ## Commit hygiene
 
-- Conventional Commits format (enforced by `orc:git-commit` skill): `feat(skills): ...`, `fix(commands): ...`, `chore(hooks): ...`.
-- One logical change per commit. Don't bundle unrelated work.
-- Never `--amend` after pushing. Never `git push --force` to a shared branch.
+- Conventional Commits (`feat(skills): …`, `fix(hooks): …`); the `orc:git-commit` skill writes them.
+- One logical change per commit. No body unless the why is not obvious.
+- Never `--amend` after pushing. Never force-push a shared branch.
 
 ## When you change something
 
-If you change a skill's name, description, or invocation surface, update:
-1. Any command in `commands/` that references it.
-2. `docs/architecture.md` if the change affects the high-level shape.
-3. The README skill catalog and the counts in `.claude-plugin/marketplace.json`.
-
-Drift between these surfaces is the most common bug in personal plugins. Run `claude plugin validate ./orc --strict` before pushing. CI (`.github/workflows/validate.yml`) enforces all of it on every PR: manifest validation (strict), `bash -n` on every shell script, `jq empty` on every JSON file, the callout-palette lint, and count-drift checks against README + marketplace.json.
+A rename or a description change touches more than one file. CI catches the drift, so run the scripts above; the usual set is `orc:map`, [commands.md](commands.md), the counts in README, `marketplace.json` and [architecture.md](architecture.md), and any `orc:<name>` mention in commands, agents and skills.
 
 ## Releasing
 
-Claude Code keys its plugin-update cache on the explicit `version` in `orc/.claude-plugin/plugin.json` — **commits without a manifest bump are invisible to installs** (and installs pinning `ref` never move at all). The release rule:
+Claude Code keys its plugin-update cache on the `version` in `orc/.claude-plugin/plugin.json`: commits without a manifest bump are invisible to installs, and installs pinning `ref` never move. Plugin releases use `orc--vX.Y.Z` tags; the CLI uses plain `vX.Y.Z` ([ADR 0003](adr/0003-dual-tag-releases.md)).
 
-1. Bump `version` (semver) in `orc/.claude-plugin/plugin.json` in the **last PR of a release train** — not per-PR.
-2. After that PR merges to `main`, tag and push a **plugin** release tag. Plugin tags use the **`orc--` prefix** so they never trigger the CLI release workflow, which watches plain `v*` tags (`.github/workflows/release-cli.yml`):
+1. In the last PR of a train, bump `version` in `plugin.json` and rename `## [Unreleased]` in `CHANGELOG.md` to the version and date. `verify-changelog.sh` fails without that section.
+2. After the merge, tag and push:
 
    ```bash
    v="orc--v$(jq -r .version orc/.claude-plugin/plugin.json)"
    git tag -a "$v" -m "orc ${v#orc--v}" && git push origin "$v"
    ```
 
-   Do **not** use a plain `vX.Y.Z` tag for the plugin — that namespace is reserved for CLI releases, and the release workflow's `guard` job rejects a plain `v*` tag whose version matches `plugin.json`.
-3. Update the pinned `ref` example in the README install section (and `docs/install.md`) to the new `orc--vX.Y.Z` tag.
-4. The `plugin-release` workflow (`.github/workflows/plugin-release.yml`) runs on the tag push: it checks that the tag matches `plugin.json`, extracts that version's section from `CHANGELOG.md`, and publishes the GitHub Release with it. If the workflow is red, fix the mismatch and re-push the tag; do not hand-create the release.
+3. The `plugin-release` workflow checks the tag against `plugin.json`, extracts the version's changelog section and publishes the GitHub Release. If it is red, fix the mismatch and re-push the tag; never hand-create the release.
+4. Move the pinned `ref` in README and [install.md](install.md) to the new tag in a follow-up PR (`verify-version.sh` checks the tag exists).
 
-Every PR that changes behaviour adds its line under `## Unreleased` in `CHANGELOG.md` (Keep-a-Changelog groups: Added / Changed / Fixed / Removed, one line each with the PR link). The release PR renames `Unreleased` to the version and date; `verify-changelog.sh` fails CI when `plugin.json`'s version has no section.
-
-No version bump → no release. A merged PR that skips the bump ships silently only to `--plugin-dir` local development.
+No version bump, no release. A merged PR that skips the bump ships only to `--plugin-dir` development.

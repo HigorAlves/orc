@@ -1,6 +1,7 @@
 ---
 name: docker-best-practices
-description: "Docker expert — image optimization, security hardening, multi-stage builds, orchestration, production deployment. Use when writing or reviewing Dockerfiles, Compose, or container deploys."
+description: Docker expert — image optimization, security hardening, multi-stage builds, orchestration, production deployment
+when_to_use: Use when writing or reviewing Dockerfiles, Compose, or container deploys.
 category: devops
 risk: unknown
 source: community

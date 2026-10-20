@@ -33,6 +33,14 @@ while IFS= read -r cmd; do
   fi
 done < <(jq -r '.. | objects | select(has("command")) | .command' "$hooks_json")
 
+# 1b. Every PreToolUse guard fails CLOSED: a missing or slow script must block
+#     the git/gh command, not let it through (hooks.md: onFailure "block").
+while IFS= read -r line; do
+  [ -n "$line" ] || continue
+  echo "verify-hooks: PreToolUse guard without onFailure=block: $line"
+  status=1
+done < <(jq -r '.hooks.PreToolUse[]?.hooks[]? | select(.onFailure != "block") | .command + " if=" + (.if // "-")' "$hooks_json")
+
 # 2. Hard dependency: session-start-using-orc.sh reads this skill by path.
 if [ ! -f "orc/skills/using-orc/SKILL.md" ]; then
   echo "verify-hooks: missing orc/skills/using-orc/SKILL.md (read by session-start-using-orc.sh)"

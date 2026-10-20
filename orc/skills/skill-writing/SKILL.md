@@ -1,11 +1,16 @@
 ---
 name: skill-writing
-description: Create new agent skills following orc's house conventions and CI gates. Use when creating, writing, or building a skill for THIS plugin. For skill evals, trigger-rate measurement, and description tuning, use the official skill-creator plugin.
+description: Create new agent skills following orc's house conventions and CI gates
+when_to_use: Use when creating, writing, or building a skill for THIS plugin. For skill evals, trigger-rate measurement, and description tuning, use the official skill-creator plugin.
 ---
 
 # Write a Skill
 
 House conventions for skills in THIS plugin. The general doctrine of writing for agents — context pointers, the two loads, information hierarchy, completion criteria, leading words, pruning, invocation choice — lives in `orc:writing-for-agents` (and its [SKILL-MECHANICS.md](../writing-for-agents/references/SKILL-MECHANICS.md) for skill frontmatter mechanics and invocation choice). Read that first; this file adds only what is orc-specific.
+
+## The authoring standard
+
+Every file follows [AUTHORING-STANDARD.md](references/AUTHORING-STANDARD.md): the glossary as restricted vocabulary, no unapproved words, procedural steps of 15 words that open with a verb, notices before the step they guard, the task anatomy for commands, size caps (command 6 KB, agent 8 KB, skill 6 KB without `references/`), and phase modules under `orc:phases`. `scripts/ci/verify-ste.sh` enforces it as a ratchet; run it with `--report` to see the worst files and with `--update` after a rewrite.
 
 ## Naming
 

@@ -229,6 +229,23 @@ if [ -z "$out" ]; then ok; else fail "guard: innocent command on main must be si
 out="$(cd "$feat_repo" && payload 'git reset --hard HEAD~1' | ORC_ALLOW_DESTRUCTIVE_GIT=1 bash "$guard")"
 if [ -z "$out" ]; then ok; else fail "guard: ORC_ALLOW_DESTRUCTIVE_GIT=1 must be silent through dispatcher"; fi
 
+# Fail closed: a guard that cannot run must ASK, never silently allow.
+# (a) jq off PATH -> the dispatcher asks before reading anything.
+nojq="$tmp/nojq-bin"; mkdir -p "$nojq"
+for b in bash cat dirname; do ln -sf "$(command -v "$b")" "$nojq/$b"; done
+out="$(cd "$main_repo" && payload 'git commit -m "x"' | PATH="$nojq" bash "$guard")"
+if printf '%s' "$out" | grep -q '"permissionDecision":"ask"' && printf '%s' "$out" | grep -q 'jq'; then ok; else fail "guard: missing jq must ask (fail closed), got: $out"; fi
+# (b) a missing check script -> ask naming it.
+nocheck="$tmp/nocheck"; mkdir -p "$nocheck"; cp "$guard" "$nocheck/pre-git-guard.sh"
+out="$(cd "$main_repo" && payload 'git commit -m "x"' | bash "$nocheck/pre-git-guard.sh")"
+if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "ask" and (.hookSpecificOutput.permissionDecisionReason | test("missing"))' >/dev/null 2>&1; then ok; else fail "guard: missing check script must ask (fail closed), got: $out"; fi
+# (c) a crashing check script -> ask with the exit code.
+crash="$tmp/crash"; mkdir -p "$crash"; cp "$guard" "$crash/pre-git-guard.sh"
+cp "$repo_root/orc/hooks/scripts/pre-commit-no-ai-attribution.sh" "$repo_root/orc/hooks/scripts/pre-destructive-git-check.sh" "$crash/"
+printf '#!/usr/bin/env bash\nexit 3\n' > "$crash/pre-commit-branch-check.sh"
+out="$(cd "$main_repo" && payload 'git commit -m "x"' | bash "$crash/pre-git-guard.sh")"
+if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "ask" and (.hookSpecificOutput.permissionDecisionReason | test("exit 3"))' >/dev/null 2>&1; then ok; else fail "guard: crashing check must ask (fail closed), got: $out"; fi
+
 if [ "$status" -eq 0 ]; then
   echo "verify-guard-hooks: OK ($pass_count cases)"
 fi

@@ -1,6 +1,7 @@
 ---
 name: finishing-a-development-branch
-description: Guide the completion of a development branch by presenting structured options for merge, PR, or cleanup. Use when implementation is complete, all tests pass, and you need to decide how to integrate the work.
+description: Guide the completion of a development branch by presenting structured options for merge, PR, or cleanup
+when_to_use: Use when implementation is complete, all tests pass, and you need to decide how to integrate the work.
 license: MIT
 metadata:
   author: Jesse Vincent
@@ -187,7 +188,7 @@ git worktree remove <worktree-path>
 - **Fix:** Present exactly 4 structured options
 
 **Automatic worktree cleanup**
-- **Problem:** Remove worktree when might need it (Option 2, 3)
+- **Problem:** Remove worktree when it is still needed (Option 2, 3)
 - **Fix:** Only cleanup for Options 1 and 4
 
 **No confirmation for discard**

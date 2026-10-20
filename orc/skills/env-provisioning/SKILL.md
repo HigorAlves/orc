@@ -5,7 +5,7 @@ description: "Provision a fast, reproducible dev environment for QA or standalon
 
 # Environment Provisioning
 
-Stand up the app (and its backing services) so QA — or the user — can run against a real, reproducible environment. Honors the project's own setup guidelines when they exist; generates the minimum when they don't. Speed is a design goal: the second boot on a branch should take seconds, not minutes.
+Stand up the app (and its backing services) so QA — or the user — can run against a real, reproducible environment. Honors the project's own setup guidelines when they exist; generates the minimum when they don't. Speed is a design goal: the second boot on a branch takes seconds, not minutes.
 
 **Announce at start:** "I'm using the env-provisioning skill because this task needs the app running."
 
@@ -13,12 +13,12 @@ Deep Docker knowledge (multi-stage builds, hardening, compose patterns) lives in
 
 ## Detection ladder
 
-Evaluate top-down in the **worktree** (the code under test), first hit wins. Setup guidelines (README/CONTRIBUTING "Setup"/"Getting started" sections, `Makefile`, `.env.example`) are consulted at EVERY rung — they supply env values, seed/migrate steps, ports, and the service list; they never override a higher rung's boot mechanism. Details + inference tables: `references/detection.md`.
+Evaluate top-down in the **worktree** (the code under test), first hit wins. Setup guidelines (README/CONTRIBUTING "Setup"/"Getting started" sections, `Makefile`, `.env.example`) are consulted at EVERY rung — they supply env values, seed/migrate steps, ports, and the service list; they never override a higher rung's boot mechanism. Rung specifics (override mechanics, devcontainer mapping, dev-stage preference, the hybrid rationale) + inference tables: `references/detection.md`.
 
-1. **Existing compose** — `compose.yaml|compose.yml|docker-compose.yml|docker-compose.yaml` (+ overrides, `dev` profiles). This IS the project's runnable setup guideline. Use as-is; NEVER edit it — meet extra port/env needs with an orc-owned override file in `.orc/<branch>/files/docker/`.
-2. **Devcontainer** — `.devcontainer/devcontainer.json` (or root variant). If it names `dockerComposeFile` → resolve to rung 1 with that file. Else wrap its image/Dockerfile in a generated compose honoring `forwardPorts`, `containerEnv`, `postCreateCommand` (as a one-shot).
-3. **Dockerfile** — `Dockerfile` / `Dockerfile.dev`. Generate a compose: app builds from it (prefer a `dev`/`development` stage when multi-stage), plus inferred backing services.
-4. **Nothing** — generate from analysis (`references/generation.md`). Default is **hybrid**: containers for backing services only (inferred from `.env.example`/config — `DATABASE_URL`→postgres, `REDIS_URL`→redis, …), app on the host via its dev script wired to them. Fastest and least invented; macOS bind-mount I/O makes containerized node dev servers *slower*. `--containerize-app` forces a full app container.
+1. **Existing compose** — `compose.yaml|compose.yml|docker-compose.yml|docker-compose.yaml` (+ overrides, `dev` profiles). Use as-is; NEVER edit it — extra needs go in an orc-owned override.
+2. **Devcontainer** — `.devcontainer/devcontainer.json` (or root variant). `dockerComposeFile` → rung 1; else wrap its image/Dockerfile in a generated compose.
+3. **Dockerfile** — `Dockerfile` / `Dockerfile.dev`. Generate a compose: app builds from it, plus inferred backing services.
+4. **Nothing** — generate from analysis (`references/generation.md`). Default **hybrid**: backing services in containers, app on host; `--containerize-app` forces an app container.
 
 All generated files land in `.orc/<branch>/files/docker/` — never in the repo. Committing a real compose file into the project happens only on explicit user request, via the normal plan → PR path.
 
@@ -38,27 +38,7 @@ All generated files land in `.orc/<branch>/files/docker/` — never in the repo.
 
 ## State contract — `docker-env-state.json`
 
-Lives at `.orc/<branch>/files/docker-env-state.json` (workspace-level when context=workspace; per-repo otherwise). `status` enum: `provisioning|ready|partial|failed|fallback|down`.
-
-```json
-{
-  "schemaVersion": 1, "context": "repo", "status": "ready", "mode": "compose",
-  "detectionRung": "existing-compose",
-  "project": "orc-myapp-feat-csv-export",
-  "composeFiles": ["/abs/path/docker-compose.yml"], "generatedFiles": [],
-  "appUrl": "http://localhost:3000",
-  "serviceEndpoints": { "app": "http://localhost:3000", "db": "postgres://localhost:5432/app_dev" },
-  "services": { "app": {"container": "…-app-1", "port": 3000, "health": "healthy", "status": "running"},
-                "db":  {"container": "…-db-1",  "port": 5432, "health": "healthy", "status": "running"} },
-  "hostProcesses": [], "volumes": ["orc-myapp-feat-csv-export_db_data"],
-  "buildInputsHash": "sha256:…", "reused": false, "bootDurationSec": 41,
-  "bootstrappedAt": "…", "lastVerifiedAt": "…", "evidenceDir": ".orc/<branch>/files/env/",
-  "teardownCommand": "docker compose -p orc-myapp-feat-csv-export -f /abs/path/docker-compose.yml down",
-  "keepVolumesOnDown": true
-}
-```
-
-Workspace context adds: `workspaceName`, `webSurfaceRepo`, `dependencyOrder` (e.g. `["db","api","ui"]`), `serviceOwners` (service → repo). Host-fallback differs only in `status: "fallback"`, `mode: "host"`, empty `services`, populated `hostProcesses[]` (`{command, pid, cwd, port, logFile}`), `teardownCommand: "kill <pid>"`.
+Lives at `.orc/<branch>/files/docker-env-state.json` (workspace-level when context=workspace; per-repo otherwise). `status` enum: `provisioning|ready|partial|failed|fallback|down`. Read [STATE-SCHEMA.md](references/STATE-SCHEMA.md) when writing the file (step 9) or reading it: the full schema, workspace additions, and the host-fallback shape.
 
 ## Speed levers
 
@@ -75,7 +55,7 @@ MAY: `docker compose watch` (only when the project's compose declares `develop.w
 
 ## Workspace mode
 
-One compose project per workspace branch (`orc-<ws>-<branch>`), all services on one network. Primary: generate `compose.workspace.yaml` that `include:`s each repo's own compose (compose ≥ 2.20; per-file `project_directory` → that repo's worktree) plus generated blocks for repos without one — backends get containerized when possible so siblings actually run. Fallback (old compose / service-name collisions): per-repo projects joined by a shared external network. Dependency order db → api → ui via `depends_on: {condition: service_healthy}`, derived from the plan's cross-repo contract or env-var references (ui env has `API_URL` → ui depends on api). QA dispatch passes `appUrl` + `serviceEndpoints` + `envStatePath` — the validator NEVER boots when state says ready.
+One compose project per workspace branch (`orc-<ws>-<branch>`), all services on one network. Read [WORKSPACE.md](references/WORKSPACE.md) only when context is `workspace`: the `include:` wrapper, the per-repo fallback, dependency order, and the QA dispatch inputs.
 
 ## Reuse & teardown
 
@@ -93,21 +73,5 @@ The environment **stays up between QA runs on a branch** — that is the speed w
 
 ## Fallback — never hard-block QA
 
-Probe ladder: docker installed → daemon up → compose v2 → containerizable (no Xcode-only / Electron-dev-loop / "requires macOS" signals). Any failure → **host-mode fallback**: the provisioner still owns the boot (dev script + curl poll), still writes the state file (`status: fallback`, `mode: host`, `hostProcesses[]`) and readiness evidence, and emits:
+Any failure on the probe ladder (docker installed → daemon up → compose v2 → containerizable) means **host-mode fallback**: the provisioner still owns the boot, still writes the state file and readiness evidence, and QA proceeds against the fallback appUrl. Read [FALLBACK.md](references/FALLBACK.md) when step 1 returns anything but `ok`: the ladder, the Caution callout, and the pointers into `orc:docker-best-practices`.
 
-```markdown
-> **⚠️ Caution — Docker unavailable, host-mode fallback**
->
-> <reason: not installed | daemon down (`open -a Docker`) | not containerizable: <why>>. Booting via `<dev command>` instead; backing services (if any) must already be reachable.
-```
-
-QA proceeds against the fallback appUrl. Because even fallback boots through the provisioner, the validator's rule stays uniform: attach when state exists, never boot.
-
-## Pointers into `orc:docker-best-practices`
-
-| Need | Reference |
-|------|-----------|
-| Compose orchestration patterns, service deps, dev overrides | `docker-best-practices/references/compose.md` |
-| Healthchecks, non-root, secrets handling | `docker-best-practices/references/security-hardening.md` |
-| Build caching for `--containerize-app` | `docker-best-practices/references/multistage-builds.md` |
-| Runtime/Compose validation + diagnostics | `docker-best-practices/references/production-deploy.md` |

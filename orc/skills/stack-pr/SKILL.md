@@ -21,7 +21,7 @@ A stack is N chained PRs where each branch's base is the previous branch (not `m
 2. **Clean working tree** — `git status --porcelain` must be empty.
 3. **No merge commits** on `base..HEAD` — `git rev-list --merges base..HEAD` must be empty. Stacks fall apart through merges.
 4. **At least 2 commits** on `base..HEAD`. A single commit isn't a stack — use `/orc:ship`.
-5. **Branch is pushed-clean** — local matches `origin` (no unpushed work that the user might lose to the rebase).
+5. **Branch is pushed-clean** — local matches `origin` (no unpushed work the rebase could lose).
 
 If any precondition fails, surface a **⚠️ Caution** callout naming the failed precondition and **stop**. Don't try to "fix it for them" — these are user decisions.
 

@@ -1,6 +1,7 @@
 ---
 name: adr-writing
-description: Author and update Architecture Decision Records (ADRs) — the durable record of a decision and its trade-offs, in docs/adr/NNNN-*.md. Use to lock in an architectural decision or to supersede an ADR.
+description: Author and update Architecture Decision Records (ADRs) — the durable record of a decision and its trade-offs, in docs/adr/NNNN-*.md
+when_to_use: Use to lock in an architectural decision or to supersede an ADR.
 ---
 
 # ADR Writing
@@ -14,7 +15,7 @@ ADRs are the contract between past-you and future-you. They capture *why* a deci
 Write an ADR when **all** of these are true:
 
 - The decision is **architectural** — affects multiple modules, defines a boundary, picks a technology, or sets a convention everyone follows.
-- The decision is **non-obvious** — there were real alternatives, and another smart engineer might pick differently.
+- The decision is **non-obvious** — there were real alternatives, and another smart engineer could pick differently.
 - The decision is **durable** — you expect it to live ≥ 3 months. Tactical tweaks don't deserve ADRs.
 
 Don't write ADRs for:

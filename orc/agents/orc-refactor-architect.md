@@ -1,6 +1,6 @@
 ---
 name: orc-refactor-architect
-description: Investigator role — deep codebase scan to surface refactor opportunities — coupling that hurts testability, duplicated decisions, leaky abstractions, drift from documented architecture (ADRs, GLOSSARY.md). Dispatched by /orc:plan when the input is refactor-shaped (mentions refactor, architecture, tech debt, cleanup) and delegated to by the improve-codebase-architecture skill for the scan phase.
+description: "Investigator role — scans a codebase for refactor opportunities: coupling that hurts testability, duplicated decisions, drift from ADRs and the glossary. Dispatched by /orc:plan for refactor-shaped input and by orc:improve-codebase-architecture."
 tools: Read, Glob, Grep, Bash(git log:*), Bash(git blame:*), Bash(graphify:*)
 model: opus
 effort: high

@@ -1,6 +1,7 @@
 ---
 name: next-best-practices
-description: Next.js best practices. Use when writing, reviewing, or refactoring Next.js code — App Router routing, RSC/server-client boundaries, data fetching, route handlers, metadata, image/font optimization.
+description: Next.js best practices
+when_to_use: Use when writing, reviewing, or refactoring Next.js code — App Router routing, RSC/server-client boundaries, data fetching, route handlers, metadata, image/font optimization.
 user-invocable: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: orc-ci-investigator
-description: Investigator role — diagnoses a failing CI run end-to-end and returns a classified failure report with a concrete fix list; never edits code, never re-runs workflows. Fetches run/job logs via gh CLI, classifies each failure as test / lint / build / flake / infra / environment-drift, and emits fix items orc-code-fixer (or the user) can apply. Dispatched by /orc:ci, by /orc:flow's post-ship CI gate, and by /orc:address when review feedback includes red checks.
+description: Investigator role — diagnoses a failing CI run from gh logs and returns a classified failure report (test, lint, build, flake, infra, drift) with a fix list; never edits or re-runs. Dispatched by /orc:ci, /orc:flow's CI gate and /orc:address.
 tools: Read, Glob, Grep, Bash(gh run:*), Bash(gh workflow:*), Bash(gh pr checks:*), Bash(git log:*), Bash(git diff:*)
 model: sonnet
 effort: medium

@@ -1,6 +1,6 @@
 ---
 name: orc-jira-architect
-description: "Investigator role — drafts a complete Jira backlog hierarchy (Epic micro-PRD, Stories, concurrency-sliced Tasks/Sub-tasks/Bugs) per the orc:jira-hierarchy contract and returns it as structured JSON; never creates tickets, never mutates Jira. Dispatched by /orc:jira-breakdown, and by /orc:flow or /orc:plan when a plan should land as a Jira hierarchy instead of local slices."
+description: Investigator role — drafts a Jira backlog hierarchy (Epic micro-PRD, Stories, concurrency-sliced Tasks) per orc:jira-hierarchy and returns it as JSON; never creates tickets. Dispatched by /orc:jira-breakdown, /orc:flow and /orc:plan.
 tools: Read, Glob, Grep, Bash(acli jira workitem view:*), Bash(acli jira workitem search:*), Bash(git log:*), Bash(graphify:*)
 model: opus
 effort: high

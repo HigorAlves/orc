@@ -1,6 +1,7 @@
 ---
 name: requesting-code-review
-description: Dispatch a code-reviewer subagent with precisely crafted context to catch issues in finished work before they cascade. Use when completing tasks, implementing major features, or before merging to verify work meets requirements.
+description: Dispatch a code-reviewer subagent with precisely crafted context to catch issues in finished work before they cascade
+when_to_use: Use when completing tasks, implementing major features, or before merging to verify work meets requirements.
 license: MIT
 metadata:
   author: Jesse Vincent
@@ -39,7 +40,7 @@ Use Task tool with superpowers:code-reviewer type, fill template at `code-review
 
 **Placeholders:**
 - `{WHAT_WAS_IMPLEMENTED}` - What you just built
-- `{PLAN_OR_REQUIREMENTS}` - What it should do
+- `{PLAN_OR_REQUIREMENTS}` - What it must do
 - `{BASE_SHA}` - Starting commit
 - `{HEAD_SHA}` - Ending commit
 - `{DESCRIPTION}` - Brief summary

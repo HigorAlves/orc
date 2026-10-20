@@ -41,6 +41,11 @@ agent-browser skills get agentcore         # AWS Bedrock AgentCore cloud browser
 Run `agent-browser skills list` to see everything available on the
 installed version.
 
+## QA references (orc-qa-validator)
+
+- [QA-RECIPES.md](references/QA-RECIPES.md): command shapes per workflow step (open, record, walk, edge cases, capture).
+- [STEPS-TEMPLATE.md](references/STEPS-TEMPLATE.md): the `steps.md` narrative template.
+
 ## Why agent-browser
 
 - Fast native Rust CLI, not a Node.js wrapper

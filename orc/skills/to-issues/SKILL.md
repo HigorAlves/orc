@@ -1,6 +1,7 @@
 ---
 name: to-issues
-description: Break a plan, spec, or PRD into independently-grabbable tracker issues using tracer-bullet vertical slices. Use when converting a plan into issues or implementation tickets.
+description: Break a plan, spec, or PRD into independently-grabbable tracker issues using tracer-bullet vertical slices
+when_to_use: Use when converting a plan into issues or implementation tickets.
 license: MIT
 metadata:
   author: Matt Pocock
@@ -11,7 +12,7 @@ metadata:
 
 Break a plan, spec, or conversation into a set of independently-grabbable **issues** — tracer-bullet vertical slices, each declaring the issues that **block** it.
 
-The issue tracker and triage label vocabulary should have been provided to you — run `/orc:setup` if not.
+The issue tracker and triage label vocabulary come from the tracker layer — if absent, run `/orc:setup`.
 
 ## Process
 
@@ -21,7 +22,7 @@ Work from whatever is already in the conversation context. If the user passes a 
 
 ### 2. Explore the codebase (optional)
 
-If you have not already explored the codebase, do so to understand the current state of the code. Issue titles and descriptions should use the project's domain glossary vocabulary, and respect ADRs in the area you're touching.
+If you have not already explored the codebase, do so to understand the current state of the code. Issue titles and descriptions use the project's domain glossary vocabulary, and respect ADRs in the area you're touching.
 
 Look for opportunities to prefactor the code to make the implementation easier. "Make the change easy, then make the easy change."
 
@@ -34,7 +35,7 @@ Break the work into **tracer bullet** issues.
 - Each slice cuts a narrow but COMPLETE path through every layer (schema, API, UI, tests) — vertical, NOT a horizontal slice of one layer
 - A completed slice is demoable or verifiable on its own
 - Each slice is sized to fit in a single fresh context window
-- Any prefactoring should be done first
+- Any prefactoring comes first
 
 </vertical-slice-rules>
 
@@ -42,7 +43,7 @@ Slices may be **HITL** or **AFK**. HITL slices require human interaction, such a
 
 Give each issue its **blocking edges** — the other issues that must complete before it can start. An issue with no blockers can start immediately.
 
-**Wide refactors are the exception to vertical slicing.** A **wide refactor** is one mechanical change — rename a column, retype a shared symbol — whose **blast radius** fans across the whole codebase, so a single edit breaks thousands of call sites at once and no vertical slice can land green. Don't force it into a tracer bullet; sequence it as **expand–contract**. First expand: add the new form beside the old so nothing breaks. Then migrate the call sites over in batches sized by blast radius (per package, per directory), each batch its own issue blocked by the expand, keeping CI green batch to batch because the old form still exists. Finally contract: delete the old form once no caller remains, in an issue blocked by every migrate batch. When even the batches can't stay green alone, keep the sequence but let them share an integration branch that all block a final integrate-and-verify issue — green is promised only there.
+**Wide refactors are the exception to vertical slicing.** A **wide refactor** is one mechanical change — rename a column, retype a shared symbol — whose **blast radius** fans across the whole codebase, so no vertical slice can land green. Sequence it as **expand–contract** per [WIDE-REFACTORS.md](references/WIDE-REFACTORS.md).
 
 ### 4. Quiz the user
 
@@ -58,7 +59,7 @@ Ask the user:
 
 - Does the granularity feel right? (too coarse / too fine)
 - Are the blocking edges correct — does each issue only depend on issues that genuinely gate it?
-- Should any issues be merged or split further?
+- Do any issues need merging or splitting further?
 - Are the correct slices marked as HITL and AFK?
 
 Iterate until the user approves the breakdown.
@@ -67,53 +68,17 @@ Iterate until the user approves the breakdown.
 
 Publish the approved issues. **How** depends on the tracker `/orc:setup` configured — the issues are the same either way, only the shape of the blocking edges changes:
 
-- **Local files** → write one file per issue under `.orc/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01` in dependency order (blockers first). Each file's "Blocked by" lists the numbers/titles it depends on. Use the per-issue file template below — one issue per file, never a single combined file.
+- **Local files** → write one file per issue under `.orc/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01` in dependency order (blockers first). Each file's "Blocked by" lists the numbers/titles it depends on. Use the per-issue file template in [TEMPLATES.md](references/TEMPLATES.md) — one issue per file, never a single combined file.
 - **A real issue tracker (GitHub, Jira, Linear, …)** → publish one issue per slice in dependency order (blockers first) so each issue's blocking edges can reference real identifiers. Use the platform's native blocking relationship where it has one; otherwise set each issue's "Blocked by" to the blocking issues. If the source was an existing issue, make each slice its sub-issue (the tracker doc's operation). Apply the `needs-triage` triage label so each issue enters the normal triage flow.
 
 Work the **frontier**: any issue whose blockers are all done. For a purely linear chain that means top to bottom.
 
 Do NOT close or modify any parent issue.
 
-<local-issue-template>
-
-# <NN> — <Issue title>
-
-**What to build:** the end-to-end behaviour this issue makes work, from the user's perspective — not a layer-by-layer implementation list.
-
-**Type:** HITL | AFK
-
-**Blocked by:** the numbers/titles of the issues that gate this one, or "None — can start immediately".
-
-**Status:** needs-triage
-
-- [ ] Acceptance criterion 1
-- [ ] Acceptance criterion 2
-
-</local-issue-template>
-
-<issue-template>
-
-## Parent
-
-A reference to the parent issue on the tracker (if the source was an existing issue, otherwise omit this section).
-
-## What to build
-
-The end-to-end behaviour this issue makes work, from the user's perspective — not layer-by-layer implementation. Note whether the slice is HITL or AFK.
-
-## Acceptance criteria
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-
-## Blocked by
-
-- A reference to each blocking issue, or "None — can start immediately". Omit this section when blockers were set as native edges.
-
-</issue-template>
+Both templates — the per-issue local file and the tracker issue body — are in [TEMPLATES.md](references/TEMPLATES.md); read it before publishing.
 
 In either form, avoid specific file paths or code snippets — they go stale fast. Exception: if a prototype produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it and note briefly that it came from a prototype. Trim to the decision-rich parts — not a working demo, just the important bits.
 
 ## Jira hierarchy variant
 
-When the tracker is Jira and the output should be the structured Epic→Story→Task hierarchy (micro-PRD epic, templated children, concurrency-sliced tasks) rather than flat issues, hand off to `/orc:jira-breakdown` — it enforces the `orc:jira-hierarchy` contract end-to-end.
+When the tracker is Jira and the output is the structured Epic→Story→Task hierarchy (micro-PRD epic, templated children, concurrency-sliced tasks) rather than flat issues, hand off to `/orc:jira-breakdown` — it enforces the `orc:jira-hierarchy` contract end-to-end.

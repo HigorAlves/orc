@@ -9,8 +9,8 @@
 ```
 orc/                               # the plugin
 ├── .claude-plugin/plugin.json     # manifest — what Claude Code reads to discover the plugin
-├── skills/                        # 84 skills, namespaced /orc:<name>
-├── commands/                      # 32 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
+├── skills/                        # 87 skills, namespaced /orc:<name>
+├── commands/                      # 29 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
 ├── agents/                        # 14 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) + PostToolUse + PreCompact + WorktreeCreate/Remove
 │   └── mod/                       # the orc mod (register.ts + tests) — in-process hooks, Claude Code 2.1.287+
@@ -174,14 +174,21 @@ Curated skills cover four optional packs (all enabled): `web-react` (incl. vites
 
 Plus the doc-authoring family for senior/architect practice: `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem-writing` (blameless incident postmortems), `prd-writing` (Product Requirements Documents), `trd-writing` (Technical Requirements Documents). Fifteen further skills are vendored or merged from MIT-licensed community sources (mattpocock/skills at pin `5beb35b`, obra/superpowers, antfu/skills, twostraws/SwiftUI-Agent-Skill) with provenance frontmatter per skill and full notices in `THIRD-PARTY-LICENSES.md`.
 
+## Authoring standard and phase modules
+
+Every command, agent and skill is written to the controlled-language standard in `orc/skills/skill-writing/references/AUTHORING-STANDARD.md` (ADR 0007): glossary vocabulary, a fixed unapproved-word list, procedural steps of at most 15 words that open with a verb, WARNING/CAUTION/NOTE before the step they guard, a fixed task anatomy, and size caps (command entry 6 KB, agent 8 KB, skill 6 KB without `references/`). `scripts/ci/verify-ste.sh` enforces it as a ratchet against `scripts/ci/precision-baseline.json`; `verify-context-cost.sh` ratchets the always-on description total.
+
+Large commands keep only Phase 0 and the phase index resident; each later phase is a **module** under `orc/skills/phases/references/<command>/PHASE-<N>-<NAME>.md`, headed by its code (`<!-- orc:<command>/P<N> -->`) and loaded exactly when the command enters that phase. The three largest commands are piloted as skill directories with their modules beside them (ADR 0008); the rest stay flat files.
+
 ## Relationship to compozy
 
 orc borrows compozy's session-state idea, hook layout, and YAML-frontmatter conventions. It diverges in two places:
 1. Workspace state is **hidden + gitignored** (`.orc/`) instead of committed (`compozy/`). orc is a personal plugin; nothing needs sharing.
-2. Command surface covers the full SDLC (32 commands, all composing the same plan → debug → verify → ship spine, now extended past PR-open with ci/release/deps/incident), with explicit web-QA evidence as a first-class concern — including the environment it runs against: `/orc:qa` and `/orc:flow` provision a Docker dev environment via `orc-env-provisioner` before browser QA (`orc:env-provisioning` skill; `/orc:env` standalone).
+2. Command surface covers the full SDLC (29 commands, all composing the same plan → debug → verify → ship spine, now extended past PR-open with ci/release/deps/incident), with explicit web-QA evidence as a first-class concern — including the environment it runs against: `/orc:qa` and `/orc:flow` provision a Docker dev environment via `orc-env-provisioner` before browser QA (`orc:env-provisioning` skill; `/orc:env` standalone).
 
 ## See also
 
+- `docs/adr/` — the decisions behind this layout; `GLOSSARY.md` — the terms; `SCOPE.md` — what is accepted; `CHANGELOG.md` — every release
 - `docs/contributing.md` — how to add a new skill, command, or agent
 - `docs/commands.md` — the full command / agent / skill catalog
 - `docs/examples/` — scenario walk-throughs

@@ -27,176 +27,69 @@ allowed-tools:
 
 # /orc:ship
 
-You're done implementing. Time to integrate. This command runs the structured branch-completion flow.
+Integrate finished work: verify, compose the PR, gate once, size-check, push and open it.
 
 ## Arguments
 
-- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`); ladder and hard-outward exemption in `orc:gates` §6.
-
+- `--auto[=guided|full]` — autopilot level for this run; overrides `interaction_policy`. Ladder and hard-outward exemption: `orc:gates` §6.
 - `--draft` — open the PR as a draft.
-- `--base <branch>` — target a non-default base (e.g. `develop`, `release/v2`).
-- `--verbose` — compose the PR body with the long-form template documented in Phase 4. Default is terse, signal-only composition via `orc:caveman-pr`. (`--caveman` is accepted as a deprecated no-op alias of the default.)
-- `--max-loc <N>` — override the per-PR LOC budget enforced by Phase 4.5 (default: 300, configurable via `$ORC_PR_LOC_BUDGET` or `<repo_root>/.orc/pr-budget.json#budget`). See `orc:pr-size-budget`.
-- `--no-size-gate` — bypass Phase 4.5 entirely. Use for emergency hot-fixes where review-cycle time dominates. Records nothing in the PR body.
+- `--base <branch>` — target a non-default base, such as `develop` or `release/v2`.
+- `--verbose` — compose the body with the long-form template (orc:ship/P3). Default is terse via `orc:caveman-pr`.
+- `--caveman` — accepted as a deprecated no-op alias of the default.
+- `--max-loc <N>` — override the per-PR LOC budget P4.5 enforces (default 300; `orc:pr-size-budget`).
+- `--no-size-gate` — skip P4.5 entirely, for emergency hot-fixes where review-cycle time dominates. Records nothing in the PR body.
+- `--repos a,b | --repo a | --all-repos | --this-repo` — workspace target selection (`orc:workspace-mode`).
 
-## Workflow
+NOTE: budget sources, in order: `--max-loc`, `$ORC_PR_LOC_BUDGET`, `<repo_root>/.orc/pr-budget.json#budget`, then 300.
+
+## Preconditions
+
+> **🛑 Outward write**
+>
+> P5 pushes and opens PRs; P4.5 can open a stack. The P4 gate precedes them. At `--auto=full` with `prMode` settled, P4 opens without asking.
+
+> **⚠️ Caution**
+>
+> P1 stops the run on a failing test, lint or type-check, uncommitted changes, or a protected branch.
+
+- In workspace mode, no silent broadcast: confirm the repo set before opening multiple PRs.
+
+## Phases
+
+Modules live in `orc:phases` (`references/ship/`). Entering a phase, Read exactly its module.
+
+| Phase | Module | Skipped when |
+|---|---|---|
+| 0 Detect context | resident, below | never |
+| 1 Pre-ship verification | `orc:ship/P1` | never |
+| 2 Self-request a review | `orc:ship/P2` | never |
+| 3 Compose the PR | `orc:ship/P3` | never |
+| 4 Branch completion + PR preview | `orc:ship/P4` | never |
+| 4.5 Size gate | `orc:ship/P4.5` | `--no-size-gate`; P4 outcome is not "open PR" |
+| 5 Push + create PR | `orc:ship/P5` | P4 outcome is not "open PR"; the repo stacked in P4.5 |
+| 6 Cleanup hint | `orc:ship/P6` | never |
 
 ### Phase 0 — Detect context
 
 !`orc-workspace-detect --banner`
 
-Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection).
+1. Read the banner above; the `ORC_*` vars already exist. Do not re-run detection.
+2. In workspace mode, resolve `targetRepos` from the flags, else ask via `AskUserQuestion`.
+3. Confirm the repo set before opening multiple PRs.
 
-In workspace mode, resolve `targetRepos` from flags or via `AskUserQuestion`. Default in workspace mode is to ship every repo in the active workspace session's `repos` array (`orc-state get --field repos` — read-for-data per `orc:state-protocol`). Iron rule: no silent broadcast — confirm before opening multiple PRs.
+NOTE: the workspace default is every repo in the active session's `repos` array (`orc-state get --field repos`, read-for-data per `orc:state-protocol`).
 
-### Phase 1 — Pre-ship verification
+## Iron rules
 
-Invoke `orc:verification-before-completion`. Confirm:
-- Tests pass.
-- Lint / type-check pass (if configured).
-- No staged-but-uncommitted changes (`git status --porcelain`).
-- Current branch is NOT a protected branch.
-
-If any check fails, stop and show the failure. Do not proceed.
-
-In workspace mode, run all four checks **per target repo** (cd into each `repoPath`). If any one repo fails, stop and surface which repo + which check; the other repos are not pushed.
-
-### Phase 2 — Self-request a review
-
-Invoke `orc:requesting-code-review`. The skill walks through whether the work meets requirements and is review-ready. If the skill flags gaps, surface them; user decides whether to proceed.
-
-### Phase 3 — Compose PR (no gate)
-
-Compose **before** asking anything — the completion decision and the PR preview then fit in one gate (Phase 4) instead of two.
-
-Invoke `orc:git-commit` if there are uncommitted changes. Then:
-
-1. Determine PR title from the branch name + recent commit subjects.
-2. Compose the body. Two modes:
-   - **Default (terse)** — invoke `orc:caveman-pr` and follow it exactly: a tight title + body with only the sections that add signal (Why / What changed / How tested / Notes / trailers). Reviewers need a why and a how-tested, not a tour of the diff.
-   - **`--verbose` mode** — the long-form template: **Summary** (the smallest visual that makes the change clear — pseudocode for logic, a call tree for runtime flow, a component tree for UI, a shallow file tree for layout, a mermaid sequence for interaction, a `diff`-sketch when the surrounding shape already exists; prose beside it, brief), **Why** (link to plan / issue / PRD if available; `.orc/<branch>/files/plan.md` if present), **Evidence** (before/after: screenshots or the recording for a visual change at `.orc/<branch>/files/qa/`, else the exact test run that failed before and passes now), **Merge danger** (`Door: one-way | two-way` with what makes a one-way door hard to walk back, and `Blast radius:` in a few words with the ramifications), **Checklist** (boxes for the reviewer). Use when the change genuinely needs narrative context (big migrations, multi-team reviews).
-3. **Append the Jira trailer if a ticket is bound.** `orc-state get --field jiraTicket` (read-for-data per `orc:state-protocol`). If present, append a single trailer line at the bottom of the body:
-
-   ```
-   <KEYWORD> <KEY>
-   ```
-
-   `KEYWORD` defaults to `Resolves`. Override per-shop with `export ORC_JIRA_PR_KEYWORD=Closes` (or `Fixes`). Both modes (terse and verbose) get this trailer. Skip silently when no `jiraTicket` is set.
-
-### Phase 4 — Branch completion + PR preview (one gate)
-
-Invoke `orc:finishing-a-development-branch` in its **caller-supplied preview mode**, passing the composed title + body. The skill renders the preview and asks ONE question: open as previewed / open as draft / edit title-body first / another completion path (merge back locally, keep as-is, discard — follow-up per the skill). The preview shown is the payload posted.
-
-(When `/orc:flow` Phase 7 drives this logic, it skips the completion options — the flow's premise is already "open a PR" — and gates only the composed preview. Standalone `/orc:ship` always offers the full set.)
-
-Autopilot: at `full`, with `prMode` settled (contract or decision), open as previewed without asking — echo the settled-decision line. At `guided`/`manual` this gate always asks. The size gate at `full` auto-stacks when over budget or escalates — it never selects the override (that attestation stays human, iron rule 8).
-
-If the outcome is "open PR" (as-is or draft):
-
-### Phase 4.5 — Size gate
-
-Defer to `orc:pr-size-budget` for the canonical mechanics. Skip this phase entirely when `--no-size-gate` is set.
-
-For each target repo (workspace mode iterates; single-repo runs once):
-
-```bash
-base="${ARG_BASE:-$(git symbolic-ref refs/remotes/origin/HEAD --short | sed 's@^origin/@@')}"
-orc-pr-size gate --base "origin/$base" ${ARG_MAX_LOC:+--max-loc "$ARG_MAX_LOC"}
-```
-
-One call returns `loc:`, `budget:`, `verdict:`, the top-contributors table, and the excluded-files line. If `verdict: under`, fall through to Phase 5.
-
-If `verdict: over`, render the gate exactly as `orc:pr-size-budget` specifies (the **⛔ Gate — PR size** callout, then the breakdown + exclusions from the gate output above) and surface `AskUserQuestion`:
-
-1. **Stack from plan slices (Recommended when shown)** — shown only when the session's `slices.json` ledger exists and every slice is `committed` with a distinct recorded `commit` sha (`orc-state slice list` — no heuristics; the ledger IS the commit↔slice map. Pre-ledger fallback: `n_commits_on_branch == n_slices_in_plan` with best-effort subject match). Uses those per-slice commits as the stack scaffold: load `orc:stack-pr` inline with the commit-based strategy pinned, one PR per slice batch. Records the resulting `linkedPRs[]` entries and **short-circuits Phase 5** for this repo.
-2. **Stack it** — invoke `/orc:stack-pr` **inline as a skill** (load `stack-pr` skill in this session, run its phases; `--smart` reshape available). Same short-circuit as option 1, but doesn't rely on commit/slice alignment. Recommended when option 1 is hidden.
-3. **Open as one big PR** — prompt for a one-line reason (free text). Append to the PR body as the trailer:
-   ```
-   Size-budget-override: <reason>
-   ```
-   placed after any Jira / `Closes #N` trailers. Continue to Phase 5 with the augmented body.
-4. **Abort** — exit non-zero with a hint: "Resize the diff and re-run `/orc:ship`, or run `/orc:stack-pr` directly when ready."
-
-This gate is the **single owner** of the size decision — `/orc:flow` Phase 7 never pre-flights it. In a flow session, per-repo decisions land in flow's `checkpoint.md` so `/orc:resume` knows the repo already gated.
-
-In **workspace mode**, the gate fires per repo inside the existing `for r in $targetRepos` loop. Each repo gets its own decision — one repo can stack while another opens single. Per-repo `stackId` is derived as `<sessionId>-<repo>` (see Phase 5 Pass 1 below).
-
-Iron rule: never silently exceed the budget. Either stack, record the override, or abort.
-
-### Phase 5 — Push + create PR
-
-```
-git push -u origin <branch>
-gh pr create --title "<title>" --body "<body>" [--draft] [--base <base>]
-```
-
-Echo the PR URL.
-
-When `${ORC_STATE_DIR}/<sanitized-branch>/files/qa/qa-manifest.json` exists, invoke `orc:evidence-publish` with `qaDir`, the packet's `verdict`, and the new PR — its PR-comment question (hard-outward, header `Post`) offers the verdict table + links on the PR just opened. Keep-local is the default; nothing posts without the answer.
-
-In workspace mode, this becomes a **two-pass loop**:
-
-**Pass 1 — push + create per repo** (sequential, since `gh pr create` should observe a clean push). Skip any repo whose Phase 4.5 already produced a stack (its `linkedPRs[]` entries are populated and `gh pr create` would create a duplicate):
-
-```bash
-for r in $targetRepos; do
-  cd "$ORC_WORKSPACE_ROOT/$r"
-  # If Phase 4.5 already opened a stack for this repo, skip — entries are in linkedPRs already.
-  already_stacked=$(jq -r --arg r "$r" --arg b "$BRANCH" \
-    '.sessions[] | select(.branch == $b) | .linkedPRs | map(select(.repo == $r and .stackId != null)) | length' \
-    "$ORC_STATE_DIR/orc.json")
-  [ "${already_stacked:-0}" -gt 0 ] && continue
-
-  branch=$(jq -r ".sessions[] | select(.branch == \"$BRANCH\") | .perRepoState.\"$r\".branch // \"$BRANCH\"" "$ORC_STATE_DIR/orc.json")
-  git push -u origin "$branch"
-  pr_url=$(gh pr create --title "<title>" --body "<body-without-cross-links-yet>" [--draft] [--base <base>])
-  jq --arg r "$r" --arg url "$pr_url" \
-     '(.sessions[] | select(.branch == "'"$BRANCH"'") | .linkedPRs) += [{repo: $r, url: $url, stackId: null, stackPosition: null, stackedOn: null}]' \
-     "$ORC_STATE_DIR/orc.json" > tmp && mv tmp "$ORC_STATE_DIR/orc.json"
-done
-```
-
-**Pass 2 — inject reciprocal "Linked PRs" block** (after all PRs exist, since PR #1 doesn't know PR #2's number at creation time):
-
-For each PR, `gh pr edit <url> --body "$(updated body)"` where the updated body appends:
-
-Default (terse) template:
-```
-## Linked
-api#311 (this) · ui#447
-order: api → ui
-```
-
-`--verbose` template:
-```
-## Linked PRs
-
-This PR is part of a workspace change spanning N repos:
-
-- org/api#311 — this PR
-- org/ui#447 — UI changes
-
-Merge order: api → ui (per workspace plan).
-```
-
-Merge order is sourced from the plan's "Merge order" line; omit the line if absent.
-
-Echo all N PR URLs to the user.
-
-### Phase 6 — Cleanup hint
-
-If the user opted for "merge after CI" rather than "wait for review," surface a reminder to come back with `/orc:address` if reviewers leave comments.
-
-After the PR merges in GitHub, the user should run **`/orc:cleanup`** to remove the `.orc/<branch>/` workspace state, the associated git worktree (if `using-git-worktrees` was used), and the local feature branch (if it merged cleanly). Surface this as the last block of `/orc:ship`'s output so the lifecycle closes properly:
-
-```markdown
-> **➡️ Next**
->
-> After the PR merges, run `/orc:cleanup` to remove the `.orc/<branch>/` state, the worktree, and the merged branch.
-```
+- No silent broadcast: confirm before opening multiple PRs.
+- Never silently exceed the size budget. Stack, record the override, or abort.
+- The size-budget override is a human attestation; autopilot never selects it.
+- P4.5 is the single owner of the size decision; `/orc:flow` Phase 7 never pre-flights it.
+- The P4 preview is the payload posted.
+- QA evidence posts to the PR only after the `orc:evidence-publish` answer; keep-local is the default.
 
 ## Output
 
-- A new (or updated) PR on GitHub
-- PR URL echoed to the user
-- (No `.orc/` writes — `/orc:ship` doesn't checkpoint; integration is the terminal state.)
+- A new (or updated) PR on GitHub, or a stack of PRs per repo.
+- The PR URLs, echoed.
+- No `.orc/` checkpoint: integration is the terminal state. Workspace mode appends to `linkedPRs` in `orc.json` (orc:ship/P5).

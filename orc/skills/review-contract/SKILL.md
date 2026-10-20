@@ -1,6 +1,7 @@
 ---
 name: review-contract
-description: The canonical review findings contract — JSON schema, severity enum, mechanical severity→event mapping, confidence ≥0.8 rule. Use when producing, merging, or posting structured review findings, or when building a new reviewer agent.
+description: The canonical review findings contract — JSON schema, severity enum, mechanical severity→event mapping, confidence ≥0.8 rule
+when_to_use: Use when producing, merging, or posting structured review findings, or when building a new reviewer agent.
 ---
 
 # Review contract

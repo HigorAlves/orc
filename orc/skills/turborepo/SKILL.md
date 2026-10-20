@@ -1,6 +1,7 @@
 ---
 name: turborepo
-description: "Turborepo monorepo build-system guidance — turbo.json task pipelines, caching, the turbo CLI, --filter/--affected, CI, env vars, and packages. Use when configuring tasks, sharing code between apps, or debugging the cache."
+description: Turborepo monorepo build-system guidance — turbo.json task pipelines, caching, the turbo CLI, --filter/--affected, CI, env vars, and packages
+when_to_use: Use when configuring tasks, sharing code between apps, or debugging the cache.
 metadata:
   version: 2.9.7-canary.14
 ---

@@ -1,6 +1,7 @@
 ---
 name: systematic-debugging
-description: "Root-cause-first debugging discipline — build a red-capable feedback loop, minimise the repro, rank falsifiable hypotheses, fix at the source. Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes."
+description: Root-cause-first debugging discipline — build a red-capable feedback loop, minimise the repro, rank falsifiable hypotheses, fix at the source
+when_to_use: Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes.
 license: MIT
 metadata:
   author: Jesse Vincent

@@ -1,6 +1,7 @@
 ---
 name: swiftui-best-practices
-description: Comprehensively reviews SwiftUI code for best practices on modern APIs, maintainability, and performance. Use when reading, writing, or reviewing SwiftUI projects.
+description: Comprehensively reviews SwiftUI code for best practices on modern APIs, maintainability, and performance
+when_to_use: Use when reading, writing, or reviewing SwiftUI projects.
 license: MIT
 metadata:
   author: Paul Hudson
@@ -14,10 +15,10 @@ Review process:
 1. Check for deprecated API using `references/api.md`.
 1. Check that views, modifiers, and animations have been written optimally using `references/views.md`.
 1. Validate that data flow is configured correctly using `references/data.md`.
-1. Ensure navigation is updated and performant using `references/navigation.md`.
-1. Ensure the code uses designs that are accessible and compliant with Apple’s Human Interface Guidelines using `references/design.md`.
+1. Verify navigation is updated and performant using `references/navigation.md`.
+1. Verify the code uses designs that are accessible and compliant with Apple’s Human Interface Guidelines using `references/design.md`.
 1. Validate accessibility compliance including Dynamic Type, VoiceOver, and Reduce Motion using `references/accessibility.md`.
-1. Ensure the code is able to run efficiently using `references/performance.md`.
+1. Verify the code runs efficiently using `references/performance.md`.
 1. Quick validation of Swift code using `references/swift.md`.
 1. Final code hygiene check using `references/hygiene.md`.
 
@@ -89,7 +90,7 @@ TextField("Username", text: $model.username)
 ### Summary
 
 1. **Accessibility (high):** The add button on line 24 is invisible to VoiceOver.
-2. **Deprecated API (medium):** `foregroundColor()` on line 12 should be `foregroundStyle()`.
+2. **Deprecated API (medium):** `foregroundColor()` on line 12 must be `foregroundStyle()`.
 3. **Data flow (medium):** The manual binding on line 31 is fragile and harder to maintain.
 
 End of example.

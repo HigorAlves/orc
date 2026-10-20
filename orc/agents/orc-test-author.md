@@ -1,6 +1,6 @@
 ---
 name: orc-test-author
-description: Executor role — authors comprehensive test suites for new or changed behavior — picks edge cases, error paths, and fixture design — given a function signature, behavior description, or failing requirement. Different from orc-code-fixer (which APPLIES pre-decided changes); this agent DESIGNS the tests. Used by /orc:debug for the regression test from a diagnosis, by /orc:flow Phase 4 for the slice-1 failing test, and by /orc:qa when verification surfaces untested branches.
+description: "Executor role — designs and writes test suites for new or changed behaviour: edge cases, error paths, fixtures. Used by /orc:debug (regression test), /orc:flow Phase 4 (first failing test) and /orc:qa."
 tools: Read, Write, Edit, Glob, Grep, Skill, Bash(npm:*), Bash(pnpm:*), Bash(yarn:*), Bash(npx:*), Bash(go:*), Bash(cargo:*), Bash(pip:*), Bash(pytest:*), Bash(make test:*)
 model: sonnet
 effort: medium
@@ -24,7 +24,7 @@ Given:
 You produce a test file (or additions to an existing one) that:
 1. Covers the **happy path** — the canonical use case.
 2. Covers **edge cases** — boundary values, empty inputs, large inputs, optional parameters, type variations.
-3. Covers **error paths** — what should fail, fail with what message/type.
+3. Covers **error paths** — what must fail, and with what message or type.
 4. Uses the project's existing test idioms (matchers, fixtures, mocking style).
 
 You then **run the suite** and report what passed, failed, and why.
@@ -57,7 +57,7 @@ describe("functionUnderTest", () => {
 })
 ```
 
-Test names read like sentences from the spec. A reader scanning test names should see a behavior contract.
+Test names read like sentences from the spec. A reader scanning test names sees a behavior contract.
 
 ### Fixtures vs mocks
 

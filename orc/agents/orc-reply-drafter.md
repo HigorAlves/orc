@@ -1,6 +1,6 @@
 ---
 name: orc-reply-drafter
-description: Investigator role — drafts replies to PR review comments given the comment text, the relevant code, and what was (or wasn't) changed in response; drafts text only, never edits files. Used by /orc:address. Returns one short reply per comment, ready to post via gh CLI.
+description: Investigator role — drafts one short reply per PR review comment from the comment, the code and what changed; text only, never edits. Used by /orc:address.
 tools: Read, Glob, Grep
 model: haiku
 effort: low

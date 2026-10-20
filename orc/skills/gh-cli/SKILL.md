@@ -1,6 +1,7 @@
 ---
 name: gh-cli
-description: "GitHub CLI (gh) reference for repos, issues, PRs, Actions, releases, gists, projects, codespaces, and the API. Use for any gh command or GitHub operation from the terminal."
+description: GitHub CLI (gh) reference for repos, issues, PRs, Actions, releases, gists, projects, codespaces, and the API
+when_to_use: Use for any gh command or GitHub operation from the terminal.
 ---
 
 # GitHub CLI (gh)

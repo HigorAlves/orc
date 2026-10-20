@@ -1,6 +1,7 @@
 ---
 name: stripe-best-practices
-description: Guide Stripe integration decisions — API choice, Connect, billing, Treasury, key/webhook security. Use when building, modifying, or reviewing any Stripe payment, marketplace, or subscription.
+description: Guide Stripe integration decisions — API choice, Connect, billing, Treasury, key/webhook security
+when_to_use: Use when building, modifying, or reviewing any Stripe payment, marketplace, or subscription.
 
 ---
 

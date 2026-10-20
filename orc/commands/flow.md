@@ -58,7 +58,7 @@ Every flag records its answer as a settled decision (`orc-state decision set …
 
 ## Phases
 
-**9 phases; the playbooks for Phases 2–9 load one at a time via `orc:flow-phases` — entering phase N, Read exactly its `references/PHASE-<N>-*.md` first. Do not run a phase from memory.** Decision points gate; machine-verified outcomes print evidence and advance.
+**9 phases; the playbooks for Phases 2–9 load one at a time via `orc:phases` — entering phase N, Read exactly `references/flow/PHASE-<N>-*.md` first. Do not run a phase from memory.** Decision points gate; machine-verified outcomes print evidence and advance.
 
 | # | Phase | Always? | Skips when … |
 |---|-------|---------|--------------|

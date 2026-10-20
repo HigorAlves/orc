@@ -1,6 +1,6 @@
 ---
 name: orc-stack-analyzer
-description: Investigator role — analyzes a too-big branch's diff and proposes how to split it into a stack of smaller, logically-coherent PRs, emitting a JSON plan (slices + non-interactive rebase plan) for the orchestrator to execute. Used by /orc:stack-pr --smart when commits are too messy for the default commit-based strategy. Never runs git rebase, cherry-pick, or any destructive operation.
+description: Investigator role — analyses a too-big branch and proposes a stack of smaller PRs as a JSON plan with a non-interactive rebase plan; never runs git mutations. Used by /orc:stack-pr --smart.
 tools: Read, Glob, Grep, Bash(git log:*), Bash(git diff:*), Bash(git show:*), Bash(git rev-list:*), Bash(git numstat:*)
 model: opus
 effort: high
@@ -35,7 +35,7 @@ You do NOT execute the rebase, push branches, or open PRs. You hand off a JSON p
 | **UI** | Often the last slice — depends on the API surface being landed. |
 | **Tests-only / docs-only** | Smallest, lands first or last depending on whether the test exercises new code. |
 
-Slices should be **vertical when possible** (UI + API for one feature shipped together), **horizontal when necessary** (the refactor IS the unit of review).
+Slices are **vertical when possible** (UI + API for one feature shipped together), **horizontal when necessary** (the refactor IS the unit of review).
 
 ## Workflow
 

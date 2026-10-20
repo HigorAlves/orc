@@ -1,6 +1,6 @@
 ---
 name: orc-debug-investigator
-description: Investigator role — long-running root-cause investigation for hard bugs and unexpected behavior. Use when a bug needs disciplined isolation — reproduction, hypothesis, instrumentation, regression-testing — before any fix is attempted. Maintains an isolated context and returns a written diagnosis the implementing engineer can act on; the dispatching command persists it.
+description: "Investigator role — root-cause investigation for hard bugs: reproduce, minimise, hypothesise, instrument, locate the line. Returns a written diagnosis and a regression-test recommendation; never fixes. Dispatched by /orc:debug and /orc:incident."
 tools: Read, Glob, Grep, Bash(git log:*), Bash(git blame:*), Bash(git diff:*), Bash(graphify:*)
 model: opus
 effort: high

@@ -1,6 +1,7 @@
 ---
 name: postgresql-optimization
-description: 'Write or review PostgreSQL-specific SQL: JSONB, arrays, custom/range/geometric types, indexing, full-text search, window functions, extensions, and RLS. Use for PG-unique features and code review.'
+description: "Write or review PostgreSQL-specific SQL: JSONB, arrays, custom/range/geometric types, indexing, full-text search, window functions, extensions, and RLS"
+when_to_use: Use for PG-unique features and code review.
 ---
 
 # PostgreSQL Development & Review Assistant
@@ -9,7 +10,7 @@ Expert PostgreSQL guidance for ${selection} (or the entire project if no selecti
 
 ## When to use
 
-Reach for this skill whenever you are writing, optimizing, or reviewing PostgreSQL-specific SQL and want to leverage what makes PostgreSQL special rather than treating it as a generic SQL database:
+Reach for this skill whenever you are writing, optimizing, or reviewing PostgreSQL-specific SQL and want to use what makes PostgreSQL special rather than treating it as a generic SQL database:
 
 - Modeling or querying **JSONB**, **arrays**, or **custom/range/geometric types**.
 - Designing **indexes** or diagnosing slow queries (EXPLAIN ANALYZE, `pg_stat_statements`).
@@ -46,4 +47,4 @@ Reach for this skill whenever you are writing, optimizing, or reviewing PostgreS
 | Extensions & maintenance | Common extensions, monitoring queries, VACUUM/ANALYZE, tuning tips | `references/extensions.md` |
 | Review checklist | Anti-patterns, schema smells, function/trigger review, RLS & privileges, code-quality checklist | `references/review-checklist.md` |
 
-Focus on specific, actionable optimizations that improve query performance, security, and maintainability while leveraging PostgreSQL's advanced features. For schema design specifically, see the `postgresql-table-design` skill.
+Focus on specific, actionable optimizations that improve query performance, security, and maintainability while using PostgreSQL's advanced features. For schema design specifically, see the `postgresql-table-design` skill.
