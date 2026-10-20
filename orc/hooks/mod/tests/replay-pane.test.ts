@@ -89,7 +89,7 @@ test('an errored call records nothing', async ($, on) => {
   expect(replay()).toBeUndefined()
 })
 
-test('replay: false records nothing and reads no file', { options: { replay: false } }, async ($, on) => {
+test('replay: false records nothing and reads no file', { options: { replay: false, sentinel: 'off' } }, async ($, on) => {
   world(on)
   await $.command.run(RUN())
   order.length = 0

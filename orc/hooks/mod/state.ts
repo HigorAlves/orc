@@ -56,3 +56,9 @@ export const askBox: { open: boolean } = { open: false }
 // the cached candidates, the last assistant answer (context for the check), and the write chain.
 export const retroBox: { dir: string | null; file: CandidateFile | null; prev: string; chain: Promise<unknown> } =
   { dir: null, file: null, prev: '', chain: Promise.resolve() }
+
+// The sentinel's card, module scope: model-free checks fill `check`, the Haiku review fills `model`, the row shows
+// `check ?? model`. `learn` is the expanded text of the card with that id; `steps` counts an orc agent's requests.
+export type SentinelCard = { id: string; text: string; slice: string }
+export const sentinelBox: { check: SentinelCard | null; model: SentinelCard | null; learn: { id: string; text: string } | null; inflight: boolean; steps: Map<string, number>; history: { command: string; ok: boolean }[] } =
+  { check: null, model: null, learn: null, inflight: false, steps: new Map(), history: [] }

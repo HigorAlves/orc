@@ -18,7 +18,8 @@ export function sentinelPrompt(slice: SentinelSlice, diff: string): string {
 
 export function parseSentinel(raw: string): SentinelVerdict | null {
   let v: unknown
-  try { v = JSON.parse(raw.trim()) } catch { return null }
+  // Models often fence JSON even when told not to.
+  try { v = JSON.parse(raw.trim().replace(/^```[a-z]*\s*|\s*```$/gi, '')) } catch { return null }
   if (typeof v !== 'object' || v === null || Array.isArray(v)) return null
   const o = v as Record<string, unknown>
   if (!('headsUp' in o) || !('kind' in o)) return null

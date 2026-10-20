@@ -15,7 +15,7 @@ import { guardText } from './guard/text'
 import { isRich } from './draw/surface'
 import { LEASE_MS, POLL_MS, SETTLED_MS, alertFor, mayPoll, signature, statusLine, summarizeChecks, type CiRecord } from './ci'
 import {
-  EMPTY, contextChipSvg, currentSlice, cutDiff, diffSlice, digestOf, hintWithContext, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, plumbingLine, policyOf, profileOf, spinnerSuffix, summaryText, type SectionId, type Snapshot,
+  EMPTY, contextChipSvg, currentSlice, isDone, cutDiff, diffSlice, digestOf, hintWithContext, parseDecisions, parseMeter, parseReport, parseSession, parseSize, parseSlices, parseUsage, plumbingLine, policyOf, profileOf, spinnerSuffix, summaryText, type SectionId, type Snapshot,
 } from './cockpit'
 import { parseFeatures, type Features } from './config'
 import { gateBadge } from './gates'
@@ -39,9 +39,14 @@ import { HAIKU, RETRO_SYSTEM, parseRetro, retroPrompt, rulesSection, savedRules 
 import { mergeCandidate, renderRules, spliceRules, type CandidateFile } from './retro/store'
 import { retroSvg } from './retro/svg'
 import { retroAlt, retroButtons, retroText, type RetroActions } from './retro/text'
+import { budgetCreep, outsideSlice, repeatedFailure, type SentinelNote } from './sentinel/checks'
+import { DIFF_CAP, parseSentinel, sentinelPrompt, type SentinelSlice } from './sentinel/prompt'
+import { sentinelAlt, sentinelSvg } from './sentinel/svg'
+import { sentinelText, type SentinelActions } from './sentinel/text'
 import { replayText } from './replay/text'
 import { replayAlt, replaySvg } from './replay/svg'
-import { DETAILS_INITIAL, LIVE_INITIAL, RADIUS_INITIAL, SECTIONS_INITIAL, ciBox, askBox, guardBox, isOrcStateWrite, latestReplayView, retroBox, stepReplay, warmBox } from './state'
+import type { SentinelCard } from './state'
+import { DETAILS_INITIAL, LIVE_INITIAL, RADIUS_INITIAL, SECTIONS_INITIAL, ciBox, askBox, guardBox, isOrcStateWrite, latestReplayView, retroBox, sentinelBox, stepReplay, warmBox } from './state'
 
 // State refs: literals in this file, as the engine's scan requires.
 const SNAPSHOT_REF = { plugin: 'orc', key: 'snapshot' } as const
@@ -63,7 +68,7 @@ export function register(on: On, options: PluginOptions) {
   register_session(on, features)
   register_attribution(on)
   register_compaction(on)
-  register_agents(on, parseProfile(options.model_profile))
+  register_agents(on, parseProfile(options.model_profile), features)
   register_step_tool(on)
   register_touched(on, features)
   register_replay_close(on)
@@ -104,6 +109,8 @@ function register_session(on: On, features: Features) {
     gitFacts = null
     retroBox.dir = null
     retroBox.file = null
+    Object.assign(sentinelBox, { check: null, model: null, learn: null, inflight: false, history: [] })
+    sentinelBox.steps.clear()
     // The step tool: orc subagents label their TDD steps for the progress view.
     try {
       await $.tool.register({ name: 'step', description: STEP_DESC, inputSchema: STEP_SCHEMA })
@@ -180,6 +187,7 @@ function register_refresh(on: On, features: Features) {
 }
 
 async function after_bash($: EngineInterface, command: string, result: unknown) {
+  if (TEST_RUN.test(command)) sentinelBox.history = [...sentinelBox.history, { command: command.trim(), ok: !failed(result) }].slice(-5)
   if (isOrcStateWrite(command)) await refresh($).catch(() => undefined)
   if (GIT_COMMIT.test(command) && !failed(result)) await commit_touched($)
   return result
@@ -217,7 +225,7 @@ async function guard_measure($: EngineInterface, command: string): Promise<{ sum
 // routing is re-tuned from.
 const agentTypes = new Map<string, string>()
 
-function register_agents(on: On, profile: Profile) {
+function register_agents(on: On, profile: Profile, features: Features) {
   // Both hooks gate the engine (a dispatch, a turn's end): orc's bookkeeping
   // never fails them, so every state call here is guarded.
   on('agent.spawn', async ($, e, next) => {
@@ -239,6 +247,7 @@ function register_agents(on: On, profile: Profile) {
     if (!e.agentId) {
       retroBox.prev = String(e.answer ?? '')
       await refresh($).catch(() => undefined)
+      await sentinel_check($, features)
       // Finished agent rows showed once; the next main-loop completion clears them.
       const cur = await $.state.get(LEDGER_REF).then(r => r.value ?? LEDGER_INITIAL, () => LEDGER_INITIAL)
       const kept = Object.keys(cur.agents).filter(id => !agentTypes.has(id)).reduce(dropAgent, cur)
@@ -372,6 +381,7 @@ function register_touched(on: On, features: Features) {
     const call = e as { file_path?: string; notebook_path?: string }
     await touch_files($, [call.file_path ?? call.notebook_path ?? ''].filter(Boolean), 'edit')
     if (features.replay) await record_edit($, e, before)
+    await sentinel_check($, features)
     return result
   })
 }
@@ -466,7 +476,7 @@ function register_replay_close(on: On) {
 
 // The only turn.step hook: every model request's usage lands in the ledger
 // (main loop, or the subagent named by agentId). Later slices extend the body.
-function register_steps(on: On, _features: Features) {
+function register_steps(on: On, features: Features) {
   on('turn.step', async function* ($, e, next) {
     const startedAt = await $.clock.now().catch(() => 0)
     const result = yield* next(e)
@@ -476,6 +486,7 @@ function register_steps(on: On, _features: Features) {
       // A request that re-wrote the cache starts the clock over (the ping clock too).
       if (!e.agentId && result?.usage && isColdRewrite(cur.main.lastContext, result.usage)) warmBox.pingedAt = null
       await $.state.set(LEDGER_REF, recordStep(cur, { agentId: e.agentId ?? null, usage: result?.usage ?? null, at, ms: at - startedAt }))
+      if (e.agentId) sentinel_step($, features, e.agentId)
     } catch { /* bookkeeping never fails a request */ }
     return result
   })
@@ -715,6 +726,110 @@ function retro_row(features: Features): BandRow | null {
   return top ? { kind: 'retro', id: top.id, rule: top.rule, seen: top.seen } : null
 }
 
+// --- Gate sentinel -----------------------------------------------------------------
+// Phase 5 only. Model-free checks (files outside the slice, budget pace, a test command failing 3x) run on every
+// main turn.complete and after every Edit/Write; with sentinel: model a Haiku review also runs every
+// `sentinel_every` requests of an orc agent, one at a time. Dismissed ids are remembered per branch in $.store.
+const TEST_RUN = /\b(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?test\b|\bpytest\b|\bvitest\b|\bjest\b|\bcargo\s+test\b|\bgo\s+test\b|\bplugin\s+test\b/
+const sentinelOn = (features: Features) => features.sentinel !== 'off' && !companions.youShouldKnow
+const dismissedKey = (branch: string) => 'sentinel:dismissed:' + branch
+const sentinel_card = (id: string) => (sentinelBox.check?.id === id ? sentinelBox.check : sentinelBox.model?.id === id ? sentinelBox.model : null)
+
+function sentinel_row(features: Features): BandRow | null {
+  const card = sentinelOn(features) ? sentinelBox.check ?? sentinelBox.model : null
+  return card ? { kind: 'sentinel', id: card.id, text: card.text } : null
+}
+
+// The current slice as the plan wrote it (touchpoints, acceptance), from <state root>/<branch>/files/slices.json.
+async function sentinel_plan($: EngineInterface, branch: string, id: string, title: string): Promise<SentinelSlice> {
+  const env = await $.env.get('ORC_STATE_DIR').catch(() => undefined)
+  const root = env || ((await git_facts($)).root || '.') + '/.orc'
+  try {
+    const json = JSON.parse(await $.fs.read(`${root}/${branch}/files/slices.json`) as string) as { slices?: { id: number | string; title?: string; touchpoints?: string[]; acceptance?: string[] }[] }
+    const hit = json.slices?.find(x => String(x.id) === id)
+    if (hit) return { id, title: hit.title ?? title, touchpoints: hit.touchpoints ?? [], acceptance: hit.acceptance ?? [] }
+  } catch { /* no plan file: the checks that need it stay quiet */ }
+  return { id, title, touchpoints: [], acceptance: [] }
+}
+
+async function sentinel_dismissed($: EngineInterface, branch: string): Promise<string[]> {
+  const v = await $.store.get(dismissedKey(branch)).catch(() => undefined)
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
+}
+
+async function sentinel_check($: EngineInterface, features: Features): Promise<void> {
+  if (!sentinelOn(features)) return
+  try {
+    const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
+    const slice = snap.session && snap.session.phase === 5 ? currentSlice(snap.slices) : null
+    let card: SentinelCard | null = null
+    if (snap.session && slice) {
+      const plan = await sentinel_plan($, snap.session.branch, slice.id, slice.title)
+      const t = (await $.state.get(TOUCHED_REF)).value ?? TOUCHED_INITIAL
+      const done = snap.slices.filter(isDone).length
+      const notes: (SentinelNote | null)[] = [
+        repeatedFailure(sentinelBox.history),
+        plan.touchpoints.length && t.sliceId === slice.id ? outsideSlice(t.files, plan.touchpoints) : null,
+        snap.size ? budgetCreep({ loc: snap.size.loc, budget: snap.size.budget, done, total: snap.slices.length }) : null,
+      ]
+      const dismissed = await sentinel_dismissed($, snap.session.branch)
+      const hit = notes.find(n => n && !dismissed.includes(n.id))
+      card = hit ? { ...hit, slice: slice.id } : null
+    }
+    const changed = sentinelBox.check?.id !== card?.id || (!card && !!sentinelBox.model)
+    sentinelBox.check = card
+    if (!slice) sentinelBox.model = null
+    if (changed) $.ui.invalidate('ui.render')
+  } catch { /* a watcher never fails the turn */ }
+}
+
+// Called from the one turn.step hook: count an orc agent's requests, review on every Nth (never two at once).
+function sentinel_step($: EngineInterface, features: Features, agentId: string): void {
+  if (features.sentinel !== 'model' || !sentinelOn(features) || !agentTypes.has(agentId)) return
+  const n = (sentinelBox.steps.get(agentId) ?? 0) + 1
+  sentinelBox.steps.set(agentId, n)
+  if (n % features.sentinelEvery !== 0 || sentinelBox.inflight) return
+  sentinelBox.inflight = true
+  $.clock.after(0, () => { void sentinel_review($).catch(() => undefined).finally(() => { sentinelBox.inflight = false }) })
+}
+
+async function sentinel_review($: EngineInterface): Promise<void> {
+  const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
+  const slice = snap.session && snap.session.phase === 5 ? currentSlice(snap.slices) : null
+  if (!snap.session || !slice) return
+  const plan = await sentinel_plan($, snap.session.branch, slice.id, slice.title)
+  const g = await git_facts($)
+  const diff = await $.process.run(['git', ...(g.root ? ['-C', g.root] : []), 'diff', '-U0', '--no-color', 'HEAD'], { timeoutMs: 10000 }).then(r => (r.exitCode === 0 ? r.stdout : ''), () => '')
+  if (!diff.trim()) return
+  const r = await $.model.complete({ model: HAIKU, maxTokens: 400, timeoutMs: 20_000, prompt: sentinelPrompt(plan, diff.slice(0, DIFF_CAP)) })
+  const v = r.isAnswered ? parseSentinel(r.text) : null
+  if (!v?.headsUp) return
+  const id = 'model:' + v.kind + ':' + v.headsUp.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 60)
+  if ((await sentinel_dismissed($, snap.session.branch)).includes(id)) return
+  sentinelBox.model = { id, text: v.headsUp, slice: slice.id }
+  $.ui.invalidate('ui.render')
+}
+
+async function sentinel_learn($: EngineInterface, id: string): Promise<void> {
+  const card = sentinel_card(id)
+  if (!card) return
+  const r = await $.model.complete({ model: HAIKU, maxTokens: 250, timeoutMs: 20_000,
+    prompt: `A reviewer raised this heads-up about slice ${card.slice} of the current change:\n"${card.text}"\nIn at most 120 words, explain what it means and how to check it. Plain text, no preamble.` })
+  if (!r.isAnswered) return
+  sentinelBox.learn = { id, text: r.text.trim().split(/\s+/).slice(0, 120).join(' ') }
+  $.ui.invalidate('ui.render')
+}
+
+async function sentinel_dismiss($: EngineInterface, id: string): Promise<void> {
+  const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
+  const branch = snap.session?.branch
+  if (branch) await $.store.set(dismissedKey(branch), [...new Set([...(await sentinel_dismissed($, branch)), id])]).catch(() => undefined)
+  if (sentinelBox.check?.id === id) sentinelBox.check = null
+  if (sentinelBox.model?.id === id) sentinelBox.model = null
+  if (sentinelBox.learn?.id === id) sentinelBox.learn = null
+  $.ui.invalidate('ui.render')
+}
+
 // Saved rules join the system prompt as one session section (after any shared ones), capped at 2,000 chars.
 function register_compose(on: On, features: Features) {
   on('prompt.compose', async ($, e, next) => {
@@ -863,8 +978,7 @@ function register_band(on: On, features: Features) {
     const guard: BandRow | null = guardBox.current ? { kind: 'guard', summary: guardBox.current.summary.headline, detail: guardBox.current.summary } : null
     const retro = retro_row(features)
     const cache = await cache_row($, features, !e.props.isWorking)
-    // the sentinel row joins here in slice 21
-    const row = pickBand([ci, guard, retro, cache, progress])
+    const row = pickBand([ci, guard, sentinel_row(features), retro, cache, progress])
     if (!row) return next(e)
     const below = await next(e)
     const els = $.ui.resolve(e)
@@ -914,6 +1028,26 @@ function draw_band_row($: EngineInterface, e: { surface: RenderSurface | null; p
       ] })
     }
     return cacheText(els, row, warm)
+  }
+  if (row.kind === 'sentinel') {
+    const note = { id: row.id, text: row.text }
+    const expanded = sentinelBox.learn?.id === row.id ? sentinelBox.learn.text : null
+    const actions: SentinelActions = {
+      learn: () => { void sentinel_learn($, row.id).catch(() => undefined) },
+      chat: () => { $.prompt.fill({ text: `Sentinel note on slice ${sentinel_card(row.id)?.slice ?? '?'}: ${row.text} — please check.` }).catch(() => undefined) },
+      dismiss: () => { void sentinel_dismiss($, row.id).catch(() => undefined) },
+    }
+    const source = isRich(e.surface) && 'Svg' in els ? sentinelSvg(note, e.props.bodyColumns) : null
+    if (!source || !('Svg' in els)) return sentinelText(els, note, actions, expanded)
+    return els.Box({ flexDirection: 'column', children: [
+      els.Box({ flexDirection: 'row', columnGap: 2, children: [
+        els.Svg({ source, alt: sentinelAlt(note), height: 28 }),
+        els.Button({ key: 'sentinel-learn', label: 'Learn more', onPress: actions.learn }),
+        els.Button({ key: 'sentinel-chat', label: 'Chat in main session', onPress: actions.chat }),
+        els.Button({ key: 'sentinel-dismiss', label: 'Dismiss', hotkey: '0', onPress: actions.dismiss }),
+      ] }),
+      ...(expanded ? [els.Text({ dimColor: true, children: [expanded] })] : []),
+    ] })
   }
   if (row.kind === 'retro') {
     const actions: RetroActions = {
