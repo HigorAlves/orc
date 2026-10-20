@@ -27,29 +27,52 @@ allowed-tools:
 
 # /orc:cleanup
 
-Close the loop on finished orc work — remove the workspace state, the worktree, and (if safe) the local feature branch.
+Close the loop on finished orc work: remove the workspace state, the worktree and, when safe, the local feature branch.
 
 ## Arguments
 
-- `--auto[=guided|full]` — autopilot level for this run (overrides `interaction_policy`); ladder and hard-outward exemption in `orc:gates` §6.
+- `--auto[=guided|full]` — autopilot level for this run; overrides `interaction_policy`. Ladder and hard-outward exemption: `orc:gates` §6.
+- `<session-id-or-branch>` — optional. Clean exactly one session, by `sessionId` (`orc-state sessions`, schema `orc:state-protocol`) or branch name, sanitized or raw.
+- `--all-completed` — clean every session whose `status` is `completed` or `abandoned`. Every safety check still applies per session.
+- `--dry-run` — print what would happen; change nothing. Recommended for the first run.
+- `--per-repo` — workspace mode: clean each linked repo as its PR merges. Use only when abandoning some repos (rare).
+- `--down-volumes` — also remove a torn-down environment's named volumes. Default keeps them: the next boot reuses DB data.
 
-- `<session-id-or-branch>` — optional. Clean up exactly one session. Accepts the `sessionId` from `.orc/orc.json` (list via `orc-state sessions`; schema per `orc:state-protocol`) or a (sanitized or raw) branch name.
+NOTE: at `guided` or `full`, the standard plan (state dir, clean worktree, merged branch) auto-applies after printing. Anomalies still gate at every level: partial workspace merges, unmerged branches, a dirty worktree.
 
-Autopilot: at `guided`/`full`, the standard cleanup plan (state dir, clean worktree, merged branch) auto-applies after printing it; anything anomalous — partial workspace merges, unmerged branches, a dirty worktree — still gates at every level.
-- `--all-completed` — clean up every session whose `status` in `.orc/orc.json` is `completed` or `abandoned`. Respects all the safety checks below per session.
-- `--dry-run` — print what *would* happen but make no changes. Recommended for the first run.
-- `--per-repo` — workspace mode: clean each linked repo independently as its PR merges, instead of waiting for all to merge. Use only when you intend to abandon some repos (rare).
-- `--down-volumes` — when tearing down a session's Docker environment, also remove its named volumes (default keeps them: the next boot on that branch reuses DB data).
+## Preconditions
 
-## Workflow
+> **🛑 Destructive run**
+>
+> P6 removes state directories, worktrees and local branches. The P5 preview gate is mandatory; `--dry-run` never applies.
+
+- Running from inside a candidate worktree stops the run in P1: `cd` to the main repo first.
+- In workspace mode, an open linked PR refuses the run unless `--per-repo` or the session is `abandoned`.
+- Typical moments: a shipped PR merged; `/orc:status` shows stale `completed` sessions; an abandoned feature (mark the session `abandoned` first).
+
+## Phases
+
+Modules live in `orc:phases` (`references/cleanup/`). Entering a phase, Read exactly its module.
+
+| Phase | Module | Skipped when |
+|---|---|---|
+| 0 Detect context | resident, below | never |
+| 1 Guard: not inside a candidate | `orc:cleanup/P1` | never |
+| 2 Read the registry | `orc:cleanup/P2` | never |
+| 3 Build the candidate list | `orc:cleanup/P3` | never |
+| 4 Inspect each candidate | `orc:cleanup/P4` | never |
+| 5 Preview the plan, then confirm | `orc:cleanup/P5` | never; `--dry-run` stops here |
+| 6 Apply with safety gates | `orc:cleanup/P6` | `--dry-run`, Cancel |
+| 7 Report | `orc:cleanup/P7` | `--dry-run` |
 
 ### Phase 0 — Detect context
 
 !`orc-workspace-detect --banner`
 
-Context is injected above (`ORC_*` vars are exported for any Bash you run — do not re-run detection).
-
-In workspace mode, the registry to read in Phase 2 is `${ORC_STATE_DIR}/orc.json` (workspace-level). Workspace sessions have `scope: "workspace"` and a `repos` array. For each candidate workspace session, fetch PR merge status for every URL in `linkedPRs`:
+1. Read the banner above; it exports `ORC_*` vars. Do not re-run detection.
+2. In workspace mode, note the registry for P2: `${ORC_STATE_DIR}/orc.json`.
+3. In workspace mode, before P4, fetch the merge state of each candidate's linked PRs.
+4. If any linked PR is not `MERGED`, refuse and list the open PRs.
 
 ```bash
 for url in $(jq -r '.sessions[] | select(.sessionId == "'$ID'") | .linkedPRs[].url' "$ORC_STATE_DIR/orc.json"); do
@@ -57,219 +80,22 @@ for url in $(jq -r '.sessions[] | select(.sessionId == "'$ID'") | .linkedPRs[].u
 done
 ```
 
-If **any** linked PR is not `MERGED`, **default behavior is to refuse** with a summary of which PRs are still open. The user must either: (a) wait, (b) pass `--per-repo` to clean only the merged ones, or (c) explicitly mark the session `abandoned` first to bypass the merge check.
+NOTE: workspace sessions carry `scope: "workspace"` and a `repos` array. After a refusal the user either waits, passes `--per-repo` to clean only the merged repos, or marks the session `abandoned` to bypass the merge check.
 
-### Phase 1 — Refuse to run from inside a soon-to-be-deleted worktree
+## Iron rules
 
-```bash
-current_path=$(pwd)
-current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-```
-
-If a session about to be cleaned up matches the current worktree path or current branch, abort with a clear message: "You're inside the worktree this command would remove. `cd` to the main repo first."
-
-### Phase 2 — Read the registry
-
-Read `.orc/orc.json`. If absent or empty, surface and stop. If a specific session was requested but not found, surface and stop (don't silently no-op).
-
-### Phase 3 — Build the candidate list
-
-If `<session-id-or-branch>` was given: 1 candidate. If `--all-completed`: every session with `status` in `{completed, abandoned}`. Otherwise: render all sessions and prompt via `AskUserQuestion`:
-
-```
-1. plan       feat-142-notifs        completed   2 days ago
-2. debug      fix-cache-stale        completed   yesterday
-3. fan-out    refactor-billing       in_progress 1 hour ago
-```
-
-Filter to candidates the user picks. **Default-exclude `in_progress` sessions** unless the user explicitly opts to abandon one — surface a separate confirmation for each.
-
-### Phase 4 — Inspect each candidate
-
-For each candidate session, gather:
-
-```bash
-# Worktree path (if any)
-git worktree list --porcelain | awk '/^worktree /{wt=$2} /^branch /{print wt, $2}'
-# Branch merged into main?
-git branch --merged main | grep -E "^[* ] $branch_name$"
-# Worktree has uncommitted changes?
-( cd "$worktree_path" 2>/dev/null && git status --porcelain | wc -l )
-# Branch has unpushed commits?
-git log "origin/$branch_name..$branch_name" --oneline 2>/dev/null | wc -l
-```
-
-Also read `<state-dir>/<branch>/files/docker-env-state.json` when present — the session may have a live Docker environment (`orc-docker-env teardown-preview <state-file>` gives the preview lines). Run the orphan sweep once per cleanup: `orc-docker-env orphans <known-projects...>` where known projects come from every candidate's state file.
-
-Build a per-session summary:
-
-```
-Session: <session-id>
-Branch: <branch>
-Workspace: .orc/<sanitized-branch>/  (size: <N> files)
-Worktree:  <path or "none">           (dirty: <yes|no>)
-Docker env: <project or "none">       (live: <yes|no>, volumes: <list>)
-Branch merged into main? <yes|no>
-Unpushed commits? <count>
-```
-
-**Stack-aware enrichment.** If `linkedPRs[]` contains any entry with `stackId != null`, group by `stackId` and fetch each PR's merge state:
-
-```bash
-# Per stack: ordered list of {position, url, branch, state}
-jq -r --arg sid "$SESSION_ID" '
-  .sessions[] | select(.sessionId == $sid) | .linkedPRs
-  | map(select(.stackId != null))
-  | group_by(.stackId)
-  | map({
-      stackId: .[0].stackId,
-      members: sort_by(.stackPosition)
-    })
-' "$ORC_STATE_DIR/orc.json"
-
-# For each member, fetch merge state via gh pr view (state).
-```
-
-For each stack member, derive a per-branch deletion gate:
-
-- **Position 1 (root)**: deletable iff its own PR is `MERGED` (same as the existing rule).
-- **Position N > 1**: deletable iff its own PR is `MERGED` **AND** the position N-1 PR is also `MERGED`. The child branch's history rests on the parent branch; deleting the parent's local branch before the parent merges leaves the child orphaned. Deleting the child first when the parent is unmerged is fine — but deleting the parent first is not.
-
-Practically: enforce **bottom-up branch deletion** within each stack. Any stack member whose parent is still open is **kept** with a "waiting on parent #N" note in the preview, even if the child itself merged.
-
-### Phase 5 — Render the cleanup plan + confirm
-
-Open with the danger callout, then list exactly what will be done in a fence (the ✓/⚠/⊘ plan lines stay in the fence — alignment matters):
-
-```markdown
-> **🛑 Destructive preview**
->
-> The plan below removes workspace state, worktrees, and branches. Skipped items (⚠/⊘) stay untouched.
-```
-
-```
-Will clean up:
-
-[feat-142-notifs]
-  ✓ docker compose -p orc-myapp-feat-142-notifs down   (volumes kept — --down-volumes to remove)
-  ✓ rm -rf .orc/feat-142-notifs/
-  ✓ remove from .orc/orc.json
-  ✓ git worktree remove ../wt-feat-142-notifs   (clean)
-  ✓ git branch -d feat-142-notifs                (merged into main)
-
-[fix-cache-stale]
-  ✓ rm -rf .orc/fix-cache-stale/
-  ✓ remove from .orc/orc.json
-  ⚠ worktree at ../wt-fix-cache-stale has 3 uncommitted files — SKIP worktree removal
-  ⚠ branch fix-cache-stale not merged into main — SKIP branch deletion
-```
-
-**Stack-aware preview block** (rendered when a session has stack members):
-
-```
-[feat-export]   stack <stackId> (3 PRs, bottom-up)
-  ✓ 01 api#311  MERGED  → branch feat/export/01-... deletable
-  ✓ 02 api#312  MERGED  → branch feat/export/02-... deletable (parent merged)
-  ⊘ 03 ui#447   OPEN    → keep until merge
-     · child branches stay (waiting for #447)
-```
-
-When a child shows as `MERGED` but its parent is still `OPEN` (rare, usually the result of a fold or out-of-order merge):
-
-```
-  ⚠ 03 ui#447   MERGED  → branch DEFERRED — parent #312 still OPEN
-     · pass --per-repo to delete the child branch out of order
-```
-
-**Orphaned environments block** (rendered when the orphan sweep found any):
-
-```
-Orphaned orc environments (no registered session):
-  ⚠ orc-zzz-old-branch   (2 containers running)
-     · not auto-removed — include in plan? (per-item choice in "Edit plan")
-```
-
-Show the full plan via `AskUserQuestion`:
-- "Proceed — apply the plan as shown"
-- "Edit plan — pick individual items to skip"
-- "Cancel"
-
-If `--dry-run`: print the plan and exit; never apply.
-
-### Phase 6 — Apply (with safety gates)
-
-For each session:
-
-0. **Docker environment** — BEFORE state removal (the state file holds the teardown command; delete it first and the environment is orphaned): execute the state file's `teardownCommand` (append `-v` only with `--down-volumes`); kill recorded `hostProcesses[]` PIDs after verifying via `ps` that the PID still runs the recorded command — a reused PID is surfaced, never killed. Then proceed.
-1. **Workspace state** — `rm -rf .orc/<sanitized-branch>/`. Update `.orc/orc.json` to remove the entry (use Read + Write to preserve the JSON).
-2. **Worktree** — `git worktree remove <path>` ONLY if clean. If dirty, skip and surface a `**⚠️ Skipped — dirty worktree**` callout. Never use `--force` automatically; require an explicit `--force-dirty` flag in a future iteration if needed.
-3. **Branch** — `git branch -d <branch>` ONLY if merged into main. If unmerged, skip and surface a `**⚠️ Skipped — unmerged branch**` callout. Never use `-D` automatically.
-4. **Worktree prune** — after removals: `git worktree prune` to clean up any stale references.
-
-For sessions with **stack members**, branch deletion (step 3) iterates the stack **bottom-up** and refuses to delete any branch whose parent (position N-1) is still `OPEN`:
-
-```bash
-# stack ordered by stackPosition asc (parents first)
-for member in "${stack_members[@]}"; do
-  parent_state=$([ "$pos" -eq 1 ] && echo "MERGED" || gh_state "$parent_url")
-  child_state=$(gh_state "$member_url")
-  if [ "$child_state" = "MERGED" ] && [ "$parent_state" = "MERGED" ]; then
-    git branch -d "$member_branch"
-  else
-    echo "Keep $member_branch — child=$child_state parent=$parent_state"
-  fi
-done
-```
-
-`--per-repo` is the escape hatch for the "child merged out of order" case — it bypasses the parent-merged check and deletes the child branch anyway. Use sparingly; only when you intend to abandon the unmerged parent.
-
-For workspace-mode sessions, repeat steps 1–4 **per repo** in `repos`:
-
-- For each repo `r`: `cd "$ORC_WORKSPACE_ROOT/$r"`, then `rm -rf .orc/<branch>/` (per-repo state, including the `workspace-link.json` back-pointer), `git worktree remove <perRepoState[$r].worktree>` (clean), `git branch -d <perRepoState[$r].branch>` (merged), `git worktree prune`.
-- Then clean the workspace-level state: `rm -rf $ORC_WORKSPACE_ROOT/.orc/<branch>/` and remove the session entry from `$ORC_STATE_DIR/orc.json`.
-- With `--per-repo`: only remove from repos whose PR is `MERGED`; leave others' state intact and update the workspace registry to reflect the partial cleanup (`perRepoState[$r]` removed, `repos` array trimmed).
-
-### Phase 7 — Report
-
-Echo a summary (plain fenced block — reports stay plain, no callout):
-
-```
-Cleaned up: 2 / 3 candidates
-
-✓ feat-142-notifs (workspace, worktree, branch)
-✓ fix-cache-stale (workspace only — worktree had uncommitted changes; branch unmerged)
-⊘ refactor-billing (skipped — still in_progress)
-
-Untouched worktrees:
-  ../wt-fix-cache-stale  (3 dirty files — review before deleting manually)
-
-Untouched branches:
-  fix-cache-stale  (not merged into main — review before `git branch -D <name>`)
-```
-
-## Safety rules (all non-negotiable)
-
-- **No `--force` on dirty worktrees.** A worktree with uncommitted changes contains user work. Skip and surface — never delete.
-- **No `git branch -D` (capital D).** Only `-d` (lowercase, refuses unmerged branches). The user must use `-D` manually if they really mean it.
-- **No deletion when running from inside a candidate.** Refuse and tell the user where to `cd` first.
-- **`.orc/orc.json` updates are atomic.** Read, modify in memory, Write the full file. Never partial.
-- **`--dry-run` always prints the plan and exits.** Even if the user confirms during the AskUserQuestion before realizing they meant `--dry-run`, treat the flag as a final gate.
-- **Stack child branches respect parent merge state.** A stack member at position N is only deletable if positions 1..N-1 are all `MERGED`. Bypassed only by `--per-repo` (with explicit consent).
-- **Never `docker compose down` a project not matching the `orc-` prefix.** Orphans are always previewed and individually opted into — never auto-removed.
-- **Named volumes survive by default.** Removal requires the explicit `--down-volumes` flag; DB data is user work.
-
-## When to invoke
-
-Most natural:
-
-- After `/orc:ship` opens a PR and the PR merges in GitHub.
-- When `/orc:status` shows multiple stale `completed` sessions cluttering the registry.
-- After abandoning a feature (mark the session `abandoned` in `.orc/orc.json` first, then run `/orc:cleanup --all-completed` includes abandoned).
+- Never pass `--force` to `git worktree remove`. A dirty worktree holds user work: skip it and say so.
+- Never run `git branch -D`. Only `-d`, which refuses unmerged branches. The user runs `-D` by hand.
+- Never delete while running from inside a candidate. Refuse and name where to `cd`.
+- `.orc/orc.json` updates are atomic: Read, modify in memory, Write the whole file. Never partial.
+- `--dry-run` always prints the plan and exits, even after a confirming answer in the gate.
+- A stack member at position N is deletable only when positions 1..N-1 are all `MERGED`. `--per-repo` bypasses, with consent.
+- Never `docker compose down` a project without the `orc-` prefix. Orphans appear in the preview; the user opts into each one.
+- Named volumes survive by default; only `--down-volumes` removes them. DB data is user work.
 
 ## Output
 
-- Updated `.orc/orc.json` (with cleaned entries removed)
-- Removed `.orc/<branch>/` directories
-- Removed worktrees (where safe)
-- Deleted local feature branches (where merged)
-- A summary echoed to the user with anything left undone and why
+- `.orc/orc.json` with the cleaned entries removed.
+- `.orc/<branch>/` directories removed.
+- Worktrees removed where clean; local branches deleted where merged.
+- A plain fenced summary (P7) with everything left undone and why.
