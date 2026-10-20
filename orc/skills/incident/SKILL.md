@@ -1,4 +1,5 @@
 ---
+name: incident
 description: "Live incident response — intake a Sentry issue, stack trace, or symptom; gate mitigate-first vs root-cause-first; keep a UTC timeline. Use when production is broken RIGHT NOW; for the after-action write-up alone, use /orc:postmortem."
 argument-hint: "[<sentry-issue-id-or-url> | <pasted stack trace> | <symptom>] [--severity sev-1|sev-2|sev-3]"
 allowed-tools:
@@ -43,7 +44,7 @@ NOTE: a Sentry short ID looks like `PROJ-123`; `orc:sentry-cli` pulls it live. A
 
 ## Phases
 
-Modules live in `orc:phases` (`references/incident/`). Entering a phase, Read exactly its module.
+Modules live beside this file under `references/` (ADR 0008 pilot). Entering a phase, Read exactly its module, per the `orc:phases` protocol.
 
 | Phase | Module | Skipped when |
 |---|---|---|

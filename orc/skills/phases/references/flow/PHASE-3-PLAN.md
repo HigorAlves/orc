@@ -1,6 +1,6 @@
+<!-- orc:flow/P3 -->
 # /orc:flow — Phase 3-PLAN
 
-<!-- orc:flow/P3 -->
 _Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
 
 

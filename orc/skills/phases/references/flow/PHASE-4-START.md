@@ -1,6 +1,6 @@
+<!-- orc:flow/P4 -->
 # /orc:flow — Phase 4-START
 
-<!-- orc:flow/P4 -->
 _Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
 
 

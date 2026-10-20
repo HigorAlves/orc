@@ -36,14 +36,14 @@
 </p>
 
 <p align="center">
-  <code>84 skills</code> &nbsp;·&nbsp; <code>32 commands</code> &nbsp;·&nbsp;
+  <code>87 skills</code> &nbsp;·&nbsp; <code>29 commands</code> &nbsp;·&nbsp;
   <code>14 agents</code> &nbsp;·&nbsp; <code>9 hooks</code> &nbsp;·&nbsp;
   <code>0 telemetry</code> &nbsp;·&nbsp; <code>MIT</code>
 </p>
 
 ---
 
-`orc` is a full-SDLC workflow plugin for Claude Code: **84 curated skills, 32 composite slash commands, 14 specialist subagents, and 10 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers, destructive git commands gated, a dependency pre-flight, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged", with the `orc-implementer` agent writing the code slice-by-slice in between — and the lifecycle no longer stops at PR-open: `/orc:ci`, `/orc:release`, `/orc:deps`, and `/orc:incident` cover what happens after.
+`orc` is a full-SDLC workflow plugin for Claude Code: **87 curated skills, 29 composite slash commands, 14 specialist subagents, and 10 hook scripts** that quietly enforce discipline (no commits to `main`, no AI-attribution trailers, destructive git commands gated, a dependency pre-flight, core rules injected at every session start). One umbrella command — **`/orc:flow`** — drives the full feature lifecycle from "I want to do X" to "PR merged", with the `orc-implementer` agent writing the code slice-by-slice in between — and the lifecycle no longer stops at PR-open: `/orc:ci`, `/orc:release`, `/orc:deps`, and `/orc:incident` cover what happens after.
 
 It exists for one reason: every time a senior developer sits down to work, they should already know how the next hour goes — write the plan, watch the test fail, fix the cause (not the symptom), verify with evidence, ship the PR. orc encodes that loop.
 
@@ -75,7 +75,7 @@ Or skip the per-phase invocations and use **`/orc:flow`** to drive the whole loo
 - **Sessions** — `/orc:resume`, `/orc:status`, `/orc:cleanup` — multi-phase work checkpoints to `.orc/` and survives interruption
 - **Close the loop** — `/orc:retro` turns a session's friction into environment changes: a navigation pointer, a lint rule, a coding standard, a log the agent could not see
 
-The full command table, the 14 agents behind it, and the 84-skill library live in [docs/commands.md](./docs/commands.md). Prefer learning by scenario? [docs/examples](./docs/examples/README.md) walks 19 real situations end-to-end.
+The full command table, the 14 agents behind it, and the 87-skill library live in [docs/commands.md](./docs/commands.md). Prefer learning by scenario? [docs/examples](./docs/examples/README.md) walks 19 real situations end-to-end.
 
 ## Install
 

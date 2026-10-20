@@ -1,6 +1,6 @@
+<!-- orc:flow/P2 -->
 # /orc:flow — Phase 2-RFC
 
-<!-- orc:flow/P2 -->
 _Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
 
 

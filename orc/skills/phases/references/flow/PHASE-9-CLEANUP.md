@@ -1,6 +1,6 @@
+<!-- orc:flow/P9 -->
 # /orc:flow — Phase 9-CLEANUP
 
-<!-- orc:flow/P9 -->
 _Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
 
 

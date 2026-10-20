@@ -1,4 +1,5 @@
 ---
+name: cleanup
 description: Clean up after completed or abandoned orc sessions — removes workspace state, registry entry, git worktree, and optionally the merged branch. Destructive; always previews and asks first. Workspace-aware.
 argument-hint: "[--auto[=guided|full]] [--dry-run] [--all-completed] [--per-repo] [--down-volumes] [<session-id-or-branch>]"
 disable-model-invocation: true
@@ -52,7 +53,7 @@ NOTE: at `guided` or `full`, the standard plan (state dir, clean worktree, merge
 
 ## Phases
 
-Modules live in `orc:phases` (`references/cleanup/`). Entering a phase, Read exactly its module.
+Modules live beside this file under `references/` (ADR 0008 pilot). Entering a phase, Read exactly its module, per the `orc:phases` protocol.
 
 | Phase | Module | Skipped when |
 |---|---|---|

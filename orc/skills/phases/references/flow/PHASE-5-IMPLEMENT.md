@@ -1,6 +1,6 @@
+<!-- orc:flow/P5 -->
 # /orc:flow — Phase 5-IMPLEMENT
 
-<!-- orc:flow/P5 -->
 _Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
 
 

@@ -1,6 +1,6 @@
+<!-- orc:flow/P6 -->
 # /orc:flow — Phase 6-QA
 
-<!-- orc:flow/P6 -->
 _Loaded on demand via orc:phases. Do not run this phase from memory — this file is the phase._
 
 
