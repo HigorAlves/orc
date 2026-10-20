@@ -11,6 +11,9 @@ export const REPLAY_INITIAL: ReplayState = { edits: [], view: { slice: 0, step: 
 
 export type EditInput = { sliceId: number; path: string; tool: string; old: string; new: string; at: number }
 
+// Slice 0 holds edits made with no slice in progress (QA fixes, or no orc session).
+export const sliceLabel = (id: number) => (id === 0 ? 'Outside slices' : `Slice ${id}`)
+
 export function recordEdit(state: ReplayState, e: EditInput): ReplayState {
   const { text: diff, add, del } = unifiedDiff(e.old, e.new, e.path)
   const next: ReplayEdit = { sliceId: e.sliceId, path: e.path, tool: e.tool, diff, add, del, at: e.at }

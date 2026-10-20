@@ -11,15 +11,15 @@ const closes: unknown[] = []
 const order: string[] = []
 const fills: unknown[] = []
 
-function world(on: On, opts: { phase?: number; old?: string | null; fail?: boolean } = {}) {
+function world(on: On, opts: { phase?: number; old?: string | null; fail?: boolean; slices?: string; noSession?: boolean } = {}) {
   writes.length = 0; opens.length = 0; closes.length = 0; order.length = 0; fills.length = 0
   on('process.run', ($, e) => {
     if (e.argv[0] === 'git') {
       if (e.argv.includes('--show-toplevel')) return ran('/w\n/w/.git\n')
       return ran('')
     }
-    if (e.argv[1] === 'get') return ran(session(opts.phase ?? 5))
-    if (e.argv[1] === 'slice') return ran(SLICES)
+    if (e.argv[1] === 'get') return opts.noSession ? ran('', 1) : ran(session(opts.phase ?? 5))
+    if (e.argv[1] === 'slice') return ran(opts.slices ?? SLICES)
     return ran('')
   })
   on('session.usage', () => ({ value: { startedAt: 0, context: { window: 200000 }, rateLimits: [] } }))
@@ -57,6 +57,23 @@ test('an Edit is recorded under the current slice, relative to the repo root', a
   const r = replay()
   expect(r.edits.length).toBe(1)
   expect(r.edits[0]).toMatchObject({ sliceId: 2, path: 'src/a.ts', tool: 'Edit', add: 1, del: 1 })
+})
+
+test('edits after every slice is committed are kept under slice 0 (outside slices)', async ($, on) => {
+  world(on, { phase: 6, slices: '1\tcommitted\ta\tabc\n2\tcommitted\tb\tdef\n' })
+  await $.command.run(RUN())
+  await edit($)
+  expect(replay().edits[0]).toMatchObject({ sliceId: 0, path: 'src/a.ts' })
+})
+
+test('edits with no orc session are kept under slice 0 and /orc replay opens', async ($, on) => {
+  world(on, { noSession: true })
+  await $.command.run(RUN())
+  await edit($)
+  expect(replay().edits[0]).toMatchObject({ sliceId: 0 })
+  opens.length = 0
+  await $.command.run(RUN('replay'))
+  expect(opens).toMatchObject([{ id: 'orc-replay' }])
 })
 
 test('a Write reads the old file BEFORE the write runs; a missing file diffs from empty', async ($, on) => {

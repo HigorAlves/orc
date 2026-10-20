@@ -1,6 +1,6 @@
 // Terminal drawing of one replay step: pure, takes the resolved element table.
 import type { Els } from '../pane'
-import type { ReplayViewModel } from './model'
+import { sliceLabel, type ReplayViewModel } from './model'
 
 export function replayText(els: Els, v: ReplayViewModel) {
   const { Box, Text } = els
@@ -12,7 +12,7 @@ export function replayText(els: Els, v: ReplayViewModel) {
   return Box({
     flexDirection: 'column',
     children: [
-      Text({ key: 'h', bold: true, children: `Slice ${v.sliceId} (${v.sliceIdx + 1}/${v.sliceCount}) · ${v.tool} ${v.path}` }),
+      Text({ key: 'h', bold: true, children: `${sliceLabel(v.sliceId)} (${v.sliceIdx + 1}/${v.sliceCount}) · ${v.tool} ${v.path}` }),
       Text({ key: 'p', dimColor: true, children: `${pills}  +${v.add} -${v.del}` }),
       body,
     ],

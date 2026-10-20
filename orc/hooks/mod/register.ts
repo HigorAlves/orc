@@ -441,8 +441,8 @@ async function record_edit($: EngineInterface, e: unknown, before: string | null
     if (!call.file_path) return
     const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
     const slice = snap.session ? currentSlice(snap.slices) : null
-    const sliceId = slice ? Number(slice.id) : NaN
-    if (!Number.isFinite(sliceId)) return
+    const id = slice ? Number(slice.id) : 0
+    const sliceId = Number.isFinite(id) ? id : 0
     const { root } = await git_facts($)
     const at = await $.clock.now()
     const cur = (await $.state.get(REPLAY_REF)).value ?? REPLAY_INITIAL

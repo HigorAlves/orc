@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 import { unifiedDiff } from '../replay/diff'
-import { REPLAY_INITIAL, recordEdit, replayView, type ReplayState } from '../replay/model'
+import { REPLAY_INITIAL, recordEdit, replayView, sliceLabel, type ReplayState } from '../replay/model'
 import { replayAlt, replaySvg } from '../replay/svg'
 import { replayText } from '../replay/text'
 import { SVG_MAX } from '../draw/svg'
@@ -121,4 +121,9 @@ test('M4 add/del count the whole change, not the capped text', () => {
   expect(d.del).toBe(300)
   const e = recordEdit(REPLAY_INITIAL, { sliceId: 1, path: 'p', tool: 'Write', old: lines(300, 'old-line-with-padding-'), new: lines(300, 'new-line-with-padding-'), at: 1 })
   expect([e.edits[0].add, e.edits[0].del]).toEqual([300, 300])
+})
+
+test('sliceLabel names slice 0 as outside slices', () => {
+  expect(sliceLabel(0)).toBe('Outside slices')
+  expect(sliceLabel(4)).toBe('Slice 4')
 })
