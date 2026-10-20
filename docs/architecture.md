@@ -61,17 +61,33 @@ Multi-phase commands pause at gates, and gates are classified: **hard-outward** 
 | Compaction keeps orc's place | `session.compact` (manual/auto) | the live `orc-state line` goes to the summarizer; the PreCompact bash hook checkpoints the same facts |
 | `/orc` cockpit | `command.run` + `ui.render` Pane | a dashboard drawn from `$.state` (no model turn): header strip (phase, slices, policy, model profile, context %, cost), bordered phase ladder beside the slice ledger (stacked under 72 columns), collapsible QA · PR · Agents · Decisions · Digest · Diff sections (`!` marks attention), `Select`s for autopilot and model profile (settled through `orc-state decision set`), `Link`s to PRs, the resume digest as `Markdown`, the current slice's diff as `Code`. Redraws itself when the model runs an `orc-state` write or a main-loop turn ends. Text summary where nothing draws (`claude -p`, VS Code). |
 | orc outside the pane | `ui.render` Spinner · PromptHint · SessionMode · ToolUse | the spinner suffix carries `orc flow 5/9 implement · implementer`, the idle prompt hint names the flow, a non-manual policy shows in the mode footer, and orc's own CLI rows (`orc-state`, `orc-pr-size`, `orc-report`, `gh pr checks`) collapse to one dim line |
-| Plugin contract | `types/index.d.ts` (`plugin.json` → `types`) | the `PluginState.orc` keys the mod keeps in `$.state`: `snapshot`, `sections`, `live`, `details`. The engine follows `$` only inside `register.ts`, so every hook and loader lives there; `cockpit.ts`, `pane.ts` and `state.ts` are pure |
+| Plugin contract | `types/index.d.ts` (`plugin.json` → `types`) | the `PluginState.orc` keys the mod keeps in `$.state` (`snapshot`, `sections`, `live`, `details`, `ledger`, `touched`, `radius`, `replay`) and the `$.orc` engine noun. The engine follows `$` only inside `register.ts`, so every hook and loader lives there; every other module is pure |
 | Model profiles | `agent.spawn` | `model_profile`: `balanced` (frontmatter), `quality` (investigator on `best` — Fable, else Opus; reviewers on Opus), `economy` (Opus-tier agents on Sonnet); an explicit per-dispatch model always wins |
 | Usage ledger | `agent.spawn` + `turn.complete` | every finished orc subagent run → `orc-state usage add` → `files/usage.jsonl`; the cockpit's Agents section and model re-tuning read it |
 | Gate badges | `ui.render` AskUserQuestion | outward (`Publish`/`Post`/`Tracker`) and `Escalation` header chips (`orc:gates`) get a badge above the engine's own dialog |
 | CI watcher | `$.clock.every` + `$.store` lease | interactive sessions poll linked PRs' checks (one poller per PR across sessions); red/green → status line, toast, optional chime (`alerts_sound`), a dim `/orc:ci <n>` suggestion, and a red-CI band above the prompt with Diagnose / Dismiss. It never pushes, posts, or starts a turn. |
+| Step ledger | `turn.step` (streaming) | every model request, main loop and subagent, adds tokens, cache reads/writes, context and time to `ledger`; it feeds the progress band, agent rows, the cache clock and the sentinel's cadence |
+| One band | `ui.render` AbovePrompt | orc shows at most one row of its own, by priority: CI red › guard › sentinel › retro › cache › progress. It always draws other mods' rows beneath its own, and yields to surveys |
+| Progress band + step tool | AbovePrompt · `tool.register` (`mcp__orc__step`) · `agent.spawn` | phase, slices, QA, PR, live agents and a `1`-key next command; `orc-implementer` briefs are told to report TDD steps through the tool |
+| Touched files | `tool.call` Read/Grep/Glob, Edit/Write/MultiEdit/NotebookEdit, Bash `git commit` | per-slice file activity; line counts refresh from `git diff --numstat <merge-base>` only when `.git/index` or `HEAD` changed |
+| Measured guard | `tool.call` Bash + `$.ui.notice` | for the shell floor's destructive-git set, read-only measurements run before the confirm and print under it; the mod never decides — the bash hook does |
+| Ship radius | cockpit section, `/orc radius` | `orc-pr-size` LOC vs budget and `graphify affected` dependents (counted only when graphify reports a match) |
+| Slice replay | Edit/Write observer, `/orc replay` pane | edits grouped by slice, LCS unified diffs, `Code format: diff` in the terminal and an SVG card elsewhere |
+| Cache clock + keep-warm | `turn.step` · `prompt.submit` · `$.model.fork` | countdown before `cache_ttl_minutes` runs out while orc waits; a cost toast after a cold send (warn only, never drops a prompt); opt-in `/orc keepwarm` pings that stop as soon as a ping finds the cache already gone |
+| Corrections → retro store | `prompt.submit` · `$.model.complete` (Haiku) · `prompt.compose` | composer prompts that look like corrections are checked off the hot path; candidates go to `<state root>/retro/candidates.json`, saved rules to the marker-fenced `retro/rules.md`, which `/orc:cleanup` never removes |
+| Sentinel | `turn.complete` · Edit/Write observer · `turn.step` · `$.model.complete` (Haiku) | phase 5 only: model-free checks (files outside the slice's touchpoints, LOC projection over budget, the same test failing 3×) plus a review every `sentinel_every` orc-agent steps |
+| QA thumbnails | cockpit QA section · `orc-report thumbs` | desktop: one `Svg` with embedded thumbnails; terminal: `Image` on kitty/Ghostty, colored-cell `Raster` elsewhere, paths as a last fallback |
+| Companions | `engine.create` | detects Skins, Filetree, Reflect, You Should Know and Terminal Browser; orc defers its corrections and sentinel when Reflect or You Should Know are on, and opens QA targets in Terminal Browser when present |
 
 The `/orc` cockpit, docked beside the transcript (Claude Code 2.1.291, 132 columns):
 
 ![orc cockpit — overview](images/orc-cockpit-overview.png)
 
 ![orc cockpit — PR, Decisions, Digest and Diff sections open](images/orc-cockpit-sections.png)
+
+### Two drawings per feature
+
+Every feature added in 0.26 is split the same way: a pure `<feature>/model.ts` turns state into a view model, `<feature>/text.ts` draws it as `Box`/`Text`, and `<feature>/svg.ts` draws it as one SVG string (shared kit in `draw/svg.ts`, palette in `draw/palette.ts`, with light and dark colors resolved by a media query inside the SVG). `register.ts` picks the drawing per render with `isRich(e.surface)`: the terminal gets text, every other surface gets SVG. Actions stay real `Button`s beside the SVG, so the Desktop app draws native buttons and the terminal draws `[ label ]`. Tests mount each feature on both surfaces.
 
 `/orc:status` remains the full markdown report. Tests: `claude plugin test orc` (`hooks/mod/tests/*.test.ts`, headless). `claude plugin validate ./orc` lists the events it hooks and every API call it makes.
 

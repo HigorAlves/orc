@@ -5,6 +5,7 @@
 import type {
   OrcAgentUsage, OrcCriterion, OrcDecision, OrcMeter, OrcQaReport, OrcSession, OrcSize, OrcSlice, OrcSnapshot,
 } from '../../types'
+import { doc, rect, ring } from './draw/svg'
 import type { Profile } from './profiles'
 
 export type Session = OrcSession
@@ -82,7 +83,7 @@ export function summaryText(snap: Snapshot): string {
 export function parseReport(json: string): QaReport | null {
   try {
     const r = JSON.parse(json)
-    return Array.isArray(r.acceptance) ? { verdict: String(r.verdict ?? ''), acceptance: r.acceptance, missing: r.missing ?? [] } : null
+    return Array.isArray(r.acceptance) ? { verdict: String(r.verdict ?? ''), acceptance: r.acceptance, missing: r.missing ?? [], url: typeof r.target?.baseUrl === 'string' ? r.target.baseUrl : null } : null
   } catch {
     return null
   }
@@ -152,7 +153,7 @@ export function headerCells(snap: Snapshot, profile: Profile): Cell[] {
 export const layoutFor = (placement: 'dock' | 'inline', bodyColumns: number): 'row' | 'column' =>
   bodyColumns >= 72 || (placement === 'dock' && bodyColumns >= 64) ? 'row' : 'column'
 
-export type SectionId = 'qa' | 'pr' | 'agents' | 'decisions' | 'digest' | 'diff'
+export type SectionId = 'qa' | 'pr' | 'agents' | 'decisions' | 'digest' | 'diff' | 'touched' | 'radius'
 
 // Which sections need a look: a failing QA verdict, an over-budget diff or red CI.
 export function attention(snap: Snapshot, ciRed: boolean): Set<SectionId> {
@@ -163,7 +164,7 @@ export function attention(snap: Snapshot, ciRed: boolean): Set<SectionId> {
 }
 
 export const sectionLabel = (id: SectionId, open: boolean, flagged: boolean) =>
-  `${open ? '▾' : '▸'} ${({ qa: 'QA', pr: 'PR', agents: 'Agents', decisions: 'Decisions', digest: 'Digest', diff: 'Diff' })[id]}${flagged ? ' !' : ''}`
+  `${open ? '▾' : '▸'} ${({ qa: 'QA', pr: 'PR', agents: 'Agents', decisions: 'Decisions', digest: 'Digest', diff: 'Diff', touched: 'Touched', radius: 'Radius' })[id]}${flagged ? ' !' : ''}`
 
 // The '## Resume digest' section of checkpoint.md, or null when there is none.
 export function digestOf(markdown: string): string | null {
@@ -189,6 +190,27 @@ export const phaseShort = (s: Session) =>
   `${s.command} ${s.phase === 'done' ? 'done' : `${s.phase}/${s.totalPhases}`}${s.phaseLabel && s.phase !== 'done' ? ' ' + s.phaseLabel : ''}`
 export const spinnerSuffix = (snap: Snapshot, agent: string | null) =>
   snap.session ? ` · orc ${phaseShort(snap.session)}${agent ? ' · ' + agent.replace(/^orc-/, '') : ''}` : ''
+const BARS = '▁▂▃▄▅▆▇█'
+// Each value as a bar, scaled to the context window.
+export const sparkline = (values: number[], window: number): string =>
+  values.map(v => BARS[Math.max(0, Math.min(7, Math.floor((v / Math.max(1, window)) * 8)))]).join('')
+
+// The idle hint: a context chip when the meter reads, else the plain flow hint.
+export function hintWithContext(snap: Snapshot, percent: number | null, trail: number[], window: number): string | null {
+  if (!snap.session) return null
+  if (percent == null) return hintFor(snap)
+  return `ctx ${percent}%${trail.length ? ' ' + sparkline(trail, window) : ''} · orc ${phaseShort(snap.session)} · /orc cockpit`
+}
+
+// The chip as a 72x18 drawing: a context ring and the trail's bars.
+export function contextChipSvg(percent: number, trail: number[], window: number): string {
+  const bars = trail.map((v, i) => {
+    const h = Math.max(2, Math.round(Math.min(1, v / Math.max(1, window)) * 16))
+    return rect({ x: 24 + i * 12, y: 17 - h, w: 9, h, r: 1, slot: percent >= 80 ? 'err' : percent >= 60 ? 'warn' : 'ok' })
+  }).join('')
+  return doc(72, 18, ring({ cx: 9, cy: 9, r: 6.5, value: percent / 100, slot: percent >= 80 ? 'err' : percent >= 60 ? 'warn' : 'ok' }) + bars)
+}
+
 export const hintFor = (snap: Snapshot) => (snap.session ? `orc ${phaseShort(snap.session)} · /orc cockpit · /orc:resume` : null)
 
 const PLUMBING = /^\s*(?:\S*\/)?(?:orc-state|orc-pr-size|orc-report|orc-docker-env|orc-workspace-detect)\b|^\s*gh pr checks\b/

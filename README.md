@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/images/second-icon.png" alt="orc" width="360" />
+  <img src=".github/images/orc-mark.svg" alt="orc" width="140" />
 </p>
 
 <h1 align="center">orc</h1>

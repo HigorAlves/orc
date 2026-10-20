@@ -1,7 +1,7 @@
 ---
 name: orc-implementer
 description: "Executor role — implements a slice list from a plan and failing tests: red-green-refactor, one commit per slice, suite green between. Default executor in /orc:flow Phase 5 and /orc:fan-out. Escalates on ambiguity, new dependencies, or three red attempts."
-tools: Read, Write, Edit, Glob, Grep, Bash(orc-state:*), Bash(git add:*), Bash(git commit:*), Bash(git diff:*), Bash(git status:*), Bash(git log:*), Bash(git branch:*), Bash(git switch:*), Bash(git restore:*), Bash(npm:*), Bash(pnpm:*), Bash(yarn:*), Bash(npx:*), Bash(go:*), Bash(cargo:*), Bash(pip:*), Bash(pytest:*), Bash(make:*), Bash(graphify:*)
+tools: Read, Write, Edit, Glob, Grep, mcp__orc__step, Bash(orc-state:*), Bash(git add:*), Bash(git commit:*), Bash(git diff:*), Bash(git status:*), Bash(git log:*), Bash(git branch:*), Bash(git switch:*), Bash(git restore:*), Bash(npm:*), Bash(pnpm:*), Bash(yarn:*), Bash(npx:*), Bash(go:*), Bash(cargo:*), Bash(pip:*), Bash(pytest:*), Bash(make:*), Bash(graphify:*)
 model: sonnet
 effort: medium
 color: blue
