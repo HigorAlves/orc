@@ -25,13 +25,16 @@ Write PR descriptions terse and exact. Reviewers don't need a tour of your diff 
 - ONLY include if the diff isn't obvious from a 30-second skim.
 - Bullets of structural changes. Don't restate file paths the reviewer will see anyway.
 - Drop "Refactored", "Cleaned up" — say what *behavior* changed.
+- When the *shape* is the point, one small visual beats bullets: a `diff`-sketch of a call tree, component tree, or file tree, pseudocode of the new control flow, or a short mermaid sequence. One visual, never a gallery.
 
 ### How tested (mandatory)
 - One or two lines. Command run + result. Or a link to QA artifacts.
 - Web change: link to `.orc/<branch>/files/qa/steps.md` (or wherever orc's QA evidence lives).
 - "Tests: 47 pass, 0 fail." beats "Wrote tests for the new branch and they all pass."
+- Evidence tiers: a screenshot or recording (S) when the change is visual and the environment allows it; execution output (A) — the exact test that failed before and passes now, command + result; prose on its own never counts.
 
 ### Notes (only if there's something real)
+- **Merge danger** — required for anything beyond a trivial fix, one line: `Door: one-way | two-way · Blast radius: <one or two words>`. Two-way doors revert cleanly; one-way doors (migrations, deletions, published API changes, anything a revert won't undo) say what makes them hard to walk back.
 - Breaking changes — call out, including the migration step.
 - Risks the reviewer should look at twice.
 - Follow-up issues filed.
@@ -110,6 +113,7 @@ ADR-0007 — compliance flagged JWT non-revocability after incident #142.
 Tests: 312 pass. Staging load test: p99 latency +3ms (within budget).
 
 ## Notes
+- Door: one-way once the 30-day window closes · Blast radius: every authenticated request.
 - Hard dependency on session service availability — outage = no auth.
   Runbook update in #318.
 - Breaking change at end of 30-day window; tracked via #319.
@@ -120,6 +124,8 @@ Closes ENG-712
 ## Auto-Clarity
 
 Always include a `## Why` section for: ADR-driven refactors, security fixes, data migrations, breaking changes. Never compress those into title-only — future debuggers need the context.
+
+The Merge-danger line is mandatory for every one-way door: a migration, a deletion, a published API change, a config cutover. A reviewer deciding how carefully to read needs the door and the blast radius before the diff.
 
 For **web changes**, `## How tested` MUST link to the QA artifact directory (per orc's web-QA evidence rule) or explicitly state "no UI surface touched". A bare "tested manually" is not acceptable.
 

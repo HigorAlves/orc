@@ -142,6 +142,9 @@ Claude Code keys its plugin-update cache on the explicit `version` in `orc/.clau
    ```
 
    Do **not** use a plain `vX.Y.Z` tag for the plugin — that namespace is reserved for CLI releases, and the release workflow's `guard` job rejects a plain `v*` tag whose version matches `plugin.json`.
-3. Update the pinned `ref` example in the README install section to the new `orc--vX.Y.Z` tag.
+3. Update the pinned `ref` example in the README install section (and `docs/install.md`) to the new `orc--vX.Y.Z` tag.
+4. The `plugin-release` workflow (`.github/workflows/plugin-release.yml`) runs on the tag push: it checks that the tag matches `plugin.json`, extracts that version's section from `CHANGELOG.md`, and publishes the GitHub Release with it. If the workflow is red, fix the mismatch and re-push the tag; do not hand-create the release.
+
+Every PR that changes behaviour adds its line under `## Unreleased` in `CHANGELOG.md` (Keep-a-Changelog groups: Added / Changed / Fixed / Removed, one line each with the PR link). The release PR renames `Unreleased` to the version and date; `verify-changelog.sh` fails CI when `plugin.json`'s version has no section.
 
 No version bump → no release. A merged PR that skips the bump ships silently only to `--plugin-dir` local development.

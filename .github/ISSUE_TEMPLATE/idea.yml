@@ -1,0 +1,41 @@
+name: Idea or feedback
+description: A change to an existing orc surface, grounded in a session where it fell short.
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        orc is curated. An idea stays open only if it clears **both** parts of the bar in [`SCOPE.md`](https://github.com/HigorAlves/orc/blob/main/SCOPE.md):
+
+        1. **Observed failure**: it describes a real session where a surface fell short, not a hypothetical improvement.
+        2. **Fits the philosophy**: it is not already recorded in [`docs/agents/out-of-scope.md`](https://github.com/HigorAlves/orc/blob/main/docs/agents/out-of-scope.md), and it is not a config knob, a harness-specific branch, or a tweak for one person's workflow.
+
+        A new skill or command is accepted only when the behaviour cannot be composed from the surfaces orc already ships.
+  - type: checkboxes
+    id: read-scope
+    attributes:
+      label: Before filing
+      options:
+        - label: I've read `SCOPE.md` and checked `docs/agents/out-of-scope.md`, and this isn't covered by either.
+          required: true
+  - type: input
+    id: surface
+    attributes:
+      label: Surface
+      description: Which existing command, skill, agent, or hook this changes.
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: What went wrong
+      description: The real session where the surface fell short. What you ran, what it did, and why that was a problem. Include orc and Claude Code versions, and the model.
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: Proposed change
+      description: What you'd change, as concretely as you can. If it is a rule the reviewer should enforce, say whether a linter could check it instead.
+    validations:
+      required: true

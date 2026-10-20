@@ -4,7 +4,7 @@ argument-hint: "[--tracker github|jira|local]"
 license: MIT
 metadata:
   author: Matt Pocock
-  source: Adapted from https://github.com/mattpocock/skills @ 2ffb184
+  source: Adapted from https://github.com/mattpocock/skills @ 5beb35b
 allowed-tools:
   - Read
   - Write
@@ -16,6 +16,7 @@ allowed-tools:
   - Bash(gh repo view:*)
   - Bash(gh auth status:*)
   - Bash(gh label list:*)
+  - Bash(gh label create:*)
   - Bash(acli:*)
   - Bash(command -v:*)
   - Bash(ls:*)
@@ -27,7 +28,7 @@ Scaffold the per-repo configuration that orc's tracker-aware surfaces assume:
 
 - **Issue tracker** — where issues live and how to create/query them → `docs/agents/issue-tracker.md`
 - **Triage labels** — the label vocabulary for the triage state machine → `docs/agents/triage-labels.md`
-- **Domain docs** — where `CONTEXT.md` and ADRs live, and the consumer rules for reading them (per `orc:domain-modeling`) → `docs/agents/domain.md`
+- **Domain docs** — where `GLOSSARY.md` and ADRs live, and the consumer rules for reading them (per `orc:domain-modeling`) → `docs/agents/domain.md`
 
 These files are read by `orc:to-issues`, `orc:to-prd`, `/orc:triage`, `/orc:wayfinder`, and the Jira adapters (`orc:jira-cli`, `orc:evidence-publish`) — the tracker choice recorded here decides whether they call `gh`, `acli`, or write local markdown.
 
@@ -48,7 +49,7 @@ Look before asking. Every fact settled here removes a question from Phase 2:
 - `gh label list` — existing label vocabulary. If labels matching the five canonical triage roles (or close variants like `bug:triage`) already exist, capture them as the proposed mapping instead of proposing new labels.
 - `docs/agents/` — prior output of this command? If `issue-tracker.md` exists, this is an **update run**: show the current choice and ask whether to keep, tweak, or restart.
 - `CLAUDE.md` / `AGENTS.md` at the repo root — which exists, and does either already have an `## Agent skills` section?
-- `CONTEXT.md`, `CONTEXT-MAP.md`, `docs/adr/` — existing domain-doc layout.
+- `GLOSSARY.md`, `GLOSSARY-MAP.md`, `docs/adr/` — existing domain-doc layout.
 - Monorepo signals — `pnpm-workspace.yaml`, a `workspaces` field, `turbo.json`, populated `packages/*` with their own `src/`. Absence means single-context, which is almost every repo.
 
 ### Phase 2 — Interview (recommended answer first)
@@ -66,7 +67,7 @@ The GitHub template carries a "PRs as a request surface" flag defaulted **off** 
 
 **Section B — Triage labels.** Ask exactly one question, recommendation first: *keep the default triage labels?* (recommended: **yes**). Defaults are the five canonical state roles, each label string equal to its role name: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix` — plus the two category roles `bug` / `enhancement`. Auto-skip when Phase 1 found an existing vocabulary that maps cleanly — present the discovered mapping for a one-word confirm instead. On "no", collect the overrides so `/orc:triage` applies existing labels instead of creating duplicates.
 
-**Section C — Domain docs.** Default to **single-context** — one `CONTEXT.md` + `docs/adr/` at the repo root — and write it **without asking**; this fits almost every repo. Only when Phase 1 found monorepo signals, ask single- vs multi-context (`CONTEXT-MAP.md` pointing at per-context `CONTEXT.md` files, per `orc:domain-modeling`).
+**Section C — Domain docs.** Default to **single-context** — one `GLOSSARY.md` + `docs/adr/` at the repo root — and write it **without asking**; this fits almost every repo. Only when Phase 1 found monorepo signals, ask single- vs multi-context (`GLOSSARY-MAP.md` pointing at per-context `GLOSSARY.md` files, per `orc:domain-modeling`).
 
 ### Phase 3 — Preview and confirm
 
@@ -100,7 +101,8 @@ Then `AskUserQuestion`: **Write them** / **Edit first — tell me what to change
    [one line — "single-context" or "multi-context"]. See `docs/agents/domain.md`.
    ```
 
-3. Close with `**➡️ Next**`: name the surfaces now unlocked (`/orc:triage`, `/orc:wayfinder`, `orc:to-issues`, `orc:to-prd`) and note that `docs/agents/*.md` can be edited directly later.
+3. **Create the labels the tracker lacks** (GitHub and Jira only; local markdown has none). Diff the vocabulary just written against `gh label list` (or the Jira project's labels via `acli`). Nothing missing → say so and move on. Otherwise print `**📋 Preview — tracker writes**` listing each `gh label create <name> --description <role>` (or the `acli` equivalent) verbatim, then `AskUserQuestion` — this is a hard-outward Tracker gate per `orc:gates` §1, never skipped by `--auto`. On yes, run exactly the previewed commands; `/orc:triage` can then apply labels instead of failing on a missing one.
+4. Close with `**➡️ Next**`: name the surfaces now unlocked (`/orc:triage`, `/orc:wayfinder`, `orc:to-issues`, `orc:to-prd`) and note that `docs/agents/*.md` can be edited directly later.
 
 ## Seed templates
 
@@ -109,11 +111,12 @@ The seed templates live in `orc:tracker-config` (`references/templates/{GITHUB,J
 ## Iron rules
 
 - Never overwrite user edits in `docs/agents/*.md` or the memory file without showing a diff-level preview first.
-- Never create labels, issues, or Jira items during setup — this command writes repo config files only.
+- Never create issues or Jira work items during setup. Labels are the one tracker write, and only behind the Phase 4 preview gate — never silently, never under autopilot.
 - Recommend only trackers whose CLI is actually usable here (Phase 1 evidence); never recommend Jira when `acli` is absent or unauthenticated.
 
 ## Output
 
 - `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md`, `docs/agents/domain.md`
 - An `## Agent skills` block in `CLAUDE.md` or `AGENTS.md`
+- Missing triage labels created on the tracker, when the user approved the preview
 - No `.orc/` session state — this is run-once repo configuration with nothing to resume; the written files ARE the durable state.

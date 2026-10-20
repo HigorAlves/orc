@@ -4,7 +4,7 @@ description: "Resolve an in-progress git merge or rebase conflict by tracing eac
 license: MIT
 metadata:
   author: Matt Pocock
-  source: Vendored from https://github.com/mattpocock/skills @ 2ffb184
+  source: Vendored from https://github.com/mattpocock/skills @ 5beb35b
 ---
 
 1. **See the current state** of the merge/rebase. Check git history, and the conflicting files.

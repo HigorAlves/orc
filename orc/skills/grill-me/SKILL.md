@@ -5,7 +5,7 @@ disable-model-invocation: true
 license: MIT
 metadata:
   author: Matt Pocock
-  source: Derived from https://github.com/mattpocock/skills (audit pin 2ffb184)
+  source: Derived from https://github.com/mattpocock/skills (audit pin 5beb35b)
 ---
 
 Run an `orc:grilling` session over the plan/design in context.

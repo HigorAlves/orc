@@ -2,7 +2,7 @@
 
 The full catalog: every slash command, the specialist agents behind them, the skill library underneath, and the CLI that installs it all. Not sure where to start? The [examples index](examples/README.md) maps 19 real scenarios to the command that handles each.
 
-## Commands (31)
+## Commands (32)
 
 | Command | Purpose |
 |---------|---------|
@@ -35,6 +35,7 @@ The full catalog: every slash command, the specialist agents behind them, the sk
 | `/orc:triage` | Herd issues + external PRs through triage roles into agent-ready briefs |
 | `/orc:wayfinder` | Plan multi-session work as decision tickets on the tracker |
 | `/orc:cleanup` | Remove `.orc/` state, worktree, and (if merged) branch for completed sessions |
+| `/orc:retro` | Retrospective on a session — environment changes (checks, standards, pointers, tool economy), most severe first; applies or files them |
 
 ## Specialist agents (14)
 

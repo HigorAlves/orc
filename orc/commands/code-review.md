@@ -75,7 +75,7 @@ gh pr diff <ref> > /tmp/pr-<ref>.diff
 
 - **Fail fast on an empty diff.** If the diff file is empty (0 bytes / no hunks), stop and report — nothing to review. Never dispatch agents against an empty diff.
 
-`Glob` the repo for `CLAUDE.md` files (root + scoped to changed directories). Read them. Reviewer agents will use them as project-specific style/architecture rules.
+`Glob` the repo for `CLAUDE.md`, `CODING_STANDARDS.md`, and `CONTRIBUTING.md` (root + scoped to changed directories). Read them. These are the **documented standards** the Standards axis reviews against; where they endorse something the smell baseline in `orc:review-contract` (`references/SMELLS.md`) would flag, the repo wins.
 
 **Spec detection.** Scan the PR body and commit messages for an originating issue/spec reference — `#123`, `Closes #45`, `Resolves org/repo#67`, a full issue URL, or a Jira key in the branch/title. If found, fetch it:
 
@@ -103,7 +103,7 @@ If any changed file matches, the parallel dispatch applies. Otherwise just `orc-
 Each agent gets:
 - The PR ref.
 - The full diff path.
-- Any CLAUDE.md guideline content found.
+- The paths of any standards files found (`CLAUDE.md`, `CODING_STANDARDS.md`, `CONTRIBUTING.md`).
 - Any `--context` text.
 
 `orc-pr-reviewer` additionally gets the fetched issue/spec content from Phase 2 (when found) — this is what makes spec-conformance findings possible (the agent already accepts it as an optional input).
@@ -143,7 +143,7 @@ Each agent gets:
 
 Invoke `orc:inline-review`. Build:
 
-- **Overall body** — hard cap: **≤ 2 sentences, ~40 words**, caveman tone. One clause on what the PR does + finding counts by severity. Never restate the inline comments (they carry the detail), never praise, never hedge, no per-category prose recap. Example:
+- **Overall body** — hard cap: **≤ 2 sentences, ~40 words**, caveman tone. One clause on what the PR does + finding counts by severity, with spec-conformance findings counted separately from standards findings when a spec was found (two axes, never reranked against each other — per `orc:review-contract`). Never restate the inline comments (they carry the detail), never praise, never hedge, no per-category prose recap. Example:
   > "CSV export for /reports. 2 bugs (serialization), 1 untested branch, 2 nits."
 - **Comments[]**: one per finding, per the `orc:inline-review` schema:
   - `path`, `line`, `start_line?`, `side: "RIGHT"`

@@ -93,6 +93,10 @@ AND any finding has a blocking severity, warn the user
 (`> **⚠️ Caution**` callout), then post the **computed** event anyway. The
 contradiction never ships.
 
+## Standards axis and the smell baseline
+
+Documented standards (`CODING_STANDARDS.md`, `CONTRIBUTING.md`, `CLAUDE.md`) are reviewed as severity `suggestion` with the rule cited. Beneath them sits a fixed Fowler smell baseline — [references/SMELLS.md](references/SMELLS.md) — that applies even when a repo documents nothing: always a judgement call, always `suggestion`, always overridden by a documented repo standard. Standards findings and spec-conformance findings are two axes: count them separately in `summary`, never rerank one against the other.
+
 ## Universal reviewer rules
 
 - **Only the diff.** Never flag pre-existing issues the change didn't touch or surface.

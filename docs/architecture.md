@@ -10,7 +10,7 @@
 orc/                               # the plugin
 ├── .claude-plugin/plugin.json     # manifest — what Claude Code reads to discover the plugin
 ├── skills/                        # 84 skills, namespaced /orc:<name>
-├── commands/                      # 31 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
+├── commands/                      # 32 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
 ├── agents/                        # 14 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) + PostToolUse + PreCompact + WorktreeCreate/Remove
 │   └── mod/                       # the orc mod (register.ts + tests) — in-process hooks, Claude Code 2.1.287+
@@ -172,13 +172,13 @@ No "QA passed" claim is accepted without the required artifacts in `.orc/<branch
 
 Curated skills cover four optional packs (all enabled): `web-react` (incl. vitest), `backend` (Node/NestJS/Postgres/Stripe), `ios` (SwiftUI), `workflow-extras` (Docker/Turborepo/Sentry/skill-authoring/PRD-issue tooling/agent-browser).
 
-Plus the doc-authoring family for senior/architect practice: `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem-writing` (blameless incident postmortems), `prd-writing` (Product Requirements Documents), `trd-writing` (Technical Requirements Documents). Fifteen further skills are vendored or merged from MIT-licensed community sources (mattpocock/skills at pin `2ffb184`, obra/superpowers, antfu/skills, twostraws/SwiftUI-Agent-Skill) with provenance frontmatter per skill and full notices in `THIRD-PARTY-LICENSES.md`.
+Plus the doc-authoring family for senior/architect practice: `adr-writing` (Architecture Decision Records), `rfc-writing` (system-design RFCs), `postmortem-writing` (blameless incident postmortems), `prd-writing` (Product Requirements Documents), `trd-writing` (Technical Requirements Documents). Fifteen further skills are vendored or merged from MIT-licensed community sources (mattpocock/skills at pin `5beb35b`, obra/superpowers, antfu/skills, twostraws/SwiftUI-Agent-Skill) with provenance frontmatter per skill and full notices in `THIRD-PARTY-LICENSES.md`.
 
 ## Relationship to compozy
 
 orc borrows compozy's session-state idea, hook layout, and YAML-frontmatter conventions. It diverges in two places:
 1. Workspace state is **hidden + gitignored** (`.orc/`) instead of committed (`compozy/`). orc is a personal plugin; nothing needs sharing.
-2. Command surface covers the full SDLC (31 commands, all composing the same plan → debug → verify → ship spine, now extended past PR-open with ci/release/deps/incident), with explicit web-QA evidence as a first-class concern — including the environment it runs against: `/orc:qa` and `/orc:flow` provision a Docker dev environment via `orc-env-provisioner` before browser QA (`orc:env-provisioning` skill; `/orc:env` standalone).
+2. Command surface covers the full SDLC (32 commands, all composing the same plan → debug → verify → ship spine, now extended past PR-open with ci/release/deps/incident), with explicit web-QA evidence as a first-class concern — including the environment it runs against: `/orc:qa` and `/orc:flow` provision a Docker dev environment via `orc-env-provisioner` before browser QA (`orc:env-provisioning` skill; `/orc:env` standalone).
 
 ## See also
 

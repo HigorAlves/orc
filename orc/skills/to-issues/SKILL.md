@@ -4,7 +4,7 @@ description: Break a plan, spec, or PRD into independently-grabbable tracker iss
 license: MIT
 metadata:
   author: Matt Pocock
-  source: Derived from https://github.com/mattpocock/skills (audit pin 2ffb184; techniques re-merged from upstream @ 2ffb184)
+  source: Derived from https://github.com/mattpocock/skills (audit pin 5beb35b; techniques re-merged from upstream @ 5beb35b)
 ---
 
 # To Issues
@@ -68,7 +68,7 @@ Iterate until the user approves the breakdown.
 Publish the approved issues. **How** depends on the tracker `/orc:setup` configured — the issues are the same either way, only the shape of the blocking edges changes:
 
 - **Local files** → write one file per issue under `.orc/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01` in dependency order (blockers first). Each file's "Blocked by" lists the numbers/titles it depends on. Use the per-issue file template below — one issue per file, never a single combined file.
-- **A real issue tracker (GitHub, Jira, Linear, …)** → publish one issue per slice in dependency order (blockers first) so each issue's blocking edges can reference real identifiers. Use the platform's native blocking / sub-issue relationship where it has one; otherwise set each issue's "Blocked by" to the blocking issues. Apply the `needs-triage` triage label so each issue enters the normal triage flow.
+- **A real issue tracker (GitHub, Jira, Linear, …)** → publish one issue per slice in dependency order (blockers first) so each issue's blocking edges can reference real identifiers. Use the platform's native blocking relationship where it has one; otherwise set each issue's "Blocked by" to the blocking issues. If the source was an existing issue, make each slice its sub-issue (the tracker doc's operation). Apply the `needs-triage` triage label so each issue enters the normal triage flow.
 
 Work the **frontier**: any issue whose blockers are all done. For a purely linear chain that means top to bottom.
 
@@ -108,7 +108,7 @@ The end-to-end behaviour this issue makes work, from the user's perspective — 
 
 ## Blocked by
 
-- A reference to each blocking issue, or "None — can start immediately".
+- A reference to each blocking issue, or "None — can start immediately". Omit this section when blockers were set as native edges.
 
 </issue-template>
 

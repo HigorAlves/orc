@@ -4,7 +4,7 @@ argument-hint: "[<issue/PR number, Jira key, or natural-language request>]"
 license: MIT
 metadata:
   author: Matt Pocock
-  source: Adapted from https://github.com/mattpocock/skills @ 2ffb184
+  source: Adapted from https://github.com/mattpocock/skills @ 5beb35b
 allowed-tools:
   - Read
   - Write
@@ -86,7 +86,7 @@ When PRs are in scope, include external PRs tagged `[PR]` vs `[issue]`. Discover
 
 3. **Verify the claim (read-only).** Before any grilling, check that the claim holds up — **investigate, don't fix**: no commits, no pushes, no tracker writes. For a bug, reproduce it from the reporter's steps. For a PR, check out the branch and confirm the diff does what it claims — run the relevant tests or commands, then switch back. Report: **confirmed** (with code path), **failed to reproduce**, or **insufficient detail** (a strong `needs-info` signal). A confirmed verification makes a much stronger agent brief.
 
-4. **Grill (if needed).** If the request needs fleshing out, run `orc:grilling` and `orc:domain-modeling` together — grill it into shape a round at a time, sharpening domain terms and updating `CONTEXT.md`/ADRs inline as decisions land.
+4. **Grill (if needed).** If the request needs fleshing out, run `orc:grilling` and `orc:domain-modeling` together — grill it into shape a round at a time, sharpening domain terms and updating `GLOSSARY.md`/ADRs inline as decisions land.
 
 5. **Apply the outcome.** Print `**📋 Preview — tracker writes**` showing every label change, comment body, and close verbatim, then `AskUserQuestion` to confirm before touching the tracker:
    - `ready-for-agent` — post an agent brief comment (template below).
@@ -184,4 +184,4 @@ build time; theming is a downstream-consumer concern. Durable reasons only —
 
 - Tracker writes (labels, briefs, triage notes, closes) — each behind its preview gate
 - `docs/agents/out-of-scope.md` entries for rejected enhancements
-- Updated `CONTEXT.md`/ADRs when grilling resolved domain terms (via `orc:domain-modeling`)
+- Updated `GLOSSARY.md`/ADRs when grilling resolved domain terms (via `orc:domain-modeling`)

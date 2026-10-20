@@ -4,7 +4,7 @@ description: "Shared vocabulary for designing deep modules — seam, adapter, de
 license: MIT
 metadata:
   author: Matt Pocock
-  source: Vendored from https://github.com/mattpocock/skills @ 2ffb184
+  source: Vendored from https://github.com/mattpocock/skills @ 5beb35b
 ---
 
 # Codebase Design

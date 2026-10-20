@@ -51,7 +51,7 @@ You answer with one word: **GitHub**. Jira wasn't recommended — no usable `acl
 
 Section B — labels: no existing vocabulary was found, so exactly one question: *keep the default triage labels?* (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`, plus `bug` / `enhancement`). **Yes.**
 
-Section C — domain docs: never asked. No monorepo signals → single-context (`CONTEXT.md` + `docs/adr/` at the root) is written automatically, with a one-line note saying so. That's the auto-skip: setup only asks single- vs multi-context when it actually finds workspace signals.
+Section C — domain docs: never asked. No monorepo signals → single-context (`GLOSSARY.md` + `docs/adr/` at the root) is written automatically, with a one-line note saying so. That's the auto-skip: setup only asks single- vs multi-context when it actually finds workspace signals.
 
 **Phase 3 — Preview.** `📋 Preview — tracker layer`, followed by full drafts of `docs/agents/issue-tracker.md` (GitHub seed from `orc:tracker-config`'s templates: `gh` conventions, "PRs as a request surface: no", wayfinding operations), `triage-labels.md` (role → label-string table), `domain.md`, and the `## Agent skills` block. Confirm: **Write them**.
 

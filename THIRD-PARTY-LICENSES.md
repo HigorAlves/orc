@@ -9,7 +9,7 @@ licensor, as the licenses require.
 ## mattpocock/skills
 
 Skills derived or vendored from <https://github.com/mattpocock/skills>
-(vendored at upstream commit `2ffb184ffbb752faa664c0b204f3c9241b1428e9`).
+(vendored at upstream commit `5beb35b040e3de97e54fa9e386d7e42d15c295c2`).
 
 ```
 MIT License

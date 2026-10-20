@@ -119,7 +119,7 @@ If the input is a short one-liner ("add CSV export"), skip the analyzer and proc
    - Skip — I'll bind later via /orc:jira bind
    - No ticket — this work has no tracker entry
 
-If `--jira <KEY>` was passed, validate against `^[A-Z][A-Z0-9_]*-\d+$`; reject and stop on mismatch.
+If `--jira <KEY>` was passed, validate against `^[A-Z][A-Z0-9_]*-\d+$`; reject and stop on mismatch. Then fetch it (`acli jira workitem view "$KEY" --fields "summary" --json`) and state its title before proceeding — if the key resolves to nothing, stop and ask.
 
 Record the resolved repo set as `targetRepos` in `checkpoint.md`. When the resolved set has exactly one repo and the user is inside that repo via `--this-repo`, treat the rest of the flow as a single-repo flow against that `repoPath` (no workspace state).
 

@@ -120,6 +120,9 @@ jobs:
       - name: Version / release-ref consistency
         run: bash scripts/ci/verify-version.sh
 
+      - name: Changelog keeps up with the manifest
+        run: bash scripts/ci/verify-changelog.sh
+
       - name: Tool registry integrity
         run: bash scripts/ci/verify-tools.sh
 
