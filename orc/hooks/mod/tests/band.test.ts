@@ -7,7 +7,7 @@ const guard: BandRow = { kind: 'guard', summary: 'Would discard 7 files' }
 const sentinel: BandRow = { kind: 'sentinel', id: 's1', text: 'outside slice' }
 const retro: BandRow = { kind: 'retro', id: 'r1', rule: 'use pnpm', seen: 2 }
 const cache: BandRow = { kind: 'cache', minutesLeft: 4, rewriteUsd: 0.4, tokens: 90000, waitingOn: null }
-const progress: BandRow = { kind: 'progress', model: {} }
+const progress: BandRow = { kind: 'progress', model: {} as never }
 
 test('pickBand returns the highest-priority present row', () => {
   const all = [progress, cache, retro, sentinel, guard, ci]

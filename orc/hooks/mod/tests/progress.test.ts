@@ -18,12 +18,12 @@ const snap: Snapshot = {
 }
 const entry = (o: Partial<LedgerLike['main']>): LedgerLike['main'] => ({
   requests: 1, input: 0, output: 0, cacheRead: 0, cacheWrite: 0, lastAt: 0, lastContext: 0, model: 'claude-sonnet-5-5', ms: 0,
-  type: 'orc:orc-implementer', step: null, startedAt: 0, ...o,
+  type: 'orc:orc-implementer', step: null, startedAt: 0, finishedAt: null, ...o,
 })
 const ledger: LedgerLike = {
   main: entry({ type: null }),
   agents: {
-    old: entry({ lastContext: 20_000, startedAt: 0, lastAt: 1_000 }),
+    old: entry({ lastContext: 20_000, startedAt: 0, lastAt: 1_000, finishedAt: 1_500 }),
     live: entry({ lastContext: 76_000, startedAt: 1_000, lastAt: 193_000, step: { label: 'writing failing test', n: 2, of: 5 } }),
   },
 }

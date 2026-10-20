@@ -15,9 +15,13 @@ import {
 } from './cockpit'
 import { parseFeatures, type Features } from './config'
 import { gateBadge } from './gates'
-import { LEDGER_INITIAL, dropAgent, recordStep, tagAgent } from './ledger'
+import { LEDGER_INITIAL, dropAgent, finishAgent, recordStep, setStep, tagAgent } from './ledger'
 import { PANE, drawPane, type Els } from './pane'
 import { modelFor, parseProfile, type Profile } from './profiles'
+import { costOf } from './prices'
+import { agentRows, progressModel } from './progress/model'
+import { progressText } from './progress/text'
+import { progressAlt, progressSvg } from './progress/svg'
 import { DETAILS_INITIAL, LIVE_INITIAL, SECTIONS_INITIAL, ciBox, isOrcStateWrite } from './state'
 
 // State refs: literals in this file, as the engine's scan requires.
@@ -37,6 +41,7 @@ export function register(on: On, options: PluginOptions) {
   register_attribution(on)
   register_compaction(on)
   register_agents(on, parseProfile(options.model_profile))
+  register_step_tool(on)
   register_refresh(on)
   register_cockpit(on, parseProfile(options.model_profile))
   register_surfaces(on)
@@ -67,6 +72,12 @@ function register_session(on: On) {
       await $.command.register({ name: 'orc', description: 'orc cockpit — phase, slices, QA, PR, agents, decisions (no model turn)', immediate: true })
     } catch {
       // name taken in this build: the markdown /orc:status stays the fallback
+    }
+    // The step tool: orc subagents label their TDD steps for the progress view.
+    try {
+      await $.tool.register({ name: 'step', description: STEP_DESC, inputSchema: STEP_SCHEMA })
+    } catch {
+      // tools can't register in this build: agents just don't report steps
     }
     void refresh($).catch(() => undefined)
     if (e.isInteractive) $.clock.every(POLL_MS, () => { void ci_tick($) })
@@ -127,7 +138,8 @@ function register_agents(on: On, profile: Profile) {
   on('agent.spawn', async ($, e, next) => {
     const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
     const model = e.model ? undefined : modelFor(profileOf(snap, profile), e.subagentType)
-    const result = await next(model ? { ...e, model } : e)
+    const brief = /^(orc:)?orc-implementer$/.test(e.subagentType) && !e.prompt.includes('mcp__orc__step') ? { prompt: e.prompt + STEP_BRIEF } : null
+    const result = await next(model || brief ? { ...e, ...(model ? { model } : {}), ...brief } : e)
     if (result.agentId && /^(orc:)?orc-/.test(e.subagentType)) {
       agentTypes.set(result.agentId, e.subagentType.replace(/^orc:/, ''))
       await $.state.set(LIVE_REF, { agent: e.subagentType.replace(/^orc:/, ''), since: await $.clock.now().catch(() => null) }).catch(() => undefined)
@@ -150,6 +162,11 @@ function register_agents(on: On, profile: Profile) {
     if (agent) {
       // Cleared on every finish — an abort or API error carries no usage but the agent is gone.
       agentTypes.delete(e.agentId as string)
+      // An explicit finish stamp: the agent row stops reading as running.
+      const at = await $.clock.now().catch(() => 0)
+      const cur = await $.state.get(LEDGER_REF).then(r => r.value ?? LEDGER_INITIAL, () => LEDGER_INITIAL)
+      const stamped = finishAgent(cur, e.agentId as string, at)
+      if (stamped !== cur) await $.state.set(LEDGER_REF, stamped).catch(() => undefined)
       const remaining = [...agentTypes.values()].at(-1) ?? null
       await $.state.set(LIVE_REF, remaining ? { agent: remaining, since: null } : LIVE_INITIAL).catch(() => undefined)
       if (e.usage) {
@@ -158,6 +175,31 @@ function register_agents(on: On, profile: Profile) {
       }
     }
     return result
+  })
+}
+
+// The step tool (mcp__orc__step): orc subagents report "writing failing test 2/5";
+// the label feeds the cockpit's agent rows. A label for the user, not a gate.
+const STEP_DESC = 'Report the current step of your work for the user\'s progress view. Only orc subagents use this.'
+const STEP_SCHEMA = { type: 'object', properties: { label: { type: 'string' }, n: { type: 'integer' }, of: { type: 'integer' } }, required: ['label'] }
+const STEP_BRIEF = '\n\nProgress: at the start of each TDD step call mcp__orc__step with { label, n, of } (e.g. { label: \'writing failing test\', n: 2, of: 5 }). It is a label for the user\'s progress view, not a gate.'
+
+function register_step_tool(on: On) {
+  // Registered tools are mcp__-named, so the engine would defer them behind ToolSearch; pin it in the prompt list.
+  on('tool.describe', { tool: 'mcp__orc__step' }, async (_$, e, next) => {
+    const r = await next(e)
+    return { ...r, isDeferred: false }
+  })
+
+  on('tool.call', { tool: 'mcp__orc__step' }, async ($, e) => {
+    const call = e as { agentId?: string; label?: unknown; n?: unknown; of?: unknown }
+    if (!call.agentId) return { result: 'ignored: only orc subagents report steps' }
+    try {
+      const step = { label: String(call.label ?? '').slice(0, 80), n: Number(call.n) || 0, of: Number(call.of) || 0 }
+      const cur = (await $.state.get(LEDGER_REF)).value ?? LEDGER_INITIAL
+      await $.state.set(LEDGER_REF, setStep(cur, call.agentId, step))
+    } catch { /* a label never fails the agent */ }
+    return { result: 'ok' }
   })
 }
 
@@ -271,18 +313,26 @@ async function ci_tick($: EngineInterface): Promise<void> {
 
 // The one band above the prompt: orc offers rows, pickBand keeps the
 // highest-priority one. No orc row (or a survey) leaves the engine's drawing alone.
-function register_band(on: On, _features: Features) {
+function register_band(on: On, features: Features) {
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey) return next(e)
     const ci: BandRow | null = ciBox.alert ? { kind: 'ci', pr: ciBox.alert.pr, failing: ciBox.alert.summary.failing } : null
-    // guard, sentinel, retro, cache and progress rows join here in later slices
-    const row = pickBand([ci])
+    const progress = features.progressBand ? await progress_row($) : null
+    // guard, sentinel, retro and cache rows join here in later slices
+    const row = pickBand([ci, progress])
     if (!row) return next(e)
     const below = await next(e)
     const els = $.ui.resolve(e)
     const mine = draw_band_row($, e, els, row)
     return els.Box({ flexDirection: 'column', children: [mine, below] })
   })
+}
+
+async function progress_row($: EngineInterface): Promise<BandRow | null> {
+  const snap = await $.state.get(SNAPSHOT_REF).then(r => r.value ?? EMPTY, () => EMPTY)
+  const ledger = await $.state.get(LEDGER_REF).then(r => r.value ?? LEDGER_INITIAL, () => LEDGER_INITIAL)
+  const model = progressModel(snap, ledger)
+  return model ? { kind: 'progress', model } : null
 }
 
 // One row, drawn for the surface: SVG strip + real Buttons on rich surfaces, text elsewhere.
@@ -300,6 +350,16 @@ function draw_band_row($: EngineInterface, e: { surface: RenderSurface | null; p
       ] })
     }
     return ciText(els, row, actions)
+  }
+  if (row.kind === 'progress') {
+    const m = row.model
+    const next = m.next
+    const go = next ? [els.Button({ key: 'orc-next', hotkey: '1', label: next, onPress: () => { $.prompt.fill({ text: next }).catch(() => undefined) } })] : []
+    const source = isRich(e.surface) && 'Svg' in els ? fitSvg(progressSvg(m, px(e.props.bodyColumns))) : null
+    const drawn = source && 'Svg' in els
+      ? els.Svg({ source, alt: progressAlt(m), height: 28 })
+      : els.Text({ children: [progressText(m, e.props.bodyColumns)] })
+    return els.Box({ flexDirection: 'row', columnGap: 2, children: [drawn, ...go] })
   }
   return els.Text({ children: [] })
 }
@@ -328,7 +388,9 @@ function register_cockpit(on: On, fallbackProfile: Profile) {
     const snap = (await $.state.get(SNAPSHOT_REF)).value ?? EMPTY
     const sections = (await $.state.get(SECTIONS_REF)).value ?? SECTIONS_INITIAL
     const details = (await $.state.get(DETAILS_REF)).value ?? DETAILS_INITIAL
-    const model = { snap, sections, details, ciAlert: ciBox.alert, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
+    const ledger = (await $.state.get(LEDGER_REF)).value ?? LEDGER_INITIAL
+    const agents = agentRows(ledger, costOf, await $.clock.now().catch(() => 0))
+    const model = { snap, sections, details, agents, rich: isRich(e.surface), ciAlert: ciBox.alert, profile: profileOf(snap, fallbackProfile), placement: e.props.placement, bodyColumns: e.props.bodyColumns }
     return drawPane($.ui.resolve(e), model, {
       resume: () => { $.prompt.fill({ text: snap.session ? '/orc:resume' : '/orc:flow ' }) },
       toggle: (id: SectionId) => async () => {

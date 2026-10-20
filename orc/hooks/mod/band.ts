@@ -1,3 +1,5 @@
+import type { ProgressModel } from './progress/model'
+
 // The one orc row above the prompt: every feature offers a row, the highest
 // priority wins. Pure — register.ts draws it.
 export type BandRow =
@@ -6,7 +8,7 @@ export type BandRow =
   | { kind: 'sentinel'; id: string; text: string }
   | { kind: 'retro'; id: string; rule: string; seen: number }
   | { kind: 'cache'; minutesLeft: number; rewriteUsd: number | null; tokens: number; waitingOn: string | null }
-  | { kind: 'progress'; model: unknown } // narrowed to ProgressModel in the progress band slice
+  | { kind: 'progress'; model: ProgressModel }
 
 export const PRIORITY: BandRow['kind'][] = ['ci', 'guard', 'sentinel', 'retro', 'cache', 'progress']
 

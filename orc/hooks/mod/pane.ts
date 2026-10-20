@@ -4,7 +4,10 @@
 import type { EngineInterface } from 'claude-code'
 import type { OrcDetails, OrcSections } from '../../types'
 import { POLICIES, attention, criterionLine, diffSlice, headerCells, isDone, layoutFor, phaseRows, policyOf, sectionLabel, sizeLine, sliceLine, usageLine, type SectionId, type Snapshot } from './cockpit'
+import { fitSvg, px } from './draw/svg'
 import type { Profile } from './profiles'
+import { agentRowLine, type AgentRow } from './progress/model'
+import { AGENT_H, agentAlt, agentLabel, agentSvg } from './progress/svg'
 import type { CiAlert } from './state'
 
 export const PANE = 'orc-cockpit'
@@ -18,6 +21,8 @@ export type PaneModel = {
   sections: OrcSections
   ciAlert: CiAlert
   details: OrcDetails
+  rich: boolean
+  agents: AgentRow[]
 }
 export type PaneActions = { resume: () => void; toggle: (id: SectionId) => () => void; renderReport: () => void; settle: (key: string, value: string) => void }
 
@@ -74,8 +79,16 @@ export function drawPane(els: Els, model: PaneModel, actions: PaneActions) {
     ...(alert ? [line(`CI: ${alert.summary.failing.length} failing (${alert.summary.failing.join(', ')})`, { color: 'red' })] : []),
   ])
 
-  const agents = section('agents', 'g', () => snap.usage?.length
-    ? [line('agent                     runs   tokens            time', { dimColor: true }), ...snap.usage.map(u => line(usageLine(u)))]
+  const Svg = 'Svg' in els ? els.Svg : null
+  const agentRow = (r: AgentRow) => {
+    const source = model.rich && Svg ? fitSvg(agentSvg(r, px(model.bodyColumns))) : null
+    return source && Svg
+      ? Svg({ source, alt: agentAlt(r), width: px(model.bodyColumns), height: AGENT_H })
+      : line([agentLabel(r), r.step, agentRowLine(r)].filter(Boolean).join('  '), { dimColor: !r.running })
+  }
+  const agents = section('agents', 'g', () => model.agents.length || snap.usage?.length
+    ? [...model.agents.map(agentRow),
+       ...(snap.usage?.length ? [line('agent                     runs   tokens            time', { dimColor: true }), ...snap.usage.map(u => line(usageLine(u)))] : [])]
     : [line('No subagent runs recorded yet.', { dimColor: true })])
 
   const policy = policyOf(snap) ?? 'manual'

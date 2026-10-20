@@ -1,6 +1,6 @@
-import { chip, chipWidth, doc, segments, text, textWidth } from '../draw/svg'
+import { chip, chipWidth, doc, ring, segments, text, textWidth } from '../draw/svg'
 import type { Slot } from '../draw/palette'
-import type { ProgressModel } from './model'
+import { agentRowLine, type AgentRow, type ProgressModel } from './model'
 
 const H = 28
 
@@ -42,4 +42,22 @@ export function progressSvg(m: ProgressModel, width: number): string {
   x += countW
   for (const c of chips) { body += chip({ x, y: 5, label: c.label, tone: c.tone }); x += chipWidth(c.label) + 6 }
   return doc(width, H, body)
+}
+
+// One cockpit agent row: context ring, name + step, cost and time. Height 36.
+export const AGENT_H = 36
+export const agentLabel = (r: AgentRow) => r.type ?? r.name
+
+export const agentAlt = (r: AgentRow) =>
+  `${agentLabel(r)}${r.step ? ' ' + r.step : ''}, ${agentRowLine(r)}${r.running ? '' : ', finished'}`
+
+export function agentSvg(r: AgentRow, width: number): string {
+  const slot: Slot = !r.running ? 'muted' : r.ctxPct != null && r.ctxPct >= 80 ? 'err' : r.ctxPct != null && r.ctxPct >= 60 ? 'warn' : 'ok'
+  const right = [r.usd != null ? `$${r.usd.toFixed(2)}` : '$—', r.elapsed].join(' · ')
+  return doc(width, AGENT_H,
+    ring({ cx: 18, cy: 18, r: 10, value: (r.ctxPct ?? 0) / 100, slot }) +
+    text({ x: 38, y: 15, s: agentLabel(r), weight: 600, slot: r.running ? 'ink' : 'muted' }) +
+    text({ x: 38, y: 29, s: r.step || (r.running ? 'working' : 'finished'), size: 11, slot: 'muted' }) +
+    text({ x: width - 8, y: 15, s: right, size: 11, slot: 'muted', anchor: 'end' }) +
+    text({ x: width - 8, y: 29, s: r.ctxPct != null ? `ctx ${r.ctxPct}%` : 'ctx —', size: 11, slot, anchor: 'end' }))
 }
