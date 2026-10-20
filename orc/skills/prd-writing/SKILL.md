@@ -113,7 +113,7 @@ How does this get to users?
 4. **Draft from the template.** Fill every section with real content. **Delete sections that genuinely have no content** (e.g. no counter-metric, no appendix) rather than writing `TBD`.
 5. **Show the draft to the user for review** before committing (review gates in `orc:doc-writing`).
 6. **Commit** via `orc:git-commit`. Suggested message: `docs(prd): NNNN — <kebab title>`.
-7. **Cross-link.** If the PRD relates to existing tickets, RFCs, ADRs — link FROM those to the PRD (the link should be the entry point, not the reverse).
+7. **Cross-link.** If the PRD relates to existing tickets, RFCs, ADRs — link FROM those to the PRD (the link is the entry point, not the reverse).
 
 ## Tone
 
@@ -126,4 +126,4 @@ Plain prose, written by a product-minded engineer for product-and-engineering re
 - **PRDs written after the feature shipped.** The "Why" gets sanitized in hindsight; future-you can't tell what was real motivation vs. retrofitted justification.
 - **PRDs that read like specs.** If half the content is API shapes and database tables, you're writing a TRD or RFC — promote it accordingly.
 - **PRDs without "Out of scope".** Without explicit exclusions, every reviewer will paste in their pet feature and the work doubles.
-- **One-line problem statements.** "Users want CSV export" is not a problem statement; it's a solution. The PRD should articulate *the problem CSV export solves*.
+- **One-line problem statements.** "Users want CSV export" is not a problem statement; it's a solution. The PRD articulates *the problem CSV export solves*.

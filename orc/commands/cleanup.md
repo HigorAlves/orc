@@ -253,7 +253,7 @@ Untouched branches:
 - **No `git branch -D` (capital D).** Only `-d` (lowercase, refuses unmerged branches). The user must use `-D` manually if they really mean it.
 - **No deletion when running from inside a candidate.** Refuse and tell the user where to `cd` first.
 - **`.orc/orc.json` updates are atomic.** Read, modify in memory, Write the full file. Never partial.
-- **`--dry-run` always prints the plan and exits.** Even if the user confirms during the AskUserQuestion before realizing they should have used `--dry-run`, treat the flag as a final gate.
+- **`--dry-run` always prints the plan and exits.** Even if the user confirms during the AskUserQuestion before realizing they meant `--dry-run`, treat the flag as a final gate.
 - **Stack child branches respect parent merge state.** A stack member at position N is only deletable if positions 1..N-1 are all `MERGED`. Bypassed only by `--per-repo` (with explicit consent).
 - **Never `docker compose down` a project not matching the `orc-` prefix.** Orphans are always previewed and individually opted into — never auto-removed.
 - **Named volumes survive by default.** Removal requires the explicit `--down-volumes` flag; DB data is user work.

@@ -160,7 +160,7 @@ This is the single most important UX rule. Auto-posting reviews is a trust-erodi
 
 ## Tone
 
-The comment body should follow `orc:caveman-review` discipline — terse, actionable, signal-only. The overall review body is hard-capped at **2 sentences (~40 words)**: one clause framing the PR + finding counts by severity (e.g. "CSV export for /reports. 2 bugs, 1 untested branch, 2 nits."). It never restates inline comments, never praises, never hedges — the inline comments carry all detail. No throat-clearing, no praise per finding. One line per problem in the comment body, suggestion block underneath if applicable.
+The comment body follows `orc:caveman-review` discipline — terse, actionable, signal-only. The overall review body is hard-capped at **2 sentences (~40 words)**: one clause framing the PR + finding counts by severity (e.g. "CSV export for /reports. 2 bugs, 1 untested branch, 2 nits."). It never restates inline comments, never praises, never hedges — the inline comments carry all detail. No throat-clearing, no praise per finding. One line per problem in the comment body, suggestion block underneath if applicable.
 
 ## Comment-body templates
 
@@ -210,4 +210,4 @@ gh pr view ${PR} --json reviews
 
 - GitHub REST API — Reviews: https://docs.github.com/en/rest/pulls/reviews
 - Suggestion block format: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/incorporating-feedback-in-your-pull-request#applying-suggested-changes
-- Sibling skills: `orc:gh-cli` (the gh CLI / API surface), `orc:caveman-review` (tone discipline that comment bodies should follow).
+- Sibling skills: `orc:gh-cli` (the gh CLI / API surface), `orc:caveman-review` (tone discipline for comment bodies).

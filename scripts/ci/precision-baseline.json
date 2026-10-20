@@ -1,0 +1,1044 @@
+{
+  "files": {
+    "orc/commands/debug.md": {
+      "kind": "command",
+      "long": 8,
+      "notimp": 7,
+      "passive": 6,
+      "bytes": 9571,
+      "desc": 251
+    },
+    "orc/commands/scaffold.md": {
+      "kind": "command",
+      "long": 0,
+      "notimp": 1,
+      "passive": 1,
+      "bytes": 2625,
+      "desc": 179
+    },
+    "orc/commands/jira.md": {
+      "kind": "command",
+      "long": 5,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 7756,
+      "desc": 203
+    },
+    "orc/commands/prd.md": {
+      "kind": "command",
+      "long": 5,
+      "notimp": 2,
+      "passive": 3,
+      "bytes": 4500,
+      "desc": 197
+    },
+    "orc/commands/rfc.md": {
+      "kind": "command",
+      "long": 2,
+      "notimp": 0,
+      "passive": 3,
+      "bytes": 4535,
+      "desc": 202
+    },
+    "orc/commands/triage.md": {
+      "kind": "command",
+      "long": 15,
+      "notimp": 0,
+      "passive": 8,
+      "bytes": 11124,
+      "desc": 217
+    },
+    "orc/commands/setup.md": {
+      "kind": "command",
+      "long": 16,
+      "notimp": 1,
+      "passive": 7,
+      "bytes": 8768,
+      "desc": 228
+    },
+    "orc/commands/qa.md": {
+      "kind": "command",
+      "long": 4,
+      "notimp": 0,
+      "passive": 7,
+      "bytes": 10882,
+      "desc": 274
+    },
+    "orc/commands/explain.md": {
+      "kind": "command",
+      "long": 0,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 3263,
+      "desc": 323
+    },
+    "orc/commands/stack-pr.md": {
+      "kind": "command",
+      "long": 1,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 10421,
+      "desc": 210
+    },
+    "orc/commands/evidence.md": {
+      "kind": "command",
+      "long": 5,
+      "notimp": 0,
+      "passive": 3,
+      "bytes": 6699,
+      "desc": 227
+    },
+    "orc/commands/status.md": {
+      "kind": "command",
+      "long": 5,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 4984,
+      "desc": 126
+    },
+    "orc/commands/ship.md": {
+      "kind": "command",
+      "long": 8,
+      "notimp": 2,
+      "passive": 9,
+      "bytes": 11771,
+      "desc": 225
+    },
+    "orc/commands/retro.md": {
+      "kind": "command",
+      "long": 15,
+      "notimp": 3,
+      "passive": 4,
+      "bytes": 9885,
+      "desc": 360
+    },
+    "orc/commands/resume.md": {
+      "kind": "command",
+      "long": 5,
+      "notimp": 3,
+      "passive": 6,
+      "bytes": 5595,
+      "desc": 173
+    },
+    "orc/commands/trd.md": {
+      "kind": "command",
+      "long": 5,
+      "notimp": 2,
+      "passive": 7,
+      "bytes": 5207,
+      "desc": 165
+    },
+    "orc/commands/env.md": {
+      "kind": "command",
+      "long": 8,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 5575,
+      "desc": 153
+    },
+    "orc/commands/release.md": {
+      "kind": "command",
+      "long": 8,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 7240,
+      "desc": 194
+    },
+    "orc/commands/address.md": {
+      "kind": "command",
+      "long": 7,
+      "notimp": 2,
+      "passive": 7,
+      "bytes": 7282,
+      "desc": 140
+    },
+    "orc/commands/jira-breakdown.md": {
+      "kind": "command",
+      "long": 11,
+      "notimp": 3,
+      "passive": 3,
+      "bytes": 8455,
+      "desc": 222
+    },
+    "orc/commands/postmortem.md": {
+      "kind": "command",
+      "long": 2,
+      "notimp": 1,
+      "passive": 4,
+      "bytes": 5954,
+      "desc": 180
+    },
+    "orc/commands/code-review.md": {
+      "kind": "command",
+      "long": 22,
+      "notimp": 9,
+      "passive": 22,
+      "bytes": 17050,
+      "desc": 236
+    },
+    "orc/commands/deps.md": {
+      "kind": "command",
+      "long": 10,
+      "notimp": 1,
+      "passive": 4,
+      "bytes": 6634,
+      "desc": 160
+    },
+    "orc/commands/plan.md": {
+      "kind": "command",
+      "long": 9,
+      "notimp": 5,
+      "passive": 9,
+      "bytes": 10818,
+      "desc": 186
+    },
+    "orc/commands/flow.md": {
+      "kind": "command",
+      "long": 8,
+      "notimp": 1,
+      "passive": 6,
+      "bytes": 13735,
+      "desc": 225
+    },
+    "orc/commands/wayfinder.md": {
+      "kind": "command",
+      "long": 13,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 10218,
+      "desc": 302
+    },
+    "orc/commands/start.md": {
+      "kind": "command",
+      "long": 5,
+      "notimp": 3,
+      "passive": 7,
+      "bytes": 7895,
+      "desc": 199
+    },
+    "orc/commands/cleanup.md": {
+      "kind": "command",
+      "long": 14,
+      "notimp": 3,
+      "passive": 7,
+      "bytes": 13628,
+      "desc": 205
+    },
+    "orc/commands/adr.md": {
+      "kind": "command",
+      "long": 0,
+      "notimp": 1,
+      "passive": 2,
+      "bytes": 3095,
+      "desc": 193
+    },
+    "orc/commands/incident.md": {
+      "kind": "command",
+      "long": 18,
+      "notimp": 4,
+      "passive": 7,
+      "bytes": 11235,
+      "desc": 235
+    },
+    "orc/commands/ci.md": {
+      "kind": "command",
+      "long": 6,
+      "notimp": 2,
+      "passive": 3,
+      "bytes": 5233,
+      "desc": 244
+    },
+    "orc/commands/fan-out.md": {
+      "kind": "command",
+      "long": 7,
+      "notimp": 3,
+      "passive": 4,
+      "bytes": 7090,
+      "desc": 204
+    },
+    "orc/agents/orc-code-fixer.md": {
+      "kind": "agent",
+      "long": 2,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 3415,
+      "desc": 259
+    },
+    "orc/agents/orc-ci-investigator.md": {
+      "kind": "agent",
+      "long": 8,
+      "notimp": 0,
+      "passive": 3,
+      "bytes": 4827,
+      "desc": 464
+    },
+    "orc/agents/orc-jira-architect.md": {
+      "kind": "agent",
+      "long": 7,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 5097,
+      "desc": 377
+    },
+    "orc/agents/orc-test-author.md": {
+      "kind": "agent",
+      "long": 6,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 7065,
+      "desc": 481
+    },
+    "orc/agents/orc-prd-analyzer.md": {
+      "kind": "agent",
+      "long": 3,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 7854,
+      "desc": 461
+    },
+    "orc/agents/orc-refactor-architect.md": {
+      "kind": "agent",
+      "long": 4,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 3710,
+      "desc": 401
+    },
+    "orc/agents/orc-qa-validator.md": {
+      "kind": "agent",
+      "long": 14,
+      "notimp": 0,
+      "passive": 8,
+      "bytes": 14570,
+      "desc": 474
+    },
+    "orc/agents/orc-env-provisioner.md": {
+      "kind": "agent",
+      "long": 4,
+      "notimp": 1,
+      "passive": 2,
+      "bytes": 5052,
+      "desc": 535
+    },
+    "orc/agents/orc-reply-drafter.md": {
+      "kind": "agent",
+      "long": 3,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 3616,
+      "desc": 269
+    },
+    "orc/agents/orc-stack-analyzer.md": {
+      "kind": "agent",
+      "long": 5,
+      "notimp": 1,
+      "passive": 1,
+      "bytes": 6901,
+      "desc": 387
+    },
+    "orc/agents/orc-security-reviewer.md": {
+      "kind": "agent",
+      "long": 6,
+      "notimp": 0,
+      "passive": 3,
+      "bytes": 6582,
+      "desc": 674
+    },
+    "orc/agents/orc-pr-reviewer.md": {
+      "kind": "agent",
+      "long": 8,
+      "notimp": 1,
+      "passive": 3,
+      "bytes": 5055,
+      "desc": 353
+    },
+    "orc/agents/orc-debug-investigator.md": {
+      "kind": "agent",
+      "long": 6,
+      "notimp": 0,
+      "passive": 5,
+      "bytes": 5873,
+      "desc": 377
+    },
+    "orc/agents/orc-implementer.md": {
+      "kind": "agent",
+      "long": 20,
+      "notimp": 0,
+      "passive": 8,
+      "bytes": 13041,
+      "desc": 613
+    },
+    "orc/skills/adr-writing/SKILL.md": {
+      "kind": "skill",
+      "long": 4,
+      "notimp": 0,
+      "passive": 5,
+      "bytes": 4847,
+      "desc": 199
+    },
+    "orc/skills/agent-browser/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 2109,
+      "desc": 130
+    },
+    "orc/skills/architecture-patterns/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 0,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 3652,
+      "desc": 202
+    },
+    "orc/skills/browser-qa/SKILL.md": {
+      "kind": "skill",
+      "long": 11,
+      "notimp": 0,
+      "passive": 3,
+      "bytes": 9564,
+      "desc": 273
+    },
+    "orc/skills/callouts/SKILL.md": {
+      "kind": "skill",
+      "long": 7,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 4815,
+      "desc": 233
+    },
+    "orc/skills/caveman-pr/SKILL.md": {
+      "kind": "skill",
+      "long": 5,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 7037,
+      "desc": 177
+    },
+    "orc/skills/caveman-review/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 3254,
+      "desc": 209
+    },
+    "orc/skills/ci-routing/SKILL.md": {
+      "kind": "skill",
+      "long": 3,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 3328,
+      "desc": 268
+    },
+    "orc/skills/code-discovery/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 4,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 3512,
+      "desc": 264
+    },
+    "orc/skills/codebase-design/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 6,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 6669,
+      "desc": 284
+    },
+    "orc/skills/dependency-management/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 4,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 3768,
+      "desc": 228
+    },
+    "orc/skills/dispatching-parallel-agents/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 6628,
+      "desc": 243
+    },
+    "orc/skills/doc-writing/SKILL.md": {
+      "kind": "skill",
+      "long": 14,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 8984,
+      "desc": 192
+    },
+    "orc/skills/docker-best-practices/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 1,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 3736,
+      "desc": 189
+    },
+    "orc/skills/documentation-writing/SKILL.md": {
+      "kind": "skill",
+      "long": 2,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 2691,
+      "desc": 170
+    },
+    "orc/skills/domain-modeling/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 0,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 4075,
+      "desc": 256
+    },
+    "orc/skills/env-provisioning/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 8,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 9981,
+      "desc": 235
+    },
+    "orc/skills/error-handling-patterns/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 3872,
+      "desc": 185
+    },
+    "orc/skills/evidence-publish/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 5,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 7930,
+      "desc": 171
+    },
+    "orc/skills/executing-plans/SKILL.md": {
+      "kind": "skill",
+      "long": 5,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 4032,
+      "desc": 251
+    },
+    "orc/skills/explainer/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 1,
+      "notimp": 0,
+      "passive": 3,
+      "bytes": 4410,
+      "desc": 246
+    },
+    "orc/skills/finishing-a-development-branch/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 5937,
+      "desc": 207
+    },
+    "orc/skills/flow-phases/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 0,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 1437,
+      "desc": 216
+    },
+    "orc/skills/gates/SKILL.md": {
+      "kind": "skill",
+      "long": 6,
+      "notimp": 0,
+      "passive": 3,
+      "bytes": 4437,
+      "desc": 280
+    },
+    "orc/skills/gh-cli/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 4999,
+      "desc": 172
+    },
+    "orc/skills/git-advanced-workflows/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 2738,
+      "desc": 196
+    },
+    "orc/skills/git-commit/SKILL.md": {
+      "kind": "skill",
+      "long": 1,
+      "notimp": 1,
+      "passive": 2,
+      "bytes": 5124,
+      "desc": 196
+    },
+    "orc/skills/grill-me/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 365,
+      "desc": 108
+    },
+    "orc/skills/grill-with-docs/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 415,
+      "desc": 153
+    },
+    "orc/skills/grilling/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 2332,
+      "desc": 263
+    },
+    "orc/skills/handoff/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 1227,
+      "desc": 217
+    },
+    "orc/skills/improve-codebase-architecture/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 5,
+      "notimp": 0,
+      "passive": 7,
+      "bytes": 7409,
+      "desc": 201
+    },
+    "orc/skills/inline-review/SKILL.md": {
+      "kind": "skill",
+      "long": 5,
+      "notimp": 0,
+      "passive": 5,
+      "bytes": 10010,
+      "desc": 184
+    },
+    "orc/skills/jira-cli/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 3854,
+      "desc": 192
+    },
+    "orc/skills/jira-hierarchy/SKILL.md": {
+      "kind": "skill",
+      "long": 6,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 4151,
+      "desc": 299
+    },
+    "orc/skills/map/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 4323,
+      "desc": 99
+    },
+    "orc/skills/mobile-ios-design/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 6895,
+      "desc": 176
+    },
+    "orc/skills/nestjs-best-practices/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 4570,
+      "desc": 186
+    },
+    "orc/skills/next-best-practices/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 4043,
+      "desc": 200
+    },
+    "orc/skills/nodejs-best-practices/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 8773,
+      "desc": 147
+    },
+    "orc/skills/playwright-qa/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 3,
+      "notimp": 0,
+      "passive": 3,
+      "bytes": 7635,
+      "desc": 285
+    },
+    "orc/skills/postgresql-optimization/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 3566,
+      "desc": 198
+    },
+    "orc/skills/postgresql-table-design/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 3,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 2916,
+      "desc": 188
+    },
+    "orc/skills/postmortem-writing/SKILL.md": {
+      "kind": "skill",
+      "long": 9,
+      "notimp": 0,
+      "passive": 3,
+      "bytes": 8720,
+      "desc": 198
+    },
+    "orc/skills/pr-size-budget/SKILL.md": {
+      "kind": "skill",
+      "long": 1,
+      "notimp": 0,
+      "passive": 5,
+      "bytes": 7763,
+      "desc": 169
+    },
+    "orc/skills/prd-writing/SKILL.md": {
+      "kind": "skill",
+      "long": 12,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 7661,
+      "desc": 192
+    },
+    "orc/skills/prototype/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 8,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 3220,
+      "desc": 289
+    },
+    "orc/skills/qa-targets/SKILL.md": {
+      "kind": "skill",
+      "long": 10,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 5570,
+      "desc": 246
+    },
+    "orc/skills/readme-writing/SKILL.md": {
+      "kind": "skill",
+      "long": 1,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 1486,
+      "desc": 195
+    },
+    "orc/skills/receiving-code-review/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 6385,
+      "desc": 199
+    },
+    "orc/skills/release-management/SKILL.md": {
+      "kind": "skill",
+      "long": 2,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 5631,
+      "desc": 187
+    },
+    "orc/skills/requesting-code-review/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 3159,
+      "desc": 227
+    },
+    "orc/skills/research/SKILL.md": {
+      "kind": "skill",
+      "long": 2,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 964,
+      "desc": 285
+    },
+    "orc/skills/resolving-merge-conflicts/SKILL.md": {
+      "kind": "skill",
+      "long": 2,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 1236,
+      "desc": 269
+    },
+    "orc/skills/review-contract/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 4,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 5883,
+      "desc": 238
+    },
+    "orc/skills/rfc-writing/SKILL.md": {
+      "kind": "skill",
+      "long": 7,
+      "notimp": 0,
+      "passive": 3,
+      "bytes": 5978,
+      "desc": 199
+    },
+    "orc/skills/sentry-cli/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 1,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 4252,
+      "desc": 183
+    },
+    "orc/skills/shadcn/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 11,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 12591,
+      "desc": 191
+    },
+    "orc/skills/skill-writing/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 2,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 4253,
+      "desc": 242
+    },
+    "orc/skills/stack-pr/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 3,
+      "notimp": 0,
+      "passive": 6,
+      "bytes": 10775,
+      "desc": 204
+    },
+    "orc/skills/state-protocol/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 2,
+      "notimp": 0,
+      "passive": 5,
+      "bytes": 7071,
+      "desc": 284
+    },
+    "orc/skills/stripe-best-practices/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 2370,
+      "desc": 193
+    },
+    "orc/skills/swiftui-best-practices/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 0,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 4144,
+      "desc": 163
+    },
+    "orc/skills/systematic-debugging/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 12,
+      "notimp": 3,
+      "passive": 4,
+      "bytes": 10972,
+      "desc": 237
+    },
+    "orc/skills/tailwind-design-system/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 4394,
+      "desc": 181
+    },
+    "orc/skills/tdd/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 4,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 5607,
+      "desc": 176
+    },
+    "orc/skills/to-issues/SKILL.md": {
+      "kind": "skill",
+      "long": 4,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 6585,
+      "desc": 173
+    },
+    "orc/skills/to-prd/SKILL.md": {
+      "kind": "skill",
+      "long": 4,
+      "notimp": 0,
+      "passive": 7,
+      "bytes": 3289,
+      "desc": 155
+    },
+    "orc/skills/to-questionnaire/SKILL.md": {
+      "kind": "skill",
+      "long": 3,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 3158,
+      "desc": 186
+    },
+    "orc/skills/tracker-config/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 3,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 2472,
+      "desc": 282
+    },
+    "orc/skills/trd-writing/SKILL.md": {
+      "kind": "skill",
+      "long": 9,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 9119,
+      "desc": 189
+    },
+    "orc/skills/turborepo/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 3,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 5810,
+      "desc": 223
+    },
+    "orc/skills/typescript-advanced-types/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 3593,
+      "desc": 216
+    },
+    "orc/skills/using-git-worktrees/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 8,
+      "bytes": 7416,
+      "desc": 176
+    },
+    "orc/skills/using-orc/SKILL.md": {
+      "kind": "skill",
+      "long": 6,
+      "notimp": 0,
+      "passive": 2,
+      "bytes": 4703,
+      "desc": 144
+    },
+    "orc/skills/vercel-composition-patterns/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 2771,
+      "desc": 205
+    },
+    "orc/skills/vercel-react-best-practices/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 7113,
+      "desc": 191
+    },
+    "orc/skills/verification-before-completion/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 4340,
+      "desc": 258
+    },
+    "orc/skills/vitest/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 0,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 3321,
+      "desc": 176
+    },
+    "orc/skills/wait-what/SKILL.md": {
+      "kind": "skill",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 495,
+      "desc": 106
+    },
+    "orc/skills/wizard/SKILL.md": {
+      "kind": "skill",
+      "long": 3,
+      "notimp": 0,
+      "passive": 5,
+      "bytes": 4260,
+      "desc": 300
+    },
+    "orc/skills/workspace-mode/SKILL.md": {
+      "kind": "skill",
+      "long": 10,
+      "notimp": 0,
+      "passive": 7,
+      "bytes": 13201,
+      "desc": 191
+    },
+    "orc/skills/writing-for-agents/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 13,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 11324,
+      "desc": 282
+    },
+    "orc/skills/writing-plans/SKILL.md": {
+      "kind": "skill",
+      "long": 6,
+      "notimp": 0,
+      "passive": 4,
+      "bytes": 9954,
+      "desc": 263
+    }
+  }
+}

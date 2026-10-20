@@ -258,7 +258,7 @@ Backup branch: ${current_branch}-pre-stack-backup (delete with `git branch -D` o
 
 - `/orc:ship` size gate fires → user picks "Stack it" → this command runs inline.
 - After realizing mid-implementation that the branch grew past the budget — run standalone before opening the PR.
-- Reviving a stale branch with multiple commits that should ship as separate PRs.
+- Reviving a stale branch with multiple commits that belong in separate PRs.
 
 Don't invoke for branches with one commit, or for production hot-fixes where review-cycle time is the dominant cost (use `/orc:ship` with the `Size-budget-override:` trailer instead).
 

@@ -253,7 +253,7 @@ struct FeatureCard: View {
 
 - **Layout Breaking**: Use `.fixedSize()` sparingly; prefer flexible layouts
 - **Performance Issues**: Use `LazyVStack`/`LazyHStack` for long scrolling lists
-- **Navigation Bugs**: Ensure `NavigationLink` values are `Hashable`
+- **Navigation Bugs**: Verify `NavigationLink` values are `Hashable`
 - **Dark Mode Problems**: Avoid hardcoded colors; use semantic or asset catalog colors
 - **Accessibility Failures**: Test with VoiceOver enabled
 - **Memory Leaks**: Watch for strong reference cycles in closures

@@ -36,7 +36,7 @@ Write PR descriptions terse and exact. Reviewers don't need a tour of your diff 
 ### Notes (only if there's something real)
 - **Merge danger** — required for anything beyond a trivial fix, one line: `Door: one-way | two-way · Blast radius: <one or two words>`. Two-way doors revert cleanly; one-way doors (migrations, deletions, published API changes, anything a revert won't undo) say what makes them hard to walk back.
 - Breaking changes — call out, including the migration step.
-- Risks the reviewer should look at twice.
+- Risks the reviewer must look at twice.
 - Follow-up issues filed.
 - Skip platitudes ("clean code", "all tests pass" — already covered).
 

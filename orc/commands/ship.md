@@ -136,7 +136,7 @@ When `${ORC_STATE_DIR}/<sanitized-branch>/files/qa/qa-manifest.json` exists, inv
 
 In workspace mode, this becomes a **two-pass loop**:
 
-**Pass 1 — push + create per repo** (sequential, since `gh pr create` should observe a clean push). Skip any repo whose Phase 4.5 already produced a stack (its `linkedPRs[]` entries are populated and `gh pr create` would create a duplicate):
+**Pass 1 — push + create per repo** (sequential, so `gh pr create` observes a clean push). Skip any repo whose Phase 4.5 already produced a stack (its `linkedPRs[]` entries are populated and `gh pr create` would create a duplicate):
 
 ```bash
 for r in $targetRepos; do
@@ -187,7 +187,7 @@ Echo all N PR URLs to the user.
 
 If the user opted for "merge after CI" rather than "wait for review," surface a reminder to come back with `/orc:address` if reviewers leave comments.
 
-After the PR merges in GitHub, the user should run **`/orc:cleanup`** to remove the `.orc/<branch>/` workspace state, the associated git worktree (if `using-git-worktrees` was used), and the local feature branch (if it merged cleanly). Surface this as the last block of `/orc:ship`'s output so the lifecycle closes properly:
+After the PR merges in GitHub, the user runs **`/orc:cleanup`** to remove the `.orc/<branch>/` workspace state, the associated git worktree (if `using-git-worktrees` was used), and the local feature branch (if it merged cleanly). Surface this as the last block of `/orc:ship`'s output so the lifecycle closes properly:
 
 ```markdown
 > **➡️ Next**

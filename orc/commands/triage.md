@@ -55,7 +55,7 @@ Two **category** roles — `bug` (something is broken) and `enhancement` (new fe
 - `ready-for-human` — needs human implementation
 - `wontfix` — will not be actioned
 
-For a PR the same states read against the attached code: `ready-for-agent` means a brief is attached and an agent should take the next step on the diff; `ready-for-human` means it's ready for a human to merge.
+For a PR the same states read against the attached code: `ready-for-agent` means a brief is attached and an agent takes the next step on the diff; `ready-for-human` means it's ready for a human to merge.
 
 Every triaged item carries exactly one category role and one state role. Conflicting state roles → flag it and ask the maintainer before doing anything else. These are **canonical names** — the actual label strings come from `docs/agents/triage-labels.md`. Transitions: unlabeled → `needs-triage` → one of `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`; `needs-info` returns to `needs-triage` when the reporter replies. The maintainer can override any transition — flag unusual ones and ask.
 
@@ -107,7 +107,7 @@ When PRs are in scope, include external PRs tagged `[PR]` vs `[issue]`. Discover
 The brief is the contract an AFK agent works from; the original body and discussion are only context. Principles:
 
 - **Durable over precise** — the item may sit for weeks while the codebase moves. Describe interfaces, types, and behavioral contracts; never file paths or line numbers.
-- **Behavioral, not procedural** — what the system should do, not how to implement it; the agent explores fresh.
+- **Behavioral, not procedural** — what the system must do, not how to implement it; the agent explores fresh.
 - **Complete acceptance criteria** — each independently verifiable ("running `x` returns `y`", not "works correctly").
 - **Explicit scope boundaries** — name what must NOT change, so the agent doesn't gold-plate.
 

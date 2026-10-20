@@ -82,4 +82,4 @@ After the suite is green, look for [refactor candidates](references/refactoring.
 
 ## Rejected framings
 
-- **"Refactoring is not part of the loop"** (upstream mattpocock/skills tdd) — evaluated and REJECTED. Upstream defers refactoring to the review stage; orc keeps it as step 4 of the cycle because the orc-implementer slice loop (step 8: refactor if the green code is ugly, re-run the suite) depends on the refactor step running against a green suite before the per-slice commit. Future audits should not re-propose removing it.
+- **"Refactoring is not part of the loop"** (upstream mattpocock/skills tdd) — evaluated and REJECTED. Upstream defers refactoring to the review stage; orc keeps it as step 4 of the cycle because the orc-implementer slice loop (step 8: refactor if the green code is ugly, re-run the suite) depends on the refactor step running against a green suite before the per-slice commit. Future audits do not re-propose removing it.

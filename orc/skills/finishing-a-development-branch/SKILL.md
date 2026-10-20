@@ -187,7 +187,7 @@ git worktree remove <worktree-path>
 - **Fix:** Present exactly 4 structured options
 
 **Automatic worktree cleanup**
-- **Problem:** Remove worktree when might need it (Option 2, 3)
+- **Problem:** Remove worktree when it is still needed (Option 2, 3)
 - **Fix:** Only cleanup for Options 1 and 4
 
 **No confirmation for discard**

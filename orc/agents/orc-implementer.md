@@ -87,7 +87,7 @@ Write the smallest amount of code that turns the slice's test green. No opportun
 - Conventional Commits format. Type derived from the slice's nature (`feat:`, `fix:`, `refactor:`, `test:`).
 - Subject ≤ 50 chars. Body only when the *why* isn't obvious.
 - No AI attribution. Ever. Iron rule.
-- The PreToolUse hook will refuse a commit on `main`/`master`/`develop` — by this point you should be on a feature branch (Phase 4 set it up). If somehow not, surface and stop.
+- The PreToolUse hook will refuse a commit on `main`/`master`/`develop` — by this point you are on a feature branch (Phase 4 set it up). If not, surface and stop.
 
 **Parallel mode** (caller passed `mode: parallel`, single-slice dispatch with sibling implementers): do NOT commit. Return a diff + test report to the caller. The caller (`/orc:flow` Phase 5) merges all parallel implementer outputs and commits them in plan order to avoid commit-races on the branch.
 

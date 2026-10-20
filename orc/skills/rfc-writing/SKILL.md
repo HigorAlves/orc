@@ -110,7 +110,7 @@ How do we know this RFC's implementation is successful 3 months in? Be measurabl
 
 1. **Draft alone first.** A blank RFC reviewed by 5 people becomes design-by-committee; an opinionated draft sharpens the conversation.
 2. **Set a decision deadline.** RFCs without a deadline drift indefinitely. 1 week for small RFCs, 2 weeks for big ones.
-3. **Revise the document, not the comments.** If a reviewer's feedback changes the design, edit the design and resolve the comment. The final document should read as if the conversation never happened.
+3. **Revise the document, not the comments.** If a reviewer's feedback changes the design, edit the design and resolve the comment. The final document reads as if the conversation never happened.
 4. **Approval ≠ implementation.** When approved, follow-up issues / `/orc:plan` produce the work breakdown. The RFC is the *why*; the plan is the *how*.
 5. **Reject is fine.** A rejected RFC is a successful one — the team learned that approach was wrong without paying for the implementation. Mark it Rejected, leave the document, link from future ADRs that benefit from the analysis.
 

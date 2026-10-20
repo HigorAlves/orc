@@ -11,7 +11,7 @@ metadata:
 
 Break a plan, spec, or conversation into a set of independently-grabbable **issues** — tracer-bullet vertical slices, each declaring the issues that **block** it.
 
-The issue tracker and triage label vocabulary should have been provided to you — run `/orc:setup` if not.
+The issue tracker and triage label vocabulary come from the tracker layer — if absent, run `/orc:setup`.
 
 ## Process
 
@@ -21,7 +21,7 @@ Work from whatever is already in the conversation context. If the user passes a 
 
 ### 2. Explore the codebase (optional)
 
-If you have not already explored the codebase, do so to understand the current state of the code. Issue titles and descriptions should use the project's domain glossary vocabulary, and respect ADRs in the area you're touching.
+If you have not already explored the codebase, do so to understand the current state of the code. Issue titles and descriptions use the project's domain glossary vocabulary, and respect ADRs in the area you're touching.
 
 Look for opportunities to prefactor the code to make the implementation easier. "Make the change easy, then make the easy change."
 
@@ -34,7 +34,7 @@ Break the work into **tracer bullet** issues.
 - Each slice cuts a narrow but COMPLETE path through every layer (schema, API, UI, tests) — vertical, NOT a horizontal slice of one layer
 - A completed slice is demoable or verifiable on its own
 - Each slice is sized to fit in a single fresh context window
-- Any prefactoring should be done first
+- Any prefactoring comes first
 
 </vertical-slice-rules>
 
@@ -58,7 +58,7 @@ Ask the user:
 
 - Does the granularity feel right? (too coarse / too fine)
 - Are the blocking edges correct — does each issue only depend on issues that genuinely gate it?
-- Should any issues be merged or split further?
+- Do any issues need merging or splitting further?
 - Are the correct slices marked as HITL and AFK?
 
 Iterate until the user approves the breakdown.
@@ -116,4 +116,4 @@ In either form, avoid specific file paths or code snippets — they go stale fas
 
 ## Jira hierarchy variant
 
-When the tracker is Jira and the output should be the structured Epic→Story→Task hierarchy (micro-PRD epic, templated children, concurrency-sliced tasks) rather than flat issues, hand off to `/orc:jira-breakdown` — it enforces the `orc:jira-hierarchy` contract end-to-end.
+When the tracker is Jira and the output is the structured Epic→Story→Task hierarchy (micro-PRD epic, templated children, concurrency-sliced tasks) rather than flat issues, hand off to `/orc:jira-breakdown` — it enforces the `orc:jira-hierarchy` contract end-to-end.

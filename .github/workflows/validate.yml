@@ -123,6 +123,9 @@ jobs:
       - name: Changelog keeps up with the manifest
         run: bash scripts/ci/verify-changelog.sh
 
+      - name: Authoring standard (controlled language, size caps, ratchet)
+        run: bash scripts/ci/verify-ste.sh
+
       - name: Tool registry integrity
         run: bash scripts/ci/verify-tools.sh
 

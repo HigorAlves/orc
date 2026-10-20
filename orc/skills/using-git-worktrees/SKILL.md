@@ -113,7 +113,7 @@ if [ -f go.mod ]; then go mod download; fi
 
 ### 4. Verify Clean Baseline
 
-Run tests to ensure worktree starts clean:
+Run tests to verify the worktree starts clean:
 
 ```bash
 # Examples - use project-appropriate command

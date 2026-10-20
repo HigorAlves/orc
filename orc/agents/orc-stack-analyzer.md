@@ -35,7 +35,7 @@ You do NOT execute the rebase, push branches, or open PRs. You hand off a JSON p
 | **UI** | Often the last slice — depends on the API surface being landed. |
 | **Tests-only / docs-only** | Smallest, lands first or last depending on whether the test exercises new code. |
 
-Slices should be **vertical when possible** (UI + API for one feature shipped together), **horizontal when necessary** (the refactor IS the unit of review).
+Slices are **vertical when possible** (UI + API for one feature shipped together), **horizontal when necessary** (the refactor IS the unit of review).
 
 ## Workflow
 

@@ -25,7 +25,7 @@ Format a round like so — a `---` rule between consecutive questions:
 ➡️ <your recommended answer>
 ```
 
-Word each question so "yes" accepts your recommended answer — the user should be able to clear a round with a list of yeses.
+Word each question so "yes" accepts your recommended answer — the user can clear a round with a list of yeses.
 
 Each round the user answers reshapes the tree — settled decisions push the frontier outward and unblock questions that depended on them. Recompute the frontier and ask the next round. A question whose answer depends on another question still open in this round belongs to a _later_ round, not this one.
 

@@ -64,7 +64,7 @@ docs/<type>s/NNNN-<kebab-name>.md
 Most of these docs share a backbone. A given type adds or drops sections (see its skill), but the spine is:
 
 1. **Header / metadata block** — title (`<TYPE> NNNN — <noun-phrase title>`), Status, Author/Deciders, dates, and links to related PRDs/RFCs/ADRs/tickets.
-2. **Summary** — 2–3 sentences; a reader who reads only this should know whether the doc concerns them.
+2. **Summary** — 2–3 sentences; a reader who reads only this knows whether the doc concerns them.
 3. **Goals** — what this doc MUST accomplish/enable. Bulleted, specific, measurable where possible.
 4. **Non-goals / Out of scope** — explicit exclusions. This is load-bearing: without it, every reviewer pastes in their pet feature and the work doubles.
 5. **Background / Context** — what the world looks like today, and the constraints (latency budget, scale, regulatory, capacity, vendor lock-in, deadline) that bound the work. Cite real numbers; link to prior docs / dashboards / incidents.
@@ -83,7 +83,7 @@ Discipline shared across all five types:
 2. **Draft alone first.** A blank doc reviewed by five people becomes design-by-committee; an opinionated draft sharpens the conversation.
 3. **Bound it before filling it.** Write Goals and Non-goals first — they constrain everything below.
 4. **Show the draft to the user before committing.** Use `AskUserQuestion` with options like "Looks good — commit" / "Edit before commit" / "Save as Draft (status flag flipped)".
-5. **Revise the document, not the comments.** When a reviewer's feedback changes the doc, edit the doc and resolve the comment. The final doc should read as if the discussion never happened.
+5. **Revise the document, not the comments.** When a reviewer's feedback changes the doc, edit the doc and resolve the comment. The final doc reads as if the discussion never happened.
 6. **Move the Status.** A doc stuck in `Draft` / `Proposed` forever is a smell — either advance it (In Review → Approved/Accepted) or archive it. Don't let docs rot in their initial status.
 7. **Commit** via `orc:git-commit`. Suggested message shape: `docs(<type>): NNNN — <kebab title>`.
 8. **Cross-link after acceptance** — from tickets, related docs, and any code the doc governs.

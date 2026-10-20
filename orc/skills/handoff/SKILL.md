@@ -11,7 +11,7 @@ metadata:
 
 Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save to the temporary directory of the user's OS (`$TMPDIR`, else `/tmp`; `%TEMP%` on Windows) — never the current workspace — and report the absolute path.
 
-Include a "suggested skills" section in the document, naming which `orc:` skills and commands the next agent should invoke.
+Include a "suggested skills" section in the document, naming which `orc:` skills and commands the next agent must invoke.
 
 Do not duplicate content already captured in other artifacts (specs, plans, ADRs, issues, commits, diffs). Reference them by path or URL instead.
 

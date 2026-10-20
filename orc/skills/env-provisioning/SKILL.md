@@ -5,7 +5,7 @@ description: "Provision a fast, reproducible dev environment for QA or standalon
 
 # Environment Provisioning
 
-Stand up the app (and its backing services) so QA — or the user — can run against a real, reproducible environment. Honors the project's own setup guidelines when they exist; generates the minimum when they don't. Speed is a design goal: the second boot on a branch should take seconds, not minutes.
+Stand up the app (and its backing services) so QA — or the user — can run against a real, reproducible environment. Honors the project's own setup guidelines when they exist; generates the minimum when they don't. Speed is a design goal: the second boot on a branch takes seconds, not minutes.
 
 **Announce at start:** "I'm using the env-provisioning skill because this task needs the app running."
 

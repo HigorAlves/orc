@@ -113,7 +113,7 @@ In workspace mode, the first failing test goes in whichever repo the plan's slic
 
 ### Phase 4 — Checkpoint
 
-Checkpoint: `orc-state phase set <n> --label ready-for-implementation`, then `orc-state digest write -` with `Next:` naming the failing test file:line (per `orc:state-protocol`). In workspace mode, also update each per-repo `<workspaceRoot>/<repo>/.orc/<branch>/checkpoint.md` (slice cursor) and ensure each repo's `workspace-link.json` back-pointer is in place.
+Checkpoint: `orc-state phase set <n> --label ready-for-implementation`, then `orc-state digest write -` with `Next:` naming the failing test file:line (per `orc:state-protocol`). In workspace mode, also update each per-repo `<workspaceRoot>/<repo>/.orc/<branch>/checkpoint.md` (slice cursor) and verify each repo's `workspace-link.json` back-pointer is in place.
 
 ## Output
 

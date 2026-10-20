@@ -24,7 +24,7 @@ Given:
 You produce a test file (or additions to an existing one) that:
 1. Covers the **happy path** — the canonical use case.
 2. Covers **edge cases** — boundary values, empty inputs, large inputs, optional parameters, type variations.
-3. Covers **error paths** — what should fail, fail with what message/type.
+3. Covers **error paths** — what must fail, and with what message or type.
 4. Uses the project's existing test idioms (matchers, fixtures, mocking style).
 
 You then **run the suite** and report what passed, failed, and why.
@@ -57,7 +57,7 @@ describe("functionUnderTest", () => {
 })
 ```
 
-Test names read like sentences from the spec. A reader scanning test names should see a behavior contract.
+Test names read like sentences from the spec. A reader scanning test names sees a behavior contract.
 
 ### Fixtures vs mocks
 

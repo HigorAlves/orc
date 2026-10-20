@@ -11,31 +11,31 @@ metadata:
 
 ## Overview
 
-Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
+Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
 
 Assume they are a skilled developer, but know almost nothing about our toolset or problem domain. Assume they don't know good test design very well.
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** This should be run in a dedicated worktree (created by brainstorming skill).
+**Context:** Run this in a dedicated worktree (created by the brainstorming skill).
 
 **Save plans to:** `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
 - (User preferences for plan location override this default)
 
 ## Scope Check
 
-If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
+If the spec covers multiple independent subsystems, brainstorming splits it into sub-project specs. If it didn't, suggest separate plans — one per subsystem. Each plan produces working, testable software on its own.
 
 ## File Structure
 
 Before defining tasks, map out which files will be created or modified and what each one is responsible for. This is where decomposition decisions get locked in. In an existing codebase, follow `orc:code-discovery` to locate the relevant files cheaply — when a Graphify code graph is available, `graphify query`/`path` surfaces which modules a change touches and how they connect, so you map the file list without reading the whole tree; fall back to Glob/Grep otherwise.
 
-- Design units with clear boundaries and well-defined interfaces. Each file should have one clear responsibility.
+- Design units with clear boundaries and well-defined interfaces. Each file has one clear responsibility.
 - You reason best about code you can hold in context at once, and your edits are more reliable when files are focused. Prefer smaller, focused files over large ones that do too much.
-- Files that change together should live together. Split by responsibility, not by technical layer.
+- Files that change together live together. Split by responsibility, not by technical layer.
 - In existing codebases, follow established patterns. If the codebase uses large files, don't unilaterally restructure - but if a file you're modifying has grown unwieldy, including a split in the plan is reasonable.
 
-This structure informs the task decomposition. Each task should produce self-contained changes that make sense independently.
+This structure informs the task decomposition. Each task produces self-contained changes that make sense independently.
 
 ## Bite-Sized Task Granularity
 
@@ -48,7 +48,7 @@ This structure informs the task decomposition. Each task should produce self-con
 
 ## LOC Budget Heuristic
 
-Each task should produce a diff small enough to review in one sitting. Target **≤ 300 LOC per task** (additions + deletions, post-exclusion — lockfiles, generated code, snapshots, and migrations don't count). Defer to `orc:pr-size-budget` for the exclusion list and resolution order (env var, per-repo config, default).
+Each task produces a diff small enough to review in one sitting. Target **≤ 300 LOC per task** (additions + deletions, post-exclusion — lockfiles, generated code, snapshots, and migrations don't count). Defer to `orc:pr-size-budget` for the exclusion list and resolution order (env var, per-repo config, default).
 
 Add an `est_loc: <int>` field to every task header. Heuristic for the estimate:
 
