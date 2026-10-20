@@ -42,3 +42,11 @@ export function stepReplay(state: ReplayState, delta: 1 | -1): ReplayState['view
 // `/orc replay` opens at the latest slice, first step.
 export const latestReplayView = (state: ReplayState): ReplayState['view'] =>
   ({ slice: Math.max(0, new Set(state.edits.map(x => x.sliceId)).size - 1), step: 0 })
+
+// Keep-warm lives in module scope: timers are not events. `gen` bumps on every arm/stop so a ping that
+// lands after either is discarded; `pingedAt` is when the last successful ping refreshed the cache.
+export const warmBox: { gen: number; timer: { cancel(): void } | null; deadline: number | null; pingedAt: number | null } =
+  { gen: 0, timer: null, deadline: null, pingedAt: null }
+
+// True while an AskUserQuestion dialog is on screen (set by its render, cleared when the tool call ends).
+export const askBox: { open: boolean } = { open: false }

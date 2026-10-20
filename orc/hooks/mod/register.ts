@@ -28,10 +28,13 @@ import { agentRows, progressModel } from './progress/model'
 import { TOUCHED_INITIAL, applyNumstat, markCommitted, parseNumstat, relPath, touch, touchedRows, type TouchKind } from './touched/model'
 import { progressText } from './progress/text'
 import { progressAlt, progressSvg } from './progress/svg'
+import { COLD_MIN_TOKENS, cacheState, coldToast, isColdRewrite, parseDuration, pingEvery, pingGone, type CacheView } from './cache/model'
+import { cacheSvg } from './cache/svg'
+import { cacheAlt, cacheText } from './cache/text'
 import { REPLAY_INITIAL, recordEdit, replayView, type ReplayState } from './replay/model'
 import { replayText } from './replay/text'
 import { replayAlt, replaySvg } from './replay/svg'
-import { DETAILS_INITIAL, LIVE_INITIAL, RADIUS_INITIAL, SECTIONS_INITIAL, ciBox, guardBox, isOrcStateWrite, latestReplayView, stepReplay } from './state'
+import { DETAILS_INITIAL, LIVE_INITIAL, RADIUS_INITIAL, SECTIONS_INITIAL, ciBox, askBox, guardBox, isOrcStateWrite, latestReplayView, stepReplay, warmBox } from './state'
 
 // State refs: literals in this file, as the engine's scan requires.
 const SNAPSHOT_REF = { plugin: 'orc', key: 'snapshot' } as const
@@ -50,7 +53,7 @@ export function register(on: On, options: PluginOptions) {
   if (options.mod_enabled === false) return
   alertsSound = options.alerts_sound === true
   const features = parseFeatures(options)
-  register_session(on)
+  register_session(on, features)
   register_attribution(on)
   register_compaction(on)
   register_agents(on, parseProfile(options.model_profile))
@@ -62,8 +65,10 @@ export function register(on: On, options: PluginOptions) {
   register_surfaces(on)
   register_toolrows(on)
   register_gates(on)
+  register_ask(on)
   register_band(on, features)
   register_steps(on, features)
+  register_prompt(on, features)
   register_api(on)
 }
 
@@ -81,7 +86,7 @@ function register_api(on: On) {
 }
 
 // One session.start hook: add /orc, and in an interactive session start the CI watcher.
-function register_session(on: On) {
+function register_session(on: On, features: Features) {
   on('session.start', async ($, e, next) => {
     try {
       await $.command.register({ name: 'orc', description: 'orc cockpit — phase, slices, QA, PR, agents, decisions (no model turn)', immediate: true })
@@ -96,7 +101,11 @@ function register_session(on: On) {
       // tools can't register in this build: agents just don't report steps
     }
     void refresh($).catch(() => undefined)
-    if (e.isInteractive) $.clock.every(POLL_MS, () => { void ci_tick($) })
+    if (e.isInteractive) {
+      $.clock.every(POLL_MS, () => { void ci_tick($) })
+      if (features.cacheCliff === 'warn') $.clock.every(60_000, () => { void cache_tick($, features) })
+    }
+    await keepwarm_resume($, features).catch(() => undefined)
     return next(e)
   })
 }
@@ -452,6 +461,8 @@ function register_steps(on: On, _features: Features) {
     try {
       const at = await $.clock.now()
       const cur = (await $.state.get(LEDGER_REF)).value ?? LEDGER_INITIAL
+      // A request that re-wrote the cache starts the clock over (the ping clock too).
+      if (!e.agentId && result?.usage && isColdRewrite(cur.main.lastContext, result.usage)) warmBox.pingedAt = null
       await $.state.set(LEDGER_REF, recordStep(cur, { agentId: e.agentId ?? null, usage: result?.usage ?? null, at, ms: at - startedAt }))
     } catch { /* bookkeeping never fails a request */ }
     return result
@@ -507,15 +518,146 @@ function register_toolrows(on: On) {
   })
 }
 
+// The dialog stays open for as long as the tool call is pending; the cache row reads it as "waiting on your answer".
+function register_ask(on: On) {
+  on('tool.call', { tool: 'AskUserQuestion' }, async ($, e, next) => {
+    try {
+      return await next(e)
+    } finally {
+      askBox.open = false
+      $.ui.invalidate('ui.render')
+    }
+  })
+}
+
 // Gate chrome: outward and escalation gates (orc:gates header chips) get a
 // badge above the engine's own dialog, which is kept exactly once.
 function register_gates(on: On) {
   on('ui.render', { component: 'AskUserQuestion' }, async ($, e, next) => {
+    askBox.open = true
     const badge = gateBadge(e.props.questions)
     if (!badge) return next(e)
     const { Box, Text } = $.ui.resolve(e)
     return Box({ flexDirection: 'column', children: [Text({ bold: true, color: 'yellow', children: [badge] }), await next(e)] })
   })
+}
+
+// --- Cache cliff and keep-warm -------------------------------------------------
+// The prompt cache lapses after the ttl without a request. The clock reads the main loop's last
+// request from the ledger (a keep-warm ping moves it forward); the band warns in the last 15 minutes,
+// a composer send past the ttl toasts what it will re-write, and /orc keepwarm pings to hold it.
+type CacheClock = CacheView & { lastAt: number }
+
+async function cache_view($: EngineInterface, features: Features): Promise<CacheClock | null> {
+  const main = ((await $.state.get(LEDGER_REF)).value ?? LEDGER_INITIAL).main
+  const lastAt = Math.max(main.lastAt ?? 0, warmBox.pingedAt ?? 0)
+  if (!lastAt || main.lastContext <= 0 || !main.model) return null
+  const now = await $.clock.now()
+  return { ...cacheState({ lastAt, lastContext: main.lastContext, model: main.model, now, ttlMs: features.cacheTtlMs }), lastAt }
+}
+
+async function cache_row($: EngineInterface, features: Features, idle: boolean): Promise<BandRow | null> {
+  if (features.cacheCliff !== 'warn' || !(idle || askBox.open)) return null
+  try {
+    const v = await cache_view($, features)
+    if (!v || v.phase !== 'cooling') return null
+    return { kind: 'cache', minutesLeft: v.minutesLeft, rewriteUsd: v.rewriteUsd, tokens: v.tokens, waitingOn: askBox.open ? 'your answer' : null }
+  } catch {
+    return null
+  }
+}
+
+// The prompt.submit step that warns before a send re-writes a cold cache. Never blocks or alters the prompt.
+async function cache_cold_toast($: EngineInterface, e: { origin: { kind: string } }, features: Features): Promise<void> {
+  if (features.cacheCliff !== 'warn' || e.origin.kind !== 'composer') return
+  try {
+    const v = await cache_view($, features)
+    if (v && v.phase === 'cold' && v.coldFor > 0 && v.tokens > COLD_MIN_TOKENS) $.ui.toast(coldToast(v.coldFor, v.tokens, v.rewriteUsd))
+  } catch { /* a warning never fails a send */ }
+}
+
+// The only prompt.submit hook; each step may inspect the prompt, none may drop it.
+function register_prompt(on: On, features: Features) {
+  on('prompt.submit', async ($, e, next) => {
+    await cache_cold_toast($, e, features)
+    return next(e)
+  })
+}
+
+// Once a minute: redraw the band only when what it says would change.
+let lastCacheSig = ''
+async function cache_tick($: EngineInterface, features: Features): Promise<void> {
+  try {
+    const v = await cache_view($, features)
+    const sig = v && v.phase === 'cooling' ? 'cooling:' + v.minutesLeft : v ? v.phase : ''
+    if (sig === lastCacheSig) return
+    lastCacheSig = sig
+    $.ui.invalidate('ui.render')
+  } catch { /* the next tick tries again */ }
+}
+
+const keepwarmKey = (sid: string) => 'keepwarm:' + sid
+
+function keepwarm_schedule($: EngineInterface, features: Features, gen: number, delay: number): void {
+  warmBox.timer = $.clock.after(delay, () => { void keepwarm_ping($, features, gen).catch(() => undefined) })
+}
+
+async function keepwarm_arm($: EngineInterface, features: Features, deadline: number, persist: boolean): Promise<void> {
+  warmBox.timer?.cancel()
+  const gen = ++warmBox.gen
+  warmBox.deadline = deadline
+  if (persist) await $.store.set(keepwarmKey(await $.session.id()), deadline).catch(() => undefined)
+  const every = pingEvery(features.cacheTtlMs)
+  // The first ping is due `every` after the cache was last touched, not after the command.
+  const v = await cache_view($, features).catch(() => null)
+  const now = await $.clock.now()
+  keepwarm_schedule($, features, gen, v && v.phase !== 'cold' ? Math.min(every, Math.max(5_000, v.lastAt + every - now)) : every)
+  $.ui.invalidate('ui.render')
+}
+
+async function keepwarm_stop($: EngineInterface, why: string | null): Promise<void> {
+  warmBox.gen++
+  warmBox.timer?.cancel()
+  warmBox.timer = null
+  warmBox.deadline = null
+  await $.store.set(keepwarmKey(await $.session.id()), null).catch(() => undefined)
+  if (why) $.ui.toast(why)
+  $.ui.invalidate('ui.render')
+}
+
+async function keepwarm_ping($: EngineInterface, features: Features, gen: number): Promise<void> {
+  if (gen !== warmBox.gen) return
+  const now = await $.clock.now()
+  if (warmBox.deadline == null || now >= warmBox.deadline) return keepwarm_stop($, 'keep-warm finished')
+  const every = pingEvery(features.cacheTtlMs)
+  // The user is active: their own requests keep the cache warm, so wait out the rest of the interval.
+  const v = await cache_view($, features)
+  if (v && now - v.lastAt < every - 5_000) { keepwarm_schedule($, features, gen, v.lastAt + every - now); return }
+  const r = await $.model.fork({ prompt: 'Reply with the single word: warm' }).catch(() => null)
+  if (gen !== warmBox.gen) return
+  if (!r || !r.isAnswered) return keepwarm_stop($, 'keep-warm stopped: ' + (r ? 'nothing to keep warm yet' : 'the ping failed'))
+  if (pingGone(r.usage)) return keepwarm_stop($, 'keep-warm stopped: the cache was already gone')
+  warmBox.pingedAt = await $.clock.now()
+  if (warmBox.pingedAt + every >= warmBox.deadline) return keepwarm_stop($, 'keep-warm finished')
+  keepwarm_schedule($, features, gen, every)
+}
+
+// A hot reload cancels pending timers; the deadline in $.store re-arms them.
+async function keepwarm_resume($: EngineInterface, features: Features): Promise<void> {
+  const deadline = await $.store.get(keepwarmKey(await $.session.id()))
+  if (typeof deadline === 'number' && deadline > (await $.clock.now())) await keepwarm_arm($, features, deadline, false)
+}
+
+async function keepwarm_command($: EngineInterface, features: Features, arg: string): Promise<{ text: string }> {
+  if (arg === 'off') {
+    await keepwarm_stop($, null)
+    return { text: 'Keep-warm off.' }
+  }
+  if (arg === '') return { text: warmBox.deadline == null ? 'Keep-warm is off. Usage: /orc keepwarm <2h|90m|off>' : `Keep-warm is on for ${Math.max(1, Math.round((warmBox.deadline - (await $.clock.now())) / 60_000))} more minutes.` }
+  const ms = parseDuration(arg)
+  if (ms == null) return { text: 'Usage: /orc keepwarm <2h|90m|1h30m|off>' }
+  await keepwarm_arm($, features, (await $.clock.now()) + ms, true)
+  return { text: `Keep-warm on for ${arg}: a one-word ping about every ${Math.round(pingEvery(features.cacheTtlMs) / 60_000)} minutes keeps the prompt cache warm (cache reads, not re-writes).` }
 }
 
 // --- CI watcher (one poller across sessions, via a $.store lease) ----------
@@ -574,8 +716,9 @@ function register_band(on: On, features: Features) {
     const ci: BandRow | null = ciBox.alert ? { kind: 'ci', pr: ciBox.alert.pr, failing: ciBox.alert.summary.failing } : null
     const progress = features.progressBand ? await progress_row($, features) : null
     const guard: BandRow | null = guardBox.current ? { kind: 'guard', summary: guardBox.current.summary.headline, detail: guardBox.current.summary } : null
-    // sentinel, retro and cache rows join here in later slices
-    const row = pickBand([ci, guard, progress])
+    const cache = await cache_row($, features, !e.props.isWorking)
+    // sentinel and retro rows join here in later slices
+    const row = pickBand([ci, guard, cache, progress])
     if (!row) return next(e)
     const below = await next(e)
     const els = $.ui.resolve(e)
@@ -615,6 +758,17 @@ function draw_band_row($: EngineInterface, e: { surface: RenderSurface | null; p
       ? els.Svg({ source, alt: row.summary, width: px(e.props.bodyColumns) })
       : els.Text({ color: 'yellow', children: ['⚠ ' + row.summary] })
   }
+  if (row.kind === 'cache') {
+    const warm = warmBox.deadline == null ? () => { $.prompt.fill({ text: '/orc keepwarm 1h' }).catch(() => undefined) } : null
+    const source = isRich(e.surface) && 'Svg' in els ? fitSvg(cacheSvg(row, px(e.props.bodyColumns))) : null
+    if (source && 'Svg' in els) {
+      return els.Box({ flexDirection: 'row', columnGap: 2, children: [
+        els.Svg({ source, alt: cacheAlt(row), height: 28 }),
+        ...(warm ? [els.Button({ key: 'cache-warm', label: 'Keep warm', onPress: warm })] : []),
+      ] })
+    }
+    return cacheText(els, row, warm)
+  }
   if (row.kind === 'progress') {
     const m = row.model
     const next = m.next
@@ -637,6 +791,7 @@ function register_cockpit(on: On, fallbackProfile: Profile, features: Features) 
   on('command.run', { command: 'orc' }, async ($, e) => {
     await refresh($).catch(() => undefined)
     if (e.args.trim() === 'replay') return replay_command($, features)
+    if (/^keepwarm(\s|$)/.test(e.args.trim())) return keepwarm_command($, features, e.args.trim().slice(8).trim())
     // `/orc radius` opens the cockpit with the ship-radius section already expanded.
     if (e.args.trim() === 'radius') {
       try {
