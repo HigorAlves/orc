@@ -1,5 +1,6 @@
 ---
-description: "Retrospective on a coding session — proposes changes to the agent's environment (navigation pointers, automated checks, coding standards, steering files, tool economy, information access), most severe first; applies accepted in-repo changes and files the rest through the tracker gate. Use after a build or a debug session, especially one that went sideways."
+description: Retrospective on a coding session — proposes changes to the agent's environment (navigation pointers, automated checks, coding standards, steering files, tool economy, information access), most severe first; applies accepted in-repo changes and files the rest through the tracker gate
+when_to_use: Use after a build or a debug session, especially one that went sideways.
 argument-hint: "[--session <branch>] [--transcript <path>] [<what to look back on>]"
 license: MIT
 metadata:

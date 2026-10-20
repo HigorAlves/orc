@@ -1,6 +1,7 @@
 ---
 name: browser-qa
-description: The canonical browser-QA protocol for web changes — target resolution, env attach, the driver gate (Playwright primary, agent-browser, Claude-in-Chrome), validator dispatch, chrome evidence packet. Use when running browser QA; /orc:qa and /orc:flow Phase 6 delegate here.
+description: The canonical browser-QA protocol for web changes — target resolution, env attach, the driver gate (Playwright primary, agent-browser, Claude-in-Chrome), validator dispatch, chrome evidence packet
+when_to_use: Use when running browser QA; /orc:qa and /orc:flow Phase 6 delegate here.
 ---
 
 # Browser QA

@@ -1,6 +1,7 @@
 ---
 name: to-issues
-description: Break a plan, spec, or PRD into independently-grabbable tracker issues using tracer-bullet vertical slices. Use when converting a plan into issues or implementation tickets.
+description: Break a plan, spec, or PRD into independently-grabbable tracker issues using tracer-bullet vertical slices
+when_to_use: Use when converting a plan into issues or implementation tickets.
 license: MIT
 metadata:
   author: Matt Pocock

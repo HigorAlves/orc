@@ -1,6 +1,7 @@
 ---
 name: postmortem-writing
-description: Author blameless incident postmortems — timeline, root cause(s), contributing factors, action items. Use after a production incident (outage, data loss, security event, regression) or a near-miss.
+description: Author blameless incident postmortems — timeline, root cause(s), contributing factors, action items
+when_to_use: Use after a production incident (outage, data loss, security event, regression) or a near-miss.
 ---
 
 # Postmortem

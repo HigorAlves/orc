@@ -1,6 +1,7 @@
 ---
 name: trd-writing
-description: Author Technical Requirements Documents (TRDs) — turn a settled PRD into interfaces, data shapes, failure modes, and constraints in docs/trds/NNNN-*.md. Use for "write a TRD" or /orc:trd.
+description: Author Technical Requirements Documents (TRDs) — turn a settled PRD into interfaces, data shapes, failure modes, and constraints in docs/trds/NNNN-*.md
+when_to_use: Use for "write a TRD" or /orc:trd.
 ---
 
 # TRD Writing

@@ -1,6 +1,7 @@
 ---
 name: incident
-description: "Live incident response — intake a Sentry issue, stack trace, or symptom; gate mitigate-first vs root-cause-first; keep a UTC timeline. Use when production is broken RIGHT NOW; for the after-action write-up alone, use /orc:postmortem."
+description: Live incident response — intake a Sentry issue, stack trace, or symptom; gate mitigate-first vs root-cause-first; keep a UTC timeline
+when_to_use: Use when production is broken RIGHT NOW; for the after-action write-up alone, use /orc:postmortem.
 argument-hint: "[<sentry-issue-id-or-url> | <pasted stack trace> | <symptom>] [--severity sev-1|sev-2|sev-3]"
 allowed-tools:
   - Bash(orc-state:*)

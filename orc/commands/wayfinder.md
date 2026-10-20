@@ -1,5 +1,6 @@
 ---
-description: "Plan a chunk of work too big for one session as a shared map of decision tickets on the configured tracker; each session resolves exactly one decision. Use when an effort spans many sessions and the route isn't visible yet; /orc:plan covers single-session planning, orc:to-issues slices a settled plan."
+description: Plan a chunk of work too big for one session as a shared map of decision tickets on the configured tracker; each session resolves exactly one decision
+when_to_use: Use when an effort spans many sessions and the route isn't visible yet; /orc:plan covers single-session planning, orc:to-issues slices a settled plan.
 argument-hint: "[chart <loose idea> | work <map ref> [ticket ref]]"
 license: MIT
 metadata:

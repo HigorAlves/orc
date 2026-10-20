@@ -1,6 +1,7 @@
 ---
 name: dispatching-parallel-agents
-description: Dispatch parallel subagents with focused, self-contained briefs — each gets exactly the context it needs, never your session history. Use when facing 2+ independent tasks that can be worked on without shared state or sequential dependencies.
+description: Dispatch parallel subagents with focused, self-contained briefs — each gets exactly the context it needs, never your session history
+when_to_use: Use when facing 2+ independent tasks that can be worked on without shared state or sequential dependencies.
 license: MIT
 metadata:
   author: Jesse Vincent

@@ -1,5 +1,6 @@
 ---
-description: "Move tracker issues and external PRs through the triage state machine into agent-ready briefs. Use when triaging incoming issues, an external PR, or the backlog. Reads the tracker + label config written by /orc:setup."
+description: Move tracker issues and external PRs through the triage state machine into agent-ready briefs
+when_to_use: Use when triaging incoming issues, an external PR, or the backlog. Reads the tracker + label config written by /orc:setup.
 argument-hint: "[<issue/PR number, Jira key, or natural-language request>]"
 license: MIT
 metadata:

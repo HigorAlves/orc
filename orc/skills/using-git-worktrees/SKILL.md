@@ -1,6 +1,7 @@
 ---
 name: using-git-worktrees
-description: Create isolated git worktrees with smart directory selection and safety checks. Use when starting feature work that needs isolation, or before executing an implementation plan.
+description: Create isolated git worktrees with smart directory selection and safety checks
+when_to_use: Use when starting feature work that needs isolation, or before executing an implementation plan.
 license: MIT
 metadata:
   author: Jesse Vincent

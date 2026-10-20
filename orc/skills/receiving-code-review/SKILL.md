@@ -1,6 +1,7 @@
 ---
 name: receiving-code-review
-description: Evaluate code review feedback with technical rigor and verification — never performative agreement or blind implementation. Use when receiving code review feedback, before implementing suggestions.
+description: Evaluate code review feedback with technical rigor and verification — never performative agreement or blind implementation
+when_to_use: Use when receiving code review feedback, before implementing suggestions.
 license: MIT
 metadata:
   author: Jesse Vincent

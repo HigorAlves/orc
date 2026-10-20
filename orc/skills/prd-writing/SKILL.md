@@ -1,6 +1,7 @@
 ---
 name: prd-writing
-description: Author Product Requirements Documents (PRDs) from scratch — interview-driven, templated, published to docs/prds/NNNN-*.md. Use for "write a PRD for X", an unsettled new feature, or /orc:prd.
+description: Author Product Requirements Documents (PRDs) from scratch — interview-driven, templated, published to docs/prds/NNNN-*.md
+when_to_use: Use for "write a PRD for X", an unsettled new feature, or /orc:prd.
 ---
 
 # PRD Writing
