@@ -4,6 +4,9 @@ import { ThemeToggle } from "@/components/theme"
 import { buttonVariants } from "@/components/ui/button"
 import { REPO, nav } from "@/content/site"
 
+// Placeholder: swap for the deployed Luna TUI site URL once it exists.
+const LUNA_TUI_URL = "https://github.com/HigorAlves/tui-harness"
+
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-20 border-b bg-background/85 backdrop-blur-md">
@@ -19,6 +22,12 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2">
+          <a
+            href={LUNA_TUI_URL}
+            className={buttonVariants({ variant: "ghost", size: "sm" }) + " max-md:hidden"}
+          >
+            controlled by Luna TUI &rarr;
+          </a>
           <ThemeToggle />
           <a href={REPO} className={buttonVariants({ variant: "outline" })}>
             <GitHubIcon data-icon="inline-start" />
