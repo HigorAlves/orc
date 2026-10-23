@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://orc.dev/factory/stage-input.json",
+  "title": "StageInput",
+  "type": "object",
+  "required": ["schema", "stage", "pack", "attempt", "task", "plan", "decisions", "priorFindings", "context", "limits", "env"],
+  "properties": {
+    "schema": { "const": 1 },
+    "stage": { "type": "string" },
+    "pack": { "enum": ["triage", "test_design", "implementing", "verifying", "e2e", "evidence", "ci_watch", "reviewing_memory"] },
+    "attempt": { "type": "integer", "minimum": 1 },
+    "task": {
+      "type": "object",
+      "required": ["id", "title", "description", "criteria", "repoPath", "branch", "source"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "criteria": { "type": "array" },
+        "repoPath": { "type": "string" },
+        "branch": { "type": "string" },
+        "source": {
+          "type": ["object", "null"],
+          "required": ["kind", "repo", "number", "url"],
+          "properties": {
+            "kind": { "type": "string" },
+            "repo": { "type": "string" },
+            "number": { "type": "integer" },
+            "url": { "type": "string" }
+          }
+        }
+      }
+    },
+    "plan": {
+      "type": ["object", "null"],
+      "required": ["brief", "criteria", "assumptions"],
+      "properties": {
+        "brief": { "type": "string" },
+        "criteria": { "type": "array" },
+        "assumptions": { "type": "array" }
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["at", "decision", "reason", "answers"],
+        "properties": {
+          "at": { "type": "string" },
+          "decision": { "type": "string" },
+          "reason": { "type": ["string", "null"] },
+          "answers": { "type": "object" }
+        }
+      }
+    },
+    "priorFindings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "context": {
+      "type": "object",
+      "required": ["projectContext", "tests"],
+      "properties": {
+        "projectContext": { "type": ["string", "object", "null"] },
+        "tests": { "type": "array" }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "required": ["maxTurns", "timeoutMs"],
+      "properties": {
+        "maxTurns": { "type": "integer", "minimum": 0 },
+        "timeoutMs": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "env": { "type": "object", "additionalProperties": { "type": "string" } }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": ["path", "line", "severity", "title", "body", "confidence"],
+      "properties": {
+        "path": { "type": "string" },
+        "line": { "type": "integer" },
+        "severity": { "enum": ["bug", "security", "api-surface", "test", "nit", "suggestion", "question"] },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}
