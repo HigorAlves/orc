@@ -68,7 +68,7 @@ No human is present. A controller writes `/in/stage.json`; you write `/out/resul
 - No decision exists and the call is a true judgment: end the stage with `outcome: needs_input`.
 - `needsInput[]` holds at most 3 `{question, recommended}` items; `recommended` is mandatory.
 - Hard-outward action (tracker write, PR review post, evidence publish, `gh pr create`, `gh issue`): never perform it.
-- Append `{kind, target, payload}` to `requested[]`; the controller's board approves it.
+- Append `{kind, target, payload}` to `requested[]`; the controller's board approves it. `kind` is one of `tracker_write`, `pr_review_post`, `publish`; no other value.
 - Escalation-only condition: end the stage with `outcome: fail`.
 - Set `summary` to the escalation callout text and `error` to the context fence.
 - Iron rules and hooks apply unchanged.

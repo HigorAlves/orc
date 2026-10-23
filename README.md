@@ -31,7 +31,7 @@
 
 ---
 
-orc is a full-SDLC workflow plugin for Claude Code: **87 curated skills, 29 composite slash commands, 14 specialist subagents, and 10 hook scripts**. The hooks enforce the discipline the model would otherwise talk itself out of: no commits to `main`, no AI-attribution trailers, destructive git gated, dependencies pre-flighted, the rules injected at every session start. One command, `/orc:flow`, drives a feature from "I want X" to "PR merged", and `/orc:ci`, `/orc:release`, `/orc:deps` and `/orc:incident` cover what happens after.
+orc is a full-SDLC workflow plugin for Claude Code: **88 curated skills, 30 composite slash commands, 14 specialist subagents, and 10 hook scripts**. The hooks enforce the discipline the model would otherwise talk itself out of: no commits to `main`, no AI-attribution trailers, destructive git gated, dependencies pre-flighted, the rules injected at every session start. One command, `/orc:flow`, drives a feature from "I want X" to "PR merged", and `/orc:ci`, `/orc:release`, `/orc:deps` and `/orc:incident` cover what happens after.
 
 It exists for one reason: every time a senior developer sits down, they already know how the next hour goes. Write the plan, watch the test fail, fix the cause, verify with evidence, ship the PR. orc encodes that loop.
 
@@ -54,6 +54,8 @@ flowchart LR
 ```
 
 Run the steps yourself, or let `/orc:flow` run them with a gate at every phase and `orc-implementer` writing the code slice by slice. `/orc:retro` closes the loop by turning a session's friction into environment changes. The full catalog, the agents behind it and the skill library: [docs/commands.md](./docs/commands.md). Nineteen scenarios walked end to end: [docs/examples](./docs/examples/README.md).
+
+- **Factory mode.** With `ORC_FACTORY=1`, orc runs as a stage worker for a controller such as Hardness: no `AskUserQuestion`, typed `result.json`, outward actions queued for approval. Stage packs, `orc-stage` and the contract: [ADR 0009](./docs/adr/0009-factory-mode-and-stage-contract.md).
 
 ## Is it safe?
 

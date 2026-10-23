@@ -2,8 +2,8 @@ name: evals
 
 # Behavioral evals (`claude plugin eval`) — real model calls, so never on PRs:
 # nightly + on demand. Zero-cost graders only (tool_used / regex / tool_order), one arm.
-# 21 cases: routing per command family, two negatives, guardrail/state fixtures, one
-# authoring-standard regression. Ablation stays `none`: under with-without the Skill
+# 25 cases: routing per command family, two negatives, guardrail/state fixtures (two for
+# factory mode), one authoring-standard regression. Ablation stays `none`: under with-without the Skill
 # graders are indicators, not scores, so routing cases would have nothing to pass.
 # Guardrail/state cases need Bash + git fixtures: --scaffold + an explicit tool grant.
 on:

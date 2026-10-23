@@ -82,6 +82,23 @@ Only for a change to an existing command under `orc/commands/`. The frontmatter 
 3. The body stays under 8 KB: role, inputs, workflow steps, what it does not do, output contract, iron rules, tone. Reference material lives in a skill the agent preloads, under that skill's `references/`.
 4. A command dispatches it via `Task`; a user never invokes it directly.
 
+## Adding a stage pack
+
+Factory mode runs stages from data ([ADR 0009](adr/0009-factory-mode-and-stage-contract.md)). The pack ids equal Hardness stage names, so a new stage is a contract change in both repos first.
+
+1. Add the entry to `orc/factory/stages.json`: `agent` or `script`, `skills`, `tools`, `writable`, `maxTurns`, `timeoutMs`, `outputSchema`.
+2. Copy each tool verbatim from the `tools:` line of the pack's agent. `verify-factory.sh` fails on a tool the agent does not declare, or a skill with no directory.
+3. Add the prompt template `orc/factory/prompts/<pack>.md`. State the inputs it reads from `stage.json` and the result it must return.
+4. Run `bash scripts/ci/verify-factory.sh` and `bash scripts/ci/verify-stage.sh`. Then `orc-stage render <pack> scripts/ci/fixtures/factory/stage-input.example.json` and read the prompt.
+5. Change a contract schema in `orc/factory/schema/` only with the Hardness repo, and bump `schema`. Update the fixtures in `scripts/ci/fixtures/factory/`.
+
+## Adding a bin
+
+1. Add `orc/bin/orc-<name>`, executable, a thin dispatcher with a usage block. Put the logic in `orc/lib/<name>.sh` so tests source it.
+2. Exit codes: 0 success, 1 a named failure, 2 usage.
+3. Add a `scripts/ci/verify-<name>.sh` with fixture cases and run it from the `validate` workflow.
+4. List the CLI in [commands.md](commands.md) under Plugin CLIs.
+
 ## Adding a hook
 
 1. Add `orc/hooks/scripts/<event>-<purpose>.sh`, executable.
@@ -98,6 +115,8 @@ claude plugin validate ./orc --strict
 ```
 
 What they check: references resolve (`verify-refs`), counts match across README, marketplace and architecture (`verify-counts`), frontmatter conventions, hook wiring and fail-closed guards, the guard regexes (55 cases), the authoring standard and the always-on cost ratchets, the changelog, install pins, the statusline and QA fixtures. Then add a line under `## [Unreleased]` in [CHANGELOG.md](../CHANGELOG.md) for any behaviour change.
+
+The STE and context-cost checks are ratchets against `scripts/ci/precision-baseline.json`: they fail when a number gets worse. After a change that improves one, run `bash scripts/ci/verify-ste.sh --update` (it also resets the `verify-context-cost.sh` baseline) and commit the new baseline. Never run `--update` to hide a regression: fix the file instead.
 
 ### Behavioural evals
 

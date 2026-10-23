@@ -2,6 +2,28 @@
 
 All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tags; the CLI releases separately under plain `vX.Y.Z` tags. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); each entry links the PR that landed it. The `plugin-release` workflow publishes a version's section as its GitHub Release notes when the tag is pushed.
 
+## [0.29.0] - 2026-10-23
+
+The factory release: orc runs as a stage worker for a controller such as Hardness, with no human in the session, alongside a project-context layer and a few hygiene fixes.
+
+### Added
+- Factory mode (`ORC_FACTORY=1`, ADR 0009): `orc:gates` section 8 replaces every `AskUserQuestion` with a typed outcome. A judgment call ends the stage with `needs_input` (at most 3 questions, each with a recommended answer); a tracker write, PR review post, evidence publish or `gh pr create` is queued in `requested[]` for the controller's board; an escalation ends the stage with `fail`. The SessionStart banner shows `mode: factory`.
+- Stage packs: `orc/factory/stages.json` holds eight packs (`triage`, `test_design`, `implementing`, `verifying`, `e2e`, `evidence`, `ci_watch`, `reviewing_memory`) with agent, skills, tool allow-list, limits and output schema, plus a prompt template per pack. `verify-factory.sh` checks that each tool is a verbatim entry of its agent's `tools:` line.
+- `orc-stage` CLI: `packs`, `validate` (input, output, packs), `render` and `run` (Agent SDK, plugin loaded through `plugins`, `settingSources: []`). `verify-stage.sh` covers the verbs.
+- Contract schemas `orc/factory/schema/stage-input.json` and `stage-output.json` (schema 1), with example and broken fixtures.
+- `/orc:triage` offers "Send to the factory" on a `ready-for-agent` issue when `factory.machineUrl` is set in `issue-tracker.md`. It is a hard-outward gate and always asks.
+- Project-context layer: `/orc:context` and the `orc:project-context` skill maintain `docs/agents/project-context.md` (150 lines, 6 KB cap). The implementer, test author, code fixer and QA validator preload it; the factory prompts read it. `verify-project-context.sh` enforces the cap.
+- `/orc:retro --propose`: proposes candidate project-context rules from a session, for a person or a controller to accept through `/orc:context add-rule`.
+- `orc-report factory`: factory metrics JSON over every session, in the shape Hardness's `GET /metrics` shares.
+- `orc-state close --merged`: marks a session completed and its phase closed once the PR has merged.
+- Eval suite 23 → 25 cases: `factory-gate-needs-input` and `factory-refuses-outward`.
+- ADR 0009 (factory mode and the stage contract); GLOSSARY terms factory mode, stage pack, stage contract and run folder; `ORC_FACTORY`, `ORC_FACTORY_STAGES`, `ORC_PLUGIN_ROOT` and `factory.machineUrl` in configuration.md.
+
+### Changed
+- The interaction policy resolver returns `auto (factory)` when `ORC_FACTORY=1`, ahead of the saved decision and the user setting; an explicit `--auto` flag still wins.
+- `orc-pr-reviewer` gains read-only `git diff`, `git log` and `git merge-base`; `orc-ci-investigator` gains `gh pr view`. Both lists were too narrow for their prompts.
+- The nightly evals workflow now fails without `ANTHROPIC_API_KEY` instead of skipping, so a missing key shows as a red run.
+
 ## [0.28.0] - 2026-10-20
 
 The intake release: `/orc:triage` takes any incoming report, from the tracker, Sentry or a paste, and checks it is valid before anyone works on it. orc also gets a website.
