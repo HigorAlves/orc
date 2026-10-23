@@ -275,7 +275,10 @@
         "Glob",
         "Grep",
         "Bash(gh pr view:*)",
-        "Bash(gh pr diff:*)"
+        "Bash(gh pr diff:*)",
+        "Bash(git diff:*)",
+        "Bash(git log:*)",
+        "Bash(git merge-base:*)"
       ],
       "writable": false,
       "maxTurns": 40,
@@ -379,15 +382,49 @@
       "outputSchema": {
         "type": "object",
         "required": [
-          "manifest",
-          "passed"
+          "verdict",
+          "summary"
         ],
         "properties": {
-          "manifest": {
+          "verdict": {
+            "enum": [
+              "pass",
+              "fail",
+              "partial",
+              "skipped"
+            ]
+          },
+          "summary": {
             "type": "string"
           },
-          "passed": {
-            "type": "boolean"
+          "criteria": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "text",
+                "result",
+                "evidence"
+              ],
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "result": {
+                  "enum": [
+                    "pass",
+                    "fail",
+                    "partial"
+                  ]
+                },
+                "evidence": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -402,12 +439,12 @@
       "timeoutMs": 300000,
       "outputSchema": {
         "type": "object",
-        "required": [
-          "published"
-        ],
         "properties": {
-          "published": {
-            "type": "boolean"
+          "outcome": {
+            "enum": [
+              "pass",
+              "fail"
+            ]
           }
         }
       },
@@ -425,6 +462,7 @@
         "Bash(gh run:*)",
         "Bash(gh workflow:*)",
         "Bash(gh pr checks:*)",
+        "Bash(gh pr view:*)",
         "Bash(git log:*)",
         "Bash(git diff:*)"
       ],
@@ -434,21 +472,113 @@
       "outputSchema": {
         "type": "object",
         "required": [
-          "status",
-          "failures"
+          "verdict",
+          "classification",
+          "summary",
+          "findings"
         ],
         "properties": {
-          "status": {
+          "verdict": {
             "enum": [
-              "green",
-              "red",
-              "pending"
+              "fixable",
+              "flake",
+              "infra",
+              "needs_debug",
+              "green"
             ]
           },
-          "failures": {
+          "classification": {
+            "enum": [
+              "test",
+              "lint",
+              "build",
+              "flake",
+              "infra",
+              "drift",
+              "none"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "runUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "findings": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "object",
+              "required": [
+                "path",
+                "line",
+                "severity",
+                "title",
+                "body",
+                "confidence"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "line": {
+                  "type": "integer"
+                },
+                "severity": {
+                  "enum": [
+                    "bug",
+                    "security",
+                    "api-surface",
+                    "test",
+                    "nit",
+                    "suggestion",
+                    "question"
+                  ]
+                },
+                "title": {
+                  "type": "string"
+                },
+                "body": {
+                  "type": "string"
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "suggestion_code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "requested": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "kind",
+                "target",
+                "payload"
+              ],
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "publish"
+                  ]
+                },
+                "target": {
+                  "type": "string"
+                },
+                "payload": {
+                  "type": "object"
+                }
+              }
             }
           }
         }
@@ -472,17 +602,65 @@
       "outputSchema": {
         "type": "object",
         "required": [
-          "rules",
-          "summary"
+          "summary",
+          "incidents",
+          "patterns",
+          "proposedRules",
+          "calibration"
         ],
         "properties": {
-          "rules": {
+          "summary": {
+            "type": "string"
+          },
+          "incidents": {
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "summary": {
+          "patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "proposedRules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "rule",
+                "evidence",
+                "scope"
+              ],
+              "properties": {
+                "rule": {
+                  "type": "string"
+                },
+                "evidence": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "scope": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "calibration": {
+            "type": "object",
+            "required": [
+              "estLocBias"
+            ],
+            "properties": {
+              "estLocBias": {
+                "type": "number"
+              }
+            }
+          },
+          "rulesMarkdown": {
             "type": "string"
           }
         }

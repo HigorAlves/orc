@@ -5,7 +5,7 @@
 // skips the model call (and the SDK import).
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
 
 const env = process.env;
@@ -120,6 +120,10 @@ const writeEvents = (ledger, outcome) => {
 const finish = (r) => {
   const ledger = readLedger();
   const s = r.structured ?? {};
+  if (typeof s.rulesMarkdown === 'string' && s.rulesMarkdown.trim()) {
+    mkdirSync(join(out, 'files'), { recursive: true });
+    writeFileSync(join(out, 'files', 'rules.md'), s.rulesMarkdown.endsWith('\n') ? s.rulesMarkdown : s.rulesMarkdown + '\n');
+  }
   const asked = s.kind === 'questions' || (Array.isArray(s.questions) && s.questions.length > 0);
   const outcome = asked ? 'needs_input' : s.kind === 'test_change' ? 'test_change' : !r.ok ? 'fail' : 'pass';
   const summary = String(s.summary || r.text || r.error || '').slice(0, 2000);
@@ -154,7 +158,21 @@ const finish = (r) => {
 
 if (dry) {
   console.log(JSON.stringify(options, null, 2));
-  finish({ ok: true, structured: null, text: 'dry-run' });
+  let structured = null;
+  try {
+    structured = env.ORC_STAGE_DRY_STRUCTURED ? JSON.parse(env.ORC_STAGE_DRY_STRUCTURED) : null; // test seam
+  } catch {}
+  finish({ ok: true, structured, text: 'dry-run' });
+  process.exit(0);
+}
+
+// Script-only pack (agent: null): no model, no SDK import. Outcome comes from the QA manifest.
+if (pack.agent == null) {
+  const m = readJson(join(out, 'files', 'qa', 'qa-manifest.json'));
+  const verdict = m?.verdict ?? null;
+  const good = verdict === 'pass' || verdict === 'skipped';
+  const note = good ? `qa ${verdict}` : m ? `qa verdict: ${verdict ?? 'missing'}` : 'qa-manifest.json missing or unreadable';
+  finish({ ok: good, structured: null, text: note, error: good ? null : note });
   process.exit(0);
 }
 

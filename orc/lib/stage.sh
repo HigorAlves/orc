@@ -148,7 +148,11 @@ orc_stage_render() {
   tpl_file="$(orc_stage__template_path "$tpl_rel")"
   if [ -n "$tpl_file" ]; then tpl="$(cat "$tpl_file")"; else tpl="$(orc_stage__default_template)"; fi
 
-  jq -rn --arg pack "$pack" --arg tpl "$tpl" --slurpfile packs "$pf" --slurpfile in "$input" '
+  # context.projectContext null: fall back to the worktree's project context file.
+  local pc=""
+  if [ -f docs/agents/project-context.md ]; then pc="$(cat docs/agents/project-context.md)"; fi
+
+  jq -rn --arg pack "$pack" --arg tpl "$tpl" --arg pc "$pc" --slurpfile packs "$pf" --slurpfile in "$input" '
     def txt: if . == null or . == "" then "(none)" else tostring end;
     def bullets: if . == null or length == 0 then "(none)" else map("- " + tostring) | join("\n") end;
     def lines(f): if . == null or length == 0 then "(none)" else map(f) | join("\n") end;
@@ -164,7 +168,7 @@ orc_stage_render() {
       "{{plan.assumptions}}": ($i.plan.assumptions? | bullets),
       "{{decisions}}": ($i.decisions | lines("- \(.decision) at \(.at): \(if (.reason // "") != "" then .reason elif (.answers // {}) != {} then (.answers|tojson) else "(none)" end)")),
       "{{priorFindings}}": ($i.priorFindings | lines("- \(.severity) \(.path):\(.line) \(.title)")),
-      "{{context.projectContext}}": ($i.context.projectContext | txt),
+      "{{context.projectContext}}": (($i.context.projectContext // "") | if . == "" then $pc else . end | txt),
       "{{attempt}}": ($i.attempt | txt),
       "{{agent}}": $agent,
       "{{skills}}": (($pk.skills // []) | if length == 0 then "(none)" else join(", ") end)
@@ -203,7 +207,7 @@ orc_stage_run() {
   in="$(cd "$(dirname "$in")" && pwd)/$(basename "$in")"
   orc_stage_render "$pack" "$in" > "$out/prompt.md" || return
   fdir="${ORC_STAGE_ROOT}/lib/factory"
-  if [ -z "$dry" ] && [ ! -d "$fdir/node_modules/@anthropic-ai/claude-agent-sdk" ]; then
+  if [ -z "$dry" ] && [ "$(jq -r '.agent // "null"' <<<"$pack_json")" != "null" ] && [ ! -d "$fdir/node_modules/@anthropic-ai/claude-agent-sdk" ]; then
     echo "orc-stage: installing the Agent SDK into $fdir (first run)" >&2
     npm install --omit=dev --no-audit --no-fund --prefix "$fdir" >&2 || { orc_stage__die 4 "npm install failed"; return; }
   fi

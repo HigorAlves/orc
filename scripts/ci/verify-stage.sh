@@ -66,9 +66,11 @@ jq --arg t "$tmp/t.md" '.packs.implementing.promptTemplate=$t' "$packs" > "$tmp/
 c="$(ORC_FACTORY_STAGES="$tmp/stages.json" run render implementing "$rich")"
 if printf '%s' "$c" | grep -qF "CUSTOM Add CSV export / 1 / orc-implementer"; then ok; else fail "render: custom template not used"; fi
 
-# shipped templates: each of the four packs renders its own file, under 6 KB
+# shipped templates: each of the eight packs renders its own file, under 6 KB
 for pair in triage:orc-prd-analyzer:"TRIAGE STAGE" test_design:orc-test-author:"TEST DESIGN STAGE" \
-  implementing:orc-implementer:"IMPLEMENTING STAGE" verifying:orc-pr-reviewer:"VERIFYING STAGE"; do
+  implementing:orc-implementer:"IMPLEMENTING STAGE" verifying:orc-pr-reviewer:"VERIFYING STAGE" \
+  e2e:orc-qa-validator:"E2E STAGE" evidence:script:"EVIDENCE STAGE" \
+  ci_watch:orc-ci-investigator:"CI WATCH STAGE" reviewing_memory:orc-refactor-architect:"REVIEWING MEMORY STAGE"; do
   pk="${pair%%:*}"; rest="${pair#*:}"; ag="${rest%%:*}"; head="${rest#*:}"
   rp="$(run render "$pk" "$fx/stage-input.example.json")" && rc=0 || rc=$?
   if [ "$rc" = 0 ]; then ok; else fail "render $pk: rc=$rc"; continue; fi
@@ -131,6 +133,33 @@ done
 if jq -e '.slices == {done:2,total:4} and (.artifacts[0].sha256|length)==64' "$o4/result.json" >/dev/null; then ok; else fail "run: slices/sha256 wrong"; fi
 if [ "$(jq -c '.kind' "$o4/events.jsonl" | tr '\n' ' ')" = '"note" "slice.committed" "slice.green" "escalation" "note" ' ]; then ok; else fail "run: events kinds: $(jq -c .kind "$o4/events.jsonl" | tr '\n' ' ')"; fi
 if run validate --output "$o4/result.json" >/dev/null 2>&1; then ok; else fail "run artifacts: result.json invalid"; fi
+
+# --- agent-less pack + rulesMarkdown (run.mjs, no SDK) -------------------------
+pj="$(jq -c '.packs.evidence' "$packs")"
+ev() { # <outdir> -> runs run.mjs for the evidence pack in a scratch cwd
+  mkdir -p "$1"
+  (cd "$tmp" && ORC_STAGE_IN="$fx/stage-input.example.json" ORC_STAGE_OUT="$1" ORC_STAGE_PROMPT="$tmp/t.md" \
+    ORC_STAGE_PACK_JSON="$pj" ORC_PLUGIN_ROOT="$plugin_root" node "$repo_root/orc/lib/factory/run.mjs" >/dev/null 2>&1)
+}
+e1="$tmp/ev1"; mkdir -p "$e1/files/qa"; printf '{"verdict":"pass"}' > "$e1/files/qa/qa-manifest.json"
+if ev "$e1" && jq -e '.ok == true and .outcome == "pass" and (.artifacts|map(.kind)|index("qa-manifest")) != null' "$e1/result.json" >/dev/null; then ok; else fail "evidence: manifest pass -> outcome pass"; fi
+e2="$tmp/ev2"; mkdir -p "$e2/files/qa"; printf '{"verdict":"skipped"}' > "$e2/files/qa/qa-manifest.json"
+if ev "$e2" && jq -e '.outcome == "pass"' "$e2/result.json" >/dev/null; then ok; else fail "evidence: skipped -> pass"; fi
+e3="$tmp/ev3"; mkdir -p "$e3/files/qa"; printf '{"verdict":"partial"}' > "$e3/files/qa/qa-manifest.json"
+if ev "$e3" && jq -e '.outcome == "fail"' "$e3/result.json" >/dev/null; then ok; else fail "evidence: partial -> fail"; fi
+e4="$tmp/ev4"
+if ev "$e4" && jq -e '.outcome == "fail" and .ok == false' "$e4/result.json" >/dev/null; then ok; else fail "evidence: no manifest -> fail"; fi
+if run validate --output "$e1/result.json" >/dev/null 2>&1; then ok; else fail "evidence: result.json invalid"; fi
+r1="$tmp/rm1"; mkdir -p "$r1"
+(cd "$tmp" && ORC_STAGE_DRY_STRUCTURED='{"summary":"s","rulesMarkdown":"# rules\n"}' ORC_STAGE_DRY_RUN=1 ORC_STAGE_IN="$fx/stage-input.example.json" \
+  ORC_STAGE_OUT="$r1" ORC_STAGE_PROMPT="$tmp/t.md" ORC_STAGE_PACK_JSON="$(jq -c '.packs.reviewing_memory' "$packs")" \
+  ORC_PLUGIN_ROOT="$plugin_root" node "$repo_root/orc/lib/factory/run.mjs" >/dev/null 2>&1) || true
+if [ -f "$r1/files/rules.md" ] && jq -e '.artifacts|any(.path=="files/rules.md" and .kind=="rules")' "$r1/result.json" >/dev/null; then ok; else fail "rulesMarkdown: files/rules.md rules artifact missing"; fi
+# verifying uses read-only git, reviewer agent matches
+for t in 'Bash(git diff:*)' 'Bash(git log:*)' 'Bash(git merge-base:*)'; do
+  if jq -e --arg t "$t" '.packs.verifying.tools|index($t)' "$packs" >/dev/null && grep -qF "$t" "$repo_root/orc/agents/orc-pr-reviewer.md"; then ok; else fail "verifying/reviewer missing tool $t"; fi
+done
+if run render verifying "$fx/stage-input.example.json" | grep -qF 'git merge-base'; then ok; else fail "verifying prompt: merge-base method"; fi
 
 [ "$status" = 0 ] || exit 1
 echo "verify-stage: OK ($pass_count checks)"
