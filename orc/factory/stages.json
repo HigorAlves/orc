@@ -21,13 +21,17 @@
       "outputSchema": {
         "type": "object",
         "required": [
-          "brief",
-          "criteria",
-          "assumptions",
-          "questions"
+          "kind",
+          "summary"
         ],
         "properties": {
-          "brief": {
+          "kind": {
+            "enum": [
+              "brief",
+              "questions"
+            ]
+          },
+          "summary": {
             "type": "string"
           },
           "criteria": {
@@ -42,8 +46,41 @@
               "type": "string"
             }
           },
+          "slices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "title",
+                "est_loc",
+                "touchpoints",
+                "acceptance"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "est_loc": {
+                  "type": "integer"
+                },
+                "touchpoints": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "acceptance": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
           "questions": {
             "type": "array",
+            "maxItems": 3,
             "items": {
               "type": "object",
               "required": [
@@ -95,21 +132,46 @@
       "outputSchema": {
         "type": "object",
         "required": [
-          "tests",
-          "commit"
+          "kind",
+          "summary"
         ],
         "properties": {
+          "kind": {
+            "enum": [
+              "done",
+              "questions"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
           "tests": {
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "commit": {
-            "type": [
-              "string",
-              "null"
-            ]
+          "questions": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "required": [
+                "question",
+                "recommended"
+              ],
+              "properties": {
+                "question": {
+                  "type": "string"
+                },
+                "recommended": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
           }
         }
       },
@@ -152,10 +214,26 @@
       "outputSchema": {
         "type": "object",
         "required": [
-          "slices",
-          "commit"
+          "kind",
+          "summary"
         ],
         "properties": {
+          "kind": {
+            "enum": [
+              "done",
+              "test_change",
+              "escalated"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "commit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "slices": {
             "type": "object",
             "required": [
@@ -171,11 +249,17 @@
               }
             }
           },
-          "commit": {
-            "type": [
-              "string",
-              "null"
-            ]
+          "reason": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "request": {
+            "type": "string"
           }
         }
       },
@@ -200,6 +284,7 @@
         "type": "object",
         "required": [
           "verdict",
+          "summary",
           "findings"
         ],
         "properties": {
@@ -249,9 +334,18 @@
                   "type": "number",
                   "minimum": 0,
                   "maximum": 1
+                },
+                "suggestion_code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 }
               }
             }
+          },
+          "summary": {
+            "type": "string"
           }
         }
       },

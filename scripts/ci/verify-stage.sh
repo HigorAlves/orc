@@ -66,6 +66,24 @@ jq --arg t "$tmp/t.md" '.packs.implementing.promptTemplate=$t' "$packs" > "$tmp/
 c="$(ORC_FACTORY_STAGES="$tmp/stages.json" run render implementing "$rich")"
 if printf '%s' "$c" | grep -qF "CUSTOM Add CSV export / 1 / orc-implementer"; then ok; else fail "render: custom template not used"; fi
 
+# shipped templates: each of the four packs renders its own file, under 6 KB
+for pair in triage:orc-prd-analyzer:"TRIAGE STAGE" test_design:orc-test-author:"TEST DESIGN STAGE" \
+  implementing:orc-implementer:"IMPLEMENTING STAGE" verifying:orc-pr-reviewer:"VERIFYING STAGE"; do
+  pk="${pair%%:*}"; rest="${pair#*:}"; ag="${rest%%:*}"; head="${rest#*:}"
+  rp="$(run render "$pk" "$fx/stage-input.example.json")" && rc=0 || rc=$?
+  if [ "$rc" = 0 ]; then ok; else fail "render $pk: rc=$rc"; continue; fi
+  sz="$(printf '%s' "$rp" | wc -c | tr -d ' ')"
+  if [ "$sz" -lt 6144 ]; then ok; else fail "render $pk: $sz bytes (>= 6144)"; fi
+  if printf '%s' "$rp" | grep -qF -- "$ag"; then ok; else fail "render $pk: missing agent $ag"; fi
+  if printf '%s' "$rp" | grep -qF -- "$head"; then ok; else fail "render $pk: shipped template not used (no '$head')"; fi
+  if printf '%s' "$rp" | grep -qF "{{"; then fail "render $pk: unreplaced placeholder"; else ok; fi
+  if printf '%s' "$rp" | grep -qF "AskUserQuestion"; then ok; else fail "render $pk: no AskUserQuestion reminder"; fi
+done
+# output schemas carry the shapes the prompts promise
+if jq -e '.packs.triage.outputSchema.properties | has("slices") and has("kind")' "$packs" >/dev/null; then ok; else fail "schema: triage needs kind + slices"; fi
+if jq -e '.packs.implementing.outputSchema.properties.kind.enum == ["done","test_change","escalated"]' "$packs" >/dev/null; then ok; else fail "schema: implementing kind enum"; fi
+if jq -e '.packs.test_design.outputSchema.properties.kind.enum == ["done","questions"]' "$packs" >/dev/null; then ok; else fail "schema: test_design kind enum"; fi
+
 # --- run (dry-run; no model call) --------------------------------------------
 export PATH="/opt/homebrew/bin:$PATH"
 plugin_root="$repo_root/orc"
