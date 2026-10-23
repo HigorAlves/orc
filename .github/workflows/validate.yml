@@ -81,6 +81,9 @@ jobs:
       - name: orc-stage smoke tests
         run: bash scripts/ci/verify-stage.sh
 
+      - name: Retro propose fixtures (lib/retro.sh)
+        run: bash scripts/ci/verify-retro.sh
+
       - name: QA report fixtures (orc-report json/html)
         run: bash scripts/ci/verify-report.sh
 
