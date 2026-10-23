@@ -23,6 +23,7 @@ usage: orc-state <verb> [args]   (state root: $ORC_STATE_DIR, else <git root>/.o
   line [--branch B]                 live-session one-line JSON summary; empty + exit 0 when none
   phase set <n|done> [--label L]    bump phase in registry + checkpoint mirror
   status set <status>               in_progress | paused | completed | abandoned
+  close --merged [--branch B]       PR merged: status completed, phase done ("closed"), mirror written
   link-pr --repo R --url U [--number N] [--stack-id S --stack-position P --stacked-on U2]
   digest write -                    stdin -> replaces '## Resume digest' (30-line/2KB cap)
   checkpoint --auto [--trigger T]   mechanical '## Auto-checkpoint' (PreCompact hook); digest untouched
@@ -60,6 +61,7 @@ case "$sub" in
     [ "$verb" = "set" ] || { echo "orc-state status: only 'set' is supported" >&2; exit 2; }
     orc_state_status_set "$@"
     ;;
+  close)    orc_state_close "$@" ;;
   link-pr)  orc_state_link_pr "$@" ;;
   checkpoint) orc_state_checkpoint_auto "$@" ;;
   usage)    orc_state_usage "$@" ;;

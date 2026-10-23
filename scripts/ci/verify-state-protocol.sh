@@ -244,6 +244,20 @@ if printf '%s' "$summary" | jq -e '.[0].agent == "orc-pr-reviewer"' >/dev/null; 
 if run usage add --agent x --in nope --branch feat/x >/dev/null 2>&1; then fail "usage add: non-numeric tokens must be rejected"; else ok; fi
 if [ "$(run usage summary --branch feat/none 2>/dev/null || echo '[]')" = "[]" ]; then ok; else fail "usage summary: no session -> []"; fi
 
+# --- close --merged: one verb finishes a merged session --------------------
+export ORC_STATE_DIR="$tmp/.orc-close"
+run init --command flow --total-phases 9 --branch feat/x >/dev/null
+close_reg="$ORC_STATE_DIR/orc.json"
+close_ckpt="$ORC_STATE_DIR/feat-x/files/checkpoint.md"
+rc=0; run close --branch feat/x >/dev/null 2>&1 || rc=$?
+if [ "$rc" = "2" ]; then ok; else fail "close: without --merged must exit 2 (got $rc)"; fi
+if jq -e '.sessions[0].status == "in_progress"' "$close_reg" >/dev/null; then ok; else fail "close: refused call must leave status untouched"; fi
+run close --merged --branch feat/x >/dev/null
+if jq -e '.sessions[0].status == "completed" and .sessions[0].phase == "done" and .sessions[0].phaseLabel == "closed"' "$close_reg" >/dev/null; then ok; else fail "close --merged: registry must be completed / done / closed"; fi
+if grep -q '^status: completed$' "$close_ckpt"; then ok; else fail "close --merged: checkpoint frontmatter must mirror status: completed"; fi
+rc=0; run close --merged --branch feat/none >/dev/null 2>&1 || rc=$?
+if [ "$rc" = "1" ]; then ok; else fail "close --merged: unknown branch must exit 1 (got $rc)"; fi
+
 if [ "$status" -eq 0 ]; then
   echo "verify-state-protocol: OK ($pass_count cases)"
 fi

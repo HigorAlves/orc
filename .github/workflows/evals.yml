@@ -21,24 +21,21 @@ jobs:
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
-      - name: Skip without an API key
+      - name: Require an API key
         if: env.ANTHROPIC_API_KEY == ''
-        run: echo "::notice::ANTHROPIC_API_KEY secret not set — skipping evals"
+        run: |
+          echo "::error::ANTHROPIC_API_KEY secret not set — evals cannot run"
+          exit 1
       - uses: actions/checkout@v7
-        if: env.ANTHROPIC_API_KEY != ''
       - uses: actions/setup-node@v7
-        if: env.ANTHROPIC_API_KEY != ''
         with:
           node-version: 22
       - name: Bash sandbox prerequisites (Linux)
-        if: env.ANTHROPIC_API_KEY != ''
         run: sudo apt-get update -qq && sudo apt-get install -y -qq bubblewrap socat
       - name: Install Claude Code CLI
-        if: env.ANTHROPIC_API_KEY != ''
         # Same pin as validate.yml; models pinned below so a rollout isn't read as a regression.
         run: npm install -g @anthropic-ai/claude-code@2.1.290
       - name: Run eval suite
-        if: env.ANTHROPIC_API_KEY != ''
         run: >
           claude plugin eval ./orc
           --ablation none --runs 2 --threshold 0.8
@@ -46,7 +43,7 @@ jobs:
           --scaffold --allow-tools Bash Write Edit
           --trust-plugin --json evals-result.json
       - uses: actions/upload-artifact@v7
-        if: always() && env.ANTHROPIC_API_KEY != ''
+        if: always()
         with:
           name: evals-result
           path: |
