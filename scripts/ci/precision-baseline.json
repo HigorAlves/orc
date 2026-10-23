@@ -45,7 +45,7 @@
       "long": 0,
       "notimp": 0,
       "passive": 0,
-      "bytes": 4300,
+      "bytes": 4374,
       "desc": 198
     },
     "orc/commands/setup.md": {
@@ -925,7 +925,7 @@
       "long": 3,
       "notimp": 0,
       "passive": 2,
-      "bytes": 2002,
+      "bytes": 2289,
       "desc": 280
     },
     "orc/skills/trd-writing/SKILL.md": {

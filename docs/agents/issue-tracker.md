@@ -19,6 +19,14 @@ Issues for this repo live as GitHub Issues in `HigorAlves/orc`. Use the `gh` CLI
 
 Create a GitHub issue. When a skill says "fetch the relevant ticket": `gh issue view <n> --comments`.
 
+## Factory (optional)
+
+Not configured here. To enable "Send to the factory" in `/orc:triage`, uncomment:
+
+```
+# machineUrl: http://127.0.0.1:4317
+```
+
 ## Wayfinding operations
 
 Used by `/orc:wayfinder`. The **map** is a single issue with **child** issues as tickets.
