@@ -37,6 +37,7 @@ Hardness is the controller. orc is a library of stages that a controller calls.
 
 - **Positive:** one copy of the discipline; the controller sees only typed results; stage packs are reviewable data with CI checks; a human flow and a factory run share every skill and hook.
 - **Negative:** two repos share a frozen contract and must move together; every outward action in factory mode costs a board round trip; variant A depends on the plugin loading in the container, which the spike must confirm.
+- **Sandbox hardening (Hardness PR #1):** the stage container runs with a read-only root filesystem, a tmpfs `/tmp`, `no-new-privileges`, and locked test files: after the implementing pack passes, a test file modified, deleted or renamed since the stage input commit fails the stage and resets the commit. Added tests pass; `kind: "test_change"` is the escape hatch. When the worktree is read-only, orc keeps its state on tmpfs (`ORC_STATE_DIR` under `$TMPDIR`) and `HOME` falls back to `$TMPDIR`.
 - **Neutral:** interactive use is unchanged. Without `ORC_FACTORY=1` no code path in this ADR runs.
 
 ## Follow-ups

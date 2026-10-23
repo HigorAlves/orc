@@ -36,6 +36,9 @@ Assumptions:
 6. If a provided test is wrong, change nothing in it. Answer `kind: "test_change"` with `summary` and `request` (which test, why).
 7. On success answer `kind: "done"` with `summary`, `commit` (output of `git rev-parse HEAD`), and `slices: {done, total}`.
 
+## Locked tests
+Tests present when your run starts (from test_design or already in the repo) are locked. Modifying, deleting or renaming one fails the stage and resets your commit. Add new tests freely. If a locked test is wrong, stop and answer `kind: "test_change"` with `request`.
+
 ## Rules
 - Never call AskUserQuestion. Escalation and questions end the stage.
 - Never `gh pr create`, never push, never post reviews or tracker writes.

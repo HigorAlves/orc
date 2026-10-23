@@ -163,5 +163,27 @@ for t in 'Bash(git diff:*)' 'Bash(git log:*)' 'Bash(git merge-base:*)'; do
 done
 if run render verifying "$fx/stage-input.example.json" | grep -qF 'git merge-base'; then ok; else fail "verifying prompt: merge-base method"; fi
 
+# --- read-only sandbox: state dir, HOME, preinstall guard ----------------------
+ro="$tmp/ro-cwd"; mkdir -p "$ro" "$tmp/tmpd"
+chmod 555 "$ro"
+ro_err="$tmp/ro.err"
+ro_out="$(cd "$ro" && env -u ORC_STATE_DIR TMPDIR="$tmp/tmpd" bash "$stage" run --dry-run --in "$fx/stage-input.example.json" --out "$tmp/ro-out" 2>"$ro_err")" && rc=0 || rc=$?
+chmod 755 "$ro"
+if [ "$rc" = 0 ]; then ok; else fail "read-only cwd: rc=$rc ($(cat "$ro_err"))"; fi
+if grep -qF 'cwd is read-only' "$ro_err"; then ok; else fail "read-only cwd: stderr lacks notice"; fi
+if printf '%s' "$ro_out" | jq -e --arg d "$tmp/tmpd" '.env.ORC_STATE_DIR | startswith($d)' >/dev/null 2>&1; then ok; else fail "read-only cwd: env.ORC_STATE_DIR not under TMPDIR: $ro_out"; fi
+if run validate --output "$tmp/ro-out/result.json" >/dev/null 2>&1; then ok; else fail "read-only cwd: result.json invalid"; fi
+hm_out="$(cd "$tmp" && HOME=/nonexistent bash "$stage" run --dry-run --in "$fx/stage-input.example.json" --out "$tmp/hm-out" 2>/dev/null)" && rc=0 || rc=$?
+if [ "$rc" = 0 ]; then ok; else fail "HOME=/nonexistent: rc=$rc"; fi
+hm="$(printf '%s' "$hm_out" | jq -r '.env.HOME' 2>/dev/null || true)"
+if [ -n "$hm" ] && [ -d "$hm" ] && [ -w "$hm" ]; then ok; else fail "HOME=/nonexistent: env.HOME not writable: $hm"; fi
+ropl="$tmp/ro-plugin"; mkdir -p "$ropl"; cp -R "$repo_root/orc/." "$ropl/"; rm -rf "$ropl/lib/factory/node_modules"
+chmod -R a-w "$ropl"
+pre_err="$(cd "$tmp" && bash "$ropl/bin/orc-stage" run --in "$fx/stage-input.example.json" --out "$tmp/pre-out" 2>&1 >/dev/null)" && rc=0 || rc=$?
+chmod -R u+w "$ropl"
+if [ "$rc" = 4 ]; then ok; else fail "SDK absent + lib read-only: rc=$rc, want 4"; fi
+if printf '%s' "$pre_err" | grep -qi 'preinstall'; then ok; else fail "SDK absent + lib read-only: message lacks preinstall: $pre_err"; fi
+if run render implementing "$fx/stage-input.example.json" | grep -qF 'Locked tests' && run render implementing "$fx/stage-input.example.json" | grep -qF 'test_change'; then ok; else fail "implementing prompt: Locked tests paragraph missing"; fi
+
 [ "$status" = 0 ] || exit 1
 echo "verify-stage: OK ($pass_count checks)"

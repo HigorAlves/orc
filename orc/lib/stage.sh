@@ -207,7 +207,22 @@ orc_stage_run() {
   in="$(cd "$(dirname "$in")" && pwd)/$(basename "$in")"
   orc_stage_render "$pack" "$in" > "$out/prompt.md" || return
   fdir="${ORC_STAGE_ROOT}/lib/factory"
+  # Read-only sandbox: keep orc state and HOME on writable ground.
+  if [ -z "${ORC_STATE_DIR:-}" ] && [ ! -w "$PWD" ]; then
+    local br
+    br="$(git branch --show-current 2>/dev/null || true)"
+    br="$(printf '%s' "${br:-detached}" | tr '/' '-' | tr -c 'a-zA-Z0-9._-' '-')"
+    export ORC_STATE_DIR="${TMPDIR:-/tmp}/orc-state/${br}"
+    mkdir -p "$ORC_STATE_DIR"
+    echo "orc-stage: cwd is read-only; state in $ORC_STATE_DIR" >&2
+  fi
+  if [ -z "${HOME:-}" ] || [ ! -d "$HOME" ] || [ ! -w "$HOME" ]; then
+    export HOME="${TMPDIR:-/tmp}"
+  fi
   if [ -z "$dry" ] && [ "$(jq -r '.agent // "null"' <<<"$pack_json")" != "null" ] && [ ! -d "$fdir/node_modules/@anthropic-ai/claude-agent-sdk" ]; then
+    if [ ! -w "$fdir" ]; then
+      orc_stage__die 4 "Agent SDK missing in $fdir and the directory is read-only; run the preinstall step (npm install --omit=dev --prefix $fdir) when building the image"; return
+    fi
     echo "orc-stage: installing the Agent SDK into $fdir (first run)" >&2
     npm install --omit=dev --no-audit --no-fund --prefix "$fdir" >&2 || { orc_stage__die 4 "npm install failed"; return; }
   fi
