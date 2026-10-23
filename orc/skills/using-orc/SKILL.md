@@ -40,6 +40,10 @@ Use the `Skill` tool — never `Read` a skill file. Every skill's description is
 
 Gates come in three classes. **Hard-outward** — anything writing to a tracker, posting a PR review, or publishing evidence: always asks; no flag or policy skips it. **Soft-inward** — decisions about the user's own working tree (plan approval, driver choice, PR compose): convertible to pre-approved defaults by the `interaction_policy` autopilot ladder (`manual` | `guided` | `auto`, via userConfig or `--auto`; banner shows the resolved level). **Escalation-only** — never asked proactively; always stop the run when triggered (implementer escalations, env failures, criteria misses), at every policy level. How every gate is rendered (header chips, Recommended-first, `preview`, multiSelect chunking): → `orc:gates`
 
+### Factory mode
+
+`ORC_FACTORY=1` marks a sandboxed run driven by a controller, with no human and no `AskUserQuestion`. Gates follow `orc:gates` §8. The SessionStart banner shows `mode: factory`.
+
 ## Skill routing
 
 - **Process skills first** — `orc:systematic-debugging`, `orc:tdd`, `orc:verification-before-completion` decide HOW to approach a task; implementation skills come second.

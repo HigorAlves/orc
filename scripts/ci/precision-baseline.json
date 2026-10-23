@@ -541,7 +541,7 @@
       "long": 6,
       "notimp": 0,
       "passive": 3,
-      "bytes": 4123,
+      "bytes": 5074,
       "desc": 278
     },
     "orc/skills/gh-cli/SKILL.md": {
@@ -853,7 +853,7 @@
       "long": 2,
       "notimp": 0,
       "passive": 5,
-      "bytes": 5302,
+      "bytes": 5465,
       "desc": 282
     },
     "orc/skills/stripe-best-practices/SKILL.md": {
@@ -965,7 +965,7 @@
       "long": 6,
       "notimp": 0,
       "passive": 2,
-      "bytes": 4468,
+      "bytes": 4666,
       "desc": 144
     },
     "orc/skills/vercel-composition-patterns/SKILL.md": {
