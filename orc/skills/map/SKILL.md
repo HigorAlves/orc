@@ -49,6 +49,7 @@ was built and proven.
 | New package/service/app shell | `/orc:scaffold` |
 | Interrupted mid-anything | `/orc:resume` (`/orc:status` lists what's live) |
 | A build just finished (or went sideways) | `/orc:retro` — improve the environment, not the code |
+| Agents keep relearning the same conventions | `/orc:context` — write the binding `project-context.md` |
 
 ## Sharpening (before committing to build)
 
