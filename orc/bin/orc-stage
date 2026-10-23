@@ -18,7 +18,7 @@ usage: orc-stage <verb> [args]   (packs: $ORC_FACTORY_STAGES, else factory/stage
   validate --output <file>               stage output against the contract
   validate --packs                       the packs file against its schema
   render <pack> <stage.json>             print the stage prompt (header, output schema, template)
-  run ...                                SDK runner (not implemented yet; exit 3)
+  run --in F --out D [--plugin-root P] [--dry-run]   run the stage via the Agent SDK (--dry-run prints options)
 EOF2
 }
 

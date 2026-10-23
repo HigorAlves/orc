@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2016  # $vars inside single quotes are jq program variables
-# stage.sh — factory stage packs: list, validate, render.
+# stage.sh — factory stage packs: list, validate, render, run.
 # Sourced by bin/orc-stage. Pure bash + jq; no sed on user text (criteria may
 # contain slashes and ampersands), placeholders are substituted by jq split/join.
 # Contract schemas: orc/factory/schema/*.json.
@@ -175,8 +175,43 @@ orc_stage_render() {
     (reduce ($subs | to_entries[]) as $e ($tpl; split($e.key) | join($e.value)))'
 }
 
-# run — SDK runner; implemented in slice 5.
+# run --in <stage.json> --out <dir> [--plugin-root <path>] [--dry-run]
+# Validates the input, renders the prompt, then hands off to lib/factory/run.mjs
+# (Agent SDK). Exit: 1 invalid input | 2 usage | 4 node missing | 5 result invalid.
 orc_stage_run() {
-  echo "orc-stage run: not implemented (slice 5)" >&2
-  return 3
+  local in="" out="" proot="${ORC_PLUGIN_ROOT:-}" dry="" pack pf pack_json fdir
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --in)          in="${2:-}"; shift 2 ;;
+      --out)         out="${2:-}"; shift 2 ;;
+      --plugin-root) proot="${2:-}"; shift 2 ;;
+      --dry-run)     dry=1; shift ;;
+      *) orc_stage__die 2 "run: unknown arg $1"; return ;;
+    esac
+  done
+  if [ -z "$in" ] || [ -z "$out" ]; then orc_stage__die 2 "run --in <stage.json> --out <dir> [--plugin-root <path>] [--dry-run]"; return; fi
+  [ -f "$in" ] || { orc_stage__die 2 "cannot read stage input: $in"; return; }
+  orc_stage_validate_jq "${ORC_STAGE_ROOT}/factory/schema/stage-input.json" "$in" || return 1
+  command -v node >/dev/null 2>&1 || { orc_stage__die 4 "node is required for run (not found on PATH)"; return; }
+  pack="$(jq -r '.pack' "$in")"
+  pf="$(orc_stage__packs_file)"
+  pack_json="$(jq -c --arg p "$pack" '.packs[$p] // empty' "$pf")"
+  [ -n "$pack_json" ] || { orc_stage__die 2 "unknown pack: $pack"; return; }
+  [ -n "$proot" ] || proot="$ORC_STAGE_ROOT"
+  mkdir -p "$out"
+  out="$(cd "$out" && pwd)"
+  in="$(cd "$(dirname "$in")" && pwd)/$(basename "$in")"
+  orc_stage_render "$pack" "$in" > "$out/prompt.md" || return
+  fdir="${ORC_STAGE_ROOT}/lib/factory"
+  if [ -z "$dry" ] && [ ! -d "$fdir/node_modules/@anthropic-ai/claude-agent-sdk" ]; then
+    echo "orc-stage: installing the Agent SDK into $fdir (first run)" >&2
+    npm install --omit=dev --no-audit --no-fund --prefix "$fdir" >&2 || { orc_stage__die 4 "npm install failed"; return; }
+  fi
+  local rc=0
+  ORC_FACTORY=1 ORC_STAGE_IN="$in" ORC_STAGE_OUT="$out" ORC_STAGE_PROMPT="$out/prompt.md" \
+    ORC_STAGE_PACK_JSON="$pack_json" ORC_PLUGIN_ROOT="$proot" ORC_STAGE_DRY_RUN="$dry" \
+    node "${fdir}/run.mjs" || rc=$?
+  [ "$rc" = 0 ] || return "$rc"
+  orc_stage_validate_jq "${ORC_STAGE_ROOT}/factory/schema/stage-output.json" "$out/result.json" \
+    || { orc_stage__die 5 "result.json failed the output contract"; return; }
 }

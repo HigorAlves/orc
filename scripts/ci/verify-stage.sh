@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Smoke tests for bin/orc-stage — packs, validate, render, run stub.
+# Smoke tests for bin/orc-stage — packs, validate, render, run (dry-run).
 # Run from the repo root.
 set -euo pipefail
 
@@ -66,9 +66,53 @@ jq --arg t "$tmp/t.md" '.packs.implementing.promptTemplate=$t' "$packs" > "$tmp/
 c="$(ORC_FACTORY_STAGES="$tmp/stages.json" run render implementing "$rich")"
 if printf '%s' "$c" | grep -qF "CUSTOM Add CSV export / 1 / orc-implementer"; then ok; else fail "render: custom template not used"; fi
 
-# --- run stub ----------------------------------------------------------------
-run run >/dev/null 2>&1 && rc=0 || rc=$?
-if [ "$rc" = 3 ]; then ok; else fail "run stub: rc=$rc, want 3"; fi
+# --- run (dry-run; no model call) --------------------------------------------
+export PATH="/opt/homebrew/bin:$PATH"
+plugin_root="$repo_root/orc"
+o1="$tmp/out1"
+dry="$(cd "$tmp" && run run --dry-run --in "$fx/stage-input.example.json" --out "$o1" 2>&1)" && rc=0 || rc=$?
+if [ "$rc" = 0 ]; then ok; else fail "run --dry-run: rc=$rc ($dry)"; fi
+opts="$(printf '%s' "$dry" | jq -c . 2>/dev/null || true)"
+want_tools="$(jq -c '.packs.implementing.tools' "$packs")"
+if [ -n "$opts" ] && printf '%s' "$opts" | jq -e --arg r "$plugin_root" --argjson t "$want_tools" '
+  (.plugins[0].path | endswith($r)) and .plugins[0].type == "local" and .settingSources == []
+  and .tools == $t and .allowedTools == $t and .permissionMode == "dontAsk"
+  and .env.ORC_FACTORY == "1" and .outputFormat.type == "json_schema"' >/dev/null; then ok; else fail "run --dry-run: options JSON wrong: $dry"; fi
+if run validate --output "$o1/result.json" >/dev/null 2>&1; then ok; else fail "run --dry-run: result.json invalid"; fi
+if [ -f "$o1/prompt.md" ] && [ "$(wc -l < "$o1/events.jsonl" | tr -d ' ')" -ge 1 ]; then ok; else fail "run --dry-run: prompt.md/events.jsonl missing"; fi
+if jq -e '.ok == true and .outcome == "pass" and .summary == "dry-run"' "$o1/result.json" >/dev/null; then ok; else fail "run --dry-run: result not pass/dry-run"; fi
+if tail -n1 "$o1/events.jsonl" | jq -e '.kind == "note" and .payload.phase == "stage_end" and .payload.outcome == "pass"' >/dev/null; then ok; else fail "run: last event not stage_end"; fi
+
+# invalid input -> exit 1
+run run --dry-run --in "$fx/stage-input.broken.json" --out "$tmp/out2" >/dev/null 2>&1 && rc=0 || rc=$?
+if [ "$rc" = 1 ]; then ok; else fail "run invalid input: rc=$rc, want 1"; fi
+
+# node missing -> exit 4
+nonode="$tmp/nonode"; mkdir -p "$nonode"
+for t in bash jq dirname cat git mkdir tr basename; do ln -sf "$(command -v "$t")" "$nonode/$t"; done
+PATH="$nonode" "$(command -v bash)" "$stage" run --dry-run --in "$fx/stage-input.example.json" --out "$tmp/out3" >/dev/null 2>&1 && rc=0 || rc=$?
+if [ "$rc" = 4 ]; then ok; else fail "run without node: rc=$rc, want 4"; fi
+
+# artifact kind inference + ledger events
+o4="$tmp/out4"; mkdir -p "$o4/files/tests" "$o4/files/qa"
+for f in qa/qa-manifest.json qa/shot.png qa/clip.webm qa/net.har qa/report.html tests/a.test.ts x.diff findings.json rules.md notes.txt; do
+  printf 'x' > "$o4/files/$f"
+done
+wt="$tmp/wt"; mkdir -p "$wt/.orc/feat-x/files"
+git -C "$wt" init -q -b feat/x
+printf '{"at":"t","agent":"orc-implementer","model":null,"in":1,"out":2,"ms":3}\n' > "$wt/.orc/feat-x/files/usage.jsonl"
+jq -n '{schema:1,slices:[{id:1,title:"a",status:"committed",commit:"abc"},{id:2,title:"b",status:"green",commit:null},{id:3,title:"c",status:"escalated",commit:null},{id:4,title:"d",status:"pending",commit:null}]}' > "$wt/.orc/feat-x/files/slices.json"
+(cd "$wt" && ORC_STATE_DIR="$wt/.orc" run run --dry-run --in "$fx/stage-input.example.json" --out "$o4" >/dev/null 2>&1) && rc=0 || rc=$?
+if [ "$rc" = 0 ]; then ok; else fail "run artifacts: rc=$rc"; fi
+kinds="$(jq -r '.artifacts[] | "\(.path)=\(.kind)"' "$o4/result.json" | sort | tr '\n' ' ')"
+for w in files/findings.json=findings files/notes.txt=report files/qa/clip.webm=video files/qa/net.har=har \
+  files/qa/qa-manifest.json=qa-manifest files/qa/report.html=report files/qa/shot.png=screenshot \
+  files/rules.md=rules files/tests/a.test.ts=test files/x.diff=diff; do
+  case " $kinds" in *" $w "*) ok ;; *) fail "artifact kind: want $w in: $kinds" ;; esac
+done
+if jq -e '.slices == {done:2,total:4} and (.artifacts[0].sha256|length)==64' "$o4/result.json" >/dev/null; then ok; else fail "run: slices/sha256 wrong"; fi
+if [ "$(jq -c '.kind' "$o4/events.jsonl" | tr '\n' ' ')" = '"note" "slice.committed" "slice.green" "escalation" "note" ' ]; then ok; else fail "run: events kinds: $(jq -c .kind "$o4/events.jsonl" | tr '\n' ' ')"; fi
+if run validate --output "$o4/result.json" >/dev/null 2>&1; then ok; else fail "run artifacts: result.json invalid"; fi
 
 [ "$status" = 0 ] || exit 1
 echo "verify-stage: OK ($pass_count checks)"

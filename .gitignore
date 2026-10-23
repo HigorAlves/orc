@@ -24,3 +24,6 @@ orc/.claude-plugin/types/
 
 # npm installs (orc-explain installs its deps into the user cache, never here)
 node_modules/
+
+# factory runner SDK install (orc-stage run installs on first use)
+orc/lib/factory/node_modules/
