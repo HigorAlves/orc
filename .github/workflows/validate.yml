@@ -78,6 +78,9 @@ jobs:
       - name: Factory packs + contract schemas
         run: bash scripts/ci/verify-factory.sh
 
+      - name: orc-stage smoke tests
+        run: bash scripts/ci/verify-stage.sh
+
       - name: QA report fixtures (orc-report json/html)
         run: bash scripts/ci/verify-report.sh
 
