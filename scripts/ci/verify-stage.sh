@@ -155,6 +155,8 @@ r1="$tmp/rm1"; mkdir -p "$r1"
   ORC_STAGE_OUT="$r1" ORC_STAGE_PROMPT="$tmp/t.md" ORC_STAGE_PACK_JSON="$(jq -c '.packs.reviewing_memory' "$packs")" \
   ORC_PLUGIN_ROOT="$plugin_root" node "$repo_root/orc/lib/factory/run.mjs" >/dev/null 2>&1) || true
 if [ -f "$r1/files/rules.md" ] && jq -e '.artifacts|any(.path=="files/rules.md" and .kind=="rules")' "$r1/result.json" >/dev/null; then ok; else fail "rulesMarkdown: files/rules.md rules artifact missing"; fi
+if jq -e '.answer.summary == "s" and .answer.rulesMarkdown != null' "$r1/result.json" >/dev/null; then ok; else fail "answer: structured output not carried in result.json"; fi
+if jq -e '.answer == null' "$o1/result.json" >/dev/null; then ok; else fail "answer: dry-run without structured output must be null"; fi
 # verifying uses read-only git, reviewer agent matches
 for t in 'Bash(git diff:*)' 'Bash(git log:*)' 'Bash(git merge-base:*)'; do
   if jq -e --arg t "$t" '.packs.verifying.tools|index($t)' "$packs" >/dev/null && grep -qF "$t" "$repo_root/orc/agents/orc-pr-reviewer.md"; then ok; else fail "verifying/reviewer missing tool $t"; fi

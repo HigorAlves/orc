@@ -141,6 +141,9 @@ const finish = (r) => {
       total: ledger.slices.length,
     },
     commit: s.commit ?? null,
+    // The pack's whole structured answer, so the controller keeps what the
+    // summary drops (triage criteria/assumptions/slices, review verdicts).
+    answer: r.structured ?? null,
     usage: {
       turns: r.turns ?? 0,
       costUsd: r.costUsd ?? null,
