@@ -2,7 +2,7 @@
 
 All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tags; the CLI releases separately under plain `vX.Y.Z` tags. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); each entry links the PR that landed it. The `plugin-release` workflow publishes a version's section as its GitHub Release notes when the tag is pushed.
 
-## [Unreleased]
+## [0.30.0] - 2026-10-24
 
 ### Added
 - Factory: test_design answers `cases[]`, one `{title, criterion, test}` per test. Stage input schema 2 carries the approved cases as `context.testCases`; implementing makes each pass and verifying reports any that is missing.
