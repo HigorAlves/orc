@@ -83,6 +83,15 @@ for pk in implementing verifying; do
   if run render "$pk" "$fx/stage-input.example.json" | grep -qF "{{context.testCases}}"; then fail "render $pk: unreplaced testCases"; else ok; fi
 done
 
+# verifying is writable now: review tools union implementing's write/test/commit set
+vft="$(jq -c '.packs.verifying.tools' "$packs")"
+for t in '"Bash(git diff:*)"' '"Bash(gh pr diff:*)"' '"Write"' '"Edit"' '"Bash(git add:*)"' '"Bash(git commit:*)"' '"Bash(pnpm:*)"'; do
+  if printf '%s' "$vft" | jq -e --argjson t "$t" 'index($t) != null' >/dev/null; then ok; else fail "verifying tools missing $t: $vft"; fi
+done
+if jq -e '.packs.verifying.writable == true and .packs.verifying.maxTurns == 60 and .packs.verifying.timeoutMs == 1200000' "$packs" >/dev/null; then ok; else fail "verifying must be writable, 60 turns, 1200000ms"; fi
+if jq -e '.packs.verifying.outputSchema.properties.results.items.required == ["title","criterion","approach","outcome"]' "$packs" >/dev/null; then ok; else fail "verifying must answer results[] {title, criterion, approach, outcome}"; fi
+if jq -e '.packs.verifying.outputSchema.required | index("results") == null' "$packs" >/dev/null; then ok; else fail "verifying's results must not be required (a questions answer has none)"; fi
+
 # custom template via ORC_FACTORY_STAGES
 printf 'CUSTOM {{task.title}} / {{attempt}} / {{agent}}\n' > "$tmp/t.md"
 jq --arg t "$tmp/t.md" '.packs.implementing.promptTemplate=$t' "$packs" > "$tmp/stages.json"
@@ -91,7 +100,7 @@ if printf '%s' "$c" | grep -qF "CUSTOM Add CSV export / 1 / orc-implementer"; th
 
 # shipped templates: each of the eight packs renders its own file, under 6 KB
 for pair in triage:orc-prd-analyzer:"TRIAGE STAGE" test_design:orc-prd-analyzer:"TEST DESIGN STAGE" \
-  implementing:orc-implementer:"IMPLEMENTING STAGE" verifying:orc-pr-reviewer:"VERIFYING STAGE" \
+  implementing:orc-implementer:"IMPLEMENTING STAGE" verifying:orc-verifier:"VERIFYING STAGE" \
   e2e:orc-qa-validator:"E2E STAGE" evidence:script:"EVIDENCE STAGE" \
   ci_watch:orc-ci-investigator:"CI WATCH STAGE" reviewing_memory:orc-refactor-architect:"REVIEWING MEMORY STAGE"; do
   pk="${pair%%:*}"; rest="${pair#*:}"; ag="${rest%%:*}"; head="${rest#*:}"

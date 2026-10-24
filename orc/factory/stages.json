@@ -280,23 +280,37 @@
       "promptTemplate": "orc/factory/prompts/implementing.md"
     },
     "verifying": {
-      "agent": "orc-pr-reviewer",
+      "agent": "orc-verifier",
       "skills": [
-        "orc:review-contract"
+        "orc:review-contract",
+        "orc:caveman-review"
       ],
       "tools": [
         "Read",
+        "Write",
+        "Edit",
         "Glob",
         "Grep",
         "Bash(gh pr view:*)",
         "Bash(gh pr diff:*)",
         "Bash(git diff:*)",
         "Bash(git log:*)",
-        "Bash(git merge-base:*)"
+        "Bash(git merge-base:*)",
+        "Bash(git add:*)",
+        "Bash(git commit:*)",
+        "Bash(npm:*)",
+        "Bash(pnpm:*)",
+        "Bash(yarn:*)",
+        "Bash(npx:*)",
+        "Bash(go:*)",
+        "Bash(cargo:*)",
+        "Bash(pip:*)",
+        "Bash(pytest:*)",
+        "Bash(make:*)"
       ],
-      "writable": false,
-      "maxTurns": 40,
-      "timeoutMs": 900000,
+      "writable": true,
+      "maxTurns": 60,
+      "timeoutMs": 1200000,
       "outputSchema": {
         "type": "object",
         "required": [
@@ -363,6 +377,38 @@
           },
           "summary": {
             "type": "string"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "title",
+                "criterion",
+                "approach",
+                "outcome"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "criterion": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "approach": {
+                  "type": "string"
+                },
+                "outcome": {
+                  "enum": [
+                    "pass",
+                    "fail"
+                  ]
+                }
+              }
+            }
           }
         }
       },

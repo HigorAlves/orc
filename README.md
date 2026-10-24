@@ -31,7 +31,7 @@
 
 ---
 
-orc is a full-SDLC workflow plugin for Claude Code: **88 curated skills, 30 composite slash commands, 14 specialist subagents, and 10 hook scripts**. The hooks enforce the discipline the model would otherwise talk itself out of: no commits to `main`, no AI-attribution trailers, destructive git gated, dependencies pre-flighted, the rules injected at every session start. One command, `/orc:flow`, drives a feature from "I want X" to "PR merged", and `/orc:ci`, `/orc:release`, `/orc:deps` and `/orc:incident` cover what happens after.
+orc is a full-SDLC workflow plugin for Claude Code: **88 curated skills, 30 composite slash commands, 15 specialist subagents, and 10 hook scripts**. The hooks enforce the discipline the model would otherwise talk itself out of: no commits to `main`, no AI-attribution trailers, destructive git gated, dependencies pre-flighted, the rules injected at every session start. One command, `/orc:flow`, drives a feature from "I want X" to "PR merged", and `/orc:ci`, `/orc:release`, `/orc:deps` and `/orc:incident` cover what happens after.
 
 It exists for one reason: every time a senior developer sits down, they already know how the next hour goes. Write the plan, watch the test fail, fix the cause, verify with evidence, ship the PR. orc encodes that loop.
 

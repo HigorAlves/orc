@@ -288,6 +288,14 @@
       "bytes": 2645,
       "desc": 247
     },
+    "orc/agents/orc-verifier.md": {
+      "kind": "agent",
+      "long": 0,
+      "notimp": 0,
+      "passive": 1,
+      "bytes": 2974,
+      "desc": 246
+    },
     "orc/agents/orc-qa-validator.md": {
       "kind": "agent",
       "long": 1,
