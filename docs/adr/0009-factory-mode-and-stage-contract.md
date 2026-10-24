@@ -39,6 +39,7 @@ Hardness is the controller. orc is a library of stages that a controller calls.
 - **Negative:** two repos share a frozen contract and must move together; every outward action in factory mode costs a board round trip; variant A depends on the plugin loading in the container, which the spike must confirm.
 - **Sandbox hardening (Hardness PR #1):** the stage container runs with a read-only root filesystem, a tmpfs `/tmp`, `no-new-privileges`, and locked test files: after the implementing pack passes, a test file modified, deleted or renamed since the stage input commit fails the stage and resets the commit. Added tests pass; `kind: "test_change"` is the escape hatch. When the worktree is read-only, orc keeps its state on tmpfs (`ORC_STATE_DIR` under `$TMPDIR`) and `HOME` falls back to `$TMPDIR`.
 - **Stage output schema 2:** adds `outcome: "escalated"`, for an agent that stops on purpose; `answer.reason` and `answer.options` carry the why. Before it, `run.mjs` reported an escalated implementer as `pass`, and the controller verified an empty change. Controllers read schema 1 and 2.
+- **Stage input schema 2:** adds `context.testCases`, the `{title, criterion, test}` cases approved at the test check, rendered as `{{context.testCases}}` for implementing and verifying. orc reads input schema 1 and 2.
 - **Neutral:** interactive use is unchanged. Without `ORC_FACTORY=1` no code path in this ADR runs.
 
 ## Follow-ups

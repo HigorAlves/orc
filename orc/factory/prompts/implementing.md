@@ -21,6 +21,9 @@ Assumptions:
 ## Decisions so far
 {{decisions}}
 
+Approved test cases (each must pass):
+{{context.testCases}}
+
 ## Prior findings to fix (from verifying)
 {{priorFindings}}
 

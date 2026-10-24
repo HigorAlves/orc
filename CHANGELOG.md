@@ -4,6 +4,9 @@ All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tag
 
 ## [Unreleased]
 
+### Added
+- Factory: test_design answers `cases[]`, one `{title, criterion, test}` per test. Stage input schema 2 carries the approved cases as `context.testCases`; implementing makes each pass and verifying reports any that is missing.
+
 ### Fixed
 - Factory: every pack gets the tools it declares. `run.mjs` passed permission patterns such as `Bash(git commit:*)` as the SDK's `tools`, which takes bare names, so no pack had Bash. `tools` now gets the bare names; `allowedTools` keeps the patterns.
 - Factory: an `escalated` answer ends the stage `escalated` instead of `pass`, so the controller escalates the task with the agent's reason.
@@ -11,6 +14,7 @@ All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tag
 
 ### Changed
 - Stage output schema 2 adds the `escalated` outcome (ADR 0009). `orc-stage validate` reads schema 1 and 2.
+- Triage's `criteria[]` keeps every ticket criterion and adds what the plan needs; the controller adopts it as the ticket's list.
 
 ## [0.29.0] - 2026-10-23
 

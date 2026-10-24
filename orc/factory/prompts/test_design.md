@@ -29,7 +29,7 @@ Assumptions:
 4. Do NOT touch production code. Do not commit.
 5. Write `/out/files/tests/manifest.json` as `{"tests":["<repo-relative path>", ...]}` listing the test files you created or changed. Copy nothing else to `/out`.
 6. If a criterion is untestable as written, stop and answer `kind: "questions"` (at most 3 `{question, recommended}`).
-7. Otherwise answer `kind: "done"` with `summary` (what is covered, how each fails) and `tests[]`.
+7. Otherwise answer `kind: "done"` with `summary` (what is covered, how each fails), `tests[]` and `cases[]`: one `{title, criterion, test}` per test. `criterion` quotes the plan criterion it proves (null for an extra edge case); `test` is `<path> > <test name>`. Every criterion has a case.
 
 ## Rules
 - Never call AskUserQuestion. Questions end the stage.

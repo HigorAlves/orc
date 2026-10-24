@@ -37,7 +37,7 @@ orc_stage_validate_jq() {
   key="$(jq -r --arg kind "$kind" --argjson ids "$ORC_STAGE_IDS" '
     def checks:
       if $kind == "input" then [
-        ["schema", .schema==1],
+        ["schema", (.schema|IN(1,2))],
         ["stage", (.stage|type)=="string"],
         ["pack", (.pack as $p | $ids|index($p)!=null)],
         ["attempt", (.attempt|type)=="number"],
@@ -168,6 +168,7 @@ orc_stage_render() {
       "{{plan.assumptions}}": ($i.plan.assumptions? | bullets),
       "{{decisions}}": ($i.decisions | lines("- \(.decision) at \(.at): \(if (.reason // "") != "" then .reason elif (.answers // {}) != {} then (.answers|tojson) else "(none)" end)")),
       "{{priorFindings}}": ($i.priorFindings | lines("- \(.severity) \(.path):\(.line) \(.title)")),
+      "{{context.testCases}}": ($i.context.testCases? | lines("- \(.title)\(if (.criterion // "") != "" then " (proves: \(.criterion))" else "" end): \(.test)")),
       "{{context.projectContext}}": (($i.context.projectContext // "") | if . == "" then $pc else . end | txt),
       "{{attempt}}": ($i.attempt | txt),
       "{{agent}}": $agent,
