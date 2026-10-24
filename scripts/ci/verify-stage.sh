@@ -69,17 +69,17 @@ if run render evidence "$fx/stage-input.example.json" | grep -qF "## Shell"; the
 
 # approved test cases (stage input schema 2) render for implementing and verifying
 cases="$tmp/cases.json"
-jq '.schema = 2 | .context.testCases = [
-  {"title":"rejects a bad password","criterion":"Bad password shows an error","test":"src/login.test.ts > rejects a bad password"},
-  {"title":"keeps the session","criterion":null,"test":"src/session.test.ts > keeps it"}]' "$fx/stage-input.example.json" > "$cases"
-if run validate --input "$cases" >/dev/null 2>&1; then ok; else fail "validate: stage input schema 2 with testCases"; fi
-jq '.schema = 3' "$fx/stage-input.example.json" > "$tmp/in3.json"
-run validate --input "$tmp/in3.json" >/dev/null 2>&1 && rc=0 || rc=$?
-if [ "$rc" = 1 ]; then ok; else fail "validate: stage input schema 3 must fail (rc=$rc)"; fi
+jq '.schema = 3 | .context.testCases = [
+  {"title":"rejects a bad password","criterion":"Bad password shows an error","approach":"run src/login.test.ts, confirm it rejects"},
+  {"title":"keeps the session","criterion":null,"approach":"manual: open devtools, confirm the cookie survives a reload"}]' "$fx/stage-input.example.json" > "$cases"
+if run validate --input "$cases" >/dev/null 2>&1; then ok; else fail "validate: stage input schema 3 with testCases"; fi
+jq '.schema = 4' "$fx/stage-input.example.json" > "$tmp/in4.json"
+run validate --input "$tmp/in4.json" >/dev/null 2>&1 && rc=0 || rc=$?
+if [ "$rc" = 1 ]; then ok; else fail "validate: stage input schema 4 must fail (rc=$rc)"; fi
 for pk in implementing verifying; do
   rc_out="$(run render "$pk" "$cases")"
-  if printf '%s' "$rc_out" | grep -qF -- "- rejects a bad password (proves: Bad password shows an error): src/login.test.ts > rejects a bad password" \
-    && printf '%s' "$rc_out" | grep -qF -- "- keeps the session: src/session.test.ts > keeps it"; then ok; else fail "render $pk: test cases missing"; fi
+  if printf '%s' "$rc_out" | grep -qF -- "- rejects a bad password (proves: Bad password shows an error): run src/login.test.ts, confirm it rejects" \
+    && printf '%s' "$rc_out" | grep -qF -- "- keeps the session: manual: open devtools, confirm the cookie survives a reload"; then ok; else fail "render $pk: test cases missing"; fi
   if run render "$pk" "$fx/stage-input.example.json" | grep -qF "{{context.testCases}}"; then fail "render $pk: unreplaced testCases"; else ok; fi
 done
 
