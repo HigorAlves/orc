@@ -60,6 +60,9 @@ if printf '%s' "$np" | grep -qF "{{"; then fail "render: unreplaced placeholder"
 run render nope "$fx/stage-input.example.json" >/dev/null 2>&1 && rc=0 || rc=$?
 if [ "$rc" = 2 ]; then ok; else fail "render unknown pack: rc=$rc, want 2"; fi
 
+# implementing no longer cites a file manifest test_design doesn't write
+if grep -qi 'manifest\.json' orc/factory/prompts/implementing.md; then fail "implementing.md still references manifest.json"; else ok; fi
+
 # a pack with Bash patterns gets a generated Shell section: its exact commands, one per call
 sh_out="$(run render implementing "$fx/stage-input.example.json")"
 for needle in "## Shell" "\`git commit\`" "\`orc-state\`" "one command per call" "never a reason to escalate"; do
