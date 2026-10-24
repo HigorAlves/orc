@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://orc.dev/factory/stages.json",
+  "title": "StagePacks",
+  "type": "object",
+  "required": ["schema", "packs"],
+  "properties": {
+    "schema": { "const": 1 },
+    "packs": {
+      "type": "object",
+      "propertyNames": { "enum": ["triage", "test_design", "implementing", "verifying", "e2e", "evidence", "ci_watch", "reviewing_memory"] },
+      "additionalProperties": { "$ref": "#/$defs/pack" }
+    }
+  },
+  "$defs": {
+    "pack": {
+      "type": "object",
+      "required": ["agent", "skills", "tools", "writable", "maxTurns", "timeoutMs", "outputSchema", "promptTemplate"],
+      "properties": {
+        "agent": { "type": ["string", "null"] },
+        "skills": { "type": "array", "items": { "type": "string", "pattern": "^orc:[a-z0-9-]+$" } },
+        "tools": { "type": "array", "items": { "type": "string" } },
+        "writable": { "type": "boolean" },
+        "maxTurns": { "type": "integer", "minimum": 0 },
+        "timeoutMs": { "type": "integer", "minimum": 0 },
+        "outputSchema": { "type": "object" },
+        "promptTemplate": { "type": "string", "pattern": "^orc/factory/prompts/[a-z0-9_]+\\.md$" }
+      }
+    }
+  }
+}

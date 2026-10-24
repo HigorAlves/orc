@@ -1,7 +1,7 @@
 ---
 description: Retrospective on a coding session — proposes changes to the agent's environment (navigation pointers, automated checks, coding standards, steering files, tool economy, information access), most severe first; applies accepted in-repo changes and files the rest through the tracker gate
 when_to_use: Use after a build or a debug session, especially one that went sideways.
-argument-hint: "[--session <branch>] [--transcript <path>] [<what to look back on>]"
+argument-hint: "[--session <branch>] [--transcript <path>] [--propose] [<what to look back on>]"
 license: MIT
 metadata:
   author: Matt Pocock
@@ -23,6 +23,7 @@ allowed-tools:
   - Bash(acli jira workitem create:*)
   - Bash(jq:*)
   - Bash(orc-workspace-detect:*)
+  - Bash(bash:*)
 ---
 
 # /orc:retro
@@ -37,6 +38,7 @@ Where it sits: the last step of the main flow (`/orc:flow` Phase 9 and `/orc:deb
 
 - `--session <branch>` — look back at that `.orc/<branch>/` session instead of the current one.
 - `--transcript <path>` — a session log on disk, read as a primary source once `/clear` has emptied the conversation.
+- `--propose` — run P1 then P5: calibration and candidate project-context rules.
 - `<what to look back on>` — free text narrowing the retro: "the three red slices", "why QA took 40 minutes".
 
 ## Preconditions
@@ -62,6 +64,9 @@ Modules live in `orc:phases` (`references/retro/`). Entering a phase, Read exact
 | 2 Candidates | `orc:retro/P2` | never |
 | 3 Present | `orc:retro/P3` | never |
 | 4 Act | `orc:retro/P4` | the P3 gate selects no candidate |
+| 5 Propose | `orc:retro/P5` | no `--propose` |
+
+With `--propose`, run P1, then P5, and stop; P2 to P4 do not run.
 
 ### Phase 0 — Detect context
 
@@ -85,4 +90,5 @@ NOTE: invoke `orc:writing-for-agents` on every run, not only before writing. It 
 - `${ORC_STATE_DIR}/<branch>/files/retro.md` — the ranked candidates and the action taken on each.
 - In-repo commits for applied candidates: pointers, checks, standards.
 - Tracker issues for filed candidates, each behind its preview.
+- With `--propose`: `files/planning-calibration.json`, `files/proposed-rules.md`, `files/retro/incidents.json`. `docs/agents/project-context.md` changes only after the gate, uncommitted.
 - No new `.orc/` session. The retro reads an existing one and annotates it.

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "ok": true,
+  "outcome": "pass",
+  "summary": "",
+  "needsInput": null,
+  "requested": [],
+  "findings": [],
+  "artifacts": [ { "kind": "qa-manifest", "path": "files/qa/qa-manifest.json", "label": "", "sha256": "" } ],
+  "slices": { "done": 0, "total": 0 },
+  "commit": null,
+  "usage": { "turns": 0, "costUsd": null, "durationMs": 0, "model": "" },
+  "error": null,
+  "rateLimited": false,
+  "resetsAt": null
+}

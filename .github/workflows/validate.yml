@@ -75,6 +75,15 @@ jobs:
       - name: orc-state smoke tests (state-protocol schema)
         run: bash scripts/ci/verify-state-protocol.sh
 
+      - name: Factory packs + contract schemas
+        run: bash scripts/ci/verify-factory.sh
+
+      - name: orc-stage smoke tests
+        run: bash scripts/ci/verify-stage.sh
+
+      - name: Retro propose fixtures (lib/retro.sh)
+        run: bash scripts/ci/verify-retro.sh
+
       - name: QA report fixtures (orc-report json/html)
         run: bash scripts/ci/verify-report.sh
 
@@ -95,6 +104,9 @@ jobs:
 
       - name: statusline render fixtures
         run: bash scripts/ci/verify-statusline.sh
+
+      - name: Project-context layer (size cap + preloads)
+        run: bash scripts/ci/verify-project-context.sh
 
       - name: Router map covers every command
         run: |

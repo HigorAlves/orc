@@ -1,0 +1,671 @@
+{
+  "schema": 1,
+  "packs": {
+    "triage": {
+      "agent": "orc-prd-analyzer",
+      "skills": [
+        "orc:writing-plans",
+        "orc:code-discovery"
+      ],
+      "tools": [
+        "Read",
+        "Glob",
+        "Grep",
+        "WebFetch",
+        "Bash(gh issue view:*)",
+        "Bash(graphify:*)"
+      ],
+      "writable": false,
+      "maxTurns": 30,
+      "timeoutMs": 600000,
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "kind",
+          "summary"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "brief",
+              "questions"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "criteria": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "slices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "title",
+                "est_loc",
+                "touchpoints",
+                "acceptance"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "est_loc": {
+                  "type": "integer"
+                },
+                "touchpoints": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "acceptance": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "questions": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "required": [
+                "question",
+                "recommended"
+              ],
+              "properties": {
+                "question": {
+                  "type": "string"
+                },
+                "recommended": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "promptTemplate": "orc/factory/prompts/triage.md"
+    },
+    "test_design": {
+      "agent": "orc-test-author",
+      "skills": [
+        "orc:tdd"
+      ],
+      "tools": [
+        "Read",
+        "Write",
+        "Edit",
+        "Glob",
+        "Grep",
+        "Skill",
+        "Bash(npm:*)",
+        "Bash(pnpm:*)",
+        "Bash(yarn:*)",
+        "Bash(npx:*)",
+        "Bash(go:*)",
+        "Bash(cargo:*)",
+        "Bash(pip:*)",
+        "Bash(pytest:*)",
+        "Bash(make test:*)"
+      ],
+      "writable": true,
+      "maxTurns": 40,
+      "timeoutMs": 900000,
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "kind",
+          "summary"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "done",
+              "questions"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "tests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "questions": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "required": [
+                "question",
+                "recommended"
+              ],
+              "properties": {
+                "question": {
+                  "type": "string"
+                },
+                "recommended": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "promptTemplate": "orc/factory/prompts/test_design.md"
+    },
+    "implementing": {
+      "agent": "orc-implementer",
+      "skills": [
+        "orc:tdd",
+        "orc:verification-before-completion",
+        "orc:code-discovery"
+      ],
+      "tools": [
+        "Read",
+        "Write",
+        "Edit",
+        "Glob",
+        "Grep",
+        "mcp__orc__step",
+        "Bash(orc-state:*)",
+        "Bash(git add:*)",
+        "Bash(git commit:*)",
+        "Bash(git diff:*)",
+        "Bash(git status:*)",
+        "Bash(git log:*)",
+        "Bash(npm:*)",
+        "Bash(pnpm:*)",
+        "Bash(yarn:*)",
+        "Bash(npx:*)",
+        "Bash(go:*)",
+        "Bash(cargo:*)",
+        "Bash(pip:*)",
+        "Bash(pytest:*)",
+        "Bash(make:*)",
+        "Bash(graphify:*)"
+      ],
+      "writable": true,
+      "maxTurns": 80,
+      "timeoutMs": 1800000,
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "kind",
+          "summary"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "done",
+              "test_change",
+              "escalated"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "commit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "slices": {
+            "type": "object",
+            "required": [
+              "done",
+              "total"
+            ],
+            "properties": {
+              "done": {
+                "type": "integer"
+              },
+              "total": {
+                "type": "integer"
+              }
+            }
+          },
+          "reason": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "request": {
+            "type": "string"
+          }
+        }
+      },
+      "promptTemplate": "orc/factory/prompts/implementing.md"
+    },
+    "verifying": {
+      "agent": "orc-pr-reviewer",
+      "skills": [
+        "orc:review-contract"
+      ],
+      "tools": [
+        "Read",
+        "Glob",
+        "Grep",
+        "Bash(gh pr view:*)",
+        "Bash(gh pr diff:*)",
+        "Bash(git diff:*)",
+        "Bash(git log:*)",
+        "Bash(git merge-base:*)"
+      ],
+      "writable": false,
+      "maxTurns": 40,
+      "timeoutMs": 900000,
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "verdict",
+          "summary",
+          "findings"
+        ],
+        "properties": {
+          "verdict": {
+            "enum": [
+              "pass",
+              "fail"
+            ]
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "path",
+                "line",
+                "severity",
+                "title",
+                "body",
+                "confidence"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "line": {
+                  "type": "integer"
+                },
+                "severity": {
+                  "enum": [
+                    "bug",
+                    "security",
+                    "api-surface",
+                    "test",
+                    "nit",
+                    "suggestion",
+                    "question"
+                  ]
+                },
+                "title": {
+                  "type": "string"
+                },
+                "body": {
+                  "type": "string"
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "suggestion_code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "summary": {
+            "type": "string"
+          }
+        }
+      },
+      "promptTemplate": "orc/factory/prompts/verifying.md"
+    },
+    "e2e": {
+      "agent": "orc-qa-validator",
+      "skills": [
+        "orc:browser-qa",
+        "orc:playwright-qa"
+      ],
+      "tools": [
+        "Read",
+        "Write",
+        "Edit",
+        "Glob",
+        "Grep",
+        "Skill",
+        "Bash(curl:*)",
+        "Bash(node:*)",
+        "Bash(npm:*)",
+        "Bash(pnpm:*)",
+        "Bash(agent-browser:*)",
+        "Bash(npx agent-browser:*)",
+        "Bash(command -v:*)",
+        "Bash(ffmpeg:*)"
+      ],
+      "writable": true,
+      "maxTurns": 60,
+      "timeoutMs": 1200000,
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "verdict",
+          "summary"
+        ],
+        "properties": {
+          "verdict": {
+            "enum": [
+              "pass",
+              "fail",
+              "partial",
+              "skipped"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "criteria": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "text",
+                "result",
+                "evidence"
+              ],
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "result": {
+                  "enum": [
+                    "pass",
+                    "fail",
+                    "partial"
+                  ]
+                },
+                "evidence": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "promptTemplate": "orc/factory/prompts/e2e.md"
+    },
+    "evidence": {
+      "agent": null,
+      "skills": [],
+      "tools": [],
+      "writable": false,
+      "maxTurns": 0,
+      "timeoutMs": 300000,
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "enum": [
+              "pass",
+              "fail"
+            ]
+          }
+        }
+      },
+      "promptTemplate": "orc/factory/prompts/evidence.md"
+    },
+    "ci_watch": {
+      "agent": "orc-ci-investigator",
+      "skills": [
+        "orc:ci-routing"
+      ],
+      "tools": [
+        "Read",
+        "Glob",
+        "Grep",
+        "Bash(gh run:*)",
+        "Bash(gh workflow:*)",
+        "Bash(gh pr checks:*)",
+        "Bash(gh pr view:*)",
+        "Bash(git log:*)",
+        "Bash(git diff:*)"
+      ],
+      "writable": false,
+      "maxTurns": 30,
+      "timeoutMs": 600000,
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "verdict",
+          "classification",
+          "summary",
+          "findings"
+        ],
+        "properties": {
+          "verdict": {
+            "enum": [
+              "fixable",
+              "flake",
+              "infra",
+              "needs_debug",
+              "green"
+            ]
+          },
+          "classification": {
+            "enum": [
+              "test",
+              "lint",
+              "build",
+              "flake",
+              "infra",
+              "drift",
+              "none"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "runUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "path",
+                "line",
+                "severity",
+                "title",
+                "body",
+                "confidence"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "line": {
+                  "type": "integer"
+                },
+                "severity": {
+                  "enum": [
+                    "bug",
+                    "security",
+                    "api-surface",
+                    "test",
+                    "nit",
+                    "suggestion",
+                    "question"
+                  ]
+                },
+                "title": {
+                  "type": "string"
+                },
+                "body": {
+                  "type": "string"
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "suggestion_code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "requested": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "kind",
+                "target",
+                "payload"
+              ],
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "publish"
+                  ]
+                },
+                "target": {
+                  "type": "string"
+                },
+                "payload": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "promptTemplate": "orc/factory/prompts/ci_watch.md"
+    },
+    "reviewing_memory": {
+      "agent": "orc-refactor-architect",
+      "skills": [],
+      "tools": [
+        "Read",
+        "Glob",
+        "Grep",
+        "Bash(git log:*)",
+        "Bash(git blame:*)",
+        "Bash(graphify:*)"
+      ],
+      "writable": false,
+      "maxTurns": 30,
+      "timeoutMs": 600000,
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "summary",
+          "incidents",
+          "patterns",
+          "proposedRules",
+          "calibration"
+        ],
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "incidents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "proposedRules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "rule",
+                "evidence",
+                "scope"
+              ],
+              "properties": {
+                "rule": {
+                  "type": "string"
+                },
+                "evidence": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "scope": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "calibration": {
+            "type": "object",
+            "required": [
+              "estLocBias"
+            ],
+            "properties": {
+              "estLocBias": {
+                "type": "number"
+              }
+            }
+          },
+          "rulesMarkdown": {
+            "type": "string"
+          }
+        }
+      },
+      "promptTemplate": "orc/factory/prompts/reviewing_memory.md"
+    }
+  }
+}

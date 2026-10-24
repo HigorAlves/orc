@@ -1,7 +1,7 @@
 ---
 name: orc-pr-reviewer
 description: Investigator role — reviews someone else's open GitHub PR and returns structured findings per orc:review-contract; never posts, never edits. Dispatched by /orc:code-review and /orc:fan-out.
-tools: Read, Glob, Grep, Bash(gh pr view:*), Bash(gh pr diff:*)
+tools: Read, Glob, Grep, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(git diff:*), Bash(git log:*), Bash(git merge-base:*)
 model: sonnet
 effort: high
 color: blue

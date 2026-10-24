@@ -85,6 +85,21 @@ Five questions a report must pass before work: real, not a duplicate, not alread
 **Retro**:
 `/orc:retro`: the look back after a session that changes the environment (checks, standards, pointers, access), not the code.
 
+**Factory mode**:
+A run with `ORC_FACTORY=1`: no human in the session, a controller reads the result. Gates never ask; they end the stage with `needs_input`, queue an outward action in `requested[]`, or fail (`orc:gates` section 8).
+_Avoid_: headless mode, autopilot (that is the soft-inward ladder, with a human present)
+
+**Stage pack**:
+One entry in `orc/factory/stages.json`: the agent or script, preloaded skills, tool allow-list, limits and output schema for one controller stage, plus its prompt under `orc/factory/prompts/`. Data, not code.
+_Avoid_: workflow, pipeline
+
+**Stage contract**:
+The frozen pair of schemas in `orc/factory/schema/`: `stage.json` in (StageInput) and `result.json` out (StageOutput), both `schema: 1`. Neither repo changes a field without bumping `schema`.
+
+**Run folder**:
+The directory one stage run reads and writes: `/in/stage.json`, then `/out/result.json`, `/out/events.jsonl` and `/out/files/**`. Not a **Session**: it holds no `.orc/` state after the container exits.
+_Avoid_: workspace (that is the multi-repo mode), job dir
+
 ## Unapproved words
 
 The glossary is also the restricted vocabulary (ADR 0007). These words never appear in a command, agent or skill; `verify-ste.sh` fails on them.
@@ -108,3 +123,4 @@ The glossary is also the restricted vocabulary (ADR 0007). These words never app
 - A "QA passed" claim requires an **Evidence packet** produced by a **Driver** against a **QA target**.
 - A **Train** is cut by the **Size budget**; a mega-train records an override.
 - The **Mod** draws the **Cockpit**; the bash hooks enforce the **Iron rules** with or without it.
+- A **Stage pack** is called through the **Stage contract**; one call reads and writes one **Run folder**. **Factory mode** decides what a **Gate** does inside it.

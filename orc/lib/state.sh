@@ -274,6 +274,27 @@ orc_state_status_set() { # <status> [--branch B]
   orc_state__write_checkpoint "$sid"
 }
 
+orc_state_close() { # --merged [--branch B]
+  local merged=0 branch=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --merged) merged=1; shift ;;
+      --branch) branch="${2:-}"; shift 2 ;;
+      *) echo "orc-state close: unknown argument '$1'" >&2; return 2 ;;
+    esac
+  done
+  [ "$merged" = 1 ] || { echo "orc-state close: --merged required (attests the PR is merged)" >&2; return 2; }
+  local sid
+  sid="$(orc_state__sid "$branch")" || return 1
+  orc_state__entry "$sid" >/dev/null || return 1
+  orc_state__update '
+    (.sessions[] | select(.sessionId == $sid)) |=
+      (.status = "completed" | .phase = "done" | .phaseLabel = "closed" | .updatedAt = $now)' \
+    --arg sid "$sid" --arg now "$(orc_state__now)"
+  orc_state__write_checkpoint "$sid"
+  orc_state__entry "$sid" | jq -c .
+}
+
 orc_state_link_pr() { # --repo R --url U [--number N] [--stack-id S] [--stack-position P] [--stacked-on U2] [--branch B]
   local repo="" url="" number="" stack_id="" stack_pos="" stacked_on="" branch=""
   while [ $# -gt 0 ]; do

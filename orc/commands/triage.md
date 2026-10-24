@@ -18,6 +18,8 @@ allowed-tools:
   - Bash(gh:*)
   - Bash(acli:*)
   - Bash(jq:*)
+  - Bash(curl:*)
+  - Bash(git rev-parse:*)
   - Bash(git log:*)
   - Bash(git fetch:*)
   - Bash(sentry:*)
@@ -40,7 +42,7 @@ The intake for every incoming report: categorise it, check it is valid, grill wh
 - `--sentry <id|url>` — a Sentry issue short ID or URL. Read-only intake via `orc:triage/P4`.
 - `<pasted report>` — a chat message, email, stack trace or complaint with no tracker item. Intake via `orc:triage/P4`.
 
-Natural-language routing: "Show me anything that needs my attention" → P1; "Let's look at #42" or "look at PROJ-123" → P2; "Is this real?" plus a paste → P4; "Move #42 to ready-for-agent" → P3; "What's ready for agents to pick up?" → query and list.
+Natural-language routing: "Show me anything that needs my attention" → P1; "Let's look at #42" or "look at PROJ-123" → P2; "Is this real?" plus a paste → P4; "Move #42 to ready-for-agent" → P3; "send #42 to the factory" → P3 with the send pre-selected (still asks); "What's ready for agents to pick up?" → query and list.
 
 ## Preconditions
 

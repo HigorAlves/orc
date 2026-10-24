@@ -32,7 +32,7 @@ When the user approves a payload (PR body, review comments, upload manifest, sli
 - Put the payload in the option's `preview` field (markdown, monospace) — single-select only. Alternatives render side by side: give each variant its own option + preview (e.g. caveman vs full PR body).
 - The `📋 Preview` callout stays as a one-line headline; do not also print the full payload in a fence — one rendering.
 - Payload over ~60 lines: write it to `${ORC_STATE_DIR}/<branch>/files/` and preview the head plus the path.
-- No `AskUserQuestion` available (headless): fall back to the callout + fenced payload, then stop for a plain-text answer. Hard-outward gates still never auto-proceed.
+- No `AskUserQuestion` available (headless): if `ORC_FACTORY=1`, follow §8. Otherwise print the callout + fenced payload, then stop for a plain-text answer. Hard-outward gates still never auto-proceed.
 
 ## 4. Picking items: `multiSelect` chunks
 
@@ -58,3 +58,18 @@ Commands that take `--auto` point here instead of restating it. The flag overrid
 ## 7. Batching
 
 One decision point = one `AskUserQuestion` call, up to 4 questions. Ask everything that's answerable now in that call; don't serialize questions the user could answer together.
+
+## 8. Factory mode (`ORC_FACTORY=1`)
+
+No human is present. A controller writes `/in/stage.json`; you write `/out/result.json`.
+
+- Never call `AskUserQuestion` at any gate.
+- Soft-inward gate: read `orc-state decision get <key>`; if unset, read `decisions[]` in the stage input.
+- No decision exists and the call is a true judgment: end the stage with `outcome: needs_input`.
+- `needsInput[]` holds at most 3 `{question, recommended}` items; `recommended` is mandatory.
+- Hard-outward action (tracker write, PR review post, evidence publish, `gh pr create`, `gh issue`): never perform it.
+- Append `{kind, target, payload}` to `requested[]`; the controller's board approves it. `kind` is one of `tracker_write`, `pr_review_post`, `publish`; no other value.
+- Escalation-only condition: end the stage with `outcome: fail`.
+- Set `summary` to the escalation callout text and `error` to the context fence.
+- Iron rules and hooks apply unchanged.
+- On a `rate_limit_event`, set `rateLimited: true`.

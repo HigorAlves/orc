@@ -1,9 +1,9 @@
 {
-  "version": "0.28.0",
-  "skills": 87,
-  "commands": 29,
-  "surfaces": 116,
+  "version": "0.29.0",
+  "skills": 88,
+  "commands": 30,
+  "surfaces": 118,
   "agents": 14,
   "hooks": 10,
-  "evals": 23
+  "evals": 25
 }

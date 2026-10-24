@@ -40,12 +40,20 @@
       "bytes": 4082,
       "desc": 202
     },
+    "orc/commands/context.md": {
+      "kind": "command",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 2836,
+      "desc": 105
+    },
     "orc/commands/triage.md": {
       "kind": "command",
       "long": 0,
       "notimp": 0,
       "passive": 0,
-      "bytes": 4300,
+      "bytes": 4374,
       "desc": 198
     },
     "orc/commands/setup.md": {
@@ -109,7 +117,7 @@
       "long": 0,
       "notimp": 0,
       "passive": 0,
-      "bytes": 2957,
+      "bytes": 3342,
       "desc": 358
     },
     "orc/commands/resume.md": {
@@ -237,7 +245,7 @@
       "long": 2,
       "notimp": 0,
       "passive": 2,
-      "bytes": 2400,
+      "bytes": 2563,
       "desc": 176
     },
     "orc/agents/orc-ci-investigator.md": {
@@ -261,7 +269,7 @@
       "long": 6,
       "notimp": 0,
       "passive": 2,
-      "bytes": 5244,
+      "bytes": 5403,
       "desc": 203
     },
     "orc/agents/orc-prd-analyzer.md": {
@@ -285,7 +293,7 @@
       "long": 1,
       "notimp": 0,
       "passive": 5,
-      "bytes": 5240,
+      "bytes": 5322,
       "desc": 264
     },
     "orc/agents/orc-env-provisioner.md": {
@@ -341,7 +349,7 @@
       "long": 2,
       "notimp": 0,
       "passive": 2,
-      "bytes": 4986,
+      "bytes": 5135,
       "desc": 256
     },
     "orc/skills/adr-writing/SKILL.md": {
@@ -541,7 +549,7 @@
       "long": 6,
       "notimp": 0,
       "passive": 3,
-      "bytes": 4123,
+      "bytes": 5153,
       "desc": 278
     },
     "orc/skills/gh-cli/SKILL.md": {
@@ -645,7 +653,7 @@
       "long": 0,
       "notimp": 0,
       "passive": 2,
-      "bytes": 3603,
+      "bytes": 3711,
       "desc": 99
     },
     "orc/skills/mobile-ios-design/SKILL.md": {
@@ -735,6 +743,14 @@
       "passive": 2,
       "bytes": 5156,
       "desc": 190
+    },
+    "orc/skills/project-context/SKILL.md": {
+      "kind": "skill_refs",
+      "long": 0,
+      "notimp": 0,
+      "passive": 0,
+      "bytes": 1980,
+      "desc": 143
     },
     "orc/skills/prototype/SKILL.md": {
       "kind": "skill_refs",
@@ -853,7 +869,7 @@
       "long": 2,
       "notimp": 0,
       "passive": 5,
-      "bytes": 5302,
+      "bytes": 5465,
       "desc": 282
     },
     "orc/skills/stripe-best-practices/SKILL.md": {
@@ -925,7 +941,7 @@
       "long": 3,
       "notimp": 0,
       "passive": 2,
-      "bytes": 2002,
+      "bytes": 2289,
       "desc": 280
     },
     "orc/skills/trd-writing/SKILL.md": {
@@ -965,7 +981,7 @@
       "long": 6,
       "notimp": 0,
       "passive": 2,
-      "bytes": 4468,
+      "bytes": 4666,
       "desc": 144
     },
     "orc/skills/vercel-composition-patterns/SKILL.md": {

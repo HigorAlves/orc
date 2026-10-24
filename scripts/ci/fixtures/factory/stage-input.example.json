@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "stage": "implementing",
+  "pack": "implementing",
+  "attempt": 1,
+  "task": {
+    "id": "uuid",
+    "title": "",
+    "description": "",
+    "criteria": [],
+    "repoPath": "/abs",
+    "branch": "task/<id>-<slug>",
+    "source": { "kind": "github", "repo": "owner/name", "number": 42, "url": "" }
+  },
+  "plan": { "brief": "", "criteria": [], "assumptions": [] },
+  "decisions": [ { "at": "awaiting_approval", "decision": "approved", "reason": null, "answers": {} } ],
+  "priorFindings": [],
+  "context": { "projectContext": null, "tests": [] },
+  "limits": { "maxTurns": 80, "timeoutMs": 1800000 },
+  "env": { "ORC_FACTORY": "1" }
+}
