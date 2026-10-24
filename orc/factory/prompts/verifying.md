@@ -23,7 +23,7 @@ Scenarios test_design named (each needs a test or a direct check):
 {{context.projectContext}}
 
 ## What to do
-1. Find the change: `git diff $(git merge-base HEAD main 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -1)..HEAD` (also `git log`, `git merge-base`; `gh pr diff` if a PR exists).
+1. Find the change. The branch started at `{{context.baseCommit}}`: `git diff {{context.baseCommit}}..HEAD` (also `git log`; `gh pr diff` if a PR exists). When the base is unknown, `git log --oneline` shows where the branch began.
 2. For each scenario, follow its `approach`.
 3. A named repo command: add a new test proving it, in the repo's own idiom (detected from package.json/go.mod/Cargo.toml/pytest config/existing tests). Skip one an existing test already covers.
 4. No automated check fits: confirm by reading the result directly. Say so in `results[]`, not a fake test.

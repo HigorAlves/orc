@@ -37,7 +37,21 @@
       "properties": {
         "brief": { "type": "string" },
         "criteria": { "type": "array" },
-        "assumptions": { "type": "array" }
+        "assumptions": { "type": "array" },
+        "slices": {
+          "type": "array",
+          "description": "triage's slices[], rendered for implementing as {{plan.slices}}.",
+          "items": {
+            "type": "object",
+            "required": ["title"],
+            "properties": {
+              "title": { "type": "string" },
+              "est_loc": { "type": ["integer", "null"] },
+              "touchpoints": { "type": "array", "items": { "type": "string" } },
+              "acceptance": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
       }
     },
     "decisions": {
@@ -56,10 +70,22 @@
     "priorFindings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
     "context": {
       "type": "object",
-      "required": ["projectContext", "tests"],
+      "required": ["projectContext"],
       "properties": {
         "projectContext": { "type": ["string", "object", "null"] },
-        "tests": { "type": "array" },
+        "baseCommit": { "type": ["string", "null"], "description": "The commit the task branch started from; verifying diffs against it." },
+        "ci": {
+          "type": ["object", "null"],
+          "description": "ci_watch: the PR, its checks and the failed-run log tail, fetched by the controller (the sandbox has no gh credential).",
+          "properties": {
+            "pr": { "type": ["object", "null"], "properties": { "number": { "type": "integer" }, "url": { "type": ["string", "null"] } } },
+            "checks": {
+              "type": "array",
+              "items": { "type": "object", "required": ["name", "state"], "properties": { "name": { "type": "string" }, "state": { "type": "string" }, "url": { "type": ["string", "null"] } } }
+            },
+            "logs": { "type": ["string", "null"] }
+          }
+        },
         "testCases": {
           "type": "array",
           "description": "Schema 2: the test cases approved at the test check, for implementing and verifying.",

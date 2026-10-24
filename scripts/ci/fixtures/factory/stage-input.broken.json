@@ -32,8 +32,7 @@
   ],
   "priorFindings": [],
   "context": {
-    "projectContext": null,
-    "tests": []
+    "projectContext": null
   },
   "limits": {
     "maxTurns": 80,

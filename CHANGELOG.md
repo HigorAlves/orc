@@ -4,7 +4,14 @@ All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tag
 
 ## [Unreleased]
 
+### Fixed
+- Factory: `run.mjs` never applied the pack's agent. The SDK's `query` is not a subagent dispatch, so `orc-implementer`, `orc-verifier` and the rest ran as a bare Claude Code session with only the stage prompt; their skills were listed but never loaded (no pack allows the Skill tool). The runner now reads the agent file: its body becomes `systemPrompt` (the `claude_code` preset plus the body), its `model` and `effort` frontmatter apply (`pack.model` still wins), and each pack skill's `SKILL.md` is inlined under `## Skill: <id>`. `verify-stage.sh` asserts it from the dry-run options.
+- Factory: verifying's prompt opened with a `$(git merge-base …)` one-liner that the one-command-per-call shell rule denies. The controller now passes `context.baseCommit` and the prompt diffs against it.
+- Factory: implementing was told to seed the slice ledger "from the plan's slices", which no placeholder rendered. `{{plan.slices}}` renders `plan.slices[]` (triage's `{title, est_loc, touchpoints, acceptance}`).
+
 ### Changed
+- Factory: ci_watch escalates `infra`/`needs_debug` like every other pack (`kind: "escalated"`, `reason`, `options[]`; its output schema gains the optional three) instead of a `requested: publish` the controller never routed. The controller fetches the PR, its checks and the failed-run log tail into `context.ci` (the sandbox has no `gh` credential); the prompt renders it as `{{context.ci}}` and uses `gh` only as a fallback.
+- Stage input: `context.tests` (the file list test_design stopped writing) is no longer required and leaves the schema; `context.baseCommit`, `context.ci` and `plan.slices` join it, all optional. Still schema 3. `scripts/ci/fixtures/factory/stage-input.luna.json` is the input exactly as luna's machine writes it; CI validates and renders it.
 - Factory: test_design stops writing test files. It's fully read-only (orc-prd-analyzer, triage's tools) and only plans — `cases[]` becomes `{title, criterion, approach}`, free text naming what to check and, when one applies, which of the repo's own commands proves it. `tests[]` and `files/tests/manifest.json` are gone.
 - Factory: verifying proves the plan's criteria and test_design's scenarios with real tests in the repo's own idiom, commits them, then reviews as before (new agent, orc-verifier — orc-pr-reviewer is explicitly never-edits, needed for its other callers). Tools, writable and limits (60 turns/20min) change to match. Output gains `results[]`; verdict fails on any result `"fail"` too. A pre-existing failure it can't tie to the change now escalates instead of failing the whole diff.
 - Factory: implementing no longer cites a test_design-written manifest; it uses the scenarios, plan and ticket as its guide. Locked-test wording updated to say "a prior verifying attempt", not test_design.

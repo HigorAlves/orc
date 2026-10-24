@@ -15,7 +15,7 @@
   "plan": { "brief": "", "criteria": [], "assumptions": [] },
   "decisions": [ { "at": "awaiting_approval", "decision": "approved", "reason": null, "answers": {} } ],
   "priorFindings": [],
-  "context": { "projectContext": null, "tests": [] },
+  "context": { "projectContext": null },
   "limits": { "maxTurns": 80, "timeoutMs": 1800000 },
   "env": { "ORC_FACTORY": "1" }
 }
