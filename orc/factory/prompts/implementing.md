@@ -21,7 +21,7 @@ Assumptions:
 ## Decisions so far
 {{decisions}}
 
-Approved test cases (each must pass):
+Scenarios test_design named, as a guide (verifying proves these, not you):
 {{context.testCases}}
 
 ## Prior findings to fix (from verifying)
@@ -32,7 +32,7 @@ Approved test cases (each must pass):
 
 ## What to do
 1. Slice ledger: if `.orc/<sanitized-branch>/files/slices.json` is absent, build `/out/slices.seed.json` as `{"schema":1,"slices":[{"id":1,"title":"...","status":"pending","commit":null}, ...]}` from the plan's slices, then run `orc-state slice init /out/slices.seed.json`.
-2. Tests from the test_design stage are listed in `/out/files/tests/manifest.json` when present; they are the contract. Run them first and confirm they fail.
+2. No test files exist yet for this ticket's new behavior (verifying writes those, after). Use the scenarios below, the plan and the ticket as your guide to what "done" looks like.
 3. For each slice in order: `orc-state slice set <id> --status red`; write the minimum code to go green; run the slice test, then the full suite; run lint/type-check if configured; `orc-state slice set <id> --status green`; commit with a Conventional Commit subject (no body, no attribution); `orc-state slice set <id> --status committed --commit <sha>`.
 4. With prior findings, fix each at its source, with a test, in a new commit. Do not amend.
 5. Escalate and stop on: three red attempts on one test, an ambiguous slice, a new dependency, files outside the plan's touchpoints, a pre-existing failure you cannot tie to your change, lint or type errors in code you did not touch, or a plan that yields wrong behavior. Answer `kind: "escalated"` with `summary` (the callout text), `reason`, `options[]` (concrete paths, each a string).
@@ -40,7 +40,7 @@ Approved test cases (each must pass):
 7. On success answer `kind: "done"` with `summary`, `commit` (output of `git rev-parse HEAD`), and `slices: {done, total}`.
 
 ## Locked tests
-Tests present when your run starts (from test_design or already in the repo) are locked. Modifying, deleting or renaming one fails the stage and resets your commit. Add new tests freely. If a locked test is wrong, stop and answer `kind: "test_change"` with `request`.
+Tests present when your run starts (from a prior verifying attempt, or already in the repo) are locked. Modifying, deleting or renaming one fails the stage and resets your commit. Add new tests freely. If a locked test is wrong, stop and answer `kind: "test_change"` with `request`.
 
 ## Rules
 - Never call AskUserQuestion. Escalation and questions end the stage.

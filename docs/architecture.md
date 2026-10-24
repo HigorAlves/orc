@@ -11,7 +11,7 @@ orc/                               # the plugin
 ├── .claude-plugin/plugin.json     # manifest — what Claude Code reads to discover the plugin
 ├── skills/                        # 88 skills, namespaced /orc:<name>
 ├── commands/                      # 30 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
-├── agents/                        # 14 specialist subagents (orc-<role>)
+├── agents/                        # 15 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) + PostToolUse + PreCompact + WorktreeCreate/Remove
 │   └── mod/                       # the orc mod (register.ts + tests) — in-process hooks, Claude Code 2.1.287+
 ├── bin/                           # deterministic CLIs, on PATH while enabled (orc-state, orc-report, orc-stage, orc-statusline, …)
