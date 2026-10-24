@@ -7,6 +7,7 @@ All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tag
 ### Fixed
 - Factory: every pack gets the tools it declares. `run.mjs` passed permission patterns such as `Bash(git commit:*)` as the SDK's `tools`, which takes bare names, so no pack had Bash. `tools` now gets the bare names; `allowedTools` keeps the patterns.
 - Factory: an `escalated` answer ends the stage `escalated` instead of `pass`, so the controller escalates the task with the agent's reason.
+- Factory: a pack with Bash patterns gets a generated `## Shell` section in its prompt: its exact commands, one per call, and that a denied command is not a reason to escalate. A chained `git status | head; ls` was denied whole under `dontAsk`, and the implementer escalated.
 
 ### Changed
 - Stage output schema 2 adds the `escalated` outcome (ADR 0009). `orc-stage validate` reads schema 1 and 2.

@@ -60,6 +60,13 @@ if printf '%s' "$np" | grep -qF "{{"; then fail "render: unreplaced placeholder"
 run render nope "$fx/stage-input.example.json" >/dev/null 2>&1 && rc=0 || rc=$?
 if [ "$rc" = 2 ]; then ok; else fail "render unknown pack: rc=$rc, want 2"; fi
 
+# a pack with Bash patterns gets a generated Shell section: its exact commands, one per call
+sh_out="$(run render implementing "$fx/stage-input.example.json")"
+for needle in "## Shell" "\`git commit\`" "\`orc-state\`" "one command per call" "never a reason to escalate"; do
+  if printf '%s' "$sh_out" | grep -qF -- "$needle"; then ok; else fail "render implementing: Shell section missing '$needle'"; fi
+done
+if run render evidence "$fx/stage-input.example.json" | grep -qF "## Shell"; then fail "render evidence: no Bash, no Shell section"; else ok; fi
+
 # custom template via ORC_FACTORY_STAGES
 printf 'CUSTOM {{task.title}} / {{attempt}} / {{agent}}\n' > "$tmp/t.md"
 jq --arg t "$tmp/t.md" '.packs.implementing.promptTemplate=$t' "$packs" > "$tmp/stages.json"
