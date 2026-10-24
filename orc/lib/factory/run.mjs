@@ -130,10 +130,20 @@ const finish = (r) => {
     writeFileSync(join(out, 'files', 'rules.md'), s.rulesMarkdown.endsWith('\n') ? s.rulesMarkdown : s.rulesMarkdown + '\n');
   }
   const asked = s.kind === 'questions' || (Array.isArray(s.questions) && s.questions.length > 0);
-  const outcome = asked ? 'needs_input' : s.kind === 'test_change' ? 'test_change' : !r.ok ? 'fail' : 'pass';
+  // An agent that stops on purpose is `escalated` (schema 2): the controller escalates the
+  // task with `answer.reason` instead of verifying an empty change.
+  const outcome = asked
+    ? 'needs_input'
+    : s.kind === 'test_change'
+      ? 'test_change'
+      : s.kind === 'escalated'
+        ? 'escalated'
+        : !r.ok
+          ? 'fail'
+          : 'pass';
   const summary = String(s.summary || r.text || r.error || '').slice(0, 2000);
   const result = {
-    schema: 1,
+    schema: 2,
     ok: r.ok,
     outcome,
     summary,

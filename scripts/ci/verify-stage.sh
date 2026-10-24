@@ -108,6 +108,17 @@ if [ -f "$o1/prompt.md" ] && [ "$(wc -l < "$o1/events.jsonl" | tr -d ' ')" -ge 1
 if jq -e '.ok == true and .outcome == "pass" and .summary == "dry-run"' "$o1/result.json" >/dev/null; then ok; else fail "run --dry-run: result not pass/dry-run"; fi
 if tail -n1 "$o1/events.jsonl" | jq -e '.kind == "note" and .payload.phase == "stage_end" and .payload.outcome == "pass"' >/dev/null; then ok; else fail "run: last event not stage_end"; fi
 
+# escalated answer -> outcome escalated (stage-output schema 2); schema 1 has no escalated
+o5="$tmp/out5"
+(cd "$tmp" && ORC_STAGE_DRY_STRUCTURED='{"kind":"escalated","summary":"stopped","reason":"needs a new dependency","options":["add it"]}' \
+  run run --dry-run --in "$fx/stage-input.example.json" --out "$o5" >/dev/null 2>&1) && rc=0 || rc=$?
+if [ "$rc" = 0 ] && jq -e '.schema == 2 and .outcome == "escalated" and .answer.reason == "needs a new dependency"' "$o5/result.json" >/dev/null; then ok; else fail "run escalated: want schema 2 / outcome escalated: $(jq -c '{schema,outcome}' "$o5/result.json" 2>/dev/null)"; fi
+if run validate --output "$o5/result.json" >/dev/null 2>&1; then ok; else fail "run escalated: result.json invalid"; fi
+if tail -n1 "$o5/events.jsonl" | jq -e '.payload.outcome == "escalated"' >/dev/null; then ok; else fail "run escalated: stage_end outcome"; fi
+jq '.schema = 1 | .outcome = "escalated"' "$o5/result.json" > "$tmp/esc1.json"
+run validate --output "$tmp/esc1.json" >/dev/null 2>&1 && rc=0 || rc=$?
+if [ "$rc" = 1 ]; then ok; else fail "validate: schema 1 must reject outcome escalated (rc=$rc)"; fi
+
 # invalid input -> exit 1
 run run --dry-run --in "$fx/stage-input.broken.json" --out "$tmp/out2" >/dev/null 2>&1 && rc=0 || rc=$?
 if [ "$rc" = 1 ]; then ok; else fail "run invalid input: rc=$rc, want 1"; fi

@@ -66,10 +66,10 @@ No human is present. A controller writes `/in/stage.json`; you write `/out/resul
 - Never call `AskUserQuestion` at any gate.
 - Soft-inward gate: read `orc-state decision get <key>`; if unset, read `decisions[]` in the stage input.
 - No decision exists and the call is a true judgment: end the stage with `outcome: needs_input`.
-- `needsInput[]` holds at most 3 `{question, recommended}` items; `recommended` is mandatory.
-- Hard-outward action (tracker write, PR review post, evidence publish, `gh pr create`, `gh issue`): never perform it.
-- Append `{kind, target, payload}` to `requested[]`; the controller's board approves it. `kind` is one of `tracker_write`, `pr_review_post`, `publish`; no other value.
-- Escalation-only condition: end the stage with `outcome: fail`.
-- Set `summary` to the escalation callout text and `error` to the context fence.
+- `needsInput[]` holds at most 3 `{question, recommended}` items, `recommended` mandatory.
+- Hard-outward action (tracker write, PR review, evidence publish, `gh pr create`, `gh issue`): never do it.
+- Append `{kind, target, payload}` to `requested[]` for the board to approve. `kind` is `tracker_write`, `pr_review_post` or `publish`, nothing else.
+- Escalation-only condition: answer `kind: escalated` (`reason`, `options[]`); else `outcome: fail`.
+- Set `summary` to the callout text, `error` to the context fence.
 - Iron rules and hooks apply unchanged.
 - On a `rate_limit_event`, set `rateLimited: true`.

@@ -50,9 +50,9 @@ orc_stage_validate_jq() {
         ["limits.timeoutMs", (.limits.timeoutMs|type)=="number"],
         ["env", (.env|type)=="object"]]
       elif $kind == "output" then [
-        ["schema", .schema==1],
+        ["schema", (.schema|IN(1,2))],
         ["ok", (.ok|type)=="boolean"],
-        ["outcome", (.outcome|IN("pass","fail","needs_input","test_change"))],
+        ["outcome", (.outcome|IN("pass","fail","needs_input","test_change","escalated")) and (.schema==2 or .outcome!="escalated")],
         ["summary", (.summary|type)=="string"],
         ["requested", (.requested|type)=="array"],
         ["findings", (.findings|type)=="array"],

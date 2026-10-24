@@ -21,7 +21,11 @@
   ],
   "properties": {
     "schema": {
-      "const": 1
+      "enum": [
+        1,
+        2
+      ],
+      "description": "2 adds the escalated outcome; a controller reads both."
     },
     "ok": {
       "type": "boolean"
@@ -31,8 +35,10 @@
         "pass",
         "fail",
         "needs_input",
-        "test_change"
-      ]
+        "test_change",
+        "escalated"
+      ],
+      "description": "escalated (schema 2 only): the agent stopped on purpose; answer.reason says why, answer.options lists the ways on."
     },
     "summary": {
       "type": "string"
