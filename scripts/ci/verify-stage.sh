@@ -60,6 +60,13 @@ if printf '%s' "$np" | grep -qF "{{"; then fail "render: unreplaced placeholder"
 run render nope "$fx/stage-input.example.json" >/dev/null 2>&1 && rc=0 || rc=$?
 if [ "$rc" = 2 ]; then ok; else fail "render unknown pack: rc=$rc, want 2"; fi
 
+# a pack with Bash patterns gets a generated Shell section: its exact commands, one per call
+sh_out="$(run render implementing "$fx/stage-input.example.json")"
+for needle in "## Shell" "\`git commit\`" "\`orc-state\`" "one command per call" "never a reason to escalate"; do
+  if printf '%s' "$sh_out" | grep -qF -- "$needle"; then ok; else fail "render implementing: Shell section missing '$needle'"; fi
+done
+if run render evidence "$fx/stage-input.example.json" | grep -qF "## Shell"; then fail "render evidence: no Bash, no Shell section"; else ok; fi
+
 # custom template via ORC_FACTORY_STAGES
 printf 'CUSTOM {{task.title}} / {{attempt}} / {{agent}}\n' > "$tmp/t.md"
 jq --arg t "$tmp/t.md" '.packs.implementing.promptTemplate=$t' "$packs" > "$tmp/stages.json"
@@ -96,12 +103,28 @@ opts="$(printf '%s' "$dry" | jq -c . 2>/dev/null || true)"
 want_tools="$(jq -c '.packs.implementing.tools' "$packs")"
 if [ -n "$opts" ] && printf '%s' "$opts" | jq -e --arg r "$plugin_root" --argjson t "$want_tools" '
   (.plugins[0].path | endswith($r)) and .plugins[0].type == "local" and .settingSources == []
-  and .tools == $t and .allowedTools == $t and .permissionMode == "dontAsk"
+  and .allowedTools == $t and .permissionMode == "dontAsk"
   and .env.ORC_FACTORY == "1" and .outputFormat.type == "json_schema"' >/dev/null; then ok; else fail "run --dry-run: options JSON wrong: $dry"; fi
+# `tools` takes bare built-in names; the patterns only go in `allowedTools`. A pattern in
+# `tools` names no tool, so the pack silently loses Bash.
+if printf '%s' "$opts" | jq -e '(.tools | index("Bash")) != null and (.tools | index("Read")) != null
+  and all(.tools[]; (contains("(") | not) and (startswith("mcp__") | not))
+  and (.tools | length) == (.tools | unique | length)' >/dev/null; then ok; else fail "run --dry-run: tools must be bare names incl. Bash: $(printf '%s' "$opts" | jq -c .tools)"; fi
 if run validate --output "$o1/result.json" >/dev/null 2>&1; then ok; else fail "run --dry-run: result.json invalid"; fi
 if [ -f "$o1/prompt.md" ] && [ "$(wc -l < "$o1/events.jsonl" | tr -d ' ')" -ge 1 ]; then ok; else fail "run --dry-run: prompt.md/events.jsonl missing"; fi
 if jq -e '.ok == true and .outcome == "pass" and .summary == "dry-run"' "$o1/result.json" >/dev/null; then ok; else fail "run --dry-run: result not pass/dry-run"; fi
 if tail -n1 "$o1/events.jsonl" | jq -e '.kind == "note" and .payload.phase == "stage_end" and .payload.outcome == "pass"' >/dev/null; then ok; else fail "run: last event not stage_end"; fi
+
+# escalated answer -> outcome escalated (stage-output schema 2); schema 1 has no escalated
+o5="$tmp/out5"
+(cd "$tmp" && ORC_STAGE_DRY_STRUCTURED='{"kind":"escalated","summary":"stopped","reason":"needs a new dependency","options":["add it"]}' \
+  run run --dry-run --in "$fx/stage-input.example.json" --out "$o5" >/dev/null 2>&1) && rc=0 || rc=$?
+if [ "$rc" = 0 ] && jq -e '.schema == 2 and .outcome == "escalated" and .answer.reason == "needs a new dependency"' "$o5/result.json" >/dev/null; then ok; else fail "run escalated: want schema 2 / outcome escalated: $(jq -c '{schema,outcome}' "$o5/result.json" 2>/dev/null)"; fi
+if run validate --output "$o5/result.json" >/dev/null 2>&1; then ok; else fail "run escalated: result.json invalid"; fi
+if tail -n1 "$o5/events.jsonl" | jq -e '.payload.outcome == "escalated"' >/dev/null; then ok; else fail "run escalated: stage_end outcome"; fi
+jq '.schema = 1 | .outcome = "escalated"' "$o5/result.json" > "$tmp/esc1.json"
+run validate --output "$tmp/esc1.json" >/dev/null 2>&1 && rc=0 || rc=$?
+if [ "$rc" = 1 ]; then ok; else fail "validate: schema 1 must reject outcome escalated (rc=$rc)"; fi
 
 # invalid input -> exit 1
 run run --dry-run --in "$fx/stage-input.broken.json" --out "$tmp/out2" >/dev/null 2>&1 && rc=0 || rc=$?

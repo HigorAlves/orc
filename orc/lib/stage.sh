@@ -50,9 +50,9 @@ orc_stage_validate_jq() {
         ["limits.timeoutMs", (.limits.timeoutMs|type)=="number"],
         ["env", (.env|type)=="object"]]
       elif $kind == "output" then [
-        ["schema", .schema==1],
+        ["schema", (.schema|IN(1,2))],
         ["ok", (.ok|type)=="boolean"],
-        ["outcome", (.outcome|IN("pass","fail","needs_input","test_change"))],
+        ["outcome", (.outcome|IN("pass","fail","needs_input","test_change","escalated")) and (.schema==2 or .outcome!="escalated")],
         ["summary", (.summary|type)=="string"],
         ["requested", (.requested|type)=="array"],
         ["findings", (.findings|type)=="array"],
@@ -176,7 +176,16 @@ orc_stage_render() {
     "You are the `\($agent)` role running the `\($pack)` stage in factory mode (ORC_FACTORY=1). Follow orc:gates §8: no AskUserQuestion; questions end the stage as needs_input; outward actions go to requested[]. Answer with JSON matching the pack outputSchema.",
     ($pk.outputSchema | tojson),
     "",
-    (reduce ($subs | to_entries[]) as $e ($tpl; split($e.key) | join($e.value)))'
+    (reduce ($subs | to_entries[]) as $e ($tpl; split($e.key) | join($e.value))),
+    # dontAsk denies a whole call when any part of it is not allow-listed, so the pack is
+    # told its exact commands; a denial must not end the stage.
+    (($pk.tools // []) | map(select(startswith("Bash(")) | ltrimstr("Bash(") | rtrimstr(")") | rtrimstr(":*")) | unique) as $cmds |
+    if ($cmds | length) > 0 then
+      "", "## Shell",
+      "Bash runs only these commands: \($cmds | map("`" + . + "`") | join(", ")).",
+      "Run one command per call: no `;`, `&&`, `||`, pipes or redirects. Look at files with Read, Glob and Grep, not `ls`, `cat` or `head`.",
+      "A denied command is never a reason to escalate: run it alone, or use another listed command or tool."
+    else empty end'
 }
 
 # run --in <stage.json> --out <dir> [--plugin-root <path>] [--dry-run]
