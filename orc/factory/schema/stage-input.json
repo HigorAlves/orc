@@ -5,7 +5,7 @@
   "type": "object",
   "required": ["schema", "stage", "pack", "attempt", "task", "plan", "decisions", "priorFindings", "context", "limits", "env"],
   "properties": {
-    "schema": { "const": 1 },
+    "schema": { "enum": [1, 2], "description": "2 adds context.testCases; orc reads both." },
     "stage": { "type": "string" },
     "pack": { "enum": ["triage", "test_design", "implementing", "verifying", "e2e", "evidence", "ci_watch", "reviewing_memory"] },
     "attempt": { "type": "integer", "minimum": 1 },
@@ -59,7 +59,20 @@
       "required": ["projectContext", "tests"],
       "properties": {
         "projectContext": { "type": ["string", "object", "null"] },
-        "tests": { "type": "array" }
+        "tests": { "type": "array" },
+        "testCases": {
+          "type": "array",
+          "description": "Schema 2: the test cases approved at the test check, for implementing and verifying.",
+          "items": {
+            "type": "object",
+            "required": ["title", "criterion", "test"],
+            "properties": {
+              "title": { "type": "string" },
+              "criterion": { "type": ["string", "null"] },
+              "test": { "type": "string" }
+            }
+          }
+        }
       }
     },
     "limits": {

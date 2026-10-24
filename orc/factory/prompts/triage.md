@@ -22,7 +22,7 @@ Ticket criteria:
 2. Pick one outcome:
    - `kind: "brief"` (preferred): a plan with stated assumptions.
      - `summary`: what to change, where, how to check it.
-     - `criteria[]`: the ticket criteria, refined until each is testable.
+     - `criteria[]`: every ticket criterion, refined until testable, plus any the plan needs. It replaces the ticket's list.
      - `assumptions[]`: each gap you filled with a default.
      - `slices[]`: ordered, each `{title, est_loc, touchpoints[], acceptance[]}`. Keep each slice a vertical, independently committable change. `touchpoints` are repo-relative paths.
    - `kind: "questions"`: only when no reasonable default exists. At most 3 items `{question, recommended}`; `recommended` is mandatory.

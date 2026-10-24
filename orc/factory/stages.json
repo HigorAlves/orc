@@ -172,6 +172,31 @@
                 }
               }
             }
+          },
+          "cases": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "title",
+                "criterion",
+                "test"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "criterion": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "test": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       },

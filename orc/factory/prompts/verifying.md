@@ -13,6 +13,9 @@ Criteria (each must be met by the diff):
 Assumptions:
 {{plan.assumptions}}
 
+Approved test cases (each must exist and pass):
+{{context.testCases}}
+
 ## Decisions so far
 {{decisions}}
 
@@ -21,7 +24,7 @@ Assumptions:
 
 ## What to do
 1. Find the change. Primary: `git diff $(git merge-base HEAD main 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -1)..HEAD` (read-only git: `git diff`, `git log`, `git merge-base`). Fallback: read `.orc/*/files/slices.json` for the slice commits and touchpoints, then Read those files and their tests. If a PR already exists, `gh pr diff` is allowed.
-2. Review per `orc:review-contract`: each finding has `path` (repo-relative), `line`, `severity`, `title`, `body`, `suggestion_code` (or null), `confidence` (0 to 1). Check spec conformance against every plan criterion; a missing criterion is a `bug`.
+2. Review per `orc:review-contract`: each finding has `path` (repo-relative), `line`, `severity`, `title`, `body`, `suggestion_code` (or null), `confidence` (0 to 1). Check spec conformance against every plan criterion and approved test case; a missing one is a `bug`.
 3. Security pass over the changed code: injection, broken authn/authz, secrets in code, unsafe deserialization, SSRF, path traversal, unvalidated input, weak crypto. Report each hit as severity `security`.
 4. Set `verdict` MECHANICALLY: `"fail"` if and only if some finding has `confidence >= 0.8` and `severity` in `["bug", "security"]`; otherwise `"pass"`. Nits, suggestions, questions and low-confidence findings never fail the stage; still list them.
 5. `summary`: one or two terse sentences. Answer `{verdict, summary, findings[]}`.
