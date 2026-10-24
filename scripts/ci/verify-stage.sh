@@ -220,7 +220,13 @@ if jq -e '.answer == null' "$o1/result.json" >/dev/null; then ok; else fail "ans
 for t in 'Bash(git diff:*)' 'Bash(git log:*)' 'Bash(git merge-base:*)'; do
   if jq -e --arg t "$t" '.packs.verifying.tools|index($t)' "$packs" >/dev/null && grep -qF "$t" "$repo_root/orc/agents/orc-pr-reviewer.md"; then ok; else fail "verifying/reviewer missing tool $t"; fi
 done
-if run render verifying "$fx/stage-input.example.json" | grep -qF 'git merge-base'; then ok; else fail "verifying prompt: merge-base method"; fi
+# verifying gets the base commit from the controller; a `$(git merge-base ...)` one-liner is a denied call
+vb="$tmp/base.json"; jq '.context.baseCommit = "abc1234def"' "$fx/stage-input.example.json" > "$vb"
+if run render verifying "$vb" | grep -qF 'git diff abc1234def..HEAD'; then ok; else fail "verifying prompt: baseCommit not rendered into the diff command"; fi
+vr="$(run render verifying "$fx/stage-input.example.json")"
+sub="\$("  # a command substitution in the prompt text
+if printf '%s' "$vr" | grep -qF -- "$sub"; then fail "verifying prompt: still carries a command-substitution one-liner"; else ok; fi
+if printf '%s' "$vr" | grep -qF '(unknown)' && ! printf '%s' "$vr" | grep -qF '{{'; then ok; else fail "verifying prompt: null baseCommit must render (unknown)"; fi
 
 # --- read-only sandbox: state dir, HOME, preinstall guard ----------------------
 ro="$tmp/ro-cwd"; mkdir -p "$ro" "$tmp/tmpd"
@@ -243,6 +249,52 @@ chmod -R u+w "$ropl"
 if [ "$rc" = 4 ]; then ok; else fail "SDK absent + lib read-only: rc=$rc, want 4"; fi
 if printf '%s' "$pre_err" | grep -qi 'preinstall'; then ok; else fail "SDK absent + lib read-only: message lacks preinstall: $pre_err"; fi
 if run render implementing "$fx/stage-input.example.json" | grep -qF 'Locked tests' && run render implementing "$fx/stage-input.example.json" | grep -qF 'test_change'; then ok; else fail "implementing prompt: Locked tests paragraph missing"; fi
+
+# --- the pack's agent is the system prompt; its model/effort apply; its skills are inlined ------
+ag_body="$(awk 'f&&NF{print;exit} /^---$/{c++; if(c==2)f=1}' "$repo_root/orc/agents/orc-implementer.md")"
+if printf '%s' "$opts" | jq -e --arg b "$ag_body" '.systemPrompt.type == "preset" and .systemPrompt.preset == "claude_code" and (.systemPrompt.append | contains($b))' >/dev/null; then ok; else fail "run --dry-run: systemPrompt must be the claude_code preset + the agent body: $(printf '%s' "$opts" | jq -c '.systemPrompt | if type=="object" then .append |= .[0:80] else . end')"; fi
+if printf '%s' "$opts" | jq -e '.systemPrompt.append | (contains("model: sonnet") | not) and (startswith("---") | not)' >/dev/null; then ok; else fail "run --dry-run: agent frontmatter leaked into systemPrompt"; fi
+for sk in orc:tdd orc:verification-before-completion orc:code-discovery; do
+  first="$(awk 'f&&NF{print;exit} /^---$/{c++; if(c==2)f=1}' "$repo_root/orc/skills/${sk#orc:}/SKILL.md")"
+  if printf '%s' "$opts" | jq -e --arg h "## Skill: $sk" --arg f "$first" '.systemPrompt.append | contains($h) and contains($f)' >/dev/null; then ok; else fail "run --dry-run: skill $sk not inlined under '## Skill: $sk'"; fi
+done
+if printf '%s' "$opts" | jq -e '.model == "sonnet" and .effort == "medium"' >/dev/null; then ok; else fail "run --dry-run: model/effort must come from the agent frontmatter: $(printf '%s' "$opts" | jq -c '{model,effort}')"; fi
+pm="$tmp/pm.json"; jq '.packs.implementing.model = "opus"' "$packs" > "$pm"
+pm_out="$(cd "$tmp" && ORC_FACTORY_STAGES="$pm" run run --dry-run --in "$fx/stage-input.example.json" --out "$tmp/pm-out" 2>/dev/null | jq -r .model)"
+if [ "$pm_out" = "opus" ]; then ok; else fail "run --dry-run: pack.model must win over the agent's: $pm_out"; fi
+mkdir -p "$tmp/ev-dry"
+ev_out="$(cd "$tmp" && ORC_STAGE_PACK_JSON="$(jq -c '.packs.evidence' "$packs")" ORC_STAGE_DRY_RUN=1 ORC_STAGE_IN="$fx/stage-input.example.json" ORC_STAGE_OUT="$tmp/ev-dry" ORC_STAGE_PROMPT="$tmp/t.md" ORC_PLUGIN_ROOT="$plugin_root" node "$repo_root/orc/lib/factory/run.mjs" 2>/dev/null | jq -c '[.systemPrompt, .model, .effort]')"
+if [ "$ev_out" = "[null,null,null]" ]; then ok; else fail "run --dry-run: a script pack has no agent, so no systemPrompt/model/effort: $ev_out"; fi
+
+# --- ci_watch escalates infra/needs_debug like every other pack; the controller feeds it the CI facts ----
+if jq -e '.packs.ci_watch.outputSchema.properties | (.kind.enum == ["done","escalated"]) and (.reason.type == "string") and (.options.type == "array")' "$packs" >/dev/null; then ok; else fail "schema: ci_watch needs kind/reason/options"; fi
+if jq -e '.packs.ci_watch.outputSchema.required | index("kind") == null' "$packs" >/dev/null; then ok; else fail "schema: ci_watch kind must stay optional (a green answer has none)"; fi
+if grep -qF 'kind: "escalated"' orc/factory/prompts/ci_watch.md && grep -qF '{{context.ci}}' orc/factory/prompts/ci_watch.md; then ok; else fail "ci_watch.md: must escalate via kind and render {{context.ci}}"; fi
+ci="$tmp/ci.json"
+jq '.context.ci = {"pr":{"number":42,"url":"https://x/pull/42"},"checks":[{"name":"machine","state":"failure","url":"https://x/runs/9"},{"name":"site","state":"success","url":null}],"logs":"FAIL src/a.test.ts > boom\n  expected 1 to be 2"}' "$fx/stage-input.example.json" > "$ci"
+ci_out="$(run render ci_watch "$ci")"
+for needle in "PR #42 https://x/pull/42" "- machine: failure https://x/runs/9" "- site: success" "FAIL src/a.test.ts > boom"; do
+  if printf '%s' "$ci_out" | grep -qF -- "$needle"; then ok; else fail "render ci_watch: missing '$needle'"; fi
+done
+if run render ci_watch "$fx/stage-input.example.json" | grep -qF '{{'; then fail "render ci_watch: unreplaced placeholder with context.ci absent"; else ok; fi
+
+# --- implementing sees the plan's slices (it seeds the ledger from them) ------
+sl="$tmp/slices.json"
+jq '.plan = {"brief":"b","criteria":["c1"],"assumptions":[],"slices":[{"title":"Exporter","est_loc":80,"touchpoints":["src/export.ts"],"acceptance":["writes UTF-8"]},{"title":"Button","est_loc":20,"touchpoints":[],"acceptance":[]}]}' "$fx/stage-input.example.json" > "$sl"
+sl_out="$(run render implementing "$sl")"
+for needle in "1. Exporter (~80 LOC) touches src/export.ts; accepts: writes UTF-8" "2. Button (~20 LOC)"; do
+  if printf '%s' "$sl_out" | grep -qF -- "$needle"; then ok; else fail "render implementing: slices missing '$needle'"; fi
+done
+if run render implementing "$fx/stage-input.noplan.json" | grep -qF '{{plan.slices}}'; then fail "render implementing: unreplaced plan.slices with a null plan"; else ok; fi
+
+# --- the input as luna's machine writes it (schema 3) validates and renders; tests[] is gone ---
+if run validate --input "$fx/stage-input.luna.json" >/dev/null 2>&1; then ok; else fail "validate --input rejects the luna-shaped fixture"; fi
+if jq -e '.schema == 3 and (.context | has("tests") | not) and (.context.testCases | length) > 0 and (.context | has("baseCommit")) and (.plan.slices | length) > 0' "$fx/stage-input.luna.json" >/dev/null; then ok; else fail "stage-input.luna.json must be schema 3 with testCases, baseCommit and plan.slices, without tests[]"; fi
+for pk in implementing verifying ci_watch; do
+  if run render "$pk" "$fx/stage-input.luna.json" | grep -qF '{{'; then fail "render $pk (luna fixture): unreplaced placeholder"; else ok; fi
+done
+if jq -e '.properties.context.required | index("tests") == null' "$repo_root/orc/factory/schema/stage-input.json" >/dev/null; then ok; else fail "stage-input schema: context.tests must not be required"; fi
+if jq -e '.context | has("tests") | not' "$fx/stage-input.example.json" >/dev/null; then ok; else fail "stage-input.example.json still carries tests[]"; fi
 
 [ "$status" = 0 ] || exit 1
 echo "verify-stage: OK ($pass_count checks)"

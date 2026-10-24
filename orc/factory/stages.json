@@ -552,6 +552,12 @@
           "findings"
         ],
         "properties": {
+          "kind": {
+            "enum": [
+              "done",
+              "escalated"
+            ]
+          },
           "verdict": {
             "enum": [
               "fixable",
@@ -653,6 +659,15 @@
                   "type": "object"
                 }
               }
+            }
+          },
+          "reason": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
           }
         }

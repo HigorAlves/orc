@@ -1,0 +1,91 @@
+{
+  "schema": 3,
+  "stage": "implementing",
+  "pack": "implementing",
+  "attempt": 1,
+  "task": {
+    "id": "7f3a2c10-1b2d-4e5f-8a9b-0c1d2e3f4a5b",
+    "title": "feat: export the board as CSV",
+    "description": "Add an export button that downloads the current column as CSV.",
+    "criteria": [
+      "The button downloads a .csv",
+      "Non-ASCII titles survive the round trip"
+    ],
+    "repoPath": "/work",
+    "branch": "hardness/7f3a2c10-export-csv",
+    "source": null
+  },
+  "plan": {
+    "brief": "A pure csv() helper plus a button that calls it.",
+    "criteria": [
+      "csv() quotes commas and newlines",
+      "the file is UTF-8 with BOM"
+    ],
+    "assumptions": [
+      "No server round trip: the data is already on the client"
+    ],
+    "slices": [
+      {
+        "title": "csv() helper",
+        "est_loc": 60,
+        "touchpoints": [
+          "src/lib/csv.ts",
+          "src/lib/csv.test.ts"
+        ],
+        "acceptance": [
+          "quotes commas and newlines",
+          "UTF-8 BOM"
+        ]
+      },
+      {
+        "title": "Export button",
+        "est_loc": 40,
+        "touchpoints": [
+          "src/board/Column.tsx"
+        ],
+        "acceptance": [
+          "downloads board.csv"
+        ]
+      }
+    ]
+  },
+  "decisions": [
+    {
+      "at": "awaiting_approval",
+      "decision": "approved",
+      "reason": null,
+      "answers": {}
+    },
+    {
+      "at": "awaiting_test_check",
+      "decision": "approved",
+      "reason": null,
+      "answers": {}
+    }
+  ],
+  "priorFindings": [],
+  "context": {
+    "projectContext": null,
+    "testCases": [
+      {
+        "title": "csv quotes a comma",
+        "criterion": "csv() quotes commas and newlines",
+        "approach": "pnpm vitest run src/lib/csv.test.ts, a row with a comma comes back quoted"
+      },
+      {
+        "title": "download has the BOM",
+        "criterion": "the file is UTF-8 with BOM",
+        "approach": "direct check: the blob's first three bytes are EF BB BF"
+      }
+    ],
+    "baseCommit": "9c1f0e2a7b6d5c4b3a2918f7e6d5c4b3a2918f7e",
+    "ci": null
+  },
+  "limits": {
+    "maxTurns": 80,
+    "timeoutMs": 1800000
+  },
+  "env": {
+    "ORC_FACTORY": "1"
+  }
+}

@@ -71,7 +71,7 @@ echo "verify-factory: validation path = $([ "$use_ajv" = 1 ] && echo ajv || echo
 jq_check() { # kind file
   case "$1" in
     input) jq -e --argjson ids "$ids" '
-      .schema==1 and (.stage|type)=="string" and (.pack as $p | $ids|index($p)!=null)
+      (.schema|IN(1,2,3)) and (.stage|type)=="string" and (.pack as $p | $ids|index($p)!=null)
       and (.attempt|type)=="number" and (.task|type)=="object"
       and ((.plan|type)=="object" or .plan==null)
       and (.decisions|type)=="array" and (.priorFindings|type)=="array" and (.context|type)=="object"
@@ -97,6 +97,7 @@ validate() { # kind schema file
 }
 
 validate input "$sdir/stage-input.json" "$fx/stage-input.example.json" || fail "stage-input example does not validate"
+validate input "$sdir/stage-input.json" "$fx/stage-input.luna.json" || fail "stage-input luna-shaped fixture does not validate"
 validate input "$sdir/stage-input.json" "$fx/stage-input.broken.json" && fail "stage-input broken fixture validated (must not)"
 validate output "$sdir/stage-output.json" "$fx/stage-output.example.json" || fail "stage-output example does not validate"
 validate output "$sdir/stage-output.json" "$fx/stage-output.broken.json" && fail "stage-output broken fixture validated (must not)"

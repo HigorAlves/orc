@@ -11,9 +11,12 @@ You are `{{agent}}`, attempt {{attempt}}. The worktree is `/work`, branch `{{tas
 ## Project context
 {{context.projectContext}}
 
+## CI, as the controller fetched it
+{{context.ci}}
+
 ## What to do
-1. Find the PR: take its number from the decisions above when present; else run `gh pr view --json number,url,statusCheckRollup` on the current branch.
-2. Pull the failing run's logs (`gh pr checks`, `gh run view <id> --log-failed`). Every classification cites the log line that proves it.
+1. Start from the CI section above: it is the PR, its checks and the failed run's log tail, fetched outside the sandbox. Use `gh pr checks` / `gh run view <id> --log-failed` only when that section is empty or you need more of a log; `gh` may have no credential here, and a denial is not a finding.
+2. Every classification cites the log line that proves it.
 3. Classify per your taxonomy: `test`, `lint`, `build`, `flake`, `infra`, `drift`. Apply `orc:ci-routing` to pick `verdict`:
    - `fixable`: the diff caused it and a concrete fix exists.
    - `flake`: intermittent, with run-history evidence.
@@ -21,13 +24,13 @@ You are `{{agent}}`, attempt {{attempt}}. The worktree is `/work`, branch `{{tas
    - `needs_debug`: root cause needs investigation beyond the diff.
    - `green`: nothing failing.
 4. For `fixable`, list the fix as review-contract `findings[]` (`path`, `line` when known else 0, `severity`, `title`, `body`, `confidence`).
-5. For `infra` and `needs_debug`, add `requested:[{"kind":"publish","target":"escalation","payload":{"classification":"...","runUrl":"...","evidence":"..."}}]`.
-6. Answer `{verdict, classification, summary, findings[], runUrl}`.
+5. For `infra` and `needs_debug`, answer `kind: "escalated"` with `reason` (the proving log line) and `options[]` (concrete next steps, each a string), plus the fields below.
+6. Answer `{verdict, classification, summary, findings[], runUrl}` (`kind: "done"` or omitted).
 
 ## What the controller does with it
 - `fixable` fails the stage and loops to implementing with your findings.
 - `flake` passes with your note; one re-run follows.
-- `infra` and `needs_debug` fail and escalate through `requested`.
+- `infra` and `needs_debug` escalate to a human with your `reason` and `options`.
 - `green` passes.
 
 ## Rules
