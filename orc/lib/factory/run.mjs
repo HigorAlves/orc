@@ -15,11 +15,16 @@ const pack = JSON.parse(env.ORC_STAGE_PACK_JSON);
 const prompt = readFileSync(env.ORC_STAGE_PROMPT, 'utf8');
 const cwd = process.cwd();
 
+// The SDK's `tools` takes bare built-in names ('Bash', 'Read'); a permission pattern such
+// as 'Bash(git commit:*)' names no tool there, and the pack would silently lose Bash.
+// The patterns go in `allowedTools`, so dontAsk still denies any command not listed.
+const builtins = [...new Set(pack.tools.map((t) => t.replace(/\(.*\)$/, '')).filter((t) => !t.startsWith('mcp__')))];
+
 const options = {
   cwd,
   plugins: [{ type: 'local', path: env.ORC_PLUGIN_ROOT }],
   settingSources: [],
-  tools: pack.tools,
+  tools: builtins,
   allowedTools: pack.tools,
   permissionMode: 'dontAsk',
   maxTurns: pack.maxTurns,

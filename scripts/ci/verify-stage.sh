@@ -96,8 +96,13 @@ opts="$(printf '%s' "$dry" | jq -c . 2>/dev/null || true)"
 want_tools="$(jq -c '.packs.implementing.tools' "$packs")"
 if [ -n "$opts" ] && printf '%s' "$opts" | jq -e --arg r "$plugin_root" --argjson t "$want_tools" '
   (.plugins[0].path | endswith($r)) and .plugins[0].type == "local" and .settingSources == []
-  and .tools == $t and .allowedTools == $t and .permissionMode == "dontAsk"
+  and .allowedTools == $t and .permissionMode == "dontAsk"
   and .env.ORC_FACTORY == "1" and .outputFormat.type == "json_schema"' >/dev/null; then ok; else fail "run --dry-run: options JSON wrong: $dry"; fi
+# `tools` takes bare built-in names; the patterns only go in `allowedTools`. A pattern in
+# `tools` names no tool, so the pack silently loses Bash.
+if printf '%s' "$opts" | jq -e '(.tools | index("Bash")) != null and (.tools | index("Read")) != null
+  and all(.tools[]; (contains("(") | not) and (startswith("mcp__") | not))
+  and (.tools | length) == (.tools | unique | length)' >/dev/null; then ok; else fail "run --dry-run: tools must be bare names incl. Bash: $(printf '%s' "$opts" | jq -c .tools)"; fi
 if run validate --output "$o1/result.json" >/dev/null 2>&1; then ok; else fail "run --dry-run: result.json invalid"; fi
 if [ -f "$o1/prompt.md" ] && [ "$(wc -l < "$o1/events.jsonl" | tr -d ' ')" -ge 1 ]; then ok; else fail "run --dry-run: prompt.md/events.jsonl missing"; fi
 if jq -e '.ok == true and .outcome == "pass" and .summary == "dry-run"' "$o1/result.json" >/dev/null; then ok; else fail "run --dry-run: result not pass/dry-run"; fi
