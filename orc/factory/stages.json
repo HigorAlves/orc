@@ -105,28 +105,17 @@
       "promptTemplate": "orc/factory/prompts/triage.md"
     },
     "test_design": {
-      "agent": "orc-test-author",
-      "skills": [
-        "orc:tdd"
-      ],
+      "agent": "orc-prd-analyzer",
+      "skills": [],
       "tools": [
         "Read",
-        "Write",
-        "Edit",
         "Glob",
         "Grep",
-        "Skill",
-        "Bash(npm:*)",
-        "Bash(pnpm:*)",
-        "Bash(yarn:*)",
-        "Bash(npx:*)",
-        "Bash(go:*)",
-        "Bash(cargo:*)",
-        "Bash(pip:*)",
-        "Bash(pytest:*)",
-        "Bash(make test:*)"
+        "WebFetch",
+        "Bash(gh issue view:*)",
+        "Bash(graphify:*)"
       ],
-      "writable": true,
+      "writable": false,
       "maxTurns": 40,
       "timeoutMs": 900000,
       "outputSchema": {
@@ -180,7 +169,7 @@
               "required": [
                 "title",
                 "criterion",
-                "test"
+                "approach"
               ],
               "properties": {
                 "title": {
@@ -192,7 +181,7 @@
                     "null"
                   ]
                 },
-                "test": {
+                "approach": {
                   "type": "string"
                 }
               }
