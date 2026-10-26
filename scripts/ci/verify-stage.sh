@@ -118,6 +118,9 @@ for pair in triage:orc-prd-analyzer:"TRIAGE STAGE" test_design:orc-prd-analyzer:
 done
 # output schemas carry the shapes the prompts promise
 if jq -e '.packs.triage.outputSchema.properties | has("slices") and has("kind")' "$packs" >/dev/null; then ok; else fail "schema: triage needs kind + slices"; fi
+# the timer approval reads both: a plan is approved by itself only when confidence is high and risk is low
+if jq -e '.packs.triage.outputSchema.properties | (.confidence.enum == ["low","medium","high"]) and (.risk.enum == ["low","medium","high"])' "$packs" >/dev/null; then ok; else fail "schema: triage needs confidence + risk enums low/medium/high"; fi
+if grep -q 'confidence.: .high. only when' orc/factory/prompts/triage.md && grep -q 'risk.: what the touchpoints are' orc/factory/prompts/triage.md; then ok; else fail "triage prompt must say how to grade confidence and risk"; fi
 if jq -e '.packs.implementing.outputSchema.properties.kind.enum == ["done","test_change","escalated"]' "$packs" >/dev/null; then ok; else fail "schema: implementing kind enum"; fi
 if jq -e '.packs.test_design.outputSchema.properties.kind.enum == ["done","questions"]' "$packs" >/dev/null; then ok; else fail "schema: test_design kind enum"; fi
 

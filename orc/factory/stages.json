@@ -78,6 +78,20 @@
               }
             }
           },
+          "confidence": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "risk": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
           "questions": {
             "type": "array",
             "maxItems": 3,

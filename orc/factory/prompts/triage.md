@@ -25,6 +25,8 @@ Ticket criteria:
      - `criteria[]`: every ticket criterion, refined until testable, plus any the plan needs. It replaces the ticket's list.
      - `assumptions[]`: each gap you filled with a default.
      - `slices[]`: ordered, each `{title, est_loc, touchpoints[], acceptance[]}`. Keep each slice a vertical, independently committable change. `touchpoints` are repo-relative paths.
+     - `confidence`: `high` only when the ticket is unambiguous, you read the code the slices touch, and no assumption would change the outcome; `medium` when one would; `low` when you are guessing.
+     - `risk`: what the touchpoints are. `high` for auth, payments, data migrations, deletion of data, CI or infrastructure, anything without tests; `medium` for shared code other features depend on; `low` for isolated code with tests. The controller may approve a `high`-confidence, `low`-risk plan by itself after a wait the repo sets; everything else waits for a human.
    - `kind: "questions"`: only when no reasonable default exists. At most 3 items `{question, recommended}`; `recommended` is mandatory.
 3. Earlier answers in the decisions above are binding. Never re-ask them.
 

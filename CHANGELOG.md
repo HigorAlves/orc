@@ -5,6 +5,7 @@ All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tag
 ## [Unreleased]
 
 ### Changed
+- Factory: triage's brief carries `confidence` and `risk` (`low`/`medium`/`high`), with the prompt saying how to grade each. A controller can approve a `high`-confidence, `low`-risk plan by itself after a wait the repo sets (luna's `PIPELINE.md`); anything less waits for a human. `verify-stage.sh` covers the schema and the prompt.
 - Factory: e2e proves only what a browser can observe. A criterion about a test command, a diff or git history is left out of `criteria[]` and named in `summary`, instead of being marked `partial` and failing the stage (the first live e2e run graded itself `partial` on "before the fix it failed" and "only cartTotal changed"). The prompt no longer asks the agent to stop the dev server: its shell has no tool for that, and the runner now ends with the answer.
 - Factory: e2e escalates like every other pack (`kind: "escalated"`, `reason`, `options[]` join its output schema; the prompt says when: the app will not start, the target is unreachable, a tool is missing) instead of folding an environment failure into a QA verdict that costs an implementing retry.
 - Factory: `run.mjs` takes `maxTurns` from the stage input's `limits` when the controller sets one (luna scales implementing's budget by the plan's slice count); the pack's default still applies otherwise. `verify-stage.sh` covers it.
