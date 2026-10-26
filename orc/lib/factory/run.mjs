@@ -265,6 +265,10 @@ try {
       state.costUsd = msg.total_cost_usd ?? null;
       state.durationMs = msg.duration_ms ?? 0;
       if (!state.ok) state.error = msg.result || msg.subtype || 'error';
+      // The result is the end of the stage. Do not wait for the stream to close: a dev server
+      // the agent left running in the background keeps the CLI's stdio open, and with it the
+      // container, until the controller's timeout kills it.
+      break;
     }
   }
 } catch (e) {
@@ -279,3 +283,5 @@ if (state.ok && state.structured === null && !state.text) {
   state.error = 'no structured output';
 }
 finish(state);
+// Same reason as the break above: nothing an agent left behind may keep this process alive.
+process.exit(0);
