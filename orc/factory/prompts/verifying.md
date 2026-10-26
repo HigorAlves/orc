@@ -32,7 +32,7 @@ Scenarios test_design named (each needs a test or a direct check):
 7. Review the diff — implementation plus your new tests — per `orc:review-contract`: each finding has `path`, `line`, `severity`, `title`, `body`, `suggestion_code` (or null), `confidence` (0 to 1). Check spec conformance against every plan criterion; a missing one is a `bug`.
 8. Security pass: injection, broken authn/authz, secrets in code, unsafe deserialization, SSRF, path traversal, unvalidated input, weak crypto. Report each hit as severity `security`.
 9. Set `verdict` MECHANICALLY: `"fail"` on any `results[]` entry `"fail"`, or a finding with `confidence >= 0.8` and `severity` in `["bug", "security"]`; otherwise `"pass"`. Nits, suggestions, questions and low-confidence findings never fail the stage; still list them.
-10. Answer `{verdict, summary, findings[], results[]}` — `results[]` is one `{title, criterion, approach, outcome}` per scenario; `summary` is one or two terse sentences. (Escalating instead: see Rules.)
+10. Answer `{verdict, summary, findings[], results[]}` — `results[]` is one `{title, criterion, approach, outcome}` per scenario, `title` copied verbatim from the scenario (the controller matches on it; a trimmed or reworded title reads as an unproven scenario); `summary` is one or two terse sentences. (Escalating instead: see Rules.)
 
 ## Rules
 - Never call AskUserQuestion. Questions go in findings with severity `question`.
