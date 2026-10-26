@@ -2,6 +2,14 @@
 
 All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tags; the CLI releases separately under plain `vX.Y.Z` tags. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); each entry links the PR that landed it. The `plugin-release` workflow publishes a version's section as its GitHub Release notes when the tag is pushed.
 
+## [Unreleased]
+
+### Changed
+- Factory: test_design stops writing test files. It's fully read-only (orc-prd-analyzer, triage's tools) and only plans — `cases[]` becomes `{title, criterion, approach}`, free text naming what to check and, when one applies, which of the repo's own commands proves it. `tests[]` and `files/tests/manifest.json` are gone.
+- Factory: verifying proves the plan's criteria and test_design's scenarios with real tests in the repo's own idiom, commits them, then reviews as before (new agent, orc-verifier — orc-pr-reviewer is explicitly never-edits, needed for its other callers). Tools, writable and limits (60 turns/20min) change to match. Output gains `results[]`; verdict fails on any result `"fail"` too. A pre-existing failure it can't tie to the change now escalates instead of failing the whole diff.
+- Factory: implementing no longer cites a test_design-written manifest; it uses the scenarios, plan and ticket as its guide. Locked-test wording updated to say "a prior verifying attempt", not test_design.
+- Stage input schema 3: `context.testCases[].test` (a file test_design no longer writes) renamed `approach` (the free text test_design's `cases[]` already answers). Stage output schema is unchanged — a pack's `answer` was already free-form.
+
 ## [0.30.0] - 2026-10-24
 
 ### Added

@@ -60,6 +60,9 @@ if printf '%s' "$np" | grep -qF "{{"; then fail "render: unreplaced placeholder"
 run render nope "$fx/stage-input.example.json" >/dev/null 2>&1 && rc=0 || rc=$?
 if [ "$rc" = 2 ]; then ok; else fail "render unknown pack: rc=$rc, want 2"; fi
 
+# implementing no longer cites a file manifest test_design doesn't write
+if grep -qi 'manifest\.json' orc/factory/prompts/implementing.md; then fail "implementing.md still references manifest.json"; else ok; fi
+
 # a pack with Bash patterns gets a generated Shell section: its exact commands, one per call
 sh_out="$(run render implementing "$fx/stage-input.example.json")"
 for needle in "## Shell" "\`git commit\`" "\`orc-state\`" "one command per call" "never a reason to escalate"; do
@@ -69,20 +72,28 @@ if run render evidence "$fx/stage-input.example.json" | grep -qF "## Shell"; the
 
 # approved test cases (stage input schema 2) render for implementing and verifying
 cases="$tmp/cases.json"
-jq '.schema = 2 | .context.testCases = [
-  {"title":"rejects a bad password","criterion":"Bad password shows an error","test":"src/login.test.ts > rejects a bad password"},
-  {"title":"keeps the session","criterion":null,"test":"src/session.test.ts > keeps it"}]' "$fx/stage-input.example.json" > "$cases"
-if run validate --input "$cases" >/dev/null 2>&1; then ok; else fail "validate: stage input schema 2 with testCases"; fi
-jq '.schema = 3' "$fx/stage-input.example.json" > "$tmp/in3.json"
-run validate --input "$tmp/in3.json" >/dev/null 2>&1 && rc=0 || rc=$?
-if [ "$rc" = 1 ]; then ok; else fail "validate: stage input schema 3 must fail (rc=$rc)"; fi
+jq '.schema = 3 | .context.testCases = [
+  {"title":"rejects a bad password","criterion":"Bad password shows an error","approach":"run src/login.test.ts, confirm it rejects"},
+  {"title":"keeps the session","criterion":null,"approach":"manual: open devtools, confirm the cookie survives a reload"}]' "$fx/stage-input.example.json" > "$cases"
+if run validate --input "$cases" >/dev/null 2>&1; then ok; else fail "validate: stage input schema 3 with testCases"; fi
+jq '.schema = 4' "$fx/stage-input.example.json" > "$tmp/in4.json"
+run validate --input "$tmp/in4.json" >/dev/null 2>&1 && rc=0 || rc=$?
+if [ "$rc" = 1 ]; then ok; else fail "validate: stage input schema 4 must fail (rc=$rc)"; fi
 for pk in implementing verifying; do
   rc_out="$(run render "$pk" "$cases")"
-  if printf '%s' "$rc_out" | grep -qF -- "- rejects a bad password (proves: Bad password shows an error): src/login.test.ts > rejects a bad password" \
-    && printf '%s' "$rc_out" | grep -qF -- "- keeps the session: src/session.test.ts > keeps it"; then ok; else fail "render $pk: test cases missing"; fi
+  if printf '%s' "$rc_out" | grep -qF -- "- rejects a bad password (proves: Bad password shows an error): run src/login.test.ts, confirm it rejects" \
+    && printf '%s' "$rc_out" | grep -qF -- "- keeps the session: manual: open devtools, confirm the cookie survives a reload"; then ok; else fail "render $pk: test cases missing"; fi
   if run render "$pk" "$fx/stage-input.example.json" | grep -qF "{{context.testCases}}"; then fail "render $pk: unreplaced testCases"; else ok; fi
 done
-if jq -e '.packs.test_design.outputSchema.properties.cases.items.required == ["title","criterion","test"]' "$packs" >/dev/null; then ok; else fail "test_design: answer must carry cases[] {title, criterion, test}"; fi
+
+# verifying is writable now: review tools union implementing's write/test/commit set
+vft="$(jq -c '.packs.verifying.tools' "$packs")"
+for t in '"Bash(git diff:*)"' '"Bash(gh pr diff:*)"' '"Write"' '"Edit"' '"Bash(git add:*)"' '"Bash(git commit:*)"' '"Bash(pnpm:*)"'; do
+  if printf '%s' "$vft" | jq -e --argjson t "$t" 'index($t) != null' >/dev/null; then ok; else fail "verifying tools missing $t: $vft"; fi
+done
+if jq -e '.packs.verifying.writable == true and .packs.verifying.maxTurns == 60 and .packs.verifying.timeoutMs == 1200000' "$packs" >/dev/null; then ok; else fail "verifying must be writable, 60 turns, 1200000ms"; fi
+if jq -e '.packs.verifying.outputSchema.properties.results.items.required == ["title","criterion","approach","outcome"]' "$packs" >/dev/null; then ok; else fail "verifying must answer results[] {title, criterion, approach, outcome}"; fi
+if jq -e '.packs.verifying.outputSchema.required | index("results") == null' "$packs" >/dev/null; then ok; else fail "verifying's results must not be required (a questions answer has none)"; fi
 
 # custom template via ORC_FACTORY_STAGES
 printf 'CUSTOM {{task.title}} / {{attempt}} / {{agent}}\n' > "$tmp/t.md"
@@ -91,8 +102,8 @@ c="$(ORC_FACTORY_STAGES="$tmp/stages.json" run render implementing "$rich")"
 if printf '%s' "$c" | grep -qF "CUSTOM Add CSV export / 1 / orc-implementer"; then ok; else fail "render: custom template not used"; fi
 
 # shipped templates: each of the eight packs renders its own file, under 6 KB
-for pair in triage:orc-prd-analyzer:"TRIAGE STAGE" test_design:orc-test-author:"TEST DESIGN STAGE" \
-  implementing:orc-implementer:"IMPLEMENTING STAGE" verifying:orc-pr-reviewer:"VERIFYING STAGE" \
+for pair in triage:orc-prd-analyzer:"TRIAGE STAGE" test_design:orc-prd-analyzer:"TEST DESIGN STAGE" \
+  implementing:orc-implementer:"IMPLEMENTING STAGE" verifying:orc-verifier:"VERIFYING STAGE" \
   e2e:orc-qa-validator:"E2E STAGE" evidence:script:"EVIDENCE STAGE" \
   ci_watch:orc-ci-investigator:"CI WATCH STAGE" reviewing_memory:orc-refactor-architect:"REVIEWING MEMORY STAGE"; do
   pk="${pair%%:*}"; rest="${pair#*:}"; ag="${rest%%:*}"; head="${rest#*:}"
@@ -131,6 +142,14 @@ if run validate --output "$o1/result.json" >/dev/null 2>&1; then ok; else fail "
 if [ -f "$o1/prompt.md" ] && [ "$(wc -l < "$o1/events.jsonl" | tr -d ' ')" -ge 1 ]; then ok; else fail "run --dry-run: prompt.md/events.jsonl missing"; fi
 if jq -e '.ok == true and .outcome == "pass" and .summary == "dry-run"' "$o1/result.json" >/dev/null; then ok; else fail "run --dry-run: result not pass/dry-run"; fi
 if tail -n1 "$o1/events.jsonl" | jq -e '.kind == "note" and .payload.phase == "stage_end" and .payload.outcome == "pass"' >/dev/null; then ok; else fail "run: last event not stage_end"; fi
+
+# test_design is read-only now: same tools as triage, no writable, scenarios carry "approach"
+tdt="$(jq -c '.packs.test_design.tools' "$packs")"
+trt="$(jq -c '.packs.triage.tools' "$packs")"
+if [ "$tdt" = "$trt" ]; then ok; else fail "test_design tools must match triage's: $tdt != $trt"; fi
+if jq -e '.packs.test_design.writable == false' "$packs" >/dev/null; then ok; else fail "test_design must be writable: false"; fi
+if jq -e '.packs.test_design.outputSchema.properties.cases.items.required == ["title","criterion","approach"]' "$packs" >/dev/null; then ok; else fail "test_design cases[] must require title/criterion/approach"; fi
+if grep -qE '^## What to do' orc/factory/prompts/test_design.md && ! grep -qiE 'manifest\.json|run the new tests|do not touch production code' orc/factory/prompts/test_design.md; then ok; else fail "test_design.md still references file-writing/running steps"; fi
 
 # escalated answer -> outcome escalated (stage-output schema 2); schema 1 has no escalated
 o5="$tmp/out5"
