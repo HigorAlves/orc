@@ -24,6 +24,7 @@ Criteria to prove:
 
 ## Rules
 - Never call AskUserQuestion. A blocked criterion is `partial` with the reason in `summary`.
+- The app will not start, the target is unreachable, or a tool the packet needs is missing: that is not a QA verdict. Answer `kind: "escalated"` with `summary`, `reason` and `options[]` (concrete paths, each a string), and stop. The controller hands it to a person without spending an implementing retry.
 - Never `gh pr create`, never push, never post or write to the tracker.
 - Never write outside `/work` and `/out`. Stop the dev server before you answer.
 
