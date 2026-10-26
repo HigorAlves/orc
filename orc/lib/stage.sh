@@ -166,10 +166,16 @@ orc_stage_render() {
       "{{plan.brief}}": ($i.plan.brief? | txt),
       "{{plan.criteria}}": ($i.plan.criteria? | bullets),
       "{{plan.assumptions}}": ($i.plan.assumptions? | bullets),
+      "{{plan.slices}}": ($i.plan.slices? | if . == null or length == 0 then "(none)" else to_entries | map("\(.key + 1). \(.value.title) (~\(.value.est_loc // "?") LOC)\(if ((.value.touchpoints // []) | length) > 0 then " touches " + (.value.touchpoints | join(", ")) else "" end)\(if ((.value.acceptance // []) | length) > 0 then "; accepts: " + (.value.acceptance | join("; ")) else "" end)") | join("\n") end),
       "{{decisions}}": ($i.decisions | lines("- \(.decision) at \(.at): \(if (.reason // "") != "" then .reason elif (.answers // {}) != {} then (.answers|tojson) else "(none)" end)")),
       "{{priorFindings}}": ($i.priorFindings | lines("- \(.severity) \(.path):\(.line) \(.title)")),
       "{{context.testCases}}": ($i.context.testCases? | lines("- \(.title)\(if (.criterion // "") != "" then " (proves: \(.criterion))" else "" end): \(.approach)")),
       "{{context.projectContext}}": (($i.context.projectContext // "") | if . == "" then $pc else . end | txt),
+      "{{context.baseCommit}}": ($i.context.baseCommit? | if . == null or . == "" then "(unknown)" else tostring end),
+      "{{context.ci}}": ($i.context.ci? | if . == null then "(none: fetch the checks yourself with gh)" else
+          ([(if .pr != null then "PR #\(.pr.number) \(.pr.url // "")" else "PR: (none found)" end),
+            "Checks:", ((.checks // []) | if length == 0 then "- (none)" else map("- \(.name): \(.state)\(if (.url // "") != "" then " " + .url else "" end)") | join("\n") end),
+            "Failed-run log (tail):", "```", ((.logs // "(none)") | tostring), "```"] | join("\n")) end),
       "{{attempt}}": ($i.attempt | txt),
       "{{agent}}": $agent,
       "{{skills}}": (($pk.skills // []) | if length == 0 then "(none)" else join(", ") end)

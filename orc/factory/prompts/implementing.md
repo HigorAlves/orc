@@ -18,6 +18,9 @@ Criteria:
 Assumptions:
 {{plan.assumptions}}
 
+Slices (in order; seed the ledger from these):
+{{plan.slices}}
+
 ## Decisions so far
 {{decisions}}
 

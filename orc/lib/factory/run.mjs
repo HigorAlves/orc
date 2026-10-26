@@ -20,6 +20,37 @@ const cwd = process.cwd();
 // The patterns go in `allowedTools`, so dontAsk still denies any command not listed.
 const builtins = [...new Set(pack.tools.map((t) => t.replace(/\(.*\)$/, '')).filter((t) => !t.startsWith('mcp__')))];
 
+// A plugin agent file: YAML-ish frontmatter (model, effort) and a markdown body. The pack
+// names the agent, but the SDK's `query` is not a subagent dispatch: nothing loads that
+// file unless this runner does. Same for the pack's skills, which the agent would
+// otherwise reach only through a Skill tool no pack allows.
+const splitFrontmatter = (text) => {
+  const m = /^---\n([\s\S]*?)\n---\n?/.exec(text);
+  if (!m) return { meta: {}, body: text.trim() };
+  const meta = {};
+  for (const line of m[1].split('\n')) {
+    const kv = /^([A-Za-z_][\w-]*):\s*(.*)$/.exec(line);
+    if (kv) meta[kv[1]] = kv[2].trim().replace(/^["']|["']$/g, '');
+  }
+  return { meta, body: text.slice(m[0].length).trim() };
+};
+const readText = (p) => {
+  try {
+    return readFileSync(p, 'utf8');
+  } catch {
+    return null;
+  }
+};
+const agentFile = pack.agent ? readText(join(env.ORC_PLUGIN_ROOT, 'agents', `${pack.agent}.md`)) : null;
+const agent = agentFile ? splitFrontmatter(agentFile) : null;
+const skillBodies = (pack.skills ?? [])
+  .map((id) => [id, readText(join(env.ORC_PLUGIN_ROOT, 'skills', id.replace(/^orc:/, ''), 'SKILL.md'))])
+  .filter(([, text]) => text)
+  .map(([id, text]) => `## Skill: ${id}\n\n${splitFrontmatter(text).body}`);
+const systemAppend = agent ? [agent.body, ...skillBodies].join('\n\n') : null;
+const model = pack.model ?? agent?.meta.model ?? null;
+const effort = agent?.meta.effort ?? null;
+
 const options = {
   cwd,
   plugins: [{ type: 'local', path: env.ORC_PLUGIN_ROOT }],
@@ -30,7 +61,9 @@ const options = {
   maxTurns: pack.maxTurns,
   outputFormat: { type: 'json_schema', schema: pack.outputSchema },
   env: { ...env, ORC_FACTORY: '1' },
-  ...(pack.model ? { model: pack.model } : {}),
+  ...(systemAppend ? { systemPrompt: { type: 'preset', preset: 'claude_code', append: systemAppend } } : {}),
+  ...(model ? { model } : {}),
+  ...(effort ? { effort } : {}),
 };
 
 const git = (args) => {
