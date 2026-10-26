@@ -296,5 +296,17 @@ done
 if jq -e '.properties.context.required | index("tests") == null' "$repo_root/orc/factory/schema/stage-input.json" >/dev/null; then ok; else fail "stage-input schema: context.tests must not be required"; fi
 if jq -e '.context | has("tests") | not' "$fx/stage-input.example.json" >/dev/null; then ok; else fail "stage-input.example.json still carries tests[]"; fi
 
+# --- a state dir set from outside (the sandbox's /tmp/orc-state) survives context detection ---
+# The SessionStart hook evals orc_detect_context and exports the result into every Bash call;
+# inside a stage container that used to clobber ORC_STATE_DIR with <worktree>/.orc, so the
+# slice ledger landed in the worktree as an untracked file and the implementer failed the
+# "left uncommitted changes" check six times in a row.
+sd_repo="$tmp/sd-repo"; mkdir -p "$sd_repo"; git -C "$sd_repo" init -q
+sd_out="$(cd "$sd_repo" && env -u ORC_CONTEXT_CACHED ORC_STATE_DIR=/tmp/elsewhere bash -c ". '$repo_root/orc/lib/workspace-detect.sh'; orc_detect_context" | grep '^ORC_STATE_DIR=')"
+if [ "$sd_out" = "ORC_STATE_DIR=/tmp/elsewhere" ]; then ok; else fail "detect: a preset ORC_STATE_DIR must win in a repo, got '$sd_out'"; fi
+# ...but one that an earlier detection exported (ORC_CONTEXT_CACHED=1) is re-derived when cwd moved.
+sd_out="$(cd "$sd_repo" && ORC_CONTEXT_CACHED=1 ORC_CONTEXT_CACHED_PWD=/somewhere/else ORC_STATE_DIR=/tmp/stale bash -c ". '$repo_root/orc/lib/workspace-detect.sh'; orc_detect_context" | grep '^ORC_STATE_DIR=')"
+if [ "$sd_out" = "ORC_STATE_DIR=$(cd "$sd_repo" && pwd -P)/.orc" ]; then ok; else fail "detect: a stale cached ORC_STATE_DIR must be re-derived, got '$sd_out'"; fi
+
 [ "$status" = 0 ] || exit 1
 echo "verify-stage: OK ($pass_count checks)"
