@@ -5,6 +5,7 @@ All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tag
 ## [Unreleased]
 
 ### Changed
+- Factory: `run.mjs` takes `maxTurns` from the stage input's `limits` when the controller sets one (luna scales implementing's budget by the plan's slice count); the pack's default still applies otherwise. `verify-stage.sh` covers it.
 - Factory: the locked-tests rule in implementing's and verifying's prompts now matches what the controller enforces: an existing test file may gain cases (and wider imports) as long as every test that was there still passes unchanged; the controller replays the original file against the new code. Deleting, renaming or rewriting an existing test still fails the stage. Six golden attempts in a row had been rejected for adding a new export's tests to the repo's one test file.
 
 ### Fixed

@@ -308,5 +308,11 @@ if [ "$sd_out" = "ORC_STATE_DIR=/tmp/elsewhere" ]; then ok; else fail "detect: a
 sd_out="$(cd "$sd_repo" && ORC_CONTEXT_CACHED=1 ORC_CONTEXT_CACHED_PWD=/somewhere/else ORC_STATE_DIR=/tmp/stale bash -c ". '$repo_root/orc/lib/workspace-detect.sh'; orc_detect_context" | grep '^ORC_STATE_DIR=')"
 if [ "$sd_out" = "ORC_STATE_DIR=$(cd "$sd_repo" && pwd -P)/.orc" ]; then ok; else fail "detect: a stale cached ORC_STATE_DIR must be re-derived, got '$sd_out'"; fi
 
+# --- the stage input's limits win over the pack's defaults: the controller scales implementing's turns by slice count ---
+jq '.limits.maxTurns = 160' "$fx/stage-input.luna.json" > "$tmp/scaled-input.json"
+mkdir -p "$tmp/scaled-dry"
+scaled="$(cd "$tmp" && ORC_STAGE_PACK_JSON="$(jq -c '.packs.implementing' "$packs")" ORC_STAGE_DRY_RUN=1 ORC_STAGE_IN="$tmp/scaled-input.json" ORC_STAGE_OUT="$tmp/scaled-dry" ORC_STAGE_PROMPT="$tmp/t.md" ORC_PLUGIN_ROOT="$plugin_root" node "$repo_root/orc/lib/factory/run.mjs" 2>/dev/null | jq -c '.maxTurns')"
+if [ "$scaled" = "160" ]; then ok; else fail "run --dry-run: limits.maxTurns from the input must set maxTurns, got '$scaled'"; fi
+
 [ "$status" = 0 ] || exit 1
 echo "verify-stage: OK ($pass_count checks)"

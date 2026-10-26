@@ -12,6 +12,15 @@ const env = process.env;
 const out = env.ORC_STAGE_OUT;
 const dry = env.ORC_STAGE_DRY_RUN === '1';
 const pack = JSON.parse(env.ORC_STAGE_PACK_JSON);
+// The controller may size a stage to the work (implementing's turns by slice count): the
+// input's limits win over the pack's defaults.
+const inputLimits = (() => {
+  try {
+    return env.ORC_STAGE_IN ? JSON.parse(readFileSync(env.ORC_STAGE_IN, 'utf8')).limits ?? {} : {};
+  } catch {
+    return {};
+  }
+})();
 const prompt = readFileSync(env.ORC_STAGE_PROMPT, 'utf8');
 const cwd = process.cwd();
 
@@ -58,7 +67,7 @@ const options = {
   tools: builtins,
   allowedTools: pack.tools,
   permissionMode: 'dontAsk',
-  maxTurns: pack.maxTurns,
+  maxTurns: Number.isInteger(inputLimits.maxTurns) && inputLimits.maxTurns > 0 ? inputLimits.maxTurns : pack.maxTurns,
   outputFormat: { type: 'json_schema', schema: pack.outputSchema },
   env: { ...env, ORC_FACTORY: '1' },
   ...(systemAppend ? { systemPrompt: { type: 'preset', preset: 'claude_code', append: systemAppend } } : {}),
