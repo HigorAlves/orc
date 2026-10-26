@@ -318,5 +318,8 @@ if [ "$scaled" = "160" ]; then ok; else fail "run --dry-run: limits.maxTurns fro
 if jq -e '.packs.e2e.outputSchema.properties | (.kind.enum == ["done","escalated"]) and (.reason.type == "string") and (.options.type == "array")' "$packs" >/dev/null; then ok; else fail "schema: e2e needs kind/reason/options"; fi
 if grep -q 'kind: "escalated"' "$repo_root/orc/factory/prompts/e2e.md"; then ok; else fail "e2e prompt: no escalation rule"; fi
 
+# --- e2e judges only what a browser can observe, and is not asked to stop a server it has no tool to stop ---
+if grep -q "not browser-observable" "$repo_root/orc/factory/prompts/e2e.md" && ! grep -q "Stop the dev server before you answer" "$repo_root/orc/factory/prompts/e2e.md"; then ok; else fail "e2e prompt: browser-observable rule / dev-server line"; fi
+
 [ "$status" = 0 ] || exit 1
 echo "verify-stage: OK ($pass_count checks)"
