@@ -43,7 +43,7 @@ Scenarios test_design named, as a guide (verifying proves these, not you):
 7. On success answer `kind: "done"` with `summary`, `commit` (output of `git rev-parse HEAD`), and `slices: {done, total}`.
 
 ## Locked tests
-Tests present when your run starts (from a prior verifying attempt, or already in the repo) are locked. Modifying, deleting or renaming one fails the stage and resets your commit. Add new tests freely. If a locked test is wrong, stop and answer `kind: "test_change"` with `request`.
+Tests present when your run starts (from a prior verifying attempt, or already in the repo) are locked: every test that was there must still pass, unchanged. You may add cases to an existing test file (and widen its imports); the controller replays the original file against your code and resets your commit if it no longer passes. Never delete, rename, rewrite or weaken an existing test. If a locked test is wrong, stop and answer `kind: "test_change"` with `request`.
 
 ## Rules
 - Never call AskUserQuestion. Escalation and questions end the stage.

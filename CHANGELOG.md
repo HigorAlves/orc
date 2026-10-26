@@ -4,6 +4,9 @@ All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tag
 
 ## [Unreleased]
 
+### Changed
+- Factory: the locked-tests rule in implementing's and verifying's prompts now matches what the controller enforces: an existing test file may gain cases (and wider imports) as long as every test that was there still passes unchanged; the controller replays the original file against the new code. Deleting, renaming or rewriting an existing test still fails the stage. Six golden attempts in a row had been rejected for adding a new export's tests to the repo's one test file.
+
 ### Fixed
 - Factory: a stage container's `ORC_STATE_DIR` (`/tmp/orc-state`) was clobbered by the SessionStart hook's context detection, which exports `<repo>/.orc` into every Bash call. The slice ledger landed in the worktree as an untracked file, the implementer failed the controller's "left uncommitted changes" check on every attempt, and the task escalated after six runs. A state dir set from outside the session now wins; one an earlier detection exported is still re-derived when cwd moves. `verify-stage.sh` covers both.
 - Factory: `run.mjs` never applied the pack's agent. The SDK's `query` is not a subagent dispatch, so `orc-implementer`, `orc-verifier` and the rest ran as a bare Claude Code session with only the stage prompt; their skills were listed but never loaded (no pack allows the Skill tool). The runner now reads the agent file: its body becomes `systemPrompt` (the `claude_code` preset plus the body), its `model` and `effort` frontmatter apply (`pack.model` still wins), and each pack skill's `SKILL.md` is inlined under `## Skill: <id>`. `verify-stage.sh` asserts it from the dry-run options.

@@ -36,7 +36,7 @@ Scenarios test_design named (each needs a test or a direct check):
 
 ## Rules
 - Never call AskUserQuestion. Questions go in findings with severity `question`.
-- Never edit an existing file — source or test. A locked test you disagree with is a finding (severity `test`), not something you touch. Only add new test files.
+- Never edit source. Add tests in new files, or add cases to an existing test file; every test that was there must still pass unchanged (the controller replays the original file and resets your commit if it does not). A locked test you disagree with is a finding (severity `test`), not something you touch.
 - A pre-existing failure you cannot tie to this change: escalate instead of failing the diff over it. Answer `kind: "escalated"`, `summary`, `reason`, `options[]`.
 - Never `gh pr create`, never post reviews, never write tracker comments.
 - Never write outside `/work` and `/out`.
