@@ -314,5 +314,9 @@ mkdir -p "$tmp/scaled-dry"
 scaled="$(cd "$tmp" && ORC_STAGE_PACK_JSON="$(jq -c '.packs.implementing' "$packs")" ORC_STAGE_DRY_RUN=1 ORC_STAGE_IN="$tmp/scaled-input.json" ORC_STAGE_OUT="$tmp/scaled-dry" ORC_STAGE_PROMPT="$tmp/t.md" ORC_PLUGIN_ROOT="$plugin_root" node "$repo_root/orc/lib/factory/run.mjs" 2>/dev/null | jq -c '.maxTurns')"
 if [ "$scaled" = "160" ]; then ok; else fail "run --dry-run: limits.maxTurns from the input must set maxTurns, got '$scaled'"; fi
 
+# --- e2e escalates like every other pack: kind/reason/options on its output schema, and the prompt says when ---
+if jq -e '.packs.e2e.outputSchema.properties | (.kind.enum == ["done","escalated"]) and (.reason.type == "string") and (.options.type == "array")' "$packs" >/dev/null; then ok; else fail "schema: e2e needs kind/reason/options"; fi
+if grep -q 'kind: "escalated"' "$repo_root/orc/factory/prompts/e2e.md"; then ok; else fail "e2e prompt: no escalation rule"; fi
+
 [ "$status" = 0 ] || exit 1
 echo "verify-stage: OK ($pass_count checks)"

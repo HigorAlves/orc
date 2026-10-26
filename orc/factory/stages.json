@@ -471,6 +471,21 @@
           "summary": {
             "type": "string"
           },
+          "kind": {
+            "enum": [
+              "done",
+              "escalated"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "criteria": {
             "type": "array",
             "items": {
