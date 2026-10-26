@@ -118,6 +118,8 @@ for pair in triage:orc-prd-analyzer:"TRIAGE STAGE" test_design:orc-prd-analyzer:
 done
 # output schemas carry the shapes the prompts promise
 if jq -e '.packs.triage.outputSchema.properties | has("slices") and has("kind")' "$packs" >/dev/null; then ok; else fail "schema: triage needs kind + slices"; fi
+# only a rejected usage window is a limit; the SDK's allowed_warning must not pause a run that finishes
+if grep -q "info.status === 'rejected'" orc/lib/factory/run.mjs && ! grep -q "info.status !== 'allowed'" orc/lib/factory/run.mjs; then ok; else fail "run.mjs must treat only a rejected rate_limit_event as a limit"; fi
 # the timer approval reads both: a plan is approved by itself only when confidence is high and risk is low
 if jq -e '.packs.triage.outputSchema.properties | (.confidence.enum == ["low","medium","high"]) and (.risk.enum == ["low","medium","high"])' "$packs" >/dev/null; then ok; else fail "schema: triage needs confidence + risk enums low/medium/high"; fi
 if grep -q 'confidence.: .high. only when' orc/factory/prompts/triage.md && grep -q 'risk.: what the touchpoints are' orc/factory/prompts/triage.md; then ok; else fail "triage prompt must say how to grade confidence and risk"; fi

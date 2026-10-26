@@ -252,10 +252,16 @@ try {
         }
       }
     } else if (msg.type === 'rate_limit_event') {
+      // The SDK reports three statuses. Only `rejected` means the window is spent: the run
+      // cannot go on and the controller should pause the task until `resetsAt`.
+      // `allowed_warning` is the window getting close; the run carries on and finishes, so
+      // reporting it as a limit threw a completed answer away and parked the whole queue.
       const info = msg.rate_limit_info ?? {};
-      if (info.status && info.status !== 'allowed') {
+      if (info.status === 'rejected' || info.overageStatus === 'rejected') {
         state.rateLimited = true;
         state.resetsAt = info.resetsAt != null ? String(info.resetsAt) : null;
+      } else if (info.status === 'allowed_warning') {
+        console.log(`usage window is getting close${info.resetsAt != null ? `; resets at ${info.resetsAt}` : ''}`);
       }
     } else if (msg.type === 'result') {
       state.ok = msg.subtype === 'success' && !msg.is_error;
