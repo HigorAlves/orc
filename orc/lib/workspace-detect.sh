@@ -49,8 +49,13 @@ orc__list_child_repos() {
 }
 
 orc_detect_context() {
-  local cwd repo_top
+  local cwd repo_top preset
   cwd="$(orc__detect_pwd)"
+  # A state dir set from outside the session (a stage sandbox points it at a tmpfs) wins over
+  # the one a repo or workspace would get; one that an earlier detection exported is not
+  # "outside" and is re-derived with the rest when cwd moved.
+  preset="${ORC_STATE_DIR:-}"
+  if [ "${ORC_CONTEXT_CACHED:-0}" = "1" ]; then preset=""; fi
 
   # Memoize per-shell, but bust the cache if cwd has changed.
   if [ "${ORC_CONTEXT_CACHED:-0}" = "1" ] && [ "${ORC_CONTEXT_CACHED_PWD:-}" = "$cwd" ]; then
@@ -74,7 +79,7 @@ ORC_REPO_ROOT=${repo_top}
 ORC_WORKSPACE_ROOT=
 ORC_WORKSPACE_NAME=
 ORC_WORKSPACE_REPOS=
-ORC_STATE_DIR=${repo_top}/.orc
+ORC_STATE_DIR=${preset:-${repo_top}/.orc}
 ORC_CONTEXT_CACHED=1
 ORC_CONTEXT_CACHED_PWD=${cwd}
 EOF
@@ -97,7 +102,7 @@ ORC_REPO_ROOT=
 ORC_WORKSPACE_ROOT=${cwd}
 ORC_WORKSPACE_NAME=$(basename "$cwd")
 ORC_WORKSPACE_REPOS=${repos}
-ORC_STATE_DIR=${cwd}/.orc
+ORC_STATE_DIR=${preset:-${cwd}/.orc}
 ORC_CONTEXT_CACHED=1
 ORC_CONTEXT_CACHED_PWD=${cwd}
 EOF
