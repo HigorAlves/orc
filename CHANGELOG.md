@@ -4,6 +4,9 @@ All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tag
 
 ## [Unreleased]
 
+### Fixed
+- Factory: `run.mjs` reported every `rate_limit_event` whose status was not `allowed` as the usage limit being hit, including the SDK's `allowed_warning`, which only says the window is getting close. A triage run that had finished with a full brief was thrown away and the controller paused the task (and held its whole queue) until the window's reset time, five hours on. Only `rejected` counts now; the warning is logged. `verify-stage.sh` covers it.
+
 ## [0.31.0] - 2026-10-26
 
 ### Changed
