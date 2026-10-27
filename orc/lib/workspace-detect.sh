@@ -134,8 +134,6 @@ orc_interaction_policy() (
   flag="${1:-}"
   validate() { case "$1" in manual|guided|auto) return 0 ;; *) return 1 ;; esac; }
   if [ -n "$flag" ] && validate "$flag"; then printf '%s (flag)\n' "$flag"; return 0; fi
-  # A stage container has no human: factory mode forces auto (orc:gates §8).
-  if [ "${ORC_FACTORY:-}" = "1" ]; then printf 'auto (factory)\n'; return 0; fi
   eval "$(orc_detect_context)"
   if [ -n "${ORC_STATE_DIR:-}" ]; then
     b="$(git branch --show-current 2>/dev/null | tr '/' '-')"

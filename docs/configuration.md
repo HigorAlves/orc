@@ -34,9 +34,6 @@ Prompted at plugin enable time (re-run via `/plugin`); exported to hooks and lib
 | `ORC_ANIMATE_ROOT` | Path to the installed animate plugin used by `orc-explain graphics`. |
 | `ORC_ANIMATE_RENDER` | `1` builds/exports authored animate pieces; unset renders fallback title cards. |
 | `ORC_JIRA_PR_KEYWORD` | PR-body trailer keyword used by `/orc:ship` when the session has a bound Jira ticket. Defaults to `Resolves`. |
-| `ORC_FACTORY=1` | Factory mode: no human in the session. Gates follow `orc:gates` section 8 (no `AskUserQuestion`; `needs_input`, `requested[]`, `fail`); the interaction policy resolves to `auto (factory)`; the SessionStart banner shows `mode: factory`. Set by the controller, not by hand. [ADR 0009](adr/0009-factory-mode-and-stage-contract.md). |
-| `ORC_FACTORY_STAGES` | Path to a stage-packs file for `orc-stage`. Defaults to `orc/factory/stages.json`; used by tests. |
-| `ORC_PLUGIN_ROOT` | Plugin directory `orc-stage run` hands to the Agent SDK `plugins` option. The `--plugin-root` flag wins; defaults to the plugin that holds the running `orc-stage`. |
 
 The `orc config` CLI edits these tunables (`pr_size_budget`, `protected_branches`, `skip_tool_check`, `allow_ai_attribution`, `jira_pr_keyword`) as `ORC_*` variables in `settings.json`.
 
@@ -55,6 +52,3 @@ The statusline also feeds the **context-monitor bridge**: it's the only surface 
 
 Tune via the `userConfig` keys above (`statusline`, `statusline_style`, `statusline_context_reserve`). Prefer an explicit user-level entry over the plugin-shipped default? `orc statusline install|uninstall|status` (the CLI never clobbers a statusline it doesn't own).
 
-## Factory (tracker config)
-
-`docs/agents/issue-tracker.md` may carry an optional `## Factory` section with one key, `machineUrl: http://127.0.0.1:4317` (the Hardness machine). The tracker-config read protocol returns it as `factory.machineUrl`. When set, `/orc:triage` adds "Send to the factory" to the `ready-for-agent` gate and posts the task to `<machineUrl>/tasks`. Leave it out and nothing changes.

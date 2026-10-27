@@ -75,12 +75,6 @@ jobs:
       - name: orc-state smoke tests (state-protocol schema)
         run: bash scripts/ci/verify-state-protocol.sh
 
-      - name: Factory packs + contract schemas
-        run: bash scripts/ci/verify-factory.sh
-
-      - name: orc-stage smoke tests
-        run: bash scripts/ci/verify-stage.sh
-
       - name: Retro propose fixtures (lib/retro.sh)
         run: bash scripts/ci/verify-retro.sh
 

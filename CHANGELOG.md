@@ -4,8 +4,8 @@ All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tag
 
 ## [Unreleased]
 
-### Fixed
-- Factory: `run.mjs` reported every `rate_limit_event` whose status was not `allowed` as the usage limit being hit, including the SDK's `allowed_warning`, which only says the window is getting close. A triage run that had finished with a full brief was thrown away and the controller paused the task (and held its whole queue) until the window's reset time, five hours on. Only `rejected` counts now; the warning is logged. `verify-stage.sh` covers it.
+### Removed
+- Factory mode. `ORC_FACTORY=1`, `orc-stage`, the stage packs under `orc/factory/`, the Agent SDK runner, the run-folder contract, `orc-report factory`, the `orc-verifier` agent, the two factory evals, the `## Factory` tracker key and the "Send to the factory" option in `/orc:triage` are gone, along with `orc:gates` section 8 and the factory branches in the session banner and the interaction policy. Luna TUI owns its stages now ([luna-tui #65](https://github.com/HigorAlves/luna-tui/pull/65)); orc is an interactive plugin again. [ADR 0010](docs/adr/0010-factory-mode-retired.md) supersedes ADR 0009. The unreleased `rate_limit_event` fix to `run.mjs` goes with it.
 
 ## [0.31.0] - 2026-10-26
 

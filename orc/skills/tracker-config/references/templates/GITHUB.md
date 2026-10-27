@@ -26,14 +26,6 @@ When `yes`, external PRs run through the same labels and states via `gh pr view/
 
 Create a GitHub issue. When a skill says "fetch the relevant ticket": `gh issue view <n> --comments`.
 
-## Factory (optional)
-
-Delete this section unless a Hardness machine takes tasks from this repo. `/orc:triage` reads `machineUrl` to offer "Send to the factory".
-
-```
-machineUrl: http://127.0.0.1:4317
-```
-
 ## Wayfinding operations
 
 Used by `/orc:wayfinder`. The **map** is a single issue with **child** issues as tickets.

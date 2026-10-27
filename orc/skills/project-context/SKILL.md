@@ -42,8 +42,6 @@ Other sections are strong defaults. Deviate only with a stated reason in the sli
 
 - Four agents preload this skill: `orc-implementer`, `orc-test-author`, `orc-code-fixer`, `orc-qa-validator`.
 - Each reads the file once, before discovery.
-- `orc-stage render` injects the file into every factory stage prompt.
-- It fills `context.projectContext` when the stage input leaves that field null.
 - A missing file is the default state. Proceed silently, never gate on it.
 
 ## Who writes it

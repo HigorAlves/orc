@@ -44,9 +44,9 @@ Three of these (`/orc:code-review`, `/orc:cleanup`, `/orc:incident`) are piloted
 
 Every command follows one anatomy: a one-sentence title, Arguments, Preconditions (the warnings for the whole run), a Phases table with Phase 0 resident, Iron rules, Output. Phases past Phase 0 are modules loaded one at a time from `orc:phases` (`references/<command>/PHASE-<N>-<NAME>.md`), so a command costs a few KB on entry and the rest only when reached. Every gate is an `AskUserQuestion` with a header chip naming its class: hard-outward gates (tracker writes, PR posts, evidence publish) always ask; soft-inward ones follow the `interaction_policy` ladder. The writing rules are in the [authoring standard](../orc/skills/skill-writing/references/AUTHORING-STANDARD.md).
 
-## Specialist agents (15)
+## Specialist agents (14)
 
-`orc-implementer` (writes code slice-by-slice), `orc-debug-investigator`, `orc-test-author`, `orc-code-fixer`, `orc-pr-reviewer`, `orc-security-reviewer`, `orc-ci-investigator`, `orc-qa-validator`, `orc-env-provisioner`, `orc-prd-analyzer`, `orc-refactor-architect`, `orc-jira-architect`, `orc-reply-drafter`, `orc-stack-analyzer`, `orc-verifier` (proves criteria with real tests, commits them, then reviews — factory-dispatched by the verifying stage) — each a read-only investigator or a scoped executor, dispatched by the commands above. Every agent pins both a `model` (haiku for mechanical work, sonnet for senior-dev execution, opus for deep investigation) and a reasoning `effort` matched to its task shape.
+`orc-implementer` (writes code slice-by-slice), `orc-debug-investigator`, `orc-test-author`, `orc-code-fixer`, `orc-pr-reviewer`, `orc-security-reviewer`, `orc-ci-investigator`, `orc-qa-validator`, `orc-env-provisioner`, `orc-prd-analyzer`, `orc-refactor-architect`, `orc-jira-architect`, `orc-reply-drafter`, `orc-stack-analyzer` — each a read-only investigator or a scoped executor, dispatched by the commands above. Every agent pins both a `model` (haiku for mechanical work, sonnet for senior-dev execution, opus for deep investigation) and a reasoning `effort` matched to its task shape.
 
 ## Skills (88)
 
@@ -71,8 +71,7 @@ Deterministic helpers under `orc/bin/`, on `PATH` while the plugin is enabled. C
 | CLI | Use |
 |---|---|
 | `orc-state` | The single writer for `.orc/` state. `orc-state close --merged [--branch B]` marks a session completed once its PR has merged. |
-| `orc-report` | Reports over sessions. `orc-report factory [--since 7d\|30d\|<ISO>]` prints factory metrics JSON in the shape Hardness's `GET /metrics` shares. |
-| `orc-stage` | Factory stage packs. `packs`, `validate --input\|--output\|--packs`, `render <pack> <stage.json>`, `run --in F --out D`. See [ADR 0009](adr/0009-factory-mode-and-stage-contract.md). |
+| `orc-report` | QA evidence reports: `json`, `html`, `thumbs` over the session's packet. |
 
 ## The orc CLI
 

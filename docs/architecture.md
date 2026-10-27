@@ -11,13 +11,11 @@ orc/                               # the plugin
 ├── .claude-plugin/plugin.json     # manifest — what Claude Code reads to discover the plugin
 ├── skills/                        # 88 skills, namespaced /orc:<name>
 ├── commands/                      # 30 composite slash commands /orc:<cmd> (incl. /orc:flow umbrella)
-├── agents/                        # 15 specialist subagents (orc-<role>)
+├── agents/                        # 14 specialist subagents (orc-<role>)
 ├── hooks/                         # SessionStart + PreToolUse(Bash) + PostToolUse + PreCompact + WorktreeCreate/Remove
 │   └── mod/                       # the orc mod (register.ts + tests) — in-process hooks, Claude Code 2.1.287+
-├── bin/                           # deterministic CLIs, on PATH while enabled (orc-state, orc-report, orc-stage, orc-statusline, …)
-├── lib/                           # shared bash libraries behind bin/ + hooks (state.sh, stage.sh, statusline.sh, workspace-detect.sh, …)
-│   └── factory/                   # run.mjs — the Agent SDK runner behind `orc-stage run`
-├── factory/                       # factory mode: stages.json (stage packs), prompts/ (one template per pack), schema/ (the contract)
+├── bin/                           # deterministic CLIs, on PATH while enabled (orc-state, orc-report, orc-statusline, …)
+├── lib/                           # shared bash libraries behind bin/ + hooks (state.sh, statusline.sh, workspace-detect.sh, …)
 └── settings.json                  # plugin-shipped defaults (statusLine; user-level settings always win)
 cli/                               # the orc installer CLI (Go / Bubble Tea)
 docs/                              # this directory (incl. examples/ — scenario walk-throughs)
@@ -52,10 +50,6 @@ docs/                              # this directory (incl. examples/ — scenari
 ## Gates + interaction policy (autopilot)
 
 Multi-phase commands pause at gates, and gates are classified: **hard-outward** (tracker writes, PR review posting, evidence publish — always ask, at every autopilot level), **soft-inward** (plan approval, previews, mechanical confirms), and escalation-only stops. The `interaction_policy` userConfig — or `--auto[=guided|full]` per invocation — sets how soft-inward gates behave: `manual` asks at every gate, `guided` auto-advances mechanical confirms, `auto` runs phases autonomously against a sprint contract agreed at kickoff. Settled answers persist in `.orc/<branch>/files/decisions.json` (`orc-state decision set`, write-once per key with provenance `flag|asked|policy|inferred`), so a question answered once is never re-asked in the same session.
-
-## Factory mode (`ORC_FACTORY=1`)
-
-orc also runs without a person. A controller (Hardness) writes `/in/stage.json` into a sandbox, calls `orc-stage run`, and reads `/out/result.json`, `/out/events.jsonl` and `/out/files/**` back. In words: controller → run folder in → `orc-stage run` → Agent SDK with the orc plugin loaded (`plugins`, tools limited to the pack's list, `settingSources: []`) → the pack's agent works under the normal hooks → run folder out → controller. `orc:gates` section 8 replaces every `AskUserQuestion` with a typed outcome: `needs_input` (at most 3 questions, each with a recommended answer), `requested[]` for outward actions the board approves, `fail` for escalations. The packs (`factory/stages.json`) are data: eight stages, each with an agent or script, preloaded skills, a tool allow-list taken verbatim from the agent's frontmatter, limits and an output schema. Postgres in the controller is the source of truth; `.orc/` is working state inside one run. Related pieces: the project-context layer (`docs/agents/project-context.md`, `/orc:context`), `/orc:triage` "Send to the factory", `orc-state close --merged` and `orc-report factory`. The decision, the contract and the fallback (variant B, a rendered prompt without the plugin): [ADR 0009](adr/0009-factory-mode-and-stage-contract.md). CI: `verify-factory.sh`, `verify-stage.sh`, `verify-project-context.sh`.
 
 ## The orc mod (Claude Code 2.1.287+)
 
