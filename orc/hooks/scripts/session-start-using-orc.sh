@@ -45,7 +45,6 @@ if [ -f "${PLUGIN_ROOT}/lib/workspace-detect.sh" ]; then
   cd "$session_cwd" 2>/dev/null || true
   eval "$(orc_detect_context)"
   context_banner="$(orc_context_banner)"
-  if [ "${ORC_FACTORY:-}" = "1" ]; then context_banner="${context_banner} — mode: factory"; fi
 
   # Persist detection into every subsequent Bash call — the memoization in
   # workspace-detect.sh finally works session-wide instead of dying with

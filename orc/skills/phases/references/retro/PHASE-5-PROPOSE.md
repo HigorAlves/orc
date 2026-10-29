@@ -3,7 +3,7 @@ _Loaded on demand via orc:phases. Do not run this phase from memory — this fil
 
 # Phase 5 — Propose (`--propose` only)
 
-Turns a finished session into calibration numbers and candidate rules for `docs/agents/project-context.md`. The arithmetic runs in `lib/retro.sh` (jq); the model writes only the rule lines. The `reviewing_memory` factory pack follows the same rules and vocabulary.
+Turns a finished session into calibration numbers and candidate rules for `docs/agents/project-context.md`. The arithmetic runs in `lib/retro.sh` (jq); the model writes only the rule lines.
 
 `R` below means `bash "${CLAUDE_PLUGIN_ROOT}/lib/retro.sh"`; `F` means `${ORC_STATE_DIR}/<branch>/files`.
 
@@ -33,8 +33,6 @@ NOTE: one occurrence is an incident, two is a pattern. A pattern counts occurren
 3. If the result exceeds 150 lines or 6 KB, refuse the write and name the lines to cut.
 4. If the answer is edit, take the user's notes, rewrite the rules and ask again.
 5. Do not commit. The user commits.
-
-Under `ORC_FACTORY=1` skip the gate: write `/out/files/rules.md` and `/out/files/planning-calibration.json`, then return the stage.
 
 ## Limits
 

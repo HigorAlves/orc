@@ -1,9 +1,0 @@
-{
-  "name": "orc-factory-runner",
-  "private": true,
-  "type": "module",
-  "description": "Agent SDK runner behind orc-stage run",
-  "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "0.3.309"
-  }
-}

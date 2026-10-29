@@ -25,10 +25,6 @@ One read-protocol and ONE missing-config gate, shared by every tracker-aware sur
 - **Continue with defaults** — GitHub Issues when `gh` is authenticated, else local markdown. Record it: `orc-state decision set trackerDefaults <choice> --provenance asked` — no tracker-aware command asks again this session.
 - **Abort.**
 
-## Factory key
-
-`issue-tracker.md` may carry an optional `## Factory` section with one key: `machineUrl: http://127.0.0.1:4317` (the Hardness machine). The read protocol returns it as `factory.machineUrl`; empty when the section is absent. The only consumer so far is `/orc:triage` P3.
-
 ## The Jira-enabled answer
 
 "Does this repo use Jira?" is read, never asked: the tracker layer declares it (`issue-tracker.md` names Jira as the tracker, or a Jira project key is recorded). **When the layer says no Jira, Jira-link prompts are dropped silently** and the session records `orc-state decision set jiraTicket none --provenance inferred` — asking about an unconfigured tracker is noise.

@@ -82,16 +82,6 @@ Only for a change to an existing command under `orc/commands/`. The frontmatter 
 3. The body stays under 8 KB: role, inputs, workflow steps, what it does not do, output contract, iron rules, tone. Reference material lives in a skill the agent preloads, under that skill's `references/`.
 4. A command dispatches it via `Task`; a user never invokes it directly.
 
-## Adding a stage pack
-
-Factory mode runs stages from data ([ADR 0009](adr/0009-factory-mode-and-stage-contract.md)). The pack ids equal Hardness stage names, so a new stage is a contract change in both repos first.
-
-1. Add the entry to `orc/factory/stages.json`: `agent` or `script`, `skills`, `tools`, `writable`, `maxTurns`, `timeoutMs`, `outputSchema`.
-2. Copy each tool verbatim from the `tools:` line of the pack's agent. `verify-factory.sh` fails on a tool the agent does not declare, or a skill with no directory.
-3. Add the prompt template `orc/factory/prompts/<pack>.md`. State the inputs it reads from `stage.json` and the result it must return.
-4. Run `bash scripts/ci/verify-factory.sh` and `bash scripts/ci/verify-stage.sh`. Then `orc-stage render <pack> scripts/ci/fixtures/factory/stage-input.example.json` and read the prompt.
-5. Change a contract schema in `orc/factory/schema/` only with the Hardness repo, and bump `schema`. Update the fixtures in `scripts/ci/fixtures/factory/`.
-
 ## Adding a bin
 
 1. Add `orc/bin/orc-<name>`, executable, a thin dispatcher with a usage block. Put the logic in `orc/lib/<name>.sh` so tests source it.

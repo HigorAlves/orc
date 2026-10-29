@@ -2,7 +2,6 @@
 # Guard the project-context layer. Run from the repo root.
 #   1. docs/agents/project-context.md, when present, stays under 150 lines / 6144 bytes.
 #   2. The four executor agents preload orc:project-context.
-#   3. orc/lib/stage.sh still reads project-context.md (factory injection).
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -34,12 +33,7 @@ for agent in orc-implementer orc-test-author orc-code-fixer orc-qa-validator; do
   fi
 done
 
-if ! grep -q 'project-context\.md' orc/lib/stage.sh; then
-  echo "verify-project-context: orc/lib/stage.sh no longer references project-context.md"
-  status=1
-fi
-
 if [ "$status" -eq 0 ]; then
-  echo "verify-project-context: OK (cap ${max_lines} lines / ${max_bytes} bytes; preloads and stage injection intact)"
+  echo "verify-project-context: OK (cap ${max_lines} lines / ${max_bytes} bytes; preloads intact)"
 fi
 exit "$status"

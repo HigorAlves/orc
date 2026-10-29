@@ -124,40 +124,6 @@ EOF
   if [ "${h:-9999}" -le 150 ]; then ok; else fail "thumbs: tall screenshot must be cropped to <=150px, got ${h}px"; fi
 fi
 
-# --- factory: aggregate metrics over every session in a state dir ---
-fstate="$tmp/fstate"
-mkdir -p "$fstate/done-a/files" "$fstate/run-b/files" "$fstate/pause-c/files"
-cat > "$fstate/orc.json" <<'EOF'
-{ "schema": 1, "sessions": [
-  { "sessionId": "done-a", "status": "completed", "startedAt": "2026-10-20T10:00:00Z", "updatedAt": "2026-10-20T11:00:00Z" },
-  { "sessionId": "run-b", "status": "in_progress", "startedAt": "2026-10-21T10:00:00Z", "updatedAt": "2026-10-21T10:30:00Z" },
-  { "sessionId": "pause-c", "status": "paused", "startedAt": "2026-10-22T10:00:00Z", "updatedAt": "2026-10-22T10:10:00Z" } ] }
-EOF
-cat > "$fstate/done-a/files/usage.jsonl" <<'EOF'
-{"at":"2026-10-20T10:10:00Z","agent":"orc-implementer","model":"m","in":100,"out":50,"ms":1000,"costUsd":0.5}
-{"at":"2026-10-20T10:20:00Z","agent":"orc-implementer","model":"m","in":100,"out":50,"ms":1000,"costUsd":0.25}
-EOF
-cat > "$fstate/done-a/files/slices.json" <<'EOF'
-{ "slices": [ { "id": 1, "status": "committed" }, { "id": 2, "status": "escalated", "note": "needs new dependency" } ] }
-EOF
-printf '{"schema":1,"verdict":"pass","checks":[]}\n' > "$fstate/done-a/files/qa-verdict.json"
-fjson="$(bash "$orc_report" factory --since 2026-10-01 --state-dir "$fstate")"
-fcheck() { if printf '%s' "$fjson" | jq -e "$2" >/dev/null 2>&1; then ok; else fail "factory: $1"; fi; }
-fcheck "all contract keys present" 'has("since") and has("until") and has("tasks") and has("cycleTimeMs") and has("firstPassRate") and has("escalations") and has("retries") and has("cost") and has("queue")'
-fcheck "task counts" '.tasks == {created: 3, closed: 1, open: 2, waitingOnYou: 1, running: 1, queued: 0}'
-fcheck "escalation rate is 1 of 1 sessions with a ledger" '.escalations.rate == 1'
-fcheck "top reasons carry the note" '.escalations.topReasons == [{reason: "needs new dependency", count: 1}]'
-fcheck "task cycle time is a number" '.cycleTimeMs.task.median == 3600000 and (.cycleTimeMs.perStage == {})'
-fcheck "verifying first-pass from qa-verdict" '.firstPassRate == {verifying: 1, ci_watch: null, implementing: null}'
-fcheck "retries per task" '.retries.perTask.median == 1 and .retries.byLoop == {verify: 0, e2e: 0, ci: 0}'
-fcheck "cost by agent" '.cost.totalUsd == 0.75 and .cost.byStage["orc-implementer"] == 0.75 and .cost.perTaskUsd.median == 0.75'
-fcheck "queue" '.queue == {depth: 0, slots: {max: 1, active: 1}, utilisation: 1}'
-empty="$tmp/empty-state"; mkdir -p "$empty"; printf '{"schema":1,"sessions":[]}\n' > "$empty/orc.json"
-ejson="$(bash "$orc_report" factory --state-dir "$empty")"
-if printf '%s' "$ejson" | jq -e '.escalations.rate == null and .cycleTimeMs.task.median == null and .cost.totalUsd == null and .queue.utilisation == 0 and (.tasks.created == 0)' >/dev/null 2>&1; then ok; else fail "factory: empty state must yield nulls, got: $ejson"; fi
-if out="$(bash "$orc_report" factory --since bogus --state-dir "$fstate" 2>&1)"; then rc=0; else rc=$?; fi
-if [ "$rc" = 2 ] && printf '%s' "$out" | grep -q 'bogus'; then ok; else fail "factory: --since bogus must exit 2 naming the value (rc=$rc: $out)"; fi
-
 if [ "$status" -eq 0 ]; then
   echo "verify-report: OK ($pass_count cases)"
 fi

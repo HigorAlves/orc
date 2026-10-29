@@ -1,6 +1,6 @@
 # 0009 — Factory mode and the stage contract
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR 0010](0010-factory-mode-retired.md)
 - **Date:** 2026-10-23
 - **Deciders:** maintainer
 

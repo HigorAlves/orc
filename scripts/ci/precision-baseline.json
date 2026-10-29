@@ -53,7 +53,7 @@
       "long": 0,
       "notimp": 0,
       "passive": 0,
-      "bytes": 4374,
+      "bytes": 4300,
       "desc": 198
     },
     "orc/commands/setup.md": {
@@ -287,14 +287,6 @@
       "passive": 1,
       "bytes": 2645,
       "desc": 247
-    },
-    "orc/agents/orc-verifier.md": {
-      "kind": "agent",
-      "long": 0,
-      "notimp": 0,
-      "passive": 1,
-      "bytes": 2974,
-      "desc": 246
     },
     "orc/agents/orc-qa-validator.md": {
       "kind": "agent",
@@ -557,7 +549,7 @@
       "long": 6,
       "notimp": 0,
       "passive": 3,
-      "bytes": 5144,
+      "bytes": 4116,
       "desc": 278
     },
     "orc/skills/gh-cli/SKILL.md": {
@@ -757,7 +749,7 @@
       "long": 0,
       "notimp": 0,
       "passive": 0,
-      "bytes": 1980,
+      "bytes": 1828,
       "desc": 143
     },
     "orc/skills/prototype/SKILL.md": {
@@ -877,7 +869,7 @@
       "long": 2,
       "notimp": 0,
       "passive": 5,
-      "bytes": 5465,
+      "bytes": 5345,
       "desc": 282
     },
     "orc/skills/stripe-best-practices/SKILL.md": {
@@ -949,7 +941,7 @@
       "long": 3,
       "notimp": 0,
       "passive": 2,
-      "bytes": 2289,
+      "bytes": 2002,
       "desc": 280
     },
     "orc/skills/trd-writing/SKILL.md": {
@@ -989,7 +981,7 @@
       "long": 6,
       "notimp": 0,
       "passive": 2,
-      "bytes": 4666,
+      "bytes": 4468,
       "desc": 144
     },
     "orc/skills/vercel-composition-patterns/SKILL.md": {
