@@ -1,0 +1,85 @@
+---
+name: inline-review
+description: Post a real GitHub PR review with line-anchored inline comments; invoked by $orc-code-review after findings. For commenting on your OWN diff, prefer the bundled /code-review --comment.
+---
+
+# Inline GitHub PR Review
+
+Convert a list of structured findings (from `orc-pr-reviewer` and/or `orc-security-reviewer`) into a real GitHub PR review — inline comments anchored to specific files and lines, optional one-click apply suggestion blocks, and a review event (APPROVE / COMMENT / REQUEST_CHANGES) computed mechanically from finding severities.
+
+This skill replaces the legacy text-block summary format. The reviewed author opens the PR and sees comments pinned next to the actual code, not a markdown wall they have to manually navigate.
+
+## When to use
+
+- Inside `$orc-code-review` Phase 5–7 after merging findings from agents.
+- Anywhere else you need to post a structured PR review programmatically.
+
+## When NOT to use
+
+- For top-level PR comments without line anchors → use `gh pr comment`.
+- For replying to an existing review comment → use the replies endpoint (`gh api repos/.../pulls/.../comments/<id>/replies`); see `orc-receiving-code-review`.
+- For your OWN PR's response loop → use `$orc-address`, not this skill.
+
+## The contract (schema, severities, event rule)
+
+The finding schema, severity enum, severity→event mapping, event-computation
+algorithm, confidence ≥0.8 rule, and self-contradiction detection are defined
+**once**, in `orc-review-contract`. Read that skill before posting; this skill
+owns only the posting mechanics below.
+
+Posting-layer obligations from the contract, restated as duties (not schema):
+
+- Compute the event mechanically from the severity set — the agent's narrative
+  verdict is ignored. `--soft-tests` relaxes only the `test` severity.
+- Run self-contradiction detection on each agent `summary`; warn with a
+  `> **⚠️ Caution**` callout, then post the computed event anyway.
+- Validate each finding's `path`/`line` per the contract's line-number
+  semantics before posting.
+
+## Posting backend selection
+
+Two paths produce identical end-result on GitHub. The orchestrator picks at runtime: `gh api repos/…/pulls/…/reviews` (one atomic POST — default) or the GitHub MCP 3-call protocol when `mcp__plugin_github_github__pull_request_review_write` is available. Read [BACKENDS.md](references/BACKENDS.md) for the payload shape, the MCP call sequence, and the selection logic.
+
+## Suggestion block rules
+
+GitHub renders a triple-backtick `suggestion` block inside a comment body as a one-click "Apply suggestion" button. Use sparingly:
+
+- **Length:** ≤ 6 lines of code. Longer suggestions are usually refactors disguised as fixes — describe in prose instead.
+- **Completeness:** Committing the suggestion must FULLY resolve the issue. No partial fixes that leave the author guessing.
+- **Mental compile:** The suggested code must be syntactically valid in the target language and reference only symbols visible at the comment's line. No imports the author has to add separately.
+- **No refactor smuggling:** Don't suggest renames, file moves, or stylistic rewrites as committable suggestions. Those go in prose.
+
+Format and per-kind templates: [COMMENT-TEMPLATES.md](references/COMMENT-TEMPLATES.md) — read when writing a comment body.
+
+If `suggestion_code` is set on a finding but doesn't meet the rules above, drop it from the suggestion block and keep the prose only.
+
+## The preview gate (mandatory)
+
+Before posting, ALWAYS show the user the constructed payload. No `--no-confirm` flag. Open with a `**📋 Preview — review for #<PR>**` headline (per the `orc-callouts` palette); the aligned comment list rides the `preview` of `Post the review as shown` (header `Post`, `orc-gates` §3 — fence fallback when `the available user-question tool (or ask in chat)` is unavailable). The preview lists:
+
+- The computed event (`APPROVE` / `COMMENT` / `REQUEST_CHANGES`)
+- The overall body (≤ 2 sentences — see the cap below)
+- One line per comment: `<path>:<line> [severity] <title>`
+- Total comment count
+- Any self-contradiction warnings (see severity-event rule above)
+
+Then `the available user-question tool (or ask in chat)`:
+- `Post the review as shown`
+- `Edit / drop specific comments` — loop back to drop or rewrite individual entries
+- `Switch to summary-only mode` — fall back to text-block markdown, do not post
+- `Cancel` — exit without posting; echo the constructed payload as JSON for the user to copy
+
+This is the single most important UX rule. Auto-posting reviews is a trust-eroding move; the gate is cheap and catches mistakes at zero cost.
+
+## Iron rules
+
+1. **Severity-event mapping is computed mechanically.** Agents do NOT decide the event. The posting layer overrides any agent verdict that contradicts its own findings.
+2. **Max 15 inline comments per review.** Over-commenting erodes signal. If agents return > 15, surface the count and ask the user which to drop before posting.
+3. **Suggestion blocks ONLY when they meet all three rules** (length, completeness, mental compile). Don't smuggle refactors.
+4. **Preview gate is mandatory.** No flag bypasses it.
+5. **Comments are posted on lines the author actually modified in this PR.** Pre-existing bugs not touched by the diff get dropped at the agent layer (caveman-review rule); if any slip through, the orchestrator filters them by checking each `path:line` is in the diff before posting.
+6. **No AI attribution in the review body or comments.** Same rule as everywhere else in orc — the comments speak for themselves.
+
+## Tone
+
+The comment body follows `orc-caveman-review` discipline — terse, actionable, signal-only. The overall review body is hard-capped at **2 sentences (~40 words)**: one clause framing the PR + finding counts by severity (e.g. "CSV export for /reports. 2 bugs, 1 untested branch, 2 nits."). It never restates inline comments, never praises, never hedges — the inline comments carry all detail. No throat-clearing, no praise per finding. One line per problem in the comment body, suggestion block underneath if applicable.

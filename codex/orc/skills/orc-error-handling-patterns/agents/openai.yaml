@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc error-handling-patterns"
+  short_description: "Run the orc error-handling-patterns workflow"

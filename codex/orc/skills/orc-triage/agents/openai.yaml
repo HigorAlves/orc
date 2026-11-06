@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc triage"
+  short_description: "Run the orc triage workflow"

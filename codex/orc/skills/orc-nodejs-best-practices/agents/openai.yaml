@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc nodejs-best-practices"
+  short_description: "Run the orc nodejs-best-practices workflow"

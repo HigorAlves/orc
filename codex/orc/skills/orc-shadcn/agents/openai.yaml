@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc shadcn"
+  short_description: "Run the orc shadcn workflow"

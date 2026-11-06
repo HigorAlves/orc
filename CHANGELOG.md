@@ -4,6 +4,12 @@ All notable changes to the orc plugin. Versions are the `orc--vX.Y.Z` plugin tag
 
 ## [Unreleased]
 
+- Preserve `SKILL.md` authoring instructions in the Codex bundle and route unconfigured Playwright QA to agent-browser before any Claude-specific provisioning.
+
+- Fix Codex smoke-test portability gaps: execute context commands explicitly, resolve inherited Superpowers references to bundled orc workflows, and verify branch mutations before state writes.
+
+- Add a generated Codex plugin catalog, lifecycle hooks, and `--host codex` installation, update, and removal. Preserve shared workflow/state sources and deny protected Git operations on Codex. Protect initial commits on unborn protected branches in both hosts.
+
 ### Removed
 - Factory mode. `ORC_FACTORY=1`, `orc-stage`, the stage packs under `orc/factory/`, the Agent SDK runner, the run-folder contract, `orc-report factory`, the `orc-verifier` agent, the two factory evals, the `## Factory` tracker key and the "Send to the factory" option in `/orc:triage` are gone, along with `orc:gates` section 8 and the factory branches in the session banner and the interaction policy. Luna TUI owns its stages now ([luna-tui #65](https://github.com/HigorAlves/luna-tui/pull/65)); orc is an interactive plugin again. [ADR 0010](docs/adr/0010-factory-mode-retired.md) supersedes ADR 0009. The unreleased `rate_limit_event` fix to `run.mjs` goes with it.
 

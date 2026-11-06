@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc status"
+  short_description: "Run the orc status workflow"

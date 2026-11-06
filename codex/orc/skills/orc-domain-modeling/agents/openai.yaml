@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc domain-modeling"
+  short_description: "Run the orc domain-modeling workflow"

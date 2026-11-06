@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc improve-codebase-architecture"
+  short_description: "Run the orc improve-codebase-architecture workflow"

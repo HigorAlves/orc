@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc flow"
+  short_description: "Run the orc flow workflow"

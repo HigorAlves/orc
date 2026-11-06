@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc phases"
+  short_description: "Run the orc phases workflow"

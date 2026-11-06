@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc agent-browser"
+  short_description: "Run the orc agent-browser workflow"

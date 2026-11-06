@@ -15,7 +15,7 @@ import (
 func NewRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:           "orc",
-		Short:         "Install, doctor, and configure the orc Claude Code plugin",
+		Short:         "Install and manage orc for Claude Code and Codex",
 		Long:          "orc streamlines installing the orc plugin, checking and installing its\nruntime tools, managing MCP servers, and editing its configuration.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
@@ -30,6 +30,7 @@ func NewRootCmd() *cobra.Command {
 	}
 
 	root.AddCommand(newVersionCmd())
+	root.AddCommand(newPluginStatusCmd())
 	root.AddCommand(newDoctorCmd())
 	root.AddCommand(newInstallCmd())
 	root.AddCommand(newInitCmd())

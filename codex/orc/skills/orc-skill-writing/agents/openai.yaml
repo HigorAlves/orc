@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc skill-writing"
+  short_description: "Run the orc skill-writing workflow"

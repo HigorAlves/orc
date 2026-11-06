@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc workspace-mode"
+  short_description: "Run the orc workspace-mode workflow"

@@ -35,6 +35,9 @@ jobs:
       - name: Shellcheck first-party scripts
         run: bash scripts/ci/shellcheck.sh
 
+      - name: Validate Codex distribution and guards
+        run: python3 scripts/codex/test_bundle.py
+
       - name: Validate all JSON
         run: git ls-files '*.json' | xargs -n1 jq empty
 

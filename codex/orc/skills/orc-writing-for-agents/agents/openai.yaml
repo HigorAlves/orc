@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc writing-for-agents"
+  short_description: "Run the orc writing-for-agents workflow"

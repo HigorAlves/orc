@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc stripe-best-practices"
+  short_description: "Run the orc stripe-best-practices workflow"

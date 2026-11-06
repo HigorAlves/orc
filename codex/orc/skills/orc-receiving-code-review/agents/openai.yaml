@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc receiving-code-review"
+  short_description: "Run the orc receiving-code-review workflow"

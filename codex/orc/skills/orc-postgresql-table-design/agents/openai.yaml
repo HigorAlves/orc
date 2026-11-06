@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc postgresql-table-design"
+  short_description: "Run the orc postgresql-table-design workflow"

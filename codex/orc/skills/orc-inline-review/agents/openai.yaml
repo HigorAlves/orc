@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc inline-review"
+  short_description: "Run the orc inline-review workflow"

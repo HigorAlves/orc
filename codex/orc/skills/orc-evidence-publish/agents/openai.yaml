@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc evidence-publish"
+  short_description: "Run the orc evidence-publish workflow"

@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc turborepo"
+  short_description: "Run the orc turborepo workflow"

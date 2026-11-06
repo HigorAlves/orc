@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc gates"
+  short_description: "Run the orc gates workflow"

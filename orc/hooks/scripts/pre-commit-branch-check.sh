@@ -20,7 +20,7 @@ if ! printf '%s' "$command" | grep -qE "$git_subcmd_re"; then
   exit 0
 fi
 
-branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
 
 protected="${ORC_PROTECTED_BRANCHES:-${CLAUDE_PLUGIN_OPTION_PROTECTED_BRANCHES:-main,master,develop}}"
 is_protected=0

@@ -1,0 +1,244 @@
+#!/usr/bin/env bash
+# orc workspace detection helper.
+#
+# Usage (from a hook script or any orc bash code):
+#   . "${CLAUDE_PLUGIN_ROOT}/lib/workspace-detect.sh"
+#   eval "$(orc_detect_context)"
+#
+# After eval, the following variables are set in the calling shell:
+#   ORC_CONTEXT         repo | workspace | loose
+#   ORC_REPO_ROOT       absolute path (when context=repo)
+#   ORC_WORKSPACE_ROOT  absolute path (when context=workspace)
+#   ORC_WORKSPACE_NAME  basename of workspace root
+#   ORC_WORKSPACE_REPOS comma-separated, sorted child repo names
+#   ORC_STATE_DIR       canonical .orc state dir for the active context
+#
+# For JSON consumers, call orc_detect_context_json instead.
+#
+# Detection precedence:
+#   1. cwd is inside a git repo               -> repo
+#   2. cwd has >=2 immediate child git repos  -> workspace
+#   3. otherwise                              -> loose
+#
+# Sourced-library contract: this file MUST NOT modify the caller's shell
+# options (no `set -e`, no `set -u`, no `set -o pipefail`). All functions
+# defend against unset vars with ${VAR:-} defaults.
+
+orc__detect_pwd() {
+  pwd -P 2>/dev/null || pwd
+}
+
+orc__is_git_repo() {
+  # Returns 0 if the given dir contains a usable git work tree.
+  local dir="$1"
+  [ -d "$dir" ] || return 1
+  git -C "$dir" rev-parse --is-inside-work-tree >/dev/null 2>&1
+}
+
+orc__list_child_repos() {
+  # Echoes one repo name per line, sorted, for immediate child dirs of $1.
+  local parent="$1"
+  local child
+  for child in "$parent"/*/; do
+    [ -d "$child" ] || continue
+    child="${child%/}"
+    if orc__is_git_repo "$child"; then
+      basename "$child"
+    fi
+  done | sort
+}
+
+orc_detect_context() {
+  local cwd repo_top preset
+  cwd="$(orc__detect_pwd)"
+  # A state dir set from outside the session (a stage sandbox points it at a tmpfs) wins over
+  # the one a repo or workspace would get; one that an earlier detection exported is not
+  # "outside" and is re-derived with the rest when cwd moved.
+  preset="${ORC_STATE_DIR:-}"
+  if [ "${ORC_CONTEXT_CACHED:-0}" = "1" ]; then preset=""; fi
+
+  # Memoize per-shell, but bust the cache if cwd has changed.
+  if [ "${ORC_CONTEXT_CACHED:-0}" = "1" ] && [ "${ORC_CONTEXT_CACHED_PWD:-}" = "$cwd" ]; then
+    cat <<EOF
+ORC_CONTEXT=${ORC_CONTEXT:-loose}
+ORC_REPO_ROOT=${ORC_REPO_ROOT:-}
+ORC_WORKSPACE_ROOT=${ORC_WORKSPACE_ROOT:-}
+ORC_WORKSPACE_NAME=${ORC_WORKSPACE_NAME:-}
+ORC_WORKSPACE_REPOS=${ORC_WORKSPACE_REPOS:-}
+ORC_STATE_DIR=${ORC_STATE_DIR:-}
+ORC_CONTEXT_CACHED=1
+ORC_CONTEXT_CACHED_PWD=${ORC_CONTEXT_CACHED_PWD}
+EOF
+    return 0
+  fi
+
+  if repo_top="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)"; then
+    cat <<EOF
+ORC_CONTEXT=repo
+ORC_REPO_ROOT=${repo_top}
+ORC_WORKSPACE_ROOT=
+ORC_WORKSPACE_NAME=
+ORC_WORKSPACE_REPOS=
+ORC_STATE_DIR=${preset:-${repo_top}/.orc}
+ORC_CONTEXT_CACHED=1
+ORC_CONTEXT_CACHED_PWD=${cwd}
+EOF
+    return 0
+  fi
+
+  local repos
+  repos="$(orc__list_child_repos "$cwd" | paste -sd, -)"
+  local count
+  if [ -z "$repos" ]; then
+    count=0
+  else
+    count="$(printf '%s\n' "$repos" | tr ',' '\n' | grep -c .)"
+  fi
+
+  if [ "$count" -ge 2 ]; then
+    cat <<EOF
+ORC_CONTEXT=workspace
+ORC_REPO_ROOT=
+ORC_WORKSPACE_ROOT=${cwd}
+ORC_WORKSPACE_NAME=$(basename "$cwd")
+ORC_WORKSPACE_REPOS=${repos}
+ORC_STATE_DIR=${preset:-${cwd}/.orc}
+ORC_CONTEXT_CACHED=1
+ORC_CONTEXT_CACHED_PWD=${cwd}
+EOF
+    return 0
+  fi
+
+  cat <<EOF
+ORC_CONTEXT=loose
+ORC_REPO_ROOT=
+ORC_WORKSPACE_ROOT=
+ORC_WORKSPACE_NAME=
+ORC_WORKSPACE_REPOS=
+ORC_STATE_DIR=
+ORC_CONTEXT_CACHED=1
+ORC_CONTEXT_CACHED_PWD=${cwd}
+EOF
+}
+
+# Resolve the interaction-policy autopilot level for inward gates.
+# Resolution order: $1 (a --auto flag value passed by the caller) >
+# the session's decisions.json autopilotLevel > $ORC_INTERACTION_POLICY >
+# userConfig interaction_policy (CLAUDE_PLUGIN_OPTION_INTERACTION_POLICY) >
+# manual. Unknown values degrade to manual — never fail open into autonomy.
+# Prints "<level> (<source>)"; use ${result%% *} for the bare level.
+# The flag argument is passed by external callers (commands resolving --auto);
+# in-file callers deliberately pass nothing.
+# shellcheck disable=SC2120
+orc_interaction_policy() (
+  flag="${1:-}"
+  validate() { case "$1" in manual|guided|auto) return 0 ;; *) return 1 ;; esac; }
+  if [ -n "$flag" ] && validate "$flag"; then printf '%s (flag)\n' "$flag"; return 0; fi
+  eval "$(orc_detect_context)"
+  if [ -n "${ORC_STATE_DIR:-}" ]; then
+    b="$(git branch --show-current 2>/dev/null | tr '/' '-')"
+    d="${ORC_STATE_DIR}/${b}/files/decisions.json"
+    if [ -n "$b" ] && [ -f "$d" ] && command -v jq >/dev/null 2>&1; then
+      lvl="$(jq -r '.autopilotLevel.value // empty' "$d" 2>/dev/null || true)"
+      if [ -n "$lvl" ] && validate "$lvl"; then printf '%s (decisions)\n' "$lvl"; return 0; fi
+    fi
+  fi
+  if [ -n "${ORC_INTERACTION_POLICY:-}" ] && validate "${ORC_INTERACTION_POLICY}"; then
+    printf '%s (env)\n' "${ORC_INTERACTION_POLICY}"
+    return 0
+  fi
+  if [ -n "${CLAUDE_PLUGIN_OPTION_INTERACTION_POLICY:-}" ] && validate "${CLAUDE_PLUGIN_OPTION_INTERACTION_POLICY}"; then
+    printf '%s (userConfig)\n' "${CLAUDE_PLUGIN_OPTION_INTERACTION_POLICY}"
+    return 0
+  fi
+  printf 'manual (default)\n'
+)
+
+orc_context_banner() (
+  # Canonical one-look context banner — shared by the SessionStart hook and
+  # (from 0.7.0) the dynamic `!`orc-workspace-detect --banner`` injection in
+  # command bodies. Subshell body: detection vars never leak to the caller.
+  eval "$(orc_detect_context)"
+  case "${ORC_CONTEXT:-loose}" in
+    workspace)
+      # shellcheck disable=SC2119
+      printf 'orc context: workspace[%s] — repos: %s — state: %s — policy: %s\n' \
+        "${ORC_WORKSPACE_NAME}" "${ORC_WORKSPACE_REPOS}" "${ORC_STATE_DIR}" \
+        "$(orc_interaction_policy)"
+      printf 'In workspace mode, repo-scoped commands prompt for --repos/--repo before broadcasting; pass --this-repo to scope to cwd, --all-repos to fan out.\n'
+      ;;
+    repo)
+      branch="$(git -C "${ORC_REPO_ROOT:-.}" branch --show-current 2>/dev/null || true)"
+      # shellcheck disable=SC2119
+      printf 'orc context: repo — root: %s — branch: %s — state: %s — policy: %s\n' \
+        "${ORC_REPO_ROOT}" "${branch:-detached}" "${ORC_STATE_DIR}" \
+        "$(orc_interaction_policy)"
+      ;;
+    loose)
+      printf 'orc context: loose — cwd is neither a git repo nor a workspace parent (no .orc state will be written here).\n'
+      ;;
+  esac
+)
+
+orc_detect_context_json() {
+  # Re-evaluates fresh into a subshell so we never pollute the caller.
+  local block
+  block="$(orc_detect_context)"
+  # shellcheck disable=SC2034
+  local ORC_CONTEXT="" ORC_REPO_ROOT="" ORC_WORKSPACE_ROOT="" ORC_WORKSPACE_NAME=""
+  # shellcheck disable=SC2034
+  local ORC_WORKSPACE_REPOS="" ORC_STATE_DIR=""
+  eval "$block"
+  local repos_json="[]"
+  if [ -n "${ORC_WORKSPACE_REPOS:-}" ]; then
+    repos_json="$(printf '%s' "$ORC_WORKSPACE_REPOS" | awk -v RS=, 'BEGIN{printf "["} NR>1{printf ","} {gsub(/"/,"\\\""); printf "\"%s\"", $0} END{printf "]"}')"
+  fi
+  cat <<EOF
+{
+  "context": "${ORC_CONTEXT}",
+  "repoRoot": "${ORC_REPO_ROOT}",
+  "workspaceRoot": "${ORC_WORKSPACE_ROOT}",
+  "workspaceName": "${ORC_WORKSPACE_NAME}",
+  "workspaceRepos": ${repos_json},
+  "stateDir": "${ORC_STATE_DIR}"
+}
+EOF
+}
+
+orc_registry_dump() (
+  # Dumps the active context's .orc/orc.json registry — and, in workspace
+  # mode, each member repo's registry under a "### repo:" header — for
+  # dynamic injection into /orc:status. Subshell body: no caller pollution.
+  eval "$(orc_detect_context)"
+  if [ -z "${ORC_STATE_DIR:-}" ]; then
+    printf 'no-registry (loose context)\n'
+    exit 0
+  fi
+  if [ -f "${ORC_STATE_DIR}/orc.json" ]; then
+    cat "${ORC_STATE_DIR}/orc.json"
+  else
+    printf 'no-registry (%s has no orc.json)\n' "${ORC_STATE_DIR}"
+  fi
+  if [ "${ORC_CONTEXT:-}" = "workspace" ] && [ -n "${ORC_WORKSPACE_REPOS:-}" ]; then
+    for repo in $(printf '%s' "$ORC_WORKSPACE_REPOS" | tr ',' ' '); do
+      if [ -f "${ORC_WORKSPACE_ROOT}/${repo}/.orc/orc.json" ]; then
+        printf '\n### repo: %s\n' "$repo"
+        cat "${ORC_WORKSPACE_ROOT}/${repo}/.orc/orc.json"
+      fi
+    done
+  fi
+)
+
+# CLI mode — active only when this file is EXECUTED (via bin/orc-workspace-detect,
+# which is on PATH while the plugin is enabled), never when sourced. Hook
+# scripts and any remaining dot-source callers are unaffected.
+if [ "${BASH_SOURCE[0]:-}" = "${0:-}" ]; then
+  case "${1:---banner}" in
+    --banner)   orc_context_banner ;;
+    --json)     orc_detect_context_json ;;
+    --env)      orc_detect_context ;;
+    --registry) orc_registry_dump ;;
+    --help|-h)  printf 'usage: orc-workspace-detect [--banner|--json|--env|--registry]\n' ;;
+    *)          printf 'orc-workspace-detect: unknown flag %s\n' "$1" >&2; exit 2 ;;
+  esac
+fi

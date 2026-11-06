@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc playwright-qa"
+  short_description: "Run the orc playwright-qa workflow"

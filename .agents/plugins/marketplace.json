@@ -1,0 +1,5 @@
+{
+  "name": "orc-codex",
+  "interface": {"displayName": "orc for Codex"},
+  "plugins": [{"name": "orc", "source": {"source": "local", "path": "./codex/orc"}, "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"}, "category": "Productivity"}]
+}

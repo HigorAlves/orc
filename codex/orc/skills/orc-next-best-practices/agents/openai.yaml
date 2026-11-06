@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc next-best-practices"
+  short_description: "Run the orc next-best-practices workflow"

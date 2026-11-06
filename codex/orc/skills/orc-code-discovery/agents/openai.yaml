@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc code-discovery"
+  short_description: "Run the orc code-discovery workflow"

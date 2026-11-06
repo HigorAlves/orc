@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc doc-writing"
+  short_description: "Run the orc doc-writing workflow"

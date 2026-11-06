@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc plan"
+  short_description: "Run the orc plan workflow"

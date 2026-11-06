@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc tracker-config"
+  short_description: "Run the orc tracker-config workflow"
