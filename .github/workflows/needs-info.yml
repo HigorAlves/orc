@@ -20,7 +20,7 @@ jobs:
       issues: write
       actions: write # the action keeps its state in the Actions cache
     steps:
-      - uses: actions/stale@v10
+      - uses: actions/stale@v11
         with:
           only-issue-labels: needs-info
           stale-issue-label: needs-info
