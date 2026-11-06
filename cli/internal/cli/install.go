@@ -10,6 +10,7 @@ import (
 )
 
 func newInstallCmd() *cobra.Command {
+	var host string
 	var ref string
 	var settingsOnly bool
 	var settingsPath string
@@ -17,12 +18,19 @@ func newInstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "install",
 		Short: "Register the orc marketplace and enable the plugin",
-		Long: "Installs the orc Claude Code plugin.\n\n" +
+		Long: "Installs orc for Claude Code (default) or Codex (--host codex).\n\n" +
 			"By default this drives the `claude` CLI (marketplace add + install). Use\n" +
 			"--ref to pin a version or --settings-only to write ~/.claude/settings.json\n" +
 			"directly (offline; also used automatically when the claude CLI is absent).",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := validateHost(host); err != nil {
+				return err
+			}
+			if host == "codex" {
+				return codexAction(cmd, "install", ref)
+			}
+
 			useSettings := settingsOnly || ref != "" || !claudecli.Available()
 
 			if !useSettings {
@@ -62,13 +70,15 @@ func newInstallCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&ref, "ref", "", "pin a git tag or commit (implies --settings-only mechanism)")
+	cmd.Flags().StringVar(&ref, "ref", "", "pin a git tag or commit (Claude uses the settings-only mechanism)")
 	cmd.Flags().BoolVar(&settingsOnly, "settings-only", false, "write ~/.claude/settings.json directly instead of using the claude CLI")
 	cmd.Flags().StringVar(&settingsPath, "settings", "", "path to settings.json (default ~/.claude/settings.json)")
+	cmd.Flags().StringVar(&host, "host", "claude", "plugin host: claude or codex")
 	return cmd
 }
 
 func newUninstallCmd() *cobra.Command {
+	var host string
 	var yes bool
 	var settingsPath string
 
@@ -77,6 +87,17 @@ func newUninstallCmd() *cobra.Command {
 		Short: "Remove the orc plugin and marketplace entries",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := validateHost(host); err != nil {
+				return err
+			}
+			if host == "codex" {
+				if !yes && !confirm(cmd, "Remove orc from Codex?") {
+					cmd.Println("Aborted.")
+					return nil
+				}
+				return codexAction(cmd, "uninstall", "")
+			}
+
 			if !yes && !confirm(cmd, "Remove orc's plugin + marketplace entries?") {
 				cmd.Println("Aborted.")
 				return nil
@@ -114,10 +135,12 @@ func newUninstallCmd() *cobra.Command {
 	}
 	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "skip the confirmation prompt")
 	cmd.Flags().StringVar(&settingsPath, "settings", "", "path to settings.json (default ~/.claude/settings.json)")
+	cmd.Flags().StringVar(&host, "host", "claude", "plugin host: claude or codex")
 	return cmd
 }
 
 func newUpdateCmd() *cobra.Command {
+	var host string
 	var to string
 	var settingsPath string
 
@@ -126,6 +149,13 @@ func newUpdateCmd() *cobra.Command {
 		Short: "Update orc to the latest version (or repin with --to)",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := validateHost(host); err != nil {
+				return err
+			}
+			if host == "codex" {
+				return codexAction(cmd, "update", to)
+			}
+
 			if to != "" {
 				path, err := resolveSettingsPath(settingsPath)
 				if err != nil {
@@ -161,6 +191,7 @@ func newUpdateCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&to, "to", "", "repin to a specific git tag or commit")
 	cmd.Flags().StringVar(&settingsPath, "settings", "", "path to settings.json (default ~/.claude/settings.json)")
+	cmd.Flags().StringVar(&host, "host", "claude", "plugin host: claude or codex")
 	return cmd
 }
 

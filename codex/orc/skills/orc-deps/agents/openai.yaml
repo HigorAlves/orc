@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc deps"
+  short_description: "Run the orc deps workflow"

@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc qa-targets"
+  short_description: "Run the orc qa-targets workflow"

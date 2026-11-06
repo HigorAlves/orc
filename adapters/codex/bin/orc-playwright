@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Codex must never provision Claude-specific agent or MCP configuration.
+set -euo pipefail
+case "${1:-}" in
+  init-agents|mcp-merge)
+    echo 'orc-playwright: automatic agent/MCP provisioning is not supported by this Codex adapter. Use the agent-browser QA driver, or connect a Codex-configured playwright-test server and agent roles first.' >&2
+    exit 2
+    ;;
+esac
+dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec bash "$dir/../lib/playwright-env.sh" "$@"

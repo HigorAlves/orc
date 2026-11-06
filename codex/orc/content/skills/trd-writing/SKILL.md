@@ -1,0 +1,73 @@
+---
+name: trd-writing
+description: Author Technical Requirements Documents (TRDs) — turn a settled PRD into interfaces, data shapes, failure modes, and constraints in docs/trds/NNNN-*.md
+when_to_use: Use for "write a TRD" or $orc-trd.
+---
+
+# TRD Writing
+
+> **Defer to `orc-doc-writing`** for the shared scaffolding: the doc-type map (TRD vs PRD vs RFC vs ADR vs postmortem, and how TRD differs from each), the shared section outline, the `docs/<type>s/NNNN-*.md` numbering & publication convention, and the review gates. This skill carries only the TRD-specific template, fields, and tone.
+
+A TRD turns "what & why" into "what we will build, technically." It pins down interfaces, data, failure modes, and constraints — the things engineering will commit to producing — *before* the design debate (RFC) or the implementation breakdown (plan).
+
+A good TRD lets a reviewer say "yes, this contract solves the PRD" without having to read code, and lets the next person to write the RFC or plan start from a stable surface area.
+
+## When to write one
+
+Write a TRD when **all** of these are true:
+
+- A **PRD (or equivalent product spec) has settled the "what & why"** — you're not still arguing about audience or scope.
+- The work introduces **non-trivial technical surface area** — new APIs, new data model, new failure modes, new dependencies, or contracts other systems must conform to.
+- Multiple engineers / services / repos will need to agree on the contract before parallel work can start.
+
+Don't write a TRD for:
+
+- Single-file changes inside one module → the plan is enough.
+- Pure debate of alternatives ("pgbouncer vs. pgcat") → that's an `orc-rfc-writing` job.
+- Locking in a single architectural decision after debate → that's `orc-adr-writing`.
+- Anything where the PRD itself is unsettled → write/finish the PRD first (`orc-prd-writing`).
+
+A TRD without a PRD is a TRD answering a question nobody asked. A TRD with no contract section is just an RFC mislabeled.
+
+## Interview checklist (before drafting)
+
+Skip questions whose answers are already in the linked PRD or in conversation. Don't make the user repeat themselves.
+
+1. **What PRD or product context is this TRD serving?** (link)
+2. **Goals.** What technical outcomes MUST this TRD's contract enable? Be specific.
+3. **Non-goals.** What are we explicitly *not* committing to in this contract? (Heads off scope drift.)
+4. **Public interfaces.** What APIs, schemas, events, CLI surfaces, or library entry points does this introduce or modify? Public = anything another component or repo depends on.
+5. **Data model.** What persisted shapes change or get added? Migrations? Indexes? Backfill?
+6. **Failure modes.** What can go wrong in this contract, and what's the contract's response (retry / dead-letter / surface to user / ignore)?
+7. **Constraints.** Performance budgets, security/compliance, capacity, vendor lock-in, language/framework requirements.
+8. **Dependencies.** Other services, libraries, teams whose work this requires or affects.
+9. **Success criteria.** How will we verify the contract is met? (Tests, SLOs, integration checks.)
+10. **Open questions.** Things the author needs reviewer input on.
+
+## Template
+
+Every TRD uses this shape. Delete sections with no real content rather than leaving `TBD`. Read [TEMPLATE.md](references/TEMPLATE.md) when drafting (step 5): header block, Summary, Goals, Non-goals, Background, Public interfaces & contracts (API shapes, data model, events), Failure modes table, Constraints, Dependencies, Migration/rollout, Success criteria, Open questions, Risks, Appendix.
+
+## What to do as the model
+
+1. **Confirm a TRD is warranted** — apply the "all of these are true" test. If borderline, surface (TRD / single design note in code / an RFC instead).
+2. **Locate or read the linked PRD.** A TRD without a PRD reference (or equivalent product context) is suspect — surface that and ask.
+3. **Run the interview** if input is sparse. Skip questions answered by the linked PRD or earlier in conversation.
+4. **Find the next sequence number** in `docs/trds/` (see the numbering convention in `orc-doc-writing`).
+5. **Draft from the template.** Fill every section. **Delete sections that have no content** rather than writing `TBD`. The "Public interfaces & contracts" section is the load-bearing one — if it's thin, the TRD isn't ready.
+6. **Show the draft to the user for review** before committing (review gates in `orc-doc-writing`).
+7. **Commit** via `orc-git-commit`. Suggested message: `docs(trd): NNNN — <kebab title>`.
+8. **Cross-link.** From the linked PRD, from any tickets, from any code that will conform to the contract.
+
+## Tone
+
+Engineer-to-engineer, plain prose, schemas and tables where they add precision. No marketing voice, no "obvious" or "trivial." Quote constraints by name (latency budget, deadline, vendor SLA). When a constraint is non-technical (legal, vendor relationship, exec mandate), say so plainly — the future reader needs that context.
+
+## Anti-patterns
+
+- **TRDs written after implementation.** The contract gets reverse-engineered from the code; the failure-mode section gets sanitized; the unknowns section disappears. Write the TRD *before* the plan.
+- **TRDs that debate alternatives.** That's an RFC. A TRD commits to *one* contract; argument belongs upstream.
+- **Empty "Failure modes" section.** Every contract has failure modes. If you can't think of any, you haven't thought hard enough.
+- **TRDs without measurable success criteria.** "We'll know when it works" means nothing is testable.
+- **Mismatched scope vs. PRD.** A TRD wider than its PRD is scope creep; narrower means part of the PRD has no technical contract yet.
+- **TRDs with no `Non-goals`.** Without explicit exclusions, the contract grows in review until nothing ships.

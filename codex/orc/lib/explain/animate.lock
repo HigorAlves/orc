@@ -1,0 +1,16 @@
+repo=https://github.com/cth9191/animate
+commit=7e5eb56feb2dd573f890e1b7b34748af43d58263
+skill_root=plugins/animate/skills/animate
+example=examples/history-of-ai
+tools=tools/build.mjs tools/export.mjs tools/capture.mjs
+# notes: (read from the pinned commit; update together with animate-piece.mjs on every bump)
+# - piece = dir with piece.json + brief.md + src/{head.html,scenes.js,bridges.js,score.js}; build.mjs <dir> assembles <dir>/index.html.
+# - piece.json is METADATA ONLY: name, title, style (one of cut-paper|crosshatch|isometric|math|pixel|riso|sketchbook),
+#   format{width,height,fps,bpm,duration,frames}, storyFormat, review{}. No beats/headline/lines/VO fields exist.
+# - All visible content (text, shapes, timing) is hand-authored canvas JS in src/scenes.js (+ TIMELINE in head.html);
+#   the example is a 60s 1080x1920 cut-paper film. Copying it renders history-of-ai, NOT segment text.
+# - Mapped by animate-piece.mjs: piece.json name=<segment id>, title=<segment title>, style=<segments.style>;
+#   brief.md = headline/lines/narration; voice/script.json = {lead,tail,lines:[{id,text,after}]} (documented in SKILL.md).
+# - Scene code for headline/lines is NOT generated: needs authoring per brief.md (animate's own workflow).
+# - export: node tools/export.mjs <dir> --formats 16:9 -> <dir>/renders/final-<w>x<h>.mp4 (non-main formats are suffixed;
+#   piece.json lacks "formats" so every format is suffixed); main format would be renders/final.mp4. Captions variant: final-captions.mp4.

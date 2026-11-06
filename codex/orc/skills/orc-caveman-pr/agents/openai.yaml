@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc caveman-pr"
+  short_description: "Run the orc caveman-pr workflow"

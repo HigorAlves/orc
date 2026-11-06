@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc postgresql-optimization"
+  short_description: "Run the orc postgresql-optimization workflow"

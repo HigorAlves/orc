@@ -1,0 +1,141 @@
+---
+description: Systematic root-cause investigation, then fix with TDD — never proposes a fix before finding the cause; resumable diagnosis + regression test in .orc/ state. Workspace-aware. For a quick one-off look without session state, prefer the bundled /debug.
+argument-hint: "[--jira <KEY>] [--repos a,b | --repo a | --all-repos | --this-repo] <bug description or failing test name>"
+allowed-tools:
+  - Bash(orc-state:*)
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - Skill
+  - Task
+  - the available user-question tool (or ask in chat)
+  - Bash(git log:*)
+  - Bash(git blame:*)
+  - Bash(git diff:*)
+  - Bash(git branch --show-current:*)
+  - Bash(jq:*)
+  - Bash(npm:*)
+  - Bash(pnpm:*)
+  - Bash(yarn:*)
+  - Bash(go:*)
+  - Bash(cargo:*)
+  - Bash(pytest:*)
+  - Bash(graphify extract:*)
+  - Bash(graphify update:*)
+  - Bash(graphify check-update:*)
+  - Bash(graphify save-result:*)
+  - Bash(graphify reflect:*)
+  - Bash(orc-workspace-detect:*)
+---
+
+# $orc-debug
+
+Hard bugs and unexpected failures get the systematic-debugging discipline. NO FIXES WITHOUT A ROOT CAUSE.
+
+## Arguments
+
+- `--jira <KEY>` — link a Jira ticket key (e.g. `BUG-42`) to this session silently. Suppresses the Phase 1 link prompt.
+- The bug description / failing test name is the rest of the argument string.
+
+## Workflow
+
+### Phase 0 — Detect context
+
+Run `orc-workspace-detect --banner` in the working repository and read its output before continuing.
+
+Run context detection explicitly; shell environments do not persist between calls.
+
+In workspace mode, resolve `targetRepos` from flags or via `the available user-question tool (or ask in chat)`. The default is the symptom-repo (the repo where the bug surfaces) plus any sibling repos the user suspects as the actual cause — the investigator reads across all of them. Iron rule: no silent broadcast — confirm.
+
+### Phase 1 — Initialize workspace + link
+
+1. Determine the current branch: `git branch --show-current` (in workspace mode, prompt the user since cwd has no branch). Sanitize (`/` → `-`).
+2. Create `${ORC_STATE_DIR}/<sanitized-branch>/files/` if it doesn't exist. In workspace mode, also create per-repo `<workspaceRoot>/<repo>/.orc/<sanitized-branch>/` with `workspace-link.json` back-pointers for each target repo (the diagnosis is workspace-level; remediation slices land per repo).
+3. **Resolve the Jira link.**
+   - If `--jira <KEY>` was passed: validate against `^[A-Z][A-Z0-9_]*-\d+$`. Reject and stop on mismatch.
+   - Otherwise: ask via `the available user-question tool (or ask in chat)` — *"Link a Jira ticket to this session?"* with options: `Paste a key` / `Skip — I'll bind later via $orc-jira bind` / `No ticket — this work has no tracker entry`.
+4. Register state: `orc-state init --command debug --total-phases 7 [--jira <KEY>]`. Defer to `orc-state-protocol` for schema and rules; per phase, `orc-state phase set <n>` + `orc-state digest write -`.
+
+### Phase 2 — Investigate (no fixes)
+
+**Prime code discovery first (optional, non-blocking).** Follow `orc-code-discovery`: if `graphify` is installed, verify the graph on the buggy branch is fresh before dispatching — build if missing (`graphify extract . --code-only`) or refresh if stale (`graphify update .`), so the investigator queries the graph from turn one instead of discovering staleness mid-investigation. Skip silently if graphify is absent or the build fails.
+
+Dispatch the `orc-debug-investigator` subagent via `Task`. Pass it:
+- The bug description / failing test name from arguments.
+- The current branch + recent commits (`git log -10 --oneline`).
+- Any relevant test output the user has already shared.
+- **Workspace mode only**: `repo` (the symptom repo), `repoPath`, `siblingRepos` (the other target repos — the investigator may read across these to find the cause). Diagnosis is written to `${ORC_STATE_DIR}/<branch>/files/diagnosis.md` (workspace-level), and each remediation slice in the diagnosis carries a `repo:` annotation so the Phase 5 fixer can fan out per repo.
+
+The agent returns a written diagnosis: root cause, evidence, recommended fix surface, recommended regression test. Save it to `${ORC_STATE_DIR}/<branch>/files/diagnosis.md`.
+
+### Phase 3 — Confirm with user
+
+Print the Gate headline (`**⛔ Gate — diagnosis**`, one line on the root cause, per `orc-callouts`), then `the available user-question tool (or ask in chat)`:
+- "Diagnosis looks right — proceed with fix"
+- "Need more investigation — re-dispatch investigator with this hint: …" (continue the same investigator via `the available agent continuation tool` when it's still addressable, so its evidence survives)
+- "Go deeper on Fable" — offered when the diagnosis is low-confidence or names no single root cause: re-dispatch `orc-debug-investigator` with the Agent tool's `model: "fable"` override (slower, costlier, investigates before acting) and the first diagnosis as a hint
+- "Diagnosis is wrong — abort"
+
+If the investigator's report carried a `## Graph nodes relied on` line, record the miss so the code graph stops recommending that path (best-effort; silent no-op when graphify is absent, no `graphify-out/graph.json` exists, or the `learn_from_outcomes` user config is `false`):
+
+```bash
+graphify save-result --type query --outcome corrected --nodes <cited-nodes> \
+  --question "<symptom>" --correction "<the right area, if known>" && graphify reflect
+```
+
+### Phase 4 — Write the regression test (TDD red)
+
+Invoke `orc-tdd`. Write the test described in the diagnosis. Run the suite — it MUST fail with the expected message (proving it captures the bug). Commit the failing test on a fix branch.
+
+For **complex regression tests** (multi-branch state machines, async coordination, integration boundaries) — dispatch the `orc-test-author` subagent via `Task` instead of writing inline. Pass it the diagnosis's "recommended regression test" section + the affected file. The agent returns a comprehensive test (happy path + boundary + error paths) using the project's existing test idioms, runs the suite, reports.
+
+Print the Gate headline (`**⛔ Gate — regression-test author**`), then `the available user-question tool (or ask in chat)`:
+- "Write inline (orc-tdd)" — for simple single-assertion regressions
+- "Dispatch orc-test-author" — for complex test scenarios
+- "Auto-pick — orc decides based on diagnosis depth"
+
+### Phase 5 — Fix and verify
+
+Hand the diagnosis + regression test to `orc-code-fixer` via `Task`. The agent applies the fix, re-runs tests. Read the report. If green, proceed. If red, return to Phase 2 (Investigate) with the new evidence — and if the superseded diagnosis carried a `## Graph nodes relied on` line, first record those nodes as a dead end so re-investigation (and future sessions) don't retread them (best-effort, same guards as Phase 3):
+
+```bash
+graphify save-result --type query --outcome dead_end --nodes <cited-nodes> --question "<symptom>" && graphify reflect
+```
+
+In workspace mode, group the diagnosis's remediation slices by their `repo:` tag and dispatch **one fixer per repo** (parallel, single response, multiple agent spawn calls), each scoped to its own `repoPath`. Aggregate per-repo test reports into a single verdict before deciding green/red.
+
+### Phase 6 — Verify (evidence-currency check, not an automatic re-run)
+
+The fixer already ran the tests in Phase 5 — verifying means confirming that evidence is real and current, per `orc-verification-before-completion`'s actual doctrine (evidence before assertions, not always-re-execute):
+
+- The fixer's report must **cite the regression-test pass and full-suite-green output with the HEAD sha it ran at**. Evidence present and sha == current HEAD → accept it; record it in the digest (`Suite: green @ <sha>`).
+- Re-run the suite only when the report lacks explicit output, the sha mismatches, or anything touched the tree since. (Evidence-keyed skip — one paragraph to revert if recorded evidence ever proves unreliable.)
+- Any related code paths still behave correctly (`orc-error-handling-patterns` if error handling was touched).
+
+**Record the graph outcome (work-memory loop).** The suite is now green — a *verified* outcome, the only honest moment to reward the graph. If graphify is installed, `graphify-out/graph.json` exists, the `learn_from_outcomes` user config is not `false`, and the investigator's report carried a `## Graph nodes relied on` line, record that those nodes led to a confirmed fix so future discovery prefers them:
+
+```bash
+graphify save-result --type query --outcome useful --nodes <cited-nodes> \
+  --question "<symptom, one line>" --answer "root cause at <fix file:line>" && graphify reflect
+```
+
+`reflect` folds the memory into `graphify-out/reflections/LESSONS.md`, which `orc-code-discovery` reads on the next session. Best-effort throughout: a non-zero exit never blocks completion, and the whole step is a silent no-op when graphify is absent, no graph exists, the toggle is off, or the diagnosis came from grep (no nodes line).
+
+### Phase 7 — Checkpoint
+
+Update `.orc/<branch>/files/checkpoint.md` to phase=done, with paths to `diagnosis.md`, the test file, and the fix file.
+
+Then close with `**➡️ Next**`: suggest `$orc-retro` in this same session — now that the fix is in, the question "what would have prevented this bug?" has an answer (a missing seam, a check that didn't exist, a log the investigator could not see), and the retro turns it into an environment change rather than a note.
+
+## Output
+
+- `.orc/<branch>/files/diagnosis.md`
+- One regression test (committed)
+- The fix (committed in a separate commit per `orc-git-commit`)
+- Checkpoint set to done
+
+## Resume
+
+If interrupted between phases, `$orc-resume` reads checkpoint and continues from the next pending phase.

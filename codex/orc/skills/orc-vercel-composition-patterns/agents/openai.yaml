@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc vercel-composition-patterns"
+  short_description: "Run the orc vercel-composition-patterns workflow"

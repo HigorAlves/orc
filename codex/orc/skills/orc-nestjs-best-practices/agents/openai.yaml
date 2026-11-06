@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc nestjs-best-practices"
+  short_description: "Run the orc nestjs-best-practices workflow"

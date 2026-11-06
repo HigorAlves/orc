@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc setup"
+  short_description: "Run the orc setup workflow"

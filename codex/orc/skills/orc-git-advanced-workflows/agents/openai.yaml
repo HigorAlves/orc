@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc git-advanced-workflows"
+  short_description: "Run the orc git-advanced-workflows workflow"

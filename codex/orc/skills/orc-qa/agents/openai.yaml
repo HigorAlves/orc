@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc qa"
+  short_description: "Run the orc qa workflow"

@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc dependency-management"
+  short_description: "Run the orc dependency-management workflow"

@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc state-protocol"
+  short_description: "Run the orc state-protocol workflow"

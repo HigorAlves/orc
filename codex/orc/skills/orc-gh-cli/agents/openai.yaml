@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc gh-cli"
+  short_description: "Run the orc gh-cli workflow"

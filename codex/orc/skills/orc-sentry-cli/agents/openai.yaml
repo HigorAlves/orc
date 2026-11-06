@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc sentry-cli"
+  short_description: "Run the orc sentry-cli workflow"

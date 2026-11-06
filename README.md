@@ -35,6 +35,12 @@ orc is a full-SDLC workflow plugin for Claude Code: **88 curated skills, 30 comp
 
 It exists for one reason: every time a senior developer sits down, they already know how the next hour goes. Write the plan, watch the test fail, fix the cause, verify with evidence, ship the PR. orc encodes that loop.
 
+## Codex
+
+Codex support is available alongside Claude: `orc install --host codex`.
+For local checkout installation, workflow names, and host differences, see
+[Codex setup](docs/codex.md).
+
 ## Install
 
 ```bash

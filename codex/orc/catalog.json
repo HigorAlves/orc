@@ -1,0 +1,588 @@
+{
+  "address": {
+    "commands": "content/commands/address.md",
+    "description": "Answer reviewer comments on YOUR open PR \u2014 categorize unresolved threads, push fixes, and post replies. Workspace-aware across linked PRs.",
+    "explicit_only": false
+  },
+  "adr": {
+    "commands": "content/commands/adr.md",
+    "description": "Author an Architecture Decision Record (ADR) \u2014 produce a numbered docs/adr/NNNN-*.md following the orc-adr-writing template. Also handles supersession and status transitions on existing ADRs.",
+    "explicit_only": false
+  },
+  "adr-writing": {
+    "description": "Author and update Architecture Decision Records (ADRs) \u2014 the durable record of a decision and its trade-offs, in docs/adr/NNNN-*.md",
+    "explicit_only": false,
+    "skills": "content/skills/adr-writing/SKILL.md"
+  },
+  "agent-browser": {
+    "description": "Browser automation CLI for AI agents; use for web tasks - navigate, click, fill forms, screenshot, scrape, test web/Electron apps.",
+    "explicit_only": false,
+    "skills": "content/skills/agent-browser/SKILL.md"
+  },
+  "architecture-patterns": {
+    "description": "Implement Clean, Hexagonal (Ports & Adapters), and Domain-Driven architecture patterns",
+    "explicit_only": false,
+    "skills": "content/skills/architecture-patterns/SKILL.md"
+  },
+  "browser-qa": {
+    "description": "The canonical browser-QA protocol for web changes \u2014 target resolution, env attach, the driver gate (Playwright primary, agent-browser, Claude-in-Chrome), validator dispatch, chrome evidence packet",
+    "explicit_only": false,
+    "skills": "content/skills/browser-qa/SKILL.md"
+  },
+  "callouts": {
+    "description": "The orc callout palette \u2014 emoji-header blockquotes in conversation, GitHub-flavored [!TYPE] form for GitHub-bound output",
+    "explicit_only": false,
+    "skills": "content/skills/callouts/SKILL.md"
+  },
+  "caveman-pr": {
+    "description": "Ultra-compressed, signal-only pull request descriptions",
+    "explicit_only": false,
+    "skills": "content/skills/caveman-pr/SKILL.md"
+  },
+  "caveman-review": {
+    "description": "Ultra-compressed code review comments \u2014 one line per finding: location, problem, fix",
+    "explicit_only": false,
+    "skills": "content/skills/caveman-review/SKILL.md"
+  },
+  "ci": {
+    "commands": "content/commands/ci.md",
+    "description": "Diagnose and fix a red CI run \u2014 dispatches orc-ci-investigator, then routes on its verdict: auto-fix via orc-code-fixer, flake re-run, infra escalation, or $orc-debug hand-off",
+    "explicit_only": false
+  },
+  "ci-routing": {
+    "description": "The canonical route-on-verdict protocol for a red CI diagnosis \u2014 fixable/flake/infra/needs-debug handling, the single-render rule, and the fix-then-re-watch loop",
+    "explicit_only": false,
+    "skills": "content/skills/ci-routing/SKILL.md"
+  },
+  "cleanup": {
+    "description": "Clean up after completed or abandoned orc sessions \u2014 removes workspace state, registry entry, git worktree, and optionally the merged branch. Destructive; always previews and asks first. Workspace-aware.",
+    "explicit_only": true,
+    "skills": "content/skills/cleanup/SKILL.md"
+  },
+  "code-discovery": {
+    "description": "Use when discovering or navigating a codebase before planning, implementing, debugging, or refactoring \u2014 prefer a Graphify code-graph query over broad Glob/Grep/Read to cut token cost, with automatic fallback to grep when Graphify is absent, stale, or unhealthy.",
+    "explicit_only": false,
+    "skills": "content/skills/code-discovery/SKILL.md"
+  },
+  "code-review": {
+    "description": "Review someone else's open GitHub PR \u2014 posts a real review with line-anchored inline comments; verdict computed mechanically; mandatory preview gate. Workspace-aware. For your OWN working diff, prefer the bundled /code-review instead.",
+    "explicit_only": false,
+    "skills": "content/skills/code-review/SKILL.md"
+  },
+  "codebase-design": {
+    "description": "Shared vocabulary for designing deep modules \u2014 seam, adapter, depth, leverage, locality",
+    "explicit_only": false,
+    "skills": "content/skills/codebase-design/SKILL.md"
+  },
+  "context": {
+    "commands": "content/commands/context.md",
+    "description": "Write or refresh docs/agents/project-context.md, the binding rules file executor agents load before code.",
+    "explicit_only": false
+  },
+  "debug": {
+    "commands": "content/commands/debug.md",
+    "description": "Systematic root-cause investigation, then fix with TDD \u2014 never proposes a fix before finding the cause; resumable diagnosis + regression test in .orc/ state. Workspace-aware. For a quick one-off look without session state, prefer the bundled /debug.",
+    "explicit_only": false
+  },
+  "dependency-management": {
+    "description": "Audit, survey, and upgrade project dependencies safely \u2014 majors escalated, never auto-applied",
+    "explicit_only": false,
+    "skills": "content/skills/dependency-management/SKILL.md"
+  },
+  "deps": {
+    "commands": "content/commands/deps.md",
+    "description": "Audit, survey, and upgrade project dependencies \u2014 one-bump-per-commit loop, majors escalated, never auto-applied. Verbs: audit (default) | outdated | upgrade.",
+    "explicit_only": false
+  },
+  "dispatching-parallel-agents": {
+    "description": "Dispatch parallel subagents with focused, self-contained briefs \u2014 each gets exactly the context it needs, never your session history",
+    "explicit_only": false,
+    "skills": "content/skills/dispatching-parallel-agents/SKILL.md"
+  },
+  "doc-writing": {
+    "description": "Shared scaffolding for numbered design/spec docs \u2014 outline, NNNN-* numbering, review gates, doc-type map (PRD/TRD/RFC/ADR/postmortem). Referenced by orc-prd/trd/rfc/adr-writing + postmortem.",
+    "explicit_only": false,
+    "skills": "content/skills/doc-writing/SKILL.md"
+  },
+  "docker-best-practices": {
+    "description": "Docker expert \u2014 image optimization, security hardening, multi-stage builds, orchestration, production deployment",
+    "explicit_only": false,
+    "skills": "content/skills/docker-best-practices/SKILL.md"
+  },
+  "documentation-writing": {
+    "description": "Di\u00e1taxis documentation expert",
+    "explicit_only": false,
+    "skills": "content/skills/documentation-writing/SKILL.md"
+  },
+  "domain-modeling": {
+    "description": "Maintain a project's ubiquitous language and decision record against GLOSSARY.md",
+    "explicit_only": false,
+    "skills": "content/skills/domain-modeling/SKILL.md"
+  },
+  "env": {
+    "commands": "content/commands/env.md",
+    "description": "Provision a fast containerized dev environment for the current repo or workspace; stays up for reuse across QA runs. Verbs: up (default) | status | down.",
+    "explicit_only": false
+  },
+  "env-provisioning": {
+    "description": "Provision a fast, reproducible dev environment for QA or standalone use \u2014 healthcheck-gated boot, reuse/teardown rules, host-mode fallback. Protocol for $orc-env, $orc-qa Phase 4, $orc-flow Phase 6, and the orc-env-provisioner agent.",
+    "explicit_only": false,
+    "skills": "content/skills/env-provisioning/SKILL.md"
+  },
+  "error-handling-patterns": {
+    "description": "Error handling patterns across languages \u2014 exceptions, Result types, propagation, graceful degradation",
+    "explicit_only": false,
+    "skills": "content/skills/error-handling-patterns/SKILL.md"
+  },
+  "evidence": {
+    "commands": "content/commands/evidence.md",
+    "description": "Collect browser evidence scoped to a ticket (or shared context) and deliver it \u2014 evidence packet, then upload to the ticket or keep local (always asks). For proving a ticket's behavior without a code diff/PR. Workspace-aware.",
+    "explicit_only": false
+  },
+  "evidence-publish": {
+    "description": "Deliver a QA/evidence packet to a tracker or keep it local, behind an always-ask preview gate. Protocol for $orc-qa Phase 6, $orc-evidence, and any evidence-delivery step.",
+    "explicit_only": false,
+    "skills": "content/skills/evidence-publish/SKILL.md"
+  },
+  "executing-plans": {
+    "description": "Execute a written implementation plan batch-by-batch \u2014 load it, review critically, implement task by task, and stop for review between batches",
+    "explicit_only": false,
+    "skills": "content/skills/executing-plans/SKILL.md"
+  },
+  "explain": {
+    "commands": "content/commands/explain.md",
+    "description": "Build a narrated \"what was made\" walkthrough from a QA packet \u2014 golden-path demo clips (Playwright, overlays off) + animate motion graphics + local kokoro-js voice, assembled by orc-explain; one preview gate before render; delivered via the evidence-publish gates",
+    "explicit_only": false
+  },
+  "explainer": {
+    "description": "Build the narrated what-was-made walkthrough for a QA packet: script from plan + acceptance, demo pass, segments.json, animate graphics, kokoro narration, orc-explain assemble",
+    "explicit_only": false,
+    "skills": "content/skills/explainer/SKILL.md"
+  },
+  "fan-out": {
+    "commands": "content/commands/fan-out.md",
+    "description": "Parallel-dispatch N independent tasks that share no state \u2014 investigations, multi-PR review, multi-repo or bulk-doc work. Standalone parallelism primitive with no surrounding lifecycle. Workspace-aware.",
+    "explicit_only": false
+  },
+  "finishing-a-development-branch": {
+    "description": "Guide the completion of a development branch by presenting structured options for merge, PR, or cleanup",
+    "explicit_only": false,
+    "skills": "content/skills/finishing-a-development-branch/SKILL.md"
+  },
+  "flow": {
+    "commands": "content/commands/flow.md",
+    "description": "End-to-end feature/bug/refactor pipeline (plan \u2192 start \u2192 implement \u2192 QA \u2192 ship \u2192 address \u2192 cleanup) with an interactive gate at every phase. Resumable via $orc-resume. --jira (KEY) links a ticket. Workspace-aware.",
+    "explicit_only": false
+  },
+  "gates": {
+    "description": "The canonical the available user-question tool (or ask in chat) conventions for every orc gate \u2014 class-tagged header chips, Recommended-first options, side-by-side `preview` for preview-then-confirm, multiSelect chunking, notes as the rewrite channel, and the --auto ladder",
+    "explicit_only": false,
+    "skills": "content/skills/gates/SKILL.md"
+  },
+  "gh-cli": {
+    "description": "GitHub CLI (gh) reference for repos, issues, PRs, Actions, releases, gists, projects, codespaces, and the API",
+    "explicit_only": false,
+    "skills": "content/skills/gh-cli/SKILL.md"
+  },
+  "git-advanced-workflows": {
+    "description": "Advanced Git workflows - rebase, cherry-pick, bisect, worktrees, reflog - for clean history and recovery",
+    "explicit_only": false,
+    "skills": "content/skills/git-advanced-workflows/SKILL.md"
+  },
+  "git-commit": {
+    "description": "Execute git commit with conventional-commit analysis, intelligent staging, and message generation from the diff",
+    "explicit_only": false,
+    "skills": "content/skills/git-commit/SKILL.md"
+  },
+  "grill-me": {
+    "description": "A relentless decision-by-decision interview to sharpen a plan or design until reaching shared understanding.",
+    "explicit_only": true,
+    "skills": "content/skills/grill-me/SKILL.md"
+  },
+  "grill-with-docs": {
+    "description": "Grill a plan or design while writing the docs as you go \u2014 the interview plus a live glossary (GLOSSARY.md) and ADRs captured the moment decisions land.",
+    "explicit_only": true,
+    "skills": "content/skills/grill-with-docs/SKILL.md"
+  },
+  "grilling": {
+    "description": "Round-based interview engine under orc's grill entry points (orc-grill-me, $orc-plan --grill, $orc-rfc --grill, $orc-flow medium+ scope)",
+    "explicit_only": false,
+    "skills": "content/skills/grilling/SKILL.md"
+  },
+  "handoff": {
+    "description": "Compact the current conversation into a redacted handoff document, saved to the OS temp dir, that a fresh agent in another session or tool can pick up \u2014 $orc-resume is the counterpart for resuming in-repo orc state.",
+    "explicit_only": true,
+    "skills": "content/skills/handoff/SKILL.md"
+  },
+  "improve-codebase-architecture": {
+    "description": "Find architecture-deepening opportunities in a codebase",
+    "explicit_only": false,
+    "skills": "content/skills/improve-codebase-architecture/SKILL.md"
+  },
+  "incident": {
+    "description": "Live incident response \u2014 intake a Sentry issue, stack trace, or symptom; gate mitigate-first vs root-cause-first; keep a UTC timeline",
+    "explicit_only": false,
+    "skills": "content/skills/incident/SKILL.md"
+  },
+  "inline-review": {
+    "description": "Post a real GitHub PR review with line-anchored inline comments; invoked by $orc-code-review after findings. For commenting on your OWN diff, prefer the bundled /code-review --comment.",
+    "explicit_only": false,
+    "skills": "content/skills/inline-review/SKILL.md"
+  },
+  "jira": {
+    "commands": "content/commands/jira.md",
+    "description": "Manage Jira tickets via acli, and bind/unbind a ticket key to the current orc session \u2014 persists jiraTicket in .orc/orc.json + checkpoint.md so $orc-status, $orc-resume, and $orc-ship all see the link.",
+    "explicit_only": true
+  },
+  "jira-breakdown": {
+    "commands": "content/commands/jira-breakdown.md",
+    "description": "Turn a feature brief, PRD, or existing Epic into a full Jira hierarchy behind a preview gate",
+    "explicit_only": false
+  },
+  "jira-cli": {
+    "description": "Atlassian CLI (acli) reference for Jira work items \u2014 create, sub-task, link, view, JQL search, transition",
+    "explicit_only": false,
+    "skills": "content/skills/jira-cli/SKILL.md"
+  },
+  "jira-hierarchy": {
+    "description": "The Jira backlog contract \u2014 Epic-as-micro-PRD, Stories, concurrency-sliced Tasks, and the mandatory child-ticket template",
+    "explicit_only": false,
+    "skills": "content/skills/jira-hierarchy/SKILL.md"
+  },
+  "map": {
+    "description": "Ask which orc command, skill, or flow fits your situation \u2014 the router over everything orc ships.",
+    "explicit_only": true,
+    "skills": "content/skills/map/SKILL.md"
+  },
+  "mobile-ios-design": {
+    "description": "iOS Human Interface Guidelines and SwiftUI patterns for native apps",
+    "explicit_only": false,
+    "skills": "content/skills/mobile-ios-design/SKILL.md"
+  },
+  "nestjs-best-practices": {
+    "description": "NestJS best practices and architecture patterns for production apps",
+    "explicit_only": false,
+    "skills": "content/skills/nestjs-best-practices/SKILL.md"
+  },
+  "next-best-practices": {
+    "description": "Next.js best practices",
+    "explicit_only": false,
+    "skills": "content/skills/next-best-practices/SKILL.md"
+  },
+  "nodejs-best-practices": {
+    "description": "Node.js development principles and decision-making. Framework selection, async patterns, security, and architecture. Teaches thinking, not copying.",
+    "explicit_only": false,
+    "skills": "content/skills/nodejs-best-practices/SKILL.md"
+  },
+  "phases": {
+    "description": "Per-phase playbooks for orc commands, loaded one phase at a time",
+    "explicit_only": false,
+    "skills": "content/skills/phases/SKILL.md"
+  },
+  "plan": {
+    "commands": "content/commands/plan.md",
+    "description": "Plan a feature or refactor \u2014 produces a TDD-shaped plan, optionally design-grilled, and decomposes it into independently shippable issues. --jira (KEY) links a ticket. Workspace-aware.",
+    "explicit_only": false
+  },
+  "playwright-qa": {
+    "description": "Driver P of orc-browser-qa \u2014 browser QA with Playwright Test and the stock planner/generator/healer agents against a resolved QA target; yields a stitched step-tagged video, traces, and qa-manifest.json",
+    "explicit_only": false,
+    "skills": "content/skills/playwright-qa/SKILL.md"
+  },
+  "postgresql-optimization": {
+    "description": "Write or review PostgreSQL-specific SQL: JSONB, arrays, custom/range/geometric types, indexing, full-text search, window functions, extensions, and RLS",
+    "explicit_only": false,
+    "skills": "content/skills/postgresql-optimization/SKILL.md"
+  },
+  "postgresql-table-design": {
+    "description": "Design or review a PostgreSQL-specific schema: data types, indexing, constraints, partitioning, RLS, performance patterns, and advanced features",
+    "explicit_only": false,
+    "skills": "content/skills/postgresql-table-design/SKILL.md"
+  },
+  "postmortem": {
+    "commands": "content/commands/postmortem.md",
+    "description": "Author a blameless incident postmortem \u2014 timeline, root causes, action items \u2014 filing each P0 action item as a tracker issue. Status reaches Final only when all P0 items close.",
+    "explicit_only": false
+  },
+  "postmortem-writing": {
+    "description": "Author blameless incident postmortems \u2014 timeline, root cause(s), contributing factors, action items",
+    "explicit_only": false,
+    "skills": "content/skills/postmortem-writing/SKILL.md"
+  },
+  "pr-size-budget": {
+    "description": "Use when opening a PR or planning slices \u2014 defines the soft 300 LOC budget, the exclusion list, the shared gate prompt for ship/flow/stack-pr, and the override syntax.",
+    "explicit_only": false,
+    "skills": "content/skills/pr-size-budget/SKILL.md"
+  },
+  "prd": {
+    "commands": "content/commands/prd.md",
+    "description": "Author a Product Requirements Document (PRD) \u2014 produce a numbered docs/prds/NNNN-*.md following the orc-prd-writing template. Optionally interview-driven and optionally seeded from a Jira ticket.",
+    "explicit_only": false
+  },
+  "prd-writing": {
+    "description": "Author Product Requirements Documents (PRDs) from scratch \u2014 interview-driven, templated, published to docs/prds/NNNN-*.md",
+    "explicit_only": false,
+    "skills": "content/skills/prd-writing/SKILL.md"
+  },
+  "project-context": {
+    "description": "Read, write and extend docs/agents/project-context.md, the 150-line binding rules file executor agents load before code. Use with $orc-context.",
+    "explicit_only": false,
+    "skills": "content/skills/project-context/SKILL.md"
+  },
+  "prototype": {
+    "description": "Throwaway code that answers a design question before real implementation \u2014 slots between $orc-plan and $orc-start",
+    "explicit_only": false,
+    "skills": "content/skills/prototype/SKILL.md"
+  },
+  "qa": {
+    "commands": "content/commands/qa.md",
+    "description": "Pre-PR quality gate \u2014 browser-driven QA for web changes with a mandatory evidence packet against a provisioned environment. No QA-passed claim without artifacts. Workspace-aware. For a quick behavioral check without the evidence packet, prefer the bundled /verify or /run.",
+    "explicit_only": false
+  },
+  "qa-targets": {
+    "description": "Resolve WHERE browser QA runs \u2014 named targets in .orc/targets.json (local, staging, preview), the Target gate, credential references (literal | op:// | env:), guard rule",
+    "explicit_only": false,
+    "skills": "content/skills/qa-targets/SKILL.md"
+  },
+  "readme-writing": {
+    "description": "Create a comprehensive, well-structured README.md for the current project by reviewing the entire codebase first",
+    "explicit_only": false,
+    "skills": "content/skills/readme-writing/SKILL.md"
+  },
+  "receiving-code-review": {
+    "description": "Evaluate code review feedback with technical rigor and verification \u2014 never performative agreement or blind implementation",
+    "explicit_only": false,
+    "skills": "content/skills/receiving-code-review/SKILL.md"
+  },
+  "release": {
+    "commands": "content/commands/release.md",
+    "description": "Cut a semver release for the current repo \u2014 bump computed from conventional commits, evidence preview, tag + GitHub release",
+    "explicit_only": false
+  },
+  "release-management": {
+    "description": "Cut a semver release from conventional commits \u2014 bump, grouped changelog, annotated tag, GitHub release",
+    "explicit_only": false,
+    "skills": "content/skills/release-management/SKILL.md"
+  },
+  "requesting-code-review": {
+    "description": "Dispatch a code-reviewer subagent with precisely crafted context to catch issues in finished work before they cascade",
+    "explicit_only": false,
+    "skills": "content/skills/requesting-code-review/SKILL.md"
+  },
+  "research": {
+    "description": "Delegate a research question to a background agent that reads primary sources and lands cited findings as a Markdown file in the repo",
+    "explicit_only": false,
+    "skills": "content/skills/research/SKILL.md"
+  },
+  "resolving-merge-conflicts": {
+    "description": "Resolve an in-progress git merge or rebase conflict by tracing each side's intent back to primary sources before touching a hunk; always resolve, never --abort",
+    "explicit_only": false,
+    "skills": "content/skills/resolving-merge-conflicts/SKILL.md"
+  },
+  "resume": {
+    "commands": "content/commands/resume.md",
+    "description": "Resume an interrupted multi-phase orc command from its last checkpoint. Reads .orc/orc.json for active sessions, picks one, jumps to the next pending phase. Workspace-aware.",
+    "explicit_only": false
+  },
+  "retro": {
+    "commands": "content/commands/retro.md",
+    "description": "Retrospective on a coding session \u2014 proposes changes to the agent's environment (navigation pointers, automated checks, coding standards, steering files, tool economy, information access), most severe first; applies accepted in-repo changes and files the rest through the tracker gate",
+    "explicit_only": false
+  },
+  "review-contract": {
+    "description": "The canonical review findings contract \u2014 JSON schema, severity enum, mechanical severity\u2192event mapping, confidence \u22650.8 rule",
+    "explicit_only": false,
+    "skills": "content/skills/review-contract/SKILL.md"
+  },
+  "rfc": {
+    "commands": "content/commands/rfc.md",
+    "description": "Author a system-design RFC \u2014 proposes a non-trivial change BEFORE implementation, surfaces alternatives, and invites critique. Differs from $orc-plan (design settled) and $orc-adr (decision recorded).",
+    "explicit_only": false
+  },
+  "rfc-writing": {
+    "description": "Author RFCs \u2014 design docs that propose a non-trivial change before implementation, surface alternatives, and invite critique, in docs/rfcs/NNNN-*.md",
+    "explicit_only": false,
+    "skills": "content/skills/rfc-writing/SKILL.md"
+  },
+  "scaffold": {
+    "commands": "content/commands/scaffold.md",
+    "description": "Bootstrap a new package, service, or app \u2014 scaffold with proper README, Di\u00e1taxis-shaped docs, an initial test, and a first commit. No business code, just the well-shaped shell.",
+    "explicit_only": false
+  },
+  "sentry-cli": {
+    "description": "Guide for using the Sentry CLI from the command line",
+    "explicit_only": false,
+    "skills": "content/skills/sentry-cli/SKILL.md"
+  },
+  "setup": {
+    "commands": "content/commands/setup.md",
+    "description": "Run-once repo interview that writes the tracker layer (docs/agents/issue-tracker.md, triage-labels.md, domain.md) with recommended answers",
+    "explicit_only": false
+  },
+  "shadcn": {
+    "description": "Add, search, fix, debug, style, and compose shadcn/ui components",
+    "explicit_only": false,
+    "skills": "content/skills/shadcn/SKILL.md"
+  },
+  "ship": {
+    "commands": "content/commands/ship.md",
+    "description": "Finalize and open the PR \u2014 verifies tests, presents commit/branch/PR options, executes the chosen path, with a soft LOC size-budget gate. Last command before review; adds a Jira Resolves trailer when bound. Workspace-aware.",
+    "explicit_only": false
+  },
+  "skill-writing": {
+    "description": "Create new agent skills following orc's house conventions and CI gates",
+    "explicit_only": false,
+    "skills": "content/skills/skill-writing/SKILL.md"
+  },
+  "stack-pr": {
+    "commands": "content/commands/stack-pr.md",
+    "description": "Break a too-big branch into a stack of smaller chained PRs \u2014 commit-based by default (one PR per Conventional Commit), or --smart for messy branches. Detects gh-stack, falls back to plain gh. Workspace-aware.",
+    "explicit_only": true,
+    "skills": "content/skills/stack-pr/SKILL.md"
+  },
+  "start": {
+    "commands": "content/commands/start.md",
+    "description": "Start a feature \u2014 set up an isolated worktree, draft the plan, and write the first failing test before any production code. --jira (KEY) links a ticket and informs the branch name. Workspace-aware.",
+    "explicit_only": false
+  },
+  "state-protocol": {
+    "description": "The canonical .orc/ state contract \u2014 orc.json session schema, checkpoint frontmatter + resume-digest shape, the orc-state CLI, read-for-data vs route-from-state, and the resumed-session startup sequence",
+    "explicit_only": false,
+    "skills": "content/skills/state-protocol/SKILL.md"
+  },
+  "status": {
+    "commands": "content/commands/status.md",
+    "description": "Show all active and recently-completed orc workspaces from .orc/orc.json. Read-only \u2014 never modifies state. Workspace-aware.",
+    "explicit_only": false
+  },
+  "stripe-best-practices": {
+    "description": "Guide Stripe integration decisions \u2014 API choice, Connect, billing, Treasury, key/webhook security",
+    "explicit_only": false,
+    "skills": "content/skills/stripe-best-practices/SKILL.md"
+  },
+  "swiftui-best-practices": {
+    "description": "Comprehensively reviews SwiftUI code for best practices on modern APIs, maintainability, and performance",
+    "explicit_only": false,
+    "skills": "content/skills/swiftui-best-practices/SKILL.md"
+  },
+  "systematic-debugging": {
+    "description": "Root-cause-first debugging discipline \u2014 build a red-capable feedback loop, minimise the repro, rank falsifiable hypotheses, fix at the source",
+    "explicit_only": false,
+    "skills": "content/skills/systematic-debugging/SKILL.md"
+  },
+  "tailwind-design-system": {
+    "description": "Build scalable Tailwind CSS v4 design systems \u2014 design tokens, component libraries, responsive patterns",
+    "explicit_only": false,
+    "skills": "content/skills/tailwind-design-system/SKILL.md"
+  },
+  "tdd": {
+    "description": "Test-driven development with the red-green-refactor loop",
+    "explicit_only": false,
+    "skills": "content/skills/tdd/SKILL.md"
+  },
+  "to-issues": {
+    "description": "Break a plan, spec, or PRD into independently-grabbable tracker issues using tracer-bullet vertical slices",
+    "explicit_only": false,
+    "skills": "content/skills/to-issues/SKILL.md"
+  },
+  "to-prd": {
+    "description": "Turn the current conversation context into a PRD and publish it to the project issue tracker",
+    "explicit_only": false,
+    "skills": "content/skills/to-prd/SKILL.md"
+  },
+  "to-questionnaire": {
+    "description": "Turn a decision you can't answer alone into a questionnaire for someone else to fill in \u2014 grill the send, not the subject. Joins the to-* family alongside orc-to-issues and orc-to-prd.",
+    "explicit_only": true,
+    "skills": "content/skills/to-questionnaire/SKILL.md"
+  },
+  "tracker-config": {
+    "description": "The shared read-protocol and missing-config gate for the repo's tracker layer (docs/agents/issue-tracker.md, triage-labels.md, domain.md)",
+    "explicit_only": false,
+    "skills": "content/skills/tracker-config/SKILL.md"
+  },
+  "trd": {
+    "commands": "content/commands/trd.md",
+    "description": "Author a Technical Requirements Document (TRD) \u2014 produce a numbered docs/trds/NNNN-*.md following the orc-trd-writing template. Optionally seeded from a prior PRD.",
+    "explicit_only": false
+  },
+  "trd-writing": {
+    "description": "Author Technical Requirements Documents (TRDs) \u2014 turn a settled PRD into interfaces, data shapes, failure modes, and constraints in docs/trds/NNNN-*.md",
+    "explicit_only": false,
+    "skills": "content/skills/trd-writing/SKILL.md"
+  },
+  "triage": {
+    "commands": "content/commands/triage.md",
+    "description": "Intake for any report (issue, PR, Jira, Sentry, paste): check it is valid, then brief, file, park or reject it",
+    "explicit_only": false
+  },
+  "turborepo": {
+    "description": "Turborepo monorepo build-system guidance \u2014 turbo.json task pipelines, caching, the turbo CLI, --filter/--affected, CI, env vars, and packages",
+    "explicit_only": false,
+    "skills": "content/skills/turborepo/SKILL.md"
+  },
+  "typescript-advanced-types": {
+    "description": "Master TypeScript's advanced type system - generics, conditional, mapped, template-literal, utility types, inference, and type guards",
+    "explicit_only": false,
+    "skills": "content/skills/typescript-advanced-types/SKILL.md"
+  },
+  "using-git-worktrees": {
+    "description": "Create isolated git worktrees with smart directory selection and safety checks",
+    "explicit_only": false,
+    "skills": "content/skills/using-git-worktrees/SKILL.md"
+  },
+  "using-orc": {
+    "description": "orc's iron rules, instruction priority, and skill-routing discipline. Injected at every SessionStart; required reading before your first action.",
+    "explicit_only": true,
+    "skills": "content/skills/using-orc/SKILL.md"
+  },
+  "vercel-composition-patterns": {
+    "description": "React composition patterns that scale (compound components, render props, context, React 19 APIs)",
+    "explicit_only": false,
+    "skills": "content/skills/vercel-composition-patterns/SKILL.md"
+  },
+  "vercel-react-best-practices": {
+    "description": "React and Next.js performance optimization guidelines from Vercel Engineering",
+    "explicit_only": false,
+    "skills": "content/skills/vercel-react-best-practices/SKILL.md"
+  },
+  "verification-before-completion": {
+    "description": "Use when about to claim work is complete, fixed, or passing, before committing or opening PRs \u2014 evidence before assertions. Doctrine skill (preloaded into orc-implementer), not a command \u2014 the bundled /verify covers interactive one-off behavioral checks.",
+    "explicit_only": false,
+    "skills": "content/skills/verification-before-completion/SKILL.md"
+  },
+  "vitest": {
+    "description": "Vitest fast unit testing framework powered by Vite with Jest-compatible API",
+    "explicit_only": false,
+    "skills": "content/skills/vitest/SKILL.md"
+  },
+  "wait-what": {
+    "description": "Stop and re-pitch \u2014 the last message did not land; say it again simply, in the project's own vocabulary.",
+    "explicit_only": true,
+    "skills": "content/skills/wait-what/SKILL.md"
+  },
+  "wayfinder": {
+    "commands": "content/commands/wayfinder.md",
+    "description": "Plan a chunk of work too big for one session as a shared map of decision tickets on the configured tracker; each session resolves exactly one decision",
+    "explicit_only": false
+  },
+  "wizard": {
+    "description": "Generate an interactive bash wizard walking a human through work only they can perform \u2014 credentials, secrets, one-off migrations",
+    "explicit_only": false,
+    "skills": "content/skills/wizard/SKILL.md"
+  },
+  "workspace-mode": {
+    "description": "Use when cwd is a parent dir holding multiple sibling git repos \u2014 defines repo auto-detection, --repos/--repo/--all-repos/--this-repo precedence, per-repo dispatch, and linked-PR mechanics.",
+    "explicit_only": false,
+    "skills": "content/skills/workspace-mode/SKILL.md"
+  },
+  "writing-for-agents": {
+    "description": "orc's doctrine layer for writing any document an agent consumes \u2014 skills, AGENTS.md/AGENTS.md, reference docs",
+    "explicit_only": false,
+    "skills": "content/skills/writing-for-agents/SKILL.md"
+  },
+  "writing-plans": {
+    "description": "Write a comprehensive implementation plan of bite-sized TDD tasks that an engineer with zero codebase context could execute \u2014 exact files, code, tests, and verification steps",
+    "explicit_only": false,
+    "skills": "content/skills/writing-plans/SKILL.md"
+  }
+}

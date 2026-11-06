@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc pr-size-budget"
+  short_description: "Run the orc pr-size-budget workflow"

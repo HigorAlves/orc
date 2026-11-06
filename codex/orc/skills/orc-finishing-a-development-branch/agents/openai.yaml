@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc finishing-a-development-branch"
+  short_description: "Run the orc finishing-a-development-branch workflow"

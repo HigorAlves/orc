@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc verification-before-completion"
+  short_description: "Run the orc verification-before-completion workflow"

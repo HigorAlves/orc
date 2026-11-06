@@ -1,0 +1,172 @@
+{
+  "_comment": "Canonical registry of the CLI tools orc relies on. Consumed by both the SessionStart tool-check hook (orc/hooks/scripts/session-start-tool-check.sh, via jq) and the orc installer CLI (cli/internal/deps, which embeds a CI-verified mirror at cli/internal/deps/tools.json). Keep the two byte-identical — the validate.yml `static` job enforces it. Hint keys are platform ids (macos/debian/fedora/arch/linux) with a `default` fallback, matching platform detection in both consumers. `install` maps a package manager (brew/apt/dnf/pacman/npm/uv/pipx) to the args passed after its install verb; omit a manager when there is no safe unattended recipe (the CLI then falls back to printing the hint). Resolution order is system manager (brew/apt/dnf/pacman), then npm, then uv, then pipx. `postInstall` is an optional argv run once after a successful install to finish setup (e.g. fetching browser binaries) — add it whenever a hint ends in a second command, or the unattended path silently leaves the tool half-installed.",
+  "tools": [
+    {
+      "name": "git",
+      "tier": "required",
+      "hints": {
+        "macos": "xcode-select --install  (or: brew install git)",
+        "debian": "sudo apt-get install -y git",
+        "fedora": "sudo dnf install -y git",
+        "arch": "sudo pacman -S git",
+        "default": "see https://git-scm.com/downloads"
+      },
+      "install": {
+        "brew": ["git"],
+        "apt": ["git"],
+        "dnf": ["git"],
+        "pacman": ["git"]
+      }
+    },
+    {
+      "name": "jq",
+      "tier": "required",
+      "hints": {
+        "macos": "brew install jq",
+        "debian": "sudo apt-get install -y jq",
+        "fedora": "sudo dnf install -y jq",
+        "arch": "sudo pacman -S jq",
+        "default": "see https://jqlang.github.io/jq/download/"
+      },
+      "install": {
+        "brew": ["jq"],
+        "apt": ["jq"],
+        "dnf": ["jq"],
+        "pacman": ["jq"]
+      }
+    },
+    {
+      "name": "gh",
+      "tier": "recommended",
+      "usedBy": "`/orc:code-review`, `/orc:address`, `/orc:ship`, `/orc:postmortem`",
+      "hints": {
+        "macos": "brew install gh && gh auth login",
+        "debian": "see https://github.com/cli/cli/blob/trunk/docs/install_linux.md (apt) — then: gh auth login",
+        "fedora": "sudo dnf install -y gh && gh auth login",
+        "arch": "sudo pacman -S github-cli && gh auth login",
+        "default": "see https://cli.github.com/  — then: gh auth login"
+      },
+      "install": {
+        "brew": ["gh"],
+        "dnf": ["gh"],
+        "pacman": ["github-cli"]
+      }
+    },
+    {
+      "name": "agent-browser",
+      "tier": "recommended",
+      "usedBy": "`/orc:qa` fallback driver when Node/Playwright is unavailable; `/orc:evidence`",
+      "hints": {
+        "macos": "brew install agent-browser && agent-browser install",
+        "default": "npm install -g agent-browser && agent-browser install"
+      },
+      "install": {
+        "brew": ["agent-browser"],
+        "npm": ["agent-browser"]
+      },
+      "postInstall": ["agent-browser", "install"]
+    },
+    {
+      "name": "acli",
+      "tier": "recommended",
+      "usedBy": "`/orc:jira`, `/orc:plan|start|debug|flow` (Jira ticket linking), `/orc:prd|trd` (`--from-jira` seeding)",
+      "hints": {
+        "macos": "brew install atlassian/acli/acli  — then: acli jira auth login --web",
+        "debian": "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/  — then: acli jira auth login --web",
+        "fedora": "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/  — then: acli jira auth login --web",
+        "arch": "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/  — then: acli jira auth login --web",
+        "linux": "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/  — then: acli jira auth login --web",
+        "default": "see https://developer.atlassian.com/cloud/acli/guides/how-to-get-started/"
+      },
+      "install": {
+        "brew": ["atlassian/acli/acli"]
+      }
+    },
+    {
+      "name": "docker",
+      "tier": "recommended",
+      "usedBy": "`/orc:env`, `/orc:qa`/`/orc:flow` env provisioning (host-mode fallback applies without it)",
+      "hints": {
+        "macos": "brew install --cask docker-desktop  (or OrbStack: brew install --cask orbstack)",
+        "debian": "see https://docs.docker.com/engine/install/debian/",
+        "fedora": "see https://docs.docker.com/engine/install/fedora/",
+        "arch": "sudo pacman -S docker docker-compose",
+        "default": "see https://docs.docker.com/get-docker/"
+      },
+      "install": {
+        "brew": ["--cask", "docker-desktop"],
+        "pacman": ["docker", "docker-compose"]
+      }
+    },
+    {
+      "name": "graphify",
+      "tier": "recommended",
+      "usedBy": "`/orc:plan`, `/orc:start`, `/orc:flow`, `/orc:debug` (code discovery — query a code graph instead of grepping)",
+      "hints": {
+        "macos": "uv tool install 'graphifyy[mcp]' && graphify install  (or: pipx install 'graphifyy[mcp]' && graphify install)",
+        "linux": "uv tool install 'graphifyy[mcp]' && graphify install  (or: pipx install 'graphifyy[mcp]' && graphify install)",
+        "default": "uv tool install 'graphifyy[mcp]' && graphify install  — see https://github.com/Graphify-Labs/graphify"
+      },
+      "install": {
+        "uv": ["graphifyy[mcp]"],
+        "pipx": ["graphifyy[mcp]"]
+      },
+      "postInstall": ["graphify", "install"]
+    },
+    {
+      "name": "osv-scanner",
+      "tier": "recommended",
+      "usedBy": "`/orc:deps` (ecosystem-agnostic vulnerability audit; per-ecosystem scanners are the fallback)",
+      "hints": {
+        "macos": "brew install osv-scanner",
+        "default": "go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest — see https://google.github.io/osv-scanner/"
+      },
+      "install": {
+        "brew": ["osv-scanner"]
+      }
+    },
+    {
+      "name": "gitleaks",
+      "tier": "recommended",
+      "usedBy": "`/orc:code-review --audit` (secret scanning; regex fallback applies without it)",
+      "hints": {
+        "macos": "brew install gitleaks",
+        "default": "see https://github.com/gitleaks/gitleaks#installing"
+      },
+      "install": {
+        "brew": ["gitleaks"]
+      }
+    },
+    {
+      "name": "sentry-cli",
+      "tier": "recommended",
+      "usedBy": "`/orc:incident` (pull Sentry issues/events into live-incident triage)",
+      "hints": {
+        "macos": "brew install getsentry/tools/sentry-cli && sentry-cli login",
+        "default": "npm install -g @sentry/cli — then: sentry-cli login"
+      },
+      "install": {
+        "brew": ["getsentry/tools/sentry-cli"],
+        "npm": ["@sentry/cli"]
+      }
+    },
+    {
+      "name": "ffmpeg",
+      "tier": "recommended",
+      "usedBy": "`/orc:qa` (stitched QA video), `/orc:explain` (explainer render), agent-browser `record` — title cards and captions need an ffmpeg build with libfreetype (`brew install ffmpeg` has it; minimal builds don't)",
+      "hints": {
+        "macos": "brew install ffmpeg",
+        "debian": "sudo apt-get install -y ffmpeg",
+        "fedora": "sudo dnf install -y ffmpeg-free  (or enable RPM Fusion for the full ffmpeg)",
+        "arch": "sudo pacman -S ffmpeg",
+        "default": "see https://ffmpeg.org/download.html"
+      },
+      "install": {
+        "brew": ["ffmpeg"],
+        "apt": ["ffmpeg"],
+        "dnf": ["ffmpeg-free"],
+        "pacman": ["ffmpeg"]
+      }
+    }
+  ]
+}

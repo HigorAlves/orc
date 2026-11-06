@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc architecture-patterns"
+  short_description: "Run the orc architecture-patterns workflow"

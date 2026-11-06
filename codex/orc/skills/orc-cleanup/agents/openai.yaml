@@ -1,0 +1,5 @@
+policy:
+  allow_implicit_invocation: false
+interface:
+  display_name: "orc cleanup"
+  short_description: "Run the orc cleanup workflow"

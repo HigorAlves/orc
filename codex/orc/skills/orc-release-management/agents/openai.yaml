@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc release-management"
+  short_description: "Run the orc release-management workflow"

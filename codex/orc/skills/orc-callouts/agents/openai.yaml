@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc callouts"
+  short_description: "Run the orc callouts workflow"

@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc rfc-writing"
+  short_description: "Run the orc rfc-writing workflow"

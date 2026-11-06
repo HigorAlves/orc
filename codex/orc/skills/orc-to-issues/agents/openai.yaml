@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc to-issues"
+  short_description: "Run the orc to-issues workflow"

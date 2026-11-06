@@ -1,0 +1,14 @@
+{
+  "name": "orc",
+  "version": "0.31.0",
+  "author": {
+    "name": "Higor Alves",
+    "email": "me@higoralves.dev"
+  },
+  "homepage": "https://github.com/HigorAlves/orc",
+  "repository": "https://github.com/HigorAlves/orc",
+  "license": "MIT",
+  "description": "Full-SDLC workflows for Codex: plan, implement, QA, ship, CI and release.",
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

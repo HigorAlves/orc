@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc prd-writing"
+  short_description: "Run the orc prd-writing workflow"

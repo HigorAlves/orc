@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc docker-best-practices"
+  short_description: "Run the orc docker-best-practices workflow"

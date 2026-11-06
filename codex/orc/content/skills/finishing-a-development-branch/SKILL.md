@@ -1,0 +1,219 @@
+---
+name: finishing-a-development-branch
+description: Guide the completion of a development branch by presenting structured options for merge, PR, or cleanup
+when_to_use: Use when implementation is complete, all tests pass, and you need to decide how to integrate the work.
+license: MIT
+metadata:
+  author: Jesse Vincent
+  source: Derived from https://github.com/obra/superpowers
+---
+
+# Finishing a Development Branch
+
+## Overview
+
+Guide completion of development work by presenting clear options and handling chosen workflow.
+
+**Core principle:** Verify tests → Present options → Execute choice → Clean up.
+
+**Announce at start:** "I'm using the finishing-a-development-branch skill to complete this work."
+
+## The Process
+
+### Step 1: Verify Tests
+
+**Before presenting options, verify tests pass:**
+
+```bash
+# Run project's test suite
+npm test / cargo test / pytest / go test ./...
+```
+
+**If tests fail** — surface the blocked callout, then the failures in a fence:
+
+```markdown
+> **🛑 Blocked — <N> test failures**
+>
+> Cannot proceed with merge/PR until tests pass.
+```
+
+```
+[Show failures]
+```
+
+Stop. Don't proceed to Step 2.
+
+**If tests pass:** Continue to Step 2.
+
+### Step 2: Determine Base Branch
+
+```bash
+# Try common base branches
+git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null
+```
+
+Or ask: "This branch split from main - is that correct?"
+
+### Step 3: Present Options
+
+Print the Gate headline (`**⛔ Gate — branch completion**`, one line: tests green, N commits on `<branch>`, per `orc-callouts`), then present exactly these 4 options (via `the available user-question tool (or ask in chat)` when available):
+
+```
+Implementation complete. What would you like to do?
+
+1. Merge back to <base-branch> locally
+2. Push and create a Pull Request
+3. Keep the branch as-is (I'll handle it later)
+4. Discard this work
+
+Which option?
+```
+
+**Don't add explanation** - keep options concise.
+
+### Caller-supplied preview mode (one gate instead of two)
+
+When the calling command has **already composed the PR title + body** (e.g. `$orc-ship`, which composes before gating), it passes them in and Steps 3–4's two questions collapse into ONE. Print the Gate headline (`**⛔ Gate — ship**`, one line: tests green, N commits on `<branch>`), then `the available user-question tool (or ask in chat)` (header `Ship`) with the composed title + body as the `preview` of options 1 and 2 — the payload renders beside the choice instead of in a fence above it (`orc-gates` §3; over ~60 lines or no `the available user-question tool (or ask in chat)` → fence fallback):
+
+```
+1. Open PR as previewed (Recommended)      preview: # <title>\n\n<body>
+2. Open as draft                           preview: same payload, "Draft" first line
+3. Edit title/body first — edits ride the notes field; re-render the preview, re-ask
+4. Another completion path — merge back locally / keep as-is / discard
+```
+
+Options 1–2 execute Option 2 below (push + `gh pr create`; `--draft` for option 2) with the previewed body verbatim. Option 4 opens the standard 4-option question from Step 3 as a follow-up and proceeds per Steps 4–5 (the discard confirmation still applies). The preview shown IS the payload posted — any edit loops back through the preview.
+
+### Step 4: Execute Choice
+
+#### Option 1: Merge Locally
+
+```bash
+# Switch to base branch
+git checkout <base-branch>
+
+# Pull latest
+git pull
+
+# Merge feature branch
+git merge <feature-branch>
+
+# Verify tests on merged result
+<test command>
+
+# If tests pass
+git branch -d <feature-branch>
+```
+
+Then: Cleanup worktree (Step 5)
+
+#### Option 2: Push and Create PR
+
+```bash
+# Push branch
+git push -u origin <feature-branch>
+
+# Create PR
+gh pr create --title "<title>" --body "$(cat <<'EOF'
+## Summary
+<2-3 bullets of what changed>
+
+## Test Plan
+- [ ] <verification steps>
+EOF
+)"
+```
+
+Then: Cleanup worktree (Step 5)
+
+#### Option 3: Keep As-Is
+
+Report: "Keeping branch <name>. Worktree preserved at <path>."
+
+**Don't cleanup worktree.**
+
+#### Option 4: Discard
+
+**Confirm first:**
+
+```markdown
+> **🛑 Destructive — type 'discard' to confirm**
+>
+> This permanently deletes branch `<name>`, all its commits (<commit-list>), and the worktree at `<path>`.
+```
+
+Wait for exact confirmation.
+
+If confirmed:
+```bash
+git checkout <base-branch>
+git branch -D <feature-branch>
+```
+
+Then: Cleanup worktree (Step 5)
+
+### Step 5: Cleanup Worktree
+
+**For Options 1, 2, 4:**
+
+Check if in worktree:
+```bash
+git worktree list | grep $(git branch --show-current)
+```
+
+If yes:
+```bash
+git worktree remove <worktree-path>
+```
+
+**For Option 3:** Keep worktree.
+
+## Quick Reference
+
+| Option | Merge | Push | Keep Worktree | Cleanup Branch |
+|--------|-------|------|---------------|----------------|
+| 1. Merge locally | ✓ | - | - | ✓ |
+| 2. Create PR | - | ✓ | ✓ | - |
+| 3. Keep as-is | - | - | ✓ | - |
+| 4. Discard | - | - | - | ✓ (force) |
+
+## Common Mistakes
+
+**Skipping test verification**
+- **Problem:** Merge broken code, create failing PR
+- **Fix:** Always verify tests before offering options
+
+**Open-ended questions**
+- **Problem:** "What should I do next?" → ambiguous
+- **Fix:** Present exactly 4 structured options
+
+**Automatic worktree cleanup**
+- **Problem:** Remove worktree when it is still needed (Option 2, 3)
+- **Fix:** Only cleanup for Options 1 and 4
+
+**No confirmation for discard**
+- **Problem:** Accidentally delete work
+- **Fix:** Require typed "discard" confirmation
+
+## Red Flags
+
+**Never:**
+- Proceed with failing tests
+- Merge without verifying tests on result
+- Delete work without confirmation
+- Force-push without explicit request
+
+**Always:**
+- Verify tests before offering options
+- Present exactly 4 options
+- Get typed confirmation for Option 4
+- Clean up worktree for Options 1 & 4 only
+
+## Integration
+
+**Called by:**
+- **subagent-driven-development** (Step 7) - After all tasks complete
+- **executing-plans** (Step 5) - After all batches complete
+
+**Pairs with:**
+- **using-git-worktrees** - Cleans up worktree created by that skill

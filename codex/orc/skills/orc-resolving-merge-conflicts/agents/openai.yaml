@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc resolving-merge-conflicts"
+  short_description: "Run the orc resolving-merge-conflicts workflow"

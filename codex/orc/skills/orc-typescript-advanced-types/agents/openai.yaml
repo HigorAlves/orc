@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc typescript-advanced-types"
+  short_description: "Run the orc typescript-advanced-types workflow"

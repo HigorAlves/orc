@@ -1,0 +1,3 @@
+interface:
+  display_name: "orc postmortem"
+  short_description: "Run the orc postmortem workflow"

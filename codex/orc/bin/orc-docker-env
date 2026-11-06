@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# orc-docker-env — docker-env helper CLI (plugin bin/, on PATH while orc is
+# enabled). Thin wrapper: all logic lives in lib/docker-env.sh, whose CLI
+# dispatch activates when the lib is executed rather than sourced.
+set -euo pipefail
+dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+exec bash "${dir}/../lib/docker-env.sh" "$@"
