@@ -59,11 +59,11 @@ homebrew_casks:
       # as HOMEBREW_TAP_GITHUB_TOKEN in the release workflow.
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: "https://github.com/HigorAlves/orc"
-    description: "Installer, doctor, and config toolbox for the orc Claude Code plugin"
+    description: "Installer, doctor, and config toolbox for the orc Claude Code and Codex plugin"
     # Strip the quarantine xattr so the unsigned binary runs without a Gatekeeper prompt.
     hooks:
       post:
-        install: |
-          if OS.mac?
-            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/orc"]
+        install_steps: |
+          on_macos do
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/orc"]
           end
