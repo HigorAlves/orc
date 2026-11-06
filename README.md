@@ -49,7 +49,7 @@ orc doctor --fix                                                                
 orc install                                                                            # 3. enable the plugin
 ```
 
-Restart Claude Code, type `/orc:`, and the palette fills. Pin a version with `orc install --ref orc--v0.31.0`, or skip the CLI with `/plugin marketplace add HigorAlves/orc`. Checkpoints, requirements and the marketplace-only path: [docs/install.md](./docs/install.md).
+Restart Claude Code, type `/orc:`, and the palette fills. Pin a version with `orc install --ref orc--v0.32.0`, or skip the CLI with `/plugin marketplace add HigorAlves/orc`. Checkpoints, requirements and the marketplace-only path: [docs/install.md](./docs/install.md).
 
 ## The loop
 
